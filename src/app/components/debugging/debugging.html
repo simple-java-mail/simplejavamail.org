@@ -136,9 +136,10 @@ try {{ '{' }}
                                                                                                                                   log4j2</a>.
       </p>
       <div>
-        Aside from the native JavaMail logging, there are three parts of Simple Java Mail that may produce logging:
+        Aside from the native JavaMail logging, the following parts of Simple Java Mail may produce additional logging:
         <ul class="indent">
           <li>"org.simplejavamail"</li>
+          <li>"org.simplejavamail.internal.clisupport"</li>
           <li>"socks5bridge"</li>
           <li>"org.simplejavamail.mailer.internal.socks"</li>
         </ul>
@@ -154,6 +155,9 @@ try {{ '{' }}
       <p>
         When using maven, Simple Java Mail provides some default XML configuration for log4j2, but you can easily switch to something else. Below are
         some examples.
+      </p>
+      <p>
+        You can also checkout the <a href="https://github.com/bbottema/simple-java-mail/blob/develop/src/test/resources/log4j2.xml">log4j2 configuration used in our own tests</a>.
       </p>
     </div>
   </section>

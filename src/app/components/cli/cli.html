@@ -1,0 +1,64 @@
+<div class="content">
+
+  <h1>Simple Java Mail Command Line Interface</h1>
+
+  <section class="introduction">
+    <p class="wide">
+      Simple Java Mail exposes the complete builder API as CLI commands, which is to say everything you can do with
+      Simple Java Mail in Java, you can also do that in a terminal.
+    </p>
+
+    <h3>From builder API to CLI commands</h3>
+
+    <p class="wide">
+      To support CLI, the commands and options are generated using <a href="https://picocli.info/">Picocli's Java API</a>
+      and <a href="https://github.com/dnault/therapi-runtime-javadoc">Therapi's Javadoc bundler</a>. Together with a
+      lot of custom glue Simple Java Mail's builder API is traversed and converted into CLI commands.
+    </p>
+    <p class="wide">
+      The great benefit from this is that new builder API is supported by CLI automagically and the documentation is
+      still centralized in the builder API.
+    </p>
+  </section>
+
+  <section>
+    <h2>Usage Help</h2>
+    <p>You can get usage information displayed on any level:</p>
+    <table>
+      <colgroup>
+        <col span="1" style="width: 15%;">
+        <col span="1" style="width: 40%;">
+        <col span="1">
+      </colgroup>
+
+      <!-- Put <thead>, <tbody>, and <tr>'s here! -->
+      <tbody>
+      <tr>
+        <td>Global level</td>
+        <td><code class="inline">--help</code></td>
+        <td>informs about available commands</td>
+      </tr>
+      <tr>
+        <td>Command level</td>
+        <td><code class="inline">send --help</code></td>
+        <td>informs about options available for the "send" command</td>
+      </tr>
+      <tr>
+        <td>Option level</td>
+        <td><code class="inline">send --email:withSubject--help</code></td>
+        <td>displays usage help for the "withSubject" option</td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>General Usage</h2>
+    <p class="wide">For Java libraries CLI support works just like any other Java static void main invocation:</p>
+    <pre><code>java -cp all;the;jars.jar org.simplejavamail.cli.SimpleJavaMail --help</code></pre>
+    <p class="wide">
+      Simple Java Mail's own main jar should be on the classpath of course, as well as all non-optional dependencies,
+      the optional cli-module dependency and <em>its</em> dependencies.
+    </p>
+  </section>
+</div>

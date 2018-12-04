@@ -7,6 +7,18 @@
       Simple Java Mail can be used without any external libraries, but a few features require additional dependencies.
     </p>
   </section>
+
+  <h2>CLI support</h2>
+
+  <section>
+    <p>
+      To enable CLI support, include the following module:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;cli-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+  </section>
   
   <h2>DKIM support</h2>
   
@@ -16,9 +28,8 @@
       include the following library:
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;net.markenwerk&lt;/groupId&gt;
-    &lt;artifactId&gt;utils-mail-dkim&lt;/artifactId&gt;
-    &lt;version&gt;X.X.X&lt;/version&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;dkim-module&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
   </section>
   
@@ -31,8 +42,7 @@
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
-    &lt;artifactId&gt;outlook-message-parser&lt;/artifactId&gt;
-    &lt;version&gt;X.X.X&lt;/version&gt;
+    &lt;artifactId&gt;outlook-module&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
   </section>
   
@@ -43,11 +53,10 @@
       To enable support for Spring (see <a [routerLink]="['/configuration']" simplePageScroll href="#section-spring-support">Configuration</a>),
       make sure the following libraries can be found on the classpath (in most cases will be there anyway):
     </p>
-    <ol class="indent">
-      <li>spring-core</li>
-      <li>spring-context</li>
-      <li>spring-beans</li>
-    </ol>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
   </section>
   
 </div>

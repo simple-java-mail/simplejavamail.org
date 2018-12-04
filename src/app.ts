@@ -10,6 +10,7 @@ import {Ng2SimplePageScrollModule} from 'ng2-simple-page-scroll/ng2-simple-page-
 
 import {About} from './app/components/about/about';
 import {Features} from './app/components/features/features';
+import {Cli} from './app/components/cli/cli';
 import {Configuration} from './app/components/configuration/configuration';
 import {Debugging} from './app/components/debugging/debugging';
 import {RfcCompliant} from './app/components/rfc/rfc';
@@ -27,6 +28,7 @@ require('./index.html');
     SimpleJavaMailApp,
     About,
     Features,
+    Cli,
     Configuration,
     Debugging,
     RfcCompliant,
