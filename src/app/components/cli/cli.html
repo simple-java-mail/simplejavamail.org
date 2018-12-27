@@ -54,12 +54,15 @@
       sjm --help
       sjm send --email:to--help
       sjm send
+          --email:startingBlank
+          --email:from "Mr. Candy" mrcandy@candystore.com
           --email:withSubject "About those tongue twisters"
-          --email:to name="Sweet Cheeks" oneOrMoreAddresses="sweet.cheeks@candystore.com"
-          --email:cc name="Candy Research Group" oneOrMoreAddresses="&lt;james@candy-insights.com&gt;;&lt;jean@candy-insights.com&gt;"
-          --email:bcc oneOrMoreAddresses="box1 &lt;info-box@candystore.com&gt;,box2 &lt;reminders@candystore.com&gt;"
-          --email:withPlainText text="I discovered a new flavor! (..)"
-          --mailer:withSMTPServer host=my-smtp-server.com port=1234 username=myuser password=mypass
+          --email:to "Sweet Cheeks" "sweet.cheeks@candystore.com"
+          --email:cc "Candy Research Group" "&lt;james@candy-insights.com&gt;;&lt;jean@candy-insights.com&gt;"
+          --email:bcc "box1 &lt;info-box@candystore.com&gt;,box2 &lt;reminders@candystore.com&gt;"
+          --email:withPlainText "I discovered a new flavor! (..)"
+          --mailer:withSMTPServer "my-smtp-server.com" 1234 "myuser" "mypass"
+          --mailer:withTransportStrategy "SMTP_TLS"
     </code></pre>
   </section>
 
