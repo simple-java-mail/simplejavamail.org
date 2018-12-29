@@ -8,10 +8,10 @@
       Simple Java Mail in Java, you can also do that in a terminal.
     </p>
     <p class="wide">
-      Also property files are read just the same, as long as they can be found on the classpath.
+      A simplejavamail.properties file is read just the same, as long as it can be found on the classpath.
     </p>
 
-    <h3>From builder API to CLI commands</h3>
+    <h2>From builder API to CLI commands</h2>
 
     <p class="wide">
       To support CLI, the commands and options are generated using <a href="https://picocli.info/">Picocli's Java API</a>
@@ -20,15 +20,17 @@
     </p>
     <p class="wide">
       The great benefit from this is that new builder API is supported by CLI automagically and the documentation is
-      still centralized in the builder API.
+      still centralized in the builder API, providing a consistent experience.
     </p>
   </section>
 
   <section class="toc">
     <ul>
       <li><a simplePageScroll href="#section-how-to-use">How to use</a></li>
+      <li><a simplePageScroll href="#section-usage-help" class="indent">Usage help</a></li>
       <li><a simplePageScroll href="#section-at-files" class="indent">@-files</a></li>
-      <li><a simplePageScroll href="#section-usage-help">Usage help</a></li>
+      <li><a simplePageScroll href="#section-config-properties" class="indent">Configuring properties</a></li>
+      <li><a simplePageScroll href="#section-config-logging" class="indent">Configuring logging</a></li>
       <li><a simplePageScroll href="#section-invoking-cli-manually">Invoking CLI manually</a></li>
       <li><a simplePageScroll href="#section-or-by-maven" class="indent">Or by Maven</a></li>
     </ul>
@@ -67,48 +69,8 @@
   </section>
 
 
-  <a href="#section-at-files" id="section-at-files" class="section-link h3">&sect;</a>
-  <h3>@-files</h3>
-
-  <section>
-    <p class="wide">
-      If you run into a character limit in your console, you can also use @-files, which is supported in
-      <a href="https://picocli.info/#AtFiles">Picocli</a>, the library used under the hood:
-    </p>
-    <pre><code class="language-text">
-      # /home/foo/args
-      --email:withSubject "..."
-      --mailer:withSMTPServer host=...
-      # ...hundred more arguments
-    </code></pre>
-    <p class="wide">The command <code class="language-text inline">sjm @/home/foo/args</code> then is expanded to:</p>
-    <pre><code class="language-text">
-      sjm --email:withSubject "..." --mailer:withSMTPServer host=... ...and the other hundred arguments
-    </code></pre>
-    <p class="wide">
-      Quoting the Picocli documentation:
-    </p>
-    <blockquote>
-      <p class="wide">
-        This feature is similar to the 'Command Line Argument File' processing supported by gcc, javadoc and javac.
-        The documentation for these tools shows further examples.
-      </p>
-      <p class="wide">
-        From picocli 3.8.1, a simpler argument file format is also supported where every line (except comment lines)
-        is interpreted as a single argument. Arguments containing whitespace do not need to be quoted, but it is not
-        possible to have arguments with embedded newlines.
-      </p>
-      <p class="wide">
-        Set system property <code class="inline">picocli.useSimplifiedAtFiles</code> without a value or with value
-        <code class="inline">"true"</code> (case-insensitive) to enable this simpler argument file format. This simplified
-        format is similar to the argument file format supported by <a href="http://jcommander.org/#__syntax">JCommander</a>.
-      </p>
-    </blockquote>
-  </section>
-
-
-  <a href="#section-usage-help" id="section-usage-help" class="section-link h2">&sect;</a>
-  <h2>Usage Help</h2>
+  <a href="#section-usage-help" id="section-usage-help" class="section-link h3">&sect;</a>
+  <h3>Usage Help</h3>
 
   <section>
     <p>You can get usage information displayed on any level:</p>
@@ -141,6 +103,69 @@
   </section>
 
 
+  <a href="#section-at-files" id="section-at-files" class="section-link h3">&sect;</a>
+  <h3>@-files</h3>
+
+  <section>
+    <p class="wide">
+      If you run into a character limit in your console, you can also use @-files, which is supported in
+      <a href="https://picocli.info/#AtFiles">Picocli</a>, the library used under the hood:
+    </p>
+    <pre><code class="language-text">
+      # /home/foo/args
+      --email:withSubject "..."
+      --mailer:withSMTPServer host=...
+      # ...other arguments
+    </code></pre>
+    <p class="wide">The command <code class="language-text inline">sjm @/home/foo/args</code> then is expanded to:</p>
+    <pre><code class="language-text">
+      sjm --email:withSubject "..." --mailer:withSMTPServer host=... ...and the other hundred arguments
+    </code></pre>
+    <p class="wide">
+      Quoting the Picocli documentation:
+    </p>
+    <blockquote>
+      <p class="wide">
+        This feature is similar to the 'Command Line Argument File' processing supported by gcc, javadoc and javac.
+        The documentation for these tools shows further examples.
+      </p>
+      <p class="wide">
+        From picocli 3.8.1, a simpler argument file format is also supported where every line (except comment lines)
+        is interpreted as a single argument. Arguments containing whitespace do not need to be quoted, but it is not
+        possible to have arguments with embedded newlines.
+      </p>
+      <p class="wide">
+        Set system property <code class="inline">picocli.useSimplifiedAtFiles</code> without a value or with value
+        <code class="inline">"true"</code> (case-insensitive) to enable this simpler argument file format. This simplified
+        format is similar to the argument file format supported by <a href="http://jcommander.org/#__syntax">JCommander</a>.
+      </p>
+    </blockquote>
+  </section>
+
+
+  <a href="#section-config-properties" id="section-config-properties" class="section-link h3">&sect;</a>
+  <h3>Configuring properties</h3>
+
+  <section>
+    <p class="wide">
+      With the provided scripts, anything added to the \etc folder is visible on the classpath. In the current release,
+      you can add your simplejavamail.properties there and it will be picked up.
+    </p>
+    <img src="../../assets/sjm etc.png">
+  </section>
+
+
+  <a href="#section-config-logging" id="section-config-logging" class="section-link h3">&sect;</a>
+  <h3>Configuring logging</h3>
+
+  <section>
+    <p class="wide">
+      In the current release, log4j2 properties as supported and you can simply edit the provided log4j2.xml in the
+      /etc folder.
+    </p>
+  </section>
+
+
   <a href="#section-invoking-cli-manually" id="section-invoking-cli-manually" class="section-link h2">&sect;</a>
   <h2>Invoking CLI manually</h2>
 
@@ -154,6 +179,8 @@
       Simple Java Mail's own main jar should be on the classpath of course, as well as all non-optional dependencies,
       the optional cli-module dependency and <em>its</em> dependencies.
     </p>
+    You can add a simplejavamail.properties file to the classpath this way which will automatically be picked for
+    defaults and configuration.
   </section>
 
 
