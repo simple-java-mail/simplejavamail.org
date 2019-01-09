@@ -7,9 +7,6 @@
       Simple Java Mail exposes the complete builder API as CLI commands, which is to say everything you can do with
       Simple Java Mail in Java, you can also do that in a terminal.
     </p>
-    <p class="wide">
-      A simplejavamail.properties file is read just the same, as long as it can be found on the classpath.
-    </p>
 
     <h2>From builder API to CLI commands</h2>
 
@@ -65,6 +62,10 @@
           --mailer:withSMTPServer "my-smtp-server.com" 1234 "myuser" "mypass"
           --mailer:withTransportStrategy "SMTP_TLS"
     </code></pre>
+    <p>
+      You can also check the <a href="https://github.com/bbottema/simple-java-mail/tree/develop/src/test/java/demo">demo code</a>
+      included in the sources.
+    </p>
   </section>
 
 
@@ -112,13 +113,13 @@
     </p>
     <pre><code class="language-text">
       # /home/foo/args
-      --email:withSubject "..."
+      --email:withSubject "My Subject"
       --mailer:withSMTPServer host=...
       # ...other arguments
     </code></pre>
     <p class="wide">The command <code class="language-text inline">sjm @/home/foo/args</code> then is expanded to:</p>
     <pre><code class="language-text">
-      sjm --email:withSubject "..." --mailer:withSMTPServer host=... ...and the other hundred arguments
+      sjm --email:withSubject "My Subject" --mailer:withSMTPServer host=...
     </code></pre>
     <p class="wide">
       Quoting the Picocli documentation:
