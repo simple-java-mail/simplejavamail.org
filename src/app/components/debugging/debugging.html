@@ -141,7 +141,7 @@ try {{ '{' }}
           <li>"org.simplejavamail"</li>
           <li>"org.simplejavamail.internal.clisupport"</li>
           <li>"socks5bridge"</li>
-          <li>"org.simplejavamail.mailer.internal.socks"</li>
+          <li>"org.simplejavamail.api.mailer.internal.socks"</li>
         </ul>
         <p>The latter two are for the proxy bridge that is used for <a [routerLink]="['/proxy']" simplePageScroll href="#navigation">authenticated
                                                                                                                                      proxy
@@ -149,7 +149,7 @@ try {{ '{' }}
         </p>
       </div>
       <p>
-        If you wish to know where and how the properties are loaded, you can increase logging for "org.simplejavamail.util.ConfigLoader".
+        If you wish to know where and how the properties are loaded, you can increase logging for "org.simplejavamail.config.ConfigLoader".
         This will tell you which properties are loaded by API and which from config file and which properties are without value.
       </p>
       <p>
