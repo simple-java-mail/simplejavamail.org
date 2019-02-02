@@ -25,6 +25,6 @@ export class SimpleJavaMailApp implements AfterViewChecked {
   }
 
   ngAfterViewChecked():any {
-    // return Prism.highlightAll();
+    return Prism.highlightAll();
   }
 }
