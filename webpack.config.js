@@ -26,7 +26,7 @@ var webpackConfig = {
   ] : []).concat([
     new webpack.ContextReplacementPlugin(
       // The (\\|\/) piece accounts for path separators in *nix and Windows
-      /angular(\\|\/)core(\\|\/)@angular/,
+      /angular([\\/])core([\\/])@angular/,
       path.resolve(__dirname, './src'), {}
     ),
     new webpack.optimize.CommonsChunkPlugin({name: ['app', 'external', 'vendor', 'polyfills'], minChunks: Infinity}),
