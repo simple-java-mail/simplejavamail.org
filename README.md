@@ -1,3 +1,5 @@
+[![Codacy](https://img.shields.io/codacy/grade/c2cda9fd822641ec935c7f790d63feda.svg?style=flat)](https://www.codacy.com/app/simple-java-mail/angular-app)
+
 ## simple-java-mail based on the angular2-seed (2.2.1)
 
 Simple Java Mail front-end based on the angular2-seed (2.2.1).
