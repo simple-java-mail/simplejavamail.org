@@ -64,6 +64,14 @@ Mailer mailer = MailerBuilder
           .buildMailer();
 
 mailer.sendMail(email);</code></pre>
+      <pre><code class="small">mailer.testConnection();
+mailer.validate(email);</code></pre>
+      <pre><code class="small">mailer.getServerConfig();
+mailer.getOperationalConfig();
+mailer.getProxyConfig();
+mailer.getTransportStrategy();
+mailer.getSession();
+mailer.getEmailAddressCriteria();</code></pre>
     </div>
   </section>
 
