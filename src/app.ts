@@ -16,7 +16,7 @@ import {Debugging} from './app/components/debugging/debugging';
 import {RfcCompliant} from './app/components/rfc/rfc';
 import {Download} from './app/components/download/download';
 import {Contact} from './app/components/contact/contact';
-import {Dependencies} from "./app/components/dependencies/dependencies";
+import {Modules} from "./app/components/modules/modules";
 import {MavenDependencyDisplay} from './app/components/maven-dependency-display/maven-dependency-display.component';
 
 // enableProdMode();
@@ -34,7 +34,7 @@ require('./index.html');
     RfcCompliant,
     Download,
     Contact,
-    Dependencies,
+    Modules,
     MavenDependencyDisplay
   ],
   imports: [

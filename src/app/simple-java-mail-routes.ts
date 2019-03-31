@@ -8,7 +8,7 @@ import {Debugging} from './components/debugging/debugging';
 import {RfcCompliant} from './components/rfc/rfc';
 import {Download} from './components/download/download';
 import {Contact} from './components/contact/contact';
-import {Dependencies} from "./components/dependencies/dependencies";
+import {Modules} from "./components/modules/modules";
 
 export const rootRouterConfig: Routes = [
   {path: 'about', component: About},
@@ -19,7 +19,7 @@ export const rootRouterConfig: Routes = [
   {path: 'rfc', component: RfcCompliant},
   {path: 'download', component: Download},
   {path: 'contact', component: Contact},
-  {path: 'dependencies', component: Dependencies},
+  {path: 'modules', component: Modules},
   {path: '', redirectTo: 'about', pathMatch: 'full'}
 ];
 
