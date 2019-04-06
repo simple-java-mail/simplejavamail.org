@@ -61,6 +61,7 @@ Mailer mailer = MailerBuilder
           .clearEmailAddressCriteria() // turns off email validation
           .withProperty("mail.smtp.sendpartial", true)
           .withDebugLogging(true)
+          .async()
           .buildMailer();
 
 mailer.sendMail(email);</code></pre>

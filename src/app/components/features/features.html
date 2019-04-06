@@ -66,7 +66,7 @@
 
   <section class="roadmap">
     <h2>Roadmap</h2>
-    <p>Currently everything we can think of is included!</p>
+    <p>Currently everything we can think of is included or on the issue tracker!</p>
     <p>Got a suggestion? Please post it in the <a
       href="https://github.com/bbottema/simple-java-mail/issues"><strong>issue tracker</strong></a>.</p>
   </section>
@@ -306,10 +306,8 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 
     <div class="side">
       <p>Using Handlers:</p>
-      <pre><code class="small">AsyncResponse asyncResponse = mailer.sendMail(email, true); // or:
-AsyncResponse asyncResponse = mailer.sendMail(asyncEmail); // using emailBuilder.async()
-// or when testing connection:
-AsyncResponse asyncResponse = mailer.testConnection(email, ...);
+      <pre><code class="small">AsyncResponse asyncResponse = mailer.sendMail(email, true); // or mailerBuilder.async()
+// also! mailer.testConnection(email, true);
 
 asyncResponse.onSuccess(() -> System.out.println("Success"));
 asyncResponse.onException((e) -> System.err.println("error"));
@@ -352,6 +350,15 @@ try {{ '{' }}
 
     <div class="side">
 <pre><code>mailer.sendMail(email, /* async = */ true);
+</code></pre>
+      Or configure it when building the mailer:
+<pre><code>
+Mailer mailer = mailerBuilder
+  .(..)
+  .async()
+  .buildMailer();
+
+mailer.sendMail(email);
 </code></pre>
       <p>Refer to the <a simplePageScroll [routerLink]="['/configuration']" href="#section-programmatic-api-other">configuration section</a>
          on how to set the thread pool size default.</p>
