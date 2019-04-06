@@ -306,8 +306,10 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 
     <div class="side">
       <p>Using Handlers:</p>
-      <pre><code class="small">AsyncResponse asyncResponse = mailer.sendMail(email, true);
-// also! mailer.testConnection(email, true);
+      <pre><code class="small">AsyncResponse asyncResponse = mailer.sendMail(email, true); // or:
+AsyncResponse asyncResponse = mailer.sendMail(asyncEmail); // using emailBuilder.async()
+// or when testing connection:
+AsyncResponse asyncResponse = mailer.testConnection(email, ...);
 
 asyncResponse.onSuccess(() -> System.out.println("Success"));
 asyncResponse.onException((e) -> System.err.println("error"));
