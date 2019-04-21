@@ -81,6 +81,26 @@
     </ul>
   </section>
 
+  <h2>S/MIME support</h2>
+
+  <section>
+    <p>
+      To enable support for reading <a href="https://docs.ipswitch.com/moveit/central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME</a>
+      signed / encrypted email, (see <a [routerLink]="['/features']" simplePageScroll href="#section-smime">Features</a>),
+      include the following library:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;smime-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds the following 3rd party dependencies:
+    </p>
+    <ul>
+      <li><a class="indent" href="https://github.com/markenwerk/java-utils-mail-smime">net.markenwerk:utils-mail-smime</a></li>
+    </ul>
+  </section>
+
   <h2>CLI support</h2>
 
   <section>

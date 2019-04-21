@@ -57,6 +57,9 @@
       <li><a simplePageScroll href="#section-return-receipt">Configure delivery / read receipt</a></li>
       <li><a simplePageScroll href="#section-email-validation">Validating Email Addresses</a></li>
       <li><a simplePageScroll href="#section-converting">Converting between email formats</a></li>
+      <li><a simplePageScroll href="#section-smime">Reading S/MIME signed / encrypted attachments</a></li>
+        <li><a simplePageScroll href="#section-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
+        <li><a simplePageScroll href="#section-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
       <li><a simplePageScroll href="#section-bouncing-emails">Setting custom recipient for bouncing emails</a></li>
       <li><a simplePageScroll href="#section-reply-forward">Replying to and forwarding emails</a></li>
       <li><a simplePageScroll href="#section-proxy">Send using a proxy</a></li>
@@ -630,11 +633,11 @@ Session session = mailer.getSession();
 </code></pre>
     </div>
   </section>
-
-
+  
+  
   <a href="#section-dkim" id="section-dkim" class="section-link h2">&sect;</a>
   <h2>Signing emails with DKIM</h2>
-
+  
   <section>
     <div class="view">
       <p>
@@ -642,14 +645,7 @@ Session session = mailer.getSession();
         domain keys. It uses <a href="https://github.com/markenwerk/java-utils-mail-dkim">java-utils-mail-dkim</a> (dependency packaged along) to
         perform the DNS DKIM record check on the given domain.
       </p>
-      <p>DKIM is an optional feature and if you want to use it, you need to include the following dependency in your project:</p>
-      <pre><code class="small language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;net.markenwerk&lt;/groupId&gt;
-    &lt;artifactId&gt;utils-mail-dkim&lt;/artifactId&gt;
-    &lt;version&gt;X.X.X&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
     </div>
-
     <div class="side">
 <pre><code>currentEmailBuilder.
     .signWithDomainKey(
@@ -662,6 +658,89 @@ mailer.sendMail(signedEmail);
       You can also directly use the helper method:
       <pre><code>Mailer.signMessageWithDKIM(mimeMessageToSign, emailContainingSigningDetails);</code></pre>
     </div>
+  </section>
+  
+  
+  <a href="#section-smime" id="section-smime" class="section-link h2">&sect;</a>
+  <h2>Reading S/MIME signed / encrypted attachments</h2>
+  
+  <section>
+    <div class="view">
+      <p>
+        Simple Java Mail can automatically decrypt
+        <a href="https://docs.ipswitch.com/moveit/central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME signed messages</a>
+        or attachment and has some useful extras such as providing you with the metadata:
+      </p>
+      <p>S/MIME is an optional feature and if you want to use it, you need to include the following dependency in your project:</p>
+      <pre><code class="small language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;smime-module&lt;/artifactId&gt;
+    &lt;version&gt;X.X.X&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+    </div>
+    <div class="side">
+<pre><code class="small">Email mergedEmail = EmailConverter.outlookMsgToEmail("yourSMIMEEncryptedMessage.msg"); // or
+Email mergedEmail = EmailConverter.emlToEmail("yourSMIMEEncryptedMessage.eml");
+
+// all attachments as-is:
+mergedEmail.getAttachments(); // smime.p7m, my-doc.docx
+// all attachments with the encrypted ones replaced:
+mergedEmail.getDecryptedAttachments(); // signed-email.eml, my-doc.docx
+
+// if the message itself was signed (rather than a independently signed attachment):
+OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
+details.getSmimeMime(); // application/pkcs7-mime
+details.getSmimeType(); // signed-data, enveloped-data
+details.getSmimeName(); // smime.p7m
+details.getSmimeSignedBy(); // certificate-owner@domain.com
+</code></pre>
+    </div>
+  </section>
+  
+  
+  <a href="#section-smime-merging" id="section-smime-merging" class="section-link h3">&sect;</a>
+  <h3>S/MIME signed messages are merged by default</h3>
+  
+  <section>
+    <div class="view">
+      <p>
+        As an S/MIME signed message is actually nested as an attachment, the default behavior is to merge the S/MIME signed content into the root message.
+        This only happens if there was exactly one S/MIME signed attachment and the decrypted version is of type "message/rfc822".
+      </p>
+      <p>
+        This default behavior can be deactivated. For your convenience, the decrypted message is available as a separate Email instance:
+      </p>
+    </div>
+    
+    <div class="side">
+<pre><code class="small">Email nonMergedEmail = EmailBuilder
+                .copying(mergedEmail)
+                .clearSMIMESignedAttachmentMergingBehavior()
+                .buildEmail();
+  
+// or by configuring the intermediary builder:
+emailBuilder = EmailConverter.outlookMsgToEmailBuilder(msgFile); // or
+emailBuilder = EmailConverter.emlToEmailBuilder(emlFile);
+Email nonMergedEmail = emailBuilder
+                .notMergingSingleSMIMESignedAttachment()
+                .buildEmail();</code></pre>
+      You always have access to the nested decrypted message:
+      <pre><code class="small">mergedEmail.getSmimeSignedEmail();
+nonMergedEmail.getSmimeSignedEmail();
+</code></pre>
+    </div>
+  </section>
+  
+  
+  <a href="#section-smime-decryption" id="section-smime-decryption" class="section-link h3">&sect;</a>
+  <h3>Decrypting S/MIME attachments using certificate</h3>
+  
+  <section>
+    <p class="wide">
+      Under the hood, Simple Java Mail uses
+      <a href="https://github.com/markenwerk/java-utils-mail-smime">net.markenwerk:utils-mail-smime</a>
+      for S/MIME handling. For decryption using certificates, please refer to the instructions there.
+    </p>
   </section>
 
 
