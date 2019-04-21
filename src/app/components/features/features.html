@@ -667,7 +667,7 @@ mailer.sendMail(signedEmail);
   <section>
     <div class="view">
       <p>
-        Simple Java Mail can automatically decrypt
+        Simple Java Mail can automatically handle
         <a href="https://docs.ipswitch.com/moveit/central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME signed messages</a>
         or attachment and has some useful extras such as providing you with the metadata:
       </p>
@@ -677,6 +677,9 @@ mailer.sendMail(signedEmail);
     &lt;artifactId&gt;smime-module&lt;/artifactId&gt;
     &lt;version&gt;X.X.X&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
+      <p>
+        <strong>NOTE:</strong> Currently only S/MIME signed content is supported. Decryption is not yet in place.
+      </p>
     </div>
     <div class="side">
 <pre><code class="small">Email mergedEmail = EmailConverter.outlookMsgToEmail("yourSMIMEEncryptedMessage.msg"); // or
