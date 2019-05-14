@@ -9,7 +9,20 @@
       href="http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mail.html">large frameworks</a> needed nor XML.
     </p>
 
-    <h3>Features always used by default</h3>
+    <h3>Entry classes</h3>
+    <p class="wide">
+      The primary entry classes are
+      <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/email/EmailBuilder.html" target="_blank">
+        EmailBuilder</a></strong> and
+      <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/mailer/MailerBuilder.html" target="_blank">
+        MailerBuilder</a></strong>. Other entry classes are
+      <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/converter/EmailConverter.html" target="_blank">
+        EmailConverter</a></strong> and
+      <strong><a href="https://javadoc.io/page/com.github.bbottema/emailaddress-rfc2822/latest/org/hazlewood/connor/bottema/emailaddress/EmailAddressValidator.html" target="_blank">
+        EmailAddressValidator</a></strong> (the latter as alternative to the validation methods on the Mailer instance).
+    </p>
+
+    <h3>Default features</h3>
     <p class="wide">
       Simple Java Mail will do some basic validation checks so that your email is always populated with enough data.
       It also checks for CRLF injection attacks. It even verifies email addresses against
@@ -112,7 +125,11 @@ MailerBuilder
 
   <section>
     <p class="wide">
-      The entry classes for the builders are EmailBuilder and MailerBuilder. For both, the first method affects the rest of the builder behavior.
+      The entry classes for the builders are
+      <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/email/EmailBuilder.html" target="_blank">
+        EmailBuilder</a> and
+      <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/mailer/MailerBuilder.html" target="_blank">
+        MailerBuilder</a>.
     </p>
     <p class="wide">
       For <strong>EmailBuilder</strong>, the first method initializes the builder differently, either preconfiguring it
@@ -677,13 +694,10 @@ mailer.sendMail(signedEmail);
     &lt;artifactId&gt;smime-module&lt;/artifactId&gt;
     &lt;version&gt;X.X.X&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
-      <p>
-        <strong>NOTE:</strong> Currently only S/MIME signed content is supported. Decryption is not yet in place.
-      </p>
     </div>
     <div class="side">
-<pre><code class="small">Email mergedEmail = EmailConverter.outlookMsgToEmail("yourSMIMEEncryptedMessage.msg"); // or
-Email mergedEmail = EmailConverter.emlToEmail("yourSMIMEEncryptedMessage.eml");
+<pre><code class="small">Email mergedEmail = EmailConverter.outlookMsgToEmail("yourSMIMESignedMessage.msg"); // or
+Email mergedEmail = EmailConverter.emlToEmail("yourSMIMESignedMessage.eml");
 
 // all attachments as-is:
 mergedEmail.getAttachments(); // smime.p7m, my-doc.docx
@@ -692,10 +706,12 @@ mergedEmail.getDecryptedAttachments(); // signed-email.eml, my-doc.docx
 
 // if the message itself was signed (rather than a independently signed attachment):
 OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
-details.getSmimeMime(); // application/pkcs7-mime
+details.getSmimeMode(); // SIGNED
+details.getSmimeMime(); // application/pkcs7-mime or multipart/signed
 details.getSmimeType(); // signed-data, enveloped-data
-details.getSmimeName(); // smime.p7m
-details.getSmimeSignedBy(); // certificate-owner@domain.com
+details.getSmimeName(); // smime.p7m or smime.p7s
+details.getSmimeMicalg(); // ie. sha-512
+details.getSmimeSignedBy(); // email or name used
 </code></pre>
     </div>
   </section>
@@ -733,6 +749,25 @@ nonMergedEmail.getSmimeSignedEmail();
 </code></pre>
     </div>
   </section>
+
+  <section>
+    <div class="view">
+      <p>If a message is <em>both</em> signed and encrypted, <code class="inline">getSmimeSignedEmail()</code>
+        will itself have a nested <code class="inline">getOriginalSmimeDetails().</code></p>
+    </div>
+
+    <div class="side">
+      <pre><code class="small">
+        signedAndEncrypted.getOriginalSmimeDetails().smimeMode(); // SIGNED_ENCRYPTED
+        Email signedOrEncrypted = signedAndEncrypted.getSmimeSignedEmail();
+
+        signedOrEncrypted.getOriginalSmimeDetails().smimeMode(); // SIGNED or ENCRYPTED
+
+        // whether it is SIGNED or ENCRYPTED depends on the order in which the original
+        // email client handled this S/MIME scenario
+</code></pre>
+    </div>
+  </section>
   
   
   <a href="#section-smime-decryption" id="section-smime-decryption" class="section-link h3">&sect;</a>
@@ -740,10 +775,24 @@ nonMergedEmail.getSmimeSignedEmail();
   
   <section>
     <p class="wide">
-      Under the hood, Simple Java Mail uses
-      <a href="https://github.com/markenwerk/java-utils-mail-smime">net.markenwerk:utils-mail-smime</a>
-      for S/MIME handling. S/MIME encrypted messages are not yet supported, but an implementation is underway.
+      Every conversion method optionally accepts a Pkcs12Config instance, which contains details about your key store and certificate.
+      With that, you can decrypt an S/MIME encrypted mail.
     </p>
+
+    <div class="wide">
+<pre><code>Pkcs12Config yourPkcs12Config = Pkcs12Config.builder()
+      .pkcs12Store("smime_keystore.pkcs12") // path, File or InputStream
+      .storePassword("letmein")
+      .keyAlias("smime_test_user_alias")
+      .keyPassword("letmein")
+      .build();
+
+EmailConverter.outlookMsgToEmail("yourSMIMEEncryptedMessage.msg", yourPkcs12Config); // or
+EmailConverter.emlToEmail("yourSMIMEEncryptedMessage.eml", yourPkcs12Config);
+
+mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENCRYPTED
+</code></pre>
+    </div>
   </section>
 
 
