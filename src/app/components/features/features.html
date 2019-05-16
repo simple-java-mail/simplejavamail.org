@@ -67,6 +67,7 @@
       <li><a simplePageScroll href="#section-icalendar-vevent">Sending a Calendar event (iCalendar vEvent)</a></li>
       <li><a simplePageScroll href="#section-session-access">Direct access to the internal Session</a></li>
       <li><a simplePageScroll href="#section-dkim">Signing emails with DKIM</a></li>
+      <li><a simplePageScroll href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
       <li><a simplePageScroll href="#section-return-receipt">Configure delivery / read receipt</a></li>
       <li><a simplePageScroll href="#section-email-validation">Validating Email Addresses</a></li>
       <li><a simplePageScroll href="#section-converting">Converting between email formats</a></li>
@@ -872,7 +873,8 @@ EmailAddressValidator.isValid("your_address@domain.com",
   <section>
     <div class="view">
       <p>
-        With Simple Java Mail you can easily convert to other types.
+        With Simple Java Mail you can easily convert between email types.
+        This includes reading <a simplePageScroll href="#section-smime">S/MIME protected emails</a> from file.
       </p>
       <p>
         For example, if you need a MimeMessage, you can convert <code class="inline">Email</code> objects, EML data and even Outlook .msg files.
