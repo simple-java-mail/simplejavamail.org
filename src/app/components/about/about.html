@@ -7,7 +7,7 @@
     <div class="view">
       <br/>
       <p>Simple Java Mail is a mailing library with a super <strong>clean API</strong>. It's the easiest to
-        use Java mailing library in the world.</p>
+        use (Java) mailing library in the world.</p>
       <br/>
       <p>This library relieves you of having to deal with low level API such as MimeMessage, fuzzy try
         catch constructions, inner classes and other nonsense. You just want to send an email!</p>
@@ -18,6 +18,9 @@
         looks good in all email clients.</p>
       <br/>
       <p>It's also the only java mailing library in the world that can send through authenticated SOCKS proxy.</p>
+      <br/>
+      <p>Over the 13+ years of open source development, Simple Java Mail has matured, adding CLI support, DKIM, SMIME,
+        batch sending, CRLF injection protection and much more.</p>
     </div>
 
     <div class="side">
@@ -50,7 +53,9 @@ Email email = EmailBuilder.startingBlank()
           .withReturnReceiptTo()
           .withDispositionNotificationTo("notify-read-emails@candyshop.com")
           .withBounceTo("tech@candyshop.com")
-          .signWithDomainKey(privateKeyData, "somemail.com", "selector")
+          .signWithDomainKey(privateKeyData, "somemail.com", "selector") // DKIM
+          .signWithSmime(pkcs12Config)
+          .encryptWithSmime(x509Certificate)
           .buildEmail();
 
 Mailer mailer = MailerBuilder
@@ -73,8 +78,8 @@ mailer.getProxyConfig();
 mailer.getTransportStrategy();
 mailer.getSession();
 mailer.getEmailAddressCriteria();</code></pre>
-      S/MIME signed Outlook messages? No problem!
-      <pre><code class="small">Email email = EmailConverter.outlookMsgToEmail("smimeSignedEmail.msg");</code></pre>
+      S/MIME signed and/or encrypted Outlook messages? No problem!
+      <pre><code class="small">Email email = EmailConverter.outlookMsgToEmail("smimeSignedEmail.msg", pkcs12Config);</code></pre>
     </div>
   </section>
 

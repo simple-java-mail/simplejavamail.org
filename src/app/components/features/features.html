@@ -151,7 +151,7 @@ MailerBuilder
   <section>
     <div class="view">
       <p>
-        You can preconfigure a <code class="inline">Mailer</code> and use it many times.
+        You can preconfigure a <code class="inline">Mailer</code> and use it many times. It is thread-safe.
       </p>
     </div>
 
@@ -191,9 +191,9 @@ public Mailer inhouseMailer() {{ '{' }}
       </p>
       <p class="wide">
         For example, when building an email, you can add recipients using
-        <a href="https://github.com/bbottema/simple-java-mail/blob/master/src/main/java/org/simplejavamail/email/Recipient.java"><code class="inline">Recipient</code></a>
-        objects, <a href="">RFC822 compiant <code class="inline">String</code> addresses</a> (each can be comma delimited and include optional nested names),
-        <a href="http://geronimo.apache.org/maven/specs/geronimo-javamail_1.4_spec/1.6/apidocs/javax/mail/internet/InternetAddress.html"><code class="inline">InternetAddress</code></a>
+        <a href="https://github.com/bbottema/simple-java-mail/blob/master/src/main/java/org/simplejavamail/email/Recipient.java">Recipient</a>
+        objects, <a href="">RFC822 compiant String addresses</a> (each can be comma delimited and include optional nested names),
+        <a href="http://geronimo.apache.org/maven/specs/geronimo-javamail_1.4_spec/1.6/apidocs/javax/mail/internet/InternetAddress.html">InternetAddress</a>
         objects, collections of said addresses, default address names or fixed address names.
       </p>
     </div>
@@ -314,44 +314,6 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
   </section>
 
 
-  <a href="#section-handling-async-result" id="section-handling-async-result" class="section-link h3">&sect;</a>
-  <h3>Handling asynchronous mailing result</h3>
-
-  <section>
-    <div class="view">
-      <p>
-        To handle the successful or erroneous result of an async sent email, you can utilize one of the response's async helpers:
-        <em>Handlers</em> or <em>Future</em>.
-      </p>
-    </div>
-
-    <div class="side">
-      <p>Using Handlers:</p>
-      <pre><code class="small">AsyncResponse asyncResponse = mailer.sendMail(email, true); // or mailerBuilder.async()
-// also! mailer.testConnection(email, true);
-
-asyncResponse.onSuccess(() -> System.out.println("Success"));
-asyncResponse.onException((e) -> System.err.println("error"));
-</code></pre>
-      <p>Using Java's native Future:</p>
-<pre><code class="small">Future<?> f = asyncResponse.getFuture();
-
-// f.get() actually blocks until done, below is an example custom loop
-// for checking result in a non-blocking way:
-while (!f.isDone()) Thread.sleep(100);
-
-// result is in, check it
-try {{ '{' }}
-  f.get(); // without the above loop, this would actually block until done
-  System.err.println("success");
-} catch (ExecutionException e) {{ '{' }}
-  System.err.println("error");
-}
-</code></pre>
-    </div>
-  </section>
-
-
   <a href="#section-sending-asynchronously" id="section-sending-asynchronously" class="section-link h3">&sect;</a>
   <h3>Asynchronous parallel batch sending</h3>
 
@@ -383,6 +345,44 @@ mailer.sendMail(email);
 </code></pre>
       <p>Refer to the <a simplePageScroll [routerLink]="['/configuration']" href="#section-programmatic-api-other">configuration section</a>
          on how to set the thread pool size default.</p>
+    </div>
+  </section>
+  
+  
+  <a href="#section-handling-async-result" id="section-handling-async-result" class="section-link h3">&sect;</a>
+  <h3>Handling asynchronous mailing result</h3>
+  
+  <section>
+    <div class="view">
+      <p>
+        To handle the successful or erroneous result of an async sent email, you can utilize one of the response's async helpers:
+        <em>Handlers</em> or <em>Future</em>.
+      </p>
+    </div>
+    
+    <div class="side">
+      <p>Using Handlers:</p>
+      <pre><code class="small">AsyncResponse asyncResponse = mailer.sendMail(email, true); // or mailerBuilder.async()
+// also! mailer.testConnection(email, true);
+
+asyncResponse.onSuccess(() -> System.out.println("Success"));
+asyncResponse.onException((e) -> System.err.println("error"));
+</code></pre>
+      <p>Using Java's native Future:</p>
+      <pre><code class="small">Future<?> f = asyncResponse.getFuture();
+
+// f.get() actually blocks until done, below is an example custom loop
+// for checking result in a non-blocking way:
+while (!f.isDone()) Thread.sleep(100); // normally you do your own thing here
+
+// result is in, check it
+try {{ '{' }}
+        f.get(); // without the above loop, this would actually block until done
+  System.err.println("success");
+} catch (ExecutionException e) {{ '{' }}
+        System.err.println("error");
+}
+</code></pre>
     </div>
   </section>
 
@@ -660,8 +660,9 @@ Session session = mailer.getSession();
     <div class="view">
       <p>
         Simple Java Mail also supports signing with <a href="http://blog.endpoint.com/2014/04/spf-dkim-and-dmarc-brief-explanation.html">DKIM</a>
-        domain keys. It uses <a href="https://github.com/markenwerk/java-utils-mail-dkim">java-utils-mail-dkim</a> (dependency packaged along) to
-        perform the DNS DKIM record check on the given domain.
+        domain keys. It uses the
+        <strong><a [routerLink]="['/modules']" simplePageScroll href="#navigation">dkim-module</a></strong>
+        module to perform the DNS DKIM record check on the given domain.
       </p>
     </div>
     <div class="side">
@@ -687,14 +688,11 @@ mailer.sendMail(signedEmail);
       <p>
         Simple Java Mail can automatically handle
         <a href="https://docs.ipswitch.com/moveit/central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME signed messages</a>
-        or attachment and has some useful extras such as providing you with the metadata:
+        or attachments and has some useful extras such as providing you with metadata.
       </p>
-      <p>S/MIME is an optional feature and if you want to use it, you need to include the following dependency in your project:</p>
-      <pre><code class="small language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
-    &lt;artifactId&gt;smime-module&lt;/artifactId&gt;
-    &lt;version&gt;X.X.X&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
+      <p>S/MIME is an optional feature and if you want to use it, you need to include the
+        <strong><a [routerLink]="['/modules']" simplePageScroll href="#navigation">smime-module</a></strong>.
+      </p>
     </div>
     <div class="side">
 <pre><code class="small">Email mergedEmail = EmailConverter.outlookMsgToEmail("yourSMIMESignedMessage.msg"); // or
@@ -776,8 +774,9 @@ nonMergedEmail.getSmimeSignedEmail();
   
   <section>
     <p class="wide">
-      Every conversion method optionally accepts a Pkcs12Config instance, which contains details about your key store and certificate.
-      With that, you can decrypt an S/MIME encrypted mail.
+      Every conversion method optionally accepts a
+      <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/api/mailer/config/Pkcs12Config.html" target="_blank">Pkcs12Config</a>
+      instance, which contains details about your key store and certificate. With that, you can decrypt an S/MIME encrypted mail.
     </p>
 
     <div class="wide">
@@ -880,24 +879,26 @@ EmailAddressValidator.isValid("your_address@domain.com",
         For example, if you need a MimeMessage, you can convert <code class="inline">Email</code> objects, EML data and even Outlook .msg files.
       </p>
       <p>
-        If you already have a MimeMessage, you can it into an Email instance, complete with embedded images and attachments, headers intact.
+        If you already have a MimeMessage, you can convert it into an Email instance, complete with embedded images and attachments, headers intact.
       </p>
       <p>
         You can even build a mass Outlook .msg to <a href="http://forensicswiki.org/wiki/EML">EML</a> converter if you like!
       </p>
+      <br/>
       <p>
         To enable Outlook message parsing support, include the
-        <a href="https://github.com/bbottema/outlook-message-parser">outlook-message-parser</a> dependency:
+        <strong><a [routerLink]="['/modules']" simplePageScroll href="#navigation">outlook-module</a></strong>.
+        To enable S/MIME signed content and decryption support, include the
+        <strong><a [routerLink]="['/modules']" simplePageScroll href="#navigation">smime-module</a></strong>
       </p>
-      <pre><code class="small language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
-    &lt;artifactId&gt;outlook-message-parser&lt;/artifactId&gt;
-    &lt;version&gt;X.X.X&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
     </div>
 
     <div class="side">
-<pre><code class="small">// from Email
+<pre><code class="small">/*
+ * Most conversion methods support an optional Pkcs12Config config for handling S/MIME
+ */
+ 
+// from Email
 String eml =              EmailConverter.emailToEML(yourEmail);
 MimeMessage mimeMessage = EmailConverter.emailToMimeMessage(yourEmail);
 MimeMessage mimeMessage = EmailConverter.emailToMimeMessage(yourEmail, yourSession);
@@ -921,6 +922,15 @@ String eml =              EmailConverter.outlookMsgToEML(getInputStream("yourMes
 MimeMessage mimeMessage = EmailConverter.outlookMsgToMimeMessage(readToString("yourMessage.msg"));
 MimeMessage mimeMessage = EmailConverter.outlookMsgToMimeMessage(new File("yourMessage.msg"));
 MimeMessage mimeMessage = EmailConverter.outlookMsgToMimeMessage(getInputStream("yourMessage.msg"));
+
+Pkcs12Config myKeyInfo = Pkcs12Config.builder()
+    .pkcs12Store("my_smime_keystore.pkcs12")
+    .storePassword("my_store_password")
+    .keyAlias("my_key_alias")
+    .keyPassword("my_key_password")
+    .build();
+
+Email decryptedEmail =    EmailConverter.emlToEmail(emlDataString, myKeyInfo);
 </code></pre>
     </div>
   </section>
