@@ -509,15 +509,38 @@ Mailer mailer = MailerBuilder
 
     <div class="side">
       Loading Spring support and obtaining default Mailer instance:
-<pre><code class="small">@Component // or @Configuration etc.
+      <pre><code class="small">@Component
 @Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {{ '{' }}
-
-    @Autowired // or roll your own, as long as SimpleJavaMailSpringSupport is processed first
-    private Mailer mailer;
-
+        
+        @Autowired // or roll your own, as long as SimpleJavaMailSpringSupport is processed first
+        private Mailer mailer;
 {{ '}' }}
 </code></pre>
+      Or obtaining the intermediate builder and customize:
+      <pre><code class="small">@Configuration
+@Import(SimpleJavaMailSpringSupport.class)
+public class YourEmailService {{ '{' }}
+        
+        @Autowired
+        private MailerGenericBuilder mailerGenericBuilder;
+    
+        @Bean
+        public Mailer customMailer() {{ '{' }}
+                return mailerGenericBuilder
+                        .resetThreadpoolSize()
+                        .withThreadPoolKeepAliveTime(5000)
+                        .withProxyBridgePort(7777)
+                        .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
+                        .buildMailer();
+        {{ '}' }}
+{{ '}' }}
+</code></pre>
+    </div>
+  </section>
+  <section>
+   
+    <div class="width">
       Then when you have profile based configuration (for example <code>default</code> and <code>production</code>):
       <pre><code class="language-properties small">#application.properties
 simplejavamail.javaxmail.debug=true
