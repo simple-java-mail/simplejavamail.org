@@ -313,8 +313,14 @@ currentMailerBuilder.clearTrustedSSLHosts();
 </code></pre>
 <pre><code class="small">// change the pool size (default 10) for concurrent threads, each sending an email
 currentMailerBuilder.withThreadPoolSize(3);
+// change keepAliveTime for other behavior.
+// 0: threads don't die, !0: threads die after delay (default 1)
+currentMailerBuilder.withKeepAliveTime(5000);
+
+// completely replace the thread pool executor with your own
+currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
 </code></pre>
-      <pre><code class="small">// change the session timeout (affects socket connect-, read- and write timeouts)
+      <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
 currentMailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
 </code></pre>
     </div>
