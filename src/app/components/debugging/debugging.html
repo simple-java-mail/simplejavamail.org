@@ -78,7 +78,10 @@ MailerBuilder.usingSession(yourSession);
   <section>
     <div class="view">
       <p>
-        After building a Mailer or an Email instance, you can read some details back from it and see if it is what you expected.
+        After building a Mailer or an Email instance, you can read everything back from it and see if it is what you expected.
+      </p>
+      <p>
+        You can verify default values this way as well.
       </p>
     </div>
 
@@ -132,18 +135,19 @@ try {{ '{' }}
       <div>
         Aside from the native JavaMail logging, the following parts of Simple Java Mail may produce additional logging:
         <ul class="indent">
-          <li>"org.simplejavamail"</li>
-          <li>"org.simplejavamail.internal.clisupport"</li>
-          <li>"socks5bridge"</li>
-          <li>"org.simplejavamail.api.mailer.internal.socks"</li>
+          <li><strong>"org.simplejavamail"</strong></li>
+          <li><strong>"org.simplejavamail.internal.clisupport"</strong></li>
+          <li><strong>"org.simplejavamail.internal.dkimsupport"</strong></li>
+          <li><strong>"org.simplejavamail.internal.smimesupport"</strong></li>
+          <li><strong>"org.simplejavamail.internal.authenticatedsockssupport"</strong></li>
+          <li><strong>"socks5bridge"</strong></li>
         </ul>
-        <p>The latter two are for the proxy bridge that is used for <a [routerLink]="['/proxy']" simplePageScroll href="#navigation">authenticated
-                                                                                                                                     proxy
-                                                                                                                                     connections</a>.
+        <p>The latter two are for the proxy bridge that is used for
+          <a [routerLink]="['/proxy']" simplePageScroll href="#navigation">authenticated proxy connections</a>.
         </p>
       </div>
       <p>
-        If you wish to know where and how the properties are loaded, you can increase logging for "org.simplejavamail.config.ConfigLoader".
+        If you wish to know where and how the properties are loaded, you can increase logging for <strong>"org.simplejavamail.config.ConfigLoader"</strong>.
         This will tell you which properties are loaded by API and which from config file and which properties are without value.
       </p>
       <p>
@@ -192,7 +196,7 @@ try {{ '{' }}
         &lt;level value=&quot;info&quot;/&gt;
         &lt;appender-ref ref=&quot;simpleConsole&quot;/&gt;
     &lt;/logger&gt;
-    &lt;logger name=&quot;org.simplejavamail.mailer.internal.socks&quot;&gt;
+    &lt;logger name=&quot;org.simplejavamail.internal.authenticatedsockssupport&quot;&gt;
         &lt;level value=&quot;warn&quot;/&gt;
     &lt;/logger&gt;
 
@@ -229,7 +233,7 @@ try {{ '{' }}
         &lt;Logger name=&quot;socks5bridge&quot; level=&quot;info&quot; additivity=&quot;false&quot;&gt;
             &lt;AppenderRef ref=&quot;simpleConsole&quot; /&gt;
         &lt;/Logger&gt;
-        &lt;Logger name=&quot;org.simplejavamail.mailer.internal.socks&quot; level=&quot;warn&quot;/&gt;
+        &lt;Logger name=&quot;org.simplejavamail.internal.authenticatedsockssupport&quot; level=&quot;warn&quot;/&gt;
 
         &lt;Root level=&quot;warn&quot;&gt;
             &lt;AppenderRef ref=&quot;console&quot; /&gt;
@@ -270,7 +274,7 @@ try {{ '{' }}
     &lt;logger name=&quot;socks5bridge&quot; level=&quot;INFO&quot; additivity=&quot;false&quot;&gt;
         &lt;appender-ref ref=&quot;simpleConsole&quot; /&gt;
     &lt;/logger&gt;
-    &lt;logger name=&quot;org.simplejavamail.mailer.internal.socks&quot; level=&quot;WARN&quot;/&gt;
+    &lt;logger name=&quot;org.simplejavamail.internal.authenticatedsockssupport&quot; level=&quot;WARN&quot;/&gt;
 
     &lt;root level=&quot;WARN&quot;&gt;
         &lt;appender-ref ref=&quot;console&quot; /&gt;
