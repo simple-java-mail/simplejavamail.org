@@ -318,6 +318,7 @@ currentMailerBuilder.withThreadPoolSize(3);
 currentMailerBuilder.withKeepAliveTime(5000);
 
 // completely replace the thread pool executor with your own
+// this negates all related properties such as pool size and keepAliveTime
 currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
 </code></pre>
       <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
