@@ -24,6 +24,26 @@
     </div>
   </section>
 
+  <h2>Batch support</h2>
+
+  <section>
+    <p>
+      To enable support for async / batch mode sending, include the following library:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;batch-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds the following 3rd party dependencies:
+    </p>
+    <ul>
+      <li><a class="indent" href="https://github.com/chrisvest/stormpot/">com.github.chrisvest:stormpot</a></li>
+    </ul>
+    This allows you to send emails asynchronous with configuration options for thread management and SMTP connection
+    pooling. See <a [routerLink]="['/configuration']" simplePageScroll href="#section-batch-support">configuration</a> for more details.
+  </section>
+
   <h2>Authenticated (SOCKS) proxy support</h2>
 
   <section>

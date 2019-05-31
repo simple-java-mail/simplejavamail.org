@@ -33,6 +33,7 @@
       <li><a simplePageScroll href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
       <li><a simplePageScroll href="#section-config-properties">Properties files</a></li>
       <li><a simplePageScroll href="#section-combine-config">Combining both for multiple environments</a></li>
+      <li><a simplePageScroll href="#section-batch-support">Spring support</a></li>
       <li><a simplePageScroll href="#section-spring-support">Spring support</a></li>
     </ul>
   </section>
@@ -499,6 +500,24 @@ Mailer mailer = MailerBuilder
   </section>
 
 
+  <a href="#section-batch-support" id="section-batch-support" class="section-link h2">&sect;</a>
+  <h2>Batch support</h2>
+
+  <section>
+    <div class="view">
+      <p>
+        Blah blah blah
+      </p>
+    </div>
+
+    <div class="side">
+      Blah:
+      <pre><code class="small">Code
+</code></pre>
+    </div>
+  </section>
+
+
   <a href="#section-spring-support" id="section-spring-support" class="section-link h2">&sect;</a>
   <h2>Spring support</h2>
 
@@ -519,34 +538,34 @@ Mailer mailer = MailerBuilder
       <pre><code class="small">@Component
 @Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {{ '{' }}
-        
+
         @Autowired // or roll your own, as long as SimpleJavaMailSpringSupport is processed first
         private Mailer mailer;
-{{ '}' }}
+        {{ '}' }}
 </code></pre>
       Or obtaining the intermediate builder and customize:
       <pre><code class="small">@Configuration
 @Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {{ '{' }}
-        
+
         @Autowired
         private MailerGenericBuilder mailerGenericBuilder;
     
         @Bean
         public Mailer customMailer() {{ '{' }}
-                return mailerGenericBuilder
+        return mailerGenericBuilder
                         .resetThreadpoolSize()
                         .withThreadPoolKeepAliveTime(5000)
                         .withProxyBridgePort(7777)
                         .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
                         .buildMailer();
         {{ '}' }}
-{{ '}' }}
+        {{ '}' }}
 </code></pre>
     </div>
   </section>
   <section>
-   
+
     <div class="width">
       Then when you have profile based configuration (for example <code>default</code> and <code>production</code>):
       <pre><code class="language-properties small">#application.properties
