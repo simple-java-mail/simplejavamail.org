@@ -553,7 +553,7 @@ public class YourEmailService {{ '{' }}
         @Bean
         public Mailer customMailer() {{ '{' }}
         return mailerGenericBuilder
-                        .resetThreadpoolSize()
+                        .resetThreadPoolSize()
                         .withThreadPoolKeepAliveTime(5000)
                         .withProxyBridgePort(7777)
                         .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
