@@ -303,11 +303,13 @@ currentMailerBuilder.withProperty("mail.smtp.sendpartial", true);
 mailer.getSession().getProperties().setProperty("mail.smtp.sendpartial", true);
 </code></pre>
 <pre><code class="small">
-// trust all hosts for SSL connections, don't validate keys
+// trust all hosts for SSL connections
 currentMailerBuilder.trustingAllHosts(true);
+// don't validate keys thus not verifying server hosts
+currentMailerBuilder.verifyingServerIdentity(false);
 </code></pre>
 <pre><code class="small">
-// white list hosts for SSL connections, don't validate keys for these
+// white list hosts for SSL connections (identity key validation notwithstanding)
 currentMailerBuilder.trustingSSLHosts("a", "b", "c", ...);
 // or clearing them
 currentMailerBuilder.clearTrustedSSLHosts();
@@ -553,7 +555,7 @@ public class YourEmailService {{ '{' }}
 
         @Autowired
         private MailerGenericBuilder mailerGenericBuilder;
-    
+
         @Bean
         public Mailer customMailer() {{ '{' }}
         return mailerGenericBuilder
