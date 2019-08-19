@@ -33,8 +33,8 @@
       <li><a simplePageScroll href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
       <li><a simplePageScroll href="#section-config-properties">Properties files</a></li>
       <li><a simplePageScroll href="#section-combine-config">Combining both for multiple environments</a></li>
-      <li><a simplePageScroll href="#section-batch-support">Spring support</a></li>
       <li><a simplePageScroll href="#section-spring-support">Spring support</a></li>
+      <li><a simplePageScroll href="#section-batch-and-clustering">Batch and clustering support</a></li>
     </ul>
   </section>
 
@@ -505,24 +505,6 @@ Mailer mailer = MailerBuilder
   </section>
 
 
-  <a href="#section-batch-support" id="section-batch-support" class="section-link h2">&sect;</a>
-  <h2>Batch support</h2>
-
-  <section>
-    <div class="view">
-      <p>
-        Blah blah blah
-      </p>
-    </div>
-
-    <div class="side">
-      Blah:
-      <pre><code class="small">Code
-</code></pre>
-    </div>
-  </section>
-
-
   <a href="#section-spring-support" id="section-spring-support" class="section-link h2">&sect;</a>
   <h2>Spring support</h2>
 
@@ -589,6 +571,89 @@ simplejavamail.smtp.password=&lt;password&gt;
 simplejavamail.proxy.username=&lt;proxy_username&gt;
 simplejavamail.proxy.password=&lt;proxy_password&gt;
 </code></pre>
+    </div>
+  </section>
+
+
+  <a href="#section-batch-and-clustering" id="section-batch-and-clustering" class="section-link h2">&sect;</a>
+  <h2>Batch and clustering support</h2>
+
+  <section>
+    <div>
+      <p class="wide">
+        Without using the <strong><a [routerLink]="['/modules']" simplePageScroll href="#navigation">batch-module</a></strong>, you can send emails asynchronously,
+        in which case a single Transport connection is used without pooling it. This means for each email the connection is opened and closed. Depending on your
+        network and SMTP server's capacity, this in itself already provides a huge performance boost if you configure the thread pool accordingly.
+      </p>
+      <div>
+        <pre><code class="language-properties small">// regular mailer:
+Mailer mailer = mailerBuiler.(..).build();
+mailer.send(email); // blocks
+// mailer that defaults to async sending:
+Mailer mailer = mailerBuiler.(..).async().build();
+mailer.send(email); // doesn't block
+// or be explicit about it:
+mailer.sendEmail(email, /*async = */ true);
+</code></pre>
+      </div>
+
+      <p class="wide">
+        However, you can really take performance to the next level by using the connection pooling introduced by the batch-module. To do this you simply include the module
+        on the class path (add the maven dependency) which gives you a default of maximum four pooled connections, which auto-close 5 seconds after the last time they were
+        utilized. What this means is if you have bursts of emails batches, the connections spin up to max four and stay alive until activity dies down.
+      </p>
+      <p class="wide">
+        You can modify this behavior by defining a core connection pool size, max pool size and a custom expiry policy.
+      </p>
+      <div>
+        <pre><code class="language-properties small">Mailer pooledMailer = mailerBuilder
+   .(..)
+   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it
+   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up
+   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour
+   .build();
+</code></pre>
+        <p class="wide">
+          Or using properties:
+        </p>
+        <pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2
+		simplejavamail.defaults.connectionpool.maxsize=10
+		simplejavamail.defaults.connectionpool.expireafter.millis=1800000
+</code></pre>
+      </div>
+
+      <p class="wide">
+        To enable high-availability / fail-over or to really <strong>take performance to out-of-this world levels</strong> and handle truly enormous email batches,
+        Simple Java Mail enables you to easily configure cluster(s) of SMTP servers. For example, for a simple fail-over setup with three SMTP servers,
+        You can define a cluster with low/default connection pool settings and have three Mailer instances use the same cluster key. Then sending an email with any
+        of these Mailer instances will result in a send-action resolved using the cluster.
+      </p>
+      <div>
+        <pre><code class="language-properties small">Mailer mailer1InFailoverCluster = mailerBuilderServer1.(..).withClusterKey(myClusterKey).build();
+Mailer mailer2InFailoverCluster = mailerBuilderServer2.(..).withClusterKey(myClusterKey).build();
+Mailer mailer3InFailoverCluster = mailerBuilderServer3.(..).withClusterKey(myClusterKey).build();
+
+mailer1InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin) // FIXME make configurable
+mailer2InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
+mailer3InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
+
+// now server 2 breaks down and becomes unreachable or produces errors
+// server 2 is removed from the cluster, but all mailers still work:
+mailer1InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
+mailer2InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
+mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
+</code></pre>
+      </div>
+      <p class="wide">
+        Note that the send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java Mail cannot determine
+        how a send-action was botched and what the next course of action should be. You can monitor individual emails using the <code class="inline">AsyncResponse</code>
+        return value obtained from <code class="inline">mailer.Send()</code> and determine followup-actions for errored-out results.
+      </p>
+
+      <p class="wide">
+        So really, there's no limit to the email performance you are looking for except maybe the client which generates the emails. You can add as many servers
+        as you like to a cluster, use multiple clusters for different purposes and have as many pooled connections as you want spinned up at all time!
+      </p>
     </div>
   </section>
 
