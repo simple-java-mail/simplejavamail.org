@@ -586,13 +586,15 @@ simplejavamail.proxy.password=&lt;proxy_password&gt;
         network and SMTP server's capacity, this in itself already provides a huge performance boost if you configure the thread pool accordingly.
       </p>
       <div>
-        <pre><code class="language-properties small">// regular mailer:
+        <pre><code class="language-java small">/* regular mailer: */
 Mailer mailer = mailerBuiler.(..).build();
 mailer.send(email); // blocks
-// mailer that defaults to async sending:
+
+/* mailer that defaults to async sending: */
 Mailer mailer = mailerBuiler.(..).async().build();
 mailer.send(email); // doesn't block
-// or be explicit about it:
+
+/* or be explicit about it: */
 mailer.sendEmail(email, /*async = */ true);
 </code></pre>
       </div>
@@ -606,7 +608,7 @@ mailer.sendEmail(email, /*async = */ true);
         You can modify this behavior by defining a core connection pool size, max pool size and a custom expiry policy.
       </p>
       <div>
-        <pre><code class="language-properties small">Mailer pooledMailer = mailerBuilder
+        <pre><code class="language-java small">Mailer pooledMailer = mailerBuilder
    .(..)
    .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it
    .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up
@@ -617,8 +619,8 @@ mailer.sendEmail(email, /*async = */ true);
           Or using properties:
         </p>
         <pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2
-		simplejavamail.defaults.connectionpool.maxsize=10
-		simplejavamail.defaults.connectionpool.expireafter.millis=1800000
+simplejavamail.defaults.connectionpool.maxsize=10
+simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 </code></pre>
       </div>
 
@@ -647,11 +649,11 @@ mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
       <p class="wide">
         Note that the send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java Mail cannot determine
         how a send-action was botched and what the next course of action should be. You can monitor individual emails using the <code class="inline">AsyncResponse</code>
-        return value obtained from <code class="inline">mailer.Send()</code> and determine followup-actions for errored-out results.
+        return value obtained from <code class="inline">mailer.send()</code> and determine followup-actions for errored-out results.
       </p>
 
       <p class="wide">
-        So really, there's no limit to the email performance you are looking for except maybe the client which generates the emails. You can add as many servers
+        So really, there's no limit to the email performance you are looking for except maybe in the client which generates the emails. You can add as many servers
         as you like to a cluster, use multiple clusters for different purposes and have as many pooled connections as you want spinned up at all time!
       </p>
     </div>
