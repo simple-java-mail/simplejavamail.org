@@ -4,6 +4,11 @@
 
   <section class="introduction">
     <p class="wide">
+      (also check the <a simplePageScroll [routerLink]="['/configuration']" href="#section-batch-and-clustering">configuration section</a> if you're missing a
+      feature)
+    </p>
+
+    <p class="wide">
       Creating and sending emails is very simple with Simple Java Mail; you don't need to know about the mailing RFC, MimeMessage or any other low
       level <code class="inline">javax.mail</code> API. No anonymous inner classes needed and no <a
       href="http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mail.html">large frameworks</a> needed nor XML.
@@ -34,32 +39,32 @@
 
     <h3>Builders all the way down</h3>
     <p class="wide">
-        With all the possible ways to configure Email and Mailer instances, the library had only one option left to streamline API, avoid the
-        <a href="http://codethataint.com/blog/telescoping-constructor-pattern-java/">Telescoping Constructor</a> anti-pattern and keep things
-        managable: <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builders</a>.
-      </p>
-      <ol class="indent">
-        <li>With fluent builders, we can tightly control <strong>valid combinations</strong>, logical <strong>decision paths</strong> and easily <strong>provide
-          alternative methods</strong>.
-        </li>
-        <li>At the same time we can concentrate all mutation logic in the builders and produce mostly <strong>immutable objects</strong>.</li>
-        <li>Finally, we're able to <strong>centralize our documentation</strong> around the builders and refer to it from wherever it is used.</li>
-      </ol>
+      With all the possible ways to configure Email and Mailer instances, the library had only one option left to streamline API, avoid the
+      <a href="http://codethataint.com/blog/telescoping-constructor-pattern-java/">Telescoping Constructor</a> anti-pattern and keep things
+      managable: <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builders</a>.
+    </p>
+    <ol class="indent">
+      <li>With fluent builders, we can tightly control <strong>valid combinations</strong>, logical <strong>decision paths</strong> and easily <strong>provide
+        alternative methods</strong>.
+      </li>
+      <li>At the same time we can concentrate all mutation logic in the builders and produce mostly <strong>immutable objects</strong>.</li>
+      <li>Finally, we're able to <strong>centralize our documentation</strong> around the builders and refer to it from wherever this library is used.</li>
+    </ol>
   </section>
 
   <section class="toc">
     <ul>
       <li><a simplePageScroll href="#section-basic-usage">Basic usage</a></li>
-       <li><a simplePageScroll href="#section-builder-api" class="indent">About the fluent API with the Builder pattern</a></li>
-       <li><a simplePageScroll href="#section-reusable-mailer" class="indent">Configure once, reuse many times</a></li>
-       <li><a simplePageScroll href="#section-add-recipients" class="indent">Alternative API for almost everything</a></li>
-       <li><a simplePageScroll href="#section-sending-asynchronously" class="indent">Asynchronous parallel batch sending</a></li>
-       <li><a simplePageScroll href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
+      <li><a simplePageScroll href="#section-builder-api" class="indent">About the fluent API with the Builder pattern</a></li>
+      <li><a simplePageScroll href="#section-reusable-mailer" class="indent">Configure once, reuse many times</a></li>
+      <li><a simplePageScroll href="#section-add-recipients" class="indent">Alternative API for almost everything</a></li>
+      <li><a simplePageScroll href="#section-sending-asynchronously" class="indent">Asynchronous parallel batch sending and clustering</a></li>
+      <li><a simplePageScroll href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
       <li><a simplePageScroll href="#section-custom-session">Sending with your own Session instance</a></li>
       <li><a simplePageScroll href="#section-custom-id">Setting a custom message ID on sent email</a></li>
       <li><a simplePageScroll href="#section-sent-id">Getting the generated email id after sending</a></li>
       <li><a simplePageScroll href="#section-ssl-tls">Sending with SSL and TLS</a></li>
-        <li><a simplePageScroll href="#section-gmail" class="indent">SSL and TLS with Google mail</a></li>
+      <li><a simplePageScroll href="#section-gmail" class="indent">SSL and TLS with Google mail</a></li>
       <li><a simplePageScroll href="#section-attachments">Adding attachments</a></li>
       <li><a simplePageScroll href="#section-embedding">Embedding images</a></li>
       <li><a simplePageScroll href="#section-custom-headers">Setting custom headers</a></li>
@@ -72,8 +77,8 @@
       <li><a simplePageScroll href="#section-email-validation">Validating Email Addresses</a></li>
       <li><a simplePageScroll href="#section-converting">Converting between email formats</a></li>
       <li><a simplePageScroll href="#section-smime">Reading S/MIME signed / encrypted attachments</a></li>
-        <li><a simplePageScroll href="#section-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
-        <li><a simplePageScroll href="#section-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
+      <li><a simplePageScroll href="#section-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
+      <li><a simplePageScroll href="#section-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
       <li><a simplePageScroll href="#section-bouncing-emails">Setting custom recipient for bouncing emails</a></li>
       <li><a simplePageScroll href="#section-reply-forward">Replying to and forwarding emails</a></li>
       <li><a simplePageScroll href="#section-proxy">Send using a proxy</a></li>
@@ -96,7 +101,7 @@
       <p>
         Simply build an <code class="inline">Email</code>, populate it with your data, build a <code class="inline">Mailer</code> and send the Email
         instance. The mailer can be <a simplePageScroll
-        href="#section-custom-session">created with your own <code class="inline">Session</code> instance as well</a>.
+                                       href="#section-custom-session">created with your own <code class="inline">Session</code> instance as well</a>.
       </p>
       <p>
         A Mailer instance is reusable.
@@ -169,7 +174,7 @@ public Mailer inhouseMailer() {{ '{' }}
         return MailerBuilder
             .withSMTPServer(...)
             .buildMailer();
-{{ '}' }}
+        {{ '}' }}
 </code></pre>
       Or the default one from Spring support:
       <pre><code>
@@ -315,7 +320,7 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 
 
   <a href="#section-sending-asynchronously" id="section-sending-asynchronously" class="section-link h3">&sect;</a>
-  <h3>Asynchronous parallel batch sending</h3>
+  <h3>Asynchronous parallel batch sending and clustering</h3>
 
   <section>
     <div class="view">
@@ -335,7 +340,7 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 <pre><code>mailer.sendMail(email, /* async = */ true);
 </code></pre>
       Or configure it when building the mailer:
-<pre><code>
+      <pre><code>
 Mailer mailer = mailerBuilder
   .(..)
   .async()
@@ -344,14 +349,26 @@ Mailer mailer = mailerBuilder
 mailer.sendMail(email);
 </code></pre>
       <p>Refer to the <a simplePageScroll [routerLink]="['/configuration']" href="#section-programmatic-api-other">configuration section</a>
-         on how to set the thread pool size default or how to configure the executor service (thread pool manager).</p>
+        on how to set the thread pool size default or how to configure the executor service (thread pool manager).</p>
     </div>
   </section>
-  
-  
+
+  <section>
+    <div>
+      <p class="wide">
+        You can maximize performance by including the <strong><a [routerLink]="['/modules']" simplePageScroll href="#navigation">batch-module</a></strong>,
+        which allows you to pool the (Transport) connection over multiple sends, which generally saves 50% time for simpler emails). Going further, you can
+        allow for multiple pooled connections to the same server and further still: even <strong>cluster multiple pools of connections to different servers</strong>!
+      </p>
+      <p class="wide">
+        Refer to the <a simplePageScroll [routerLink]="['/configuration']" href="#section-batch-and-clustering">configuration section</a> for details.
+      </p>
+    </div>
+  </section>
+
   <a href="#section-handling-async-result" id="section-handling-async-result" class="section-link h3">&sect;</a>
   <h3>Handling asynchronous mailing result</h3>
-  
+
   <section>
     <div class="view">
       <p>
@@ -359,7 +376,7 @@ mailer.sendMail(email);
         <em>Handlers</em> or <em>Future</em>.
       </p>
     </div>
-    
+
     <div class="side">
       <p>Using Handlers:</p>
       <pre><code class="small">AsyncResponse asyncResponse = mailer.sendMail(email, true); // or mailerBuilder.async()
@@ -477,8 +494,8 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
       </p>
       <p>
         If you have two-factor login turned on, you need to generate an <a href="https://security.google.com/settings/security/apppasswords">application
-                                                                                                                                             specific
-                                                                                                                                             password</a>
+        specific
+        password</a>
         from your Google account.
       </p>
     </div>
@@ -639,7 +656,7 @@ currentEmailBuilder
       <p>
         For emergencies, you can also get a hold of the internal Session instance itself. <strong>You should never need this however</strong> and if
         you do it means Simple Java Mail failed to simplify the configuration process for you. <strong>Please let us know how we can help alleviate
-                                                                                                       this need</strong>.
+        this need</strong>.
       </p>
     </div>
 
@@ -651,11 +668,11 @@ Session session = mailer.getSession();
 </code></pre>
     </div>
   </section>
-  
-  
+
+
   <a href="#section-dkim" id="section-dkim" class="section-link h2">&sect;</a>
   <h2>Signing emails with DKIM</h2>
-  
+
   <section>
     <div class="view">
       <p>
@@ -678,11 +695,11 @@ mailer.sendMail(signedEmail);
       <pre><code>Mailer.signMessageWithDKIM(mimeMessageToSign, emailContainingSigningDetails);</code></pre>
     </div>
   </section>
-  
-  
+
+
   <a href="#section-sending-smime" id="section-sending-smime" class="section-link h2">&sect;</a>
   <h2>Signing / encrypting emails with S/MIME</h2>
-  
+
   <section>
     <div class="view">
       <p>
@@ -700,13 +717,13 @@ mailer.sendMail(signedEmail);
     </div>
     <div class="side">
       Signing:
-<pre><code>Pkcs12Config myKeyInfo = Pkcs12Config.builder()
+      <pre><code>Pkcs12Config myKeyInfo = Pkcs12Config.builder()
     .pkcs12Store("my_smime_keystore.pkcs12")
     .storePassword("my_store_password")
     .keyAlias("my_key_alias")
     .keyPassword("my_key_password")
     .build();
-  
+
 Email emailToBeSigned = currentEmailBuilder.
     .(..)
     .signWithSmime(myKeyInfo)
@@ -723,7 +740,7 @@ mailer.sendMail(emailToBeSigned);
 mailer.sendMail(emailToBeEncrypted);
 </code></pre>
       Also works with properties:
-<pre><code class="language-properties small">simplejavamail.smime.signing.keystore=my_smime_keystore.pkcs12
+      <pre><code class="language-properties small">simplejavamail.smime.signing.keystore=my_smime_keystore.pkcs12
 simplejavamail.smime.signing.keystore_password=keystore_password
 simplejavamail.smime.signing.key_alias=key_alias
 simplejavamail.smime.signing.key_password=key_password
@@ -731,8 +748,8 @@ simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
 </code></pre>
     </div>
   </section>
-  
-  
+
+
   <a href="#section-return-receipt" id="section-return-receipt" class="section-link h2">&sect;</a>
   <h2>Configure delivery / read receipt</h2>
 
@@ -834,7 +851,7 @@ EmailAddressValidator.isValid("your_address@domain.com",
 <pre><code class="small">/*
  * Most conversion methods support an optional Pkcs12Config config for handling S/MIME
  */
- 
+
 // from Email
 String eml =              EmailConverter.emailToEML(yourEmail);
 MimeMessage mimeMessage = EmailConverter.emailToMimeMessage(yourEmail);
@@ -871,11 +888,11 @@ Email decryptedEmail =    EmailConverter.emlToEmail(emlDataString, myKeyInfo);
 </code></pre>
     </div>
   </section>
-  
-  
+
+
   <a href="#section-smime" id="section-smime" class="section-link h2">&sect;</a>
   <h2>Reading S/MIME signed / encrypted attachments</h2>
-  
+
   <section>
     <div class="view">
       <p>
@@ -907,11 +924,11 @@ details.getSmimeSignedBy(); // email or name used
 </code></pre>
     </div>
   </section>
-  
-  
+
+
   <a href="#section-smime-merging" id="section-smime-merging" class="section-link h3">&sect;</a>
   <h3>S/MIME signed messages are merged by default</h3>
-  
+
   <section>
     <div class="view">
       <p>
@@ -922,13 +939,13 @@ details.getSmimeSignedBy(); // email or name used
         This default behavior can be deactivated. For your convenience, the decrypted message is available as a separate Email instance:
       </p>
     </div>
-    
+
     <div class="side">
 <pre><code class="small">Email nonMergedEmail = EmailBuilder
                 .copying(mergedEmail)
                 .clearSMIMESignedAttachmentMergingBehavior()
                 .buildEmail();
-  
+
 // or by configuring the intermediary builder:
 emailBuilder = EmailConverter.outlookMsgToEmailBuilder(msgFile); // or
 emailBuilder = EmailConverter.emlToEmailBuilder(emlFile);
@@ -941,13 +958,13 @@ nonMergedEmail.getSmimeSignedEmail();
 </code></pre>
     </div>
   </section>
-  
+
   <section>
     <div class="view">
       <p>If a message is <em>both</em> signed and encrypted, <code class="inline">getSmimeSignedEmail()</code>
         will itself have a nested <code class="inline">getOriginalSmimeDetails().</code></p>
     </div>
-    
+
     <div class="side">
       <pre><code class="small">
         signedAndEncrypted.getOriginalSmimeDetails().smimeMode(); // SIGNED_ENCRYPTED
@@ -960,18 +977,18 @@ nonMergedEmail.getSmimeSignedEmail();
 </code></pre>
     </div>
   </section>
-  
-  
+
+
   <a href="#section-smime-decryption" id="section-smime-decryption" class="section-link h3">&sect;</a>
   <h3>Decrypting S/MIME attachments using certificate</h3>
-  
+
   <section>
     <p class="wide">
       Every conversion method optionally accepts a
       <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/api/mailer/config/Pkcs12Config.html" target="_blank">Pkcs12Config</a>
       instance, which contains details about your key store and certificate. With that, you can decrypt an S/MIME encrypted mail.
     </p>
-    
+
     <div class="wide">
 <pre><code>Pkcs12Config yourPkcs12Config = Pkcs12Config.builder()
       .pkcs12Store("smime_keystore.pkcs12") // path, File or InputStream
@@ -1028,8 +1045,8 @@ currentEmailBuilder
       <div>
         <p>
           <strong>Note:</strong> due to the nature of the underlying JavaMail framework (also see
-            <a href="https://javaee.github.io/javamail/FAQ#reply">reply</a> /
-            <a href="https://javaee.github.io/javamail/FAQ#forward">forward</a>):
+          <a href="https://javaee.github.io/javamail/FAQ#reply">reply</a> /
+          <a href="https://javaee.github.io/javamail/FAQ#forward">forward</a>):
         </p>
         <ul class="indent">
           <li>In case of replying, the original email is quoted in the body of the reply itself.</li>
@@ -1040,14 +1057,14 @@ currentEmailBuilder
 
     <div class="side">
       <p>Replying to an email:</p>
-<pre><code>EmailBuilder
+      <pre><code>EmailBuilder
     .replyingTo(receivedEmail) // Email or MimeMessage
     .from("dummy@domain.com")
     .prependText("Reply body. Original email included below")
     .buildEmail();
 </code></pre>
       <p>Forwarding an email:</p>
-<pre><code>EmailBuilder
+      <pre><code>EmailBuilder
     .forwarding(receivedEmail) // Email or MimeMessage
     .from("dummy@domain.com")
     .text("Hello? This is Forward. See below email:")
@@ -1085,7 +1102,7 @@ currentMailerBuilder.withProxy("proxy.host.com", 1080)
 currentMailerBuilder.withProxy("proxy.host.com", 1080, "proxy username", "proxy password");
 </code></pre>
       <p>Refer to the <a simplePageScroll [routerLink]="['/configuration']" href="#section-other-settings">configuration section</a>
-         on how to set proxy server defaults and the port on which the proxy bridge runs.</p>
+        on how to set proxy server defaults and the port on which the proxy bridge runs.</p>
     </div>
   </section>
 
