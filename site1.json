@@ -1,0 +1,9 @@
+{
+  "company": "Freddy's Fish Farm",
+  "phone": "619-555-1212",
+  "owner": {
+    "firstName": "Freddy",
+    "lastName": "Fishman"
+  },
+  "rewardsCustomer": true
+}
