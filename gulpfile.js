@@ -112,7 +112,7 @@ gulp.task('watch', () => {
 });
 
 gulp.task('default', ['build'], done => {
-  if (env.dev) {
+  if (env.watch) {
     gulp.start('serve');
     gulp.start('watch');
   }

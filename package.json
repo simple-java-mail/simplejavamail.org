@@ -4,7 +4,7 @@
   "description": "Simple API, Complex Emails",
   "scripts": {
     "build": "gulp",
-    "server": "gulp --dev"
+    "server": "gulp --watch"
   },
   "contributors": [
     "Benny Bottema <benny@bennybottema.com>"
