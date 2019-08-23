@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" class="language-java">
+	<head>
+		<meta charset="UTF-8">
+		<title>Simple Java Mail - Modules</title>
+		<link rel="icon" href="data:;base64,=">
+		<script type="application/ld+json">
+			{
+				"@context": "http://schema.org",
+				"@type": "Organization",
+				"url": "http://www.simplejavamail.org",
+				"name": "Simple Java Mail",
+				"sameAs": [
+					"https://github.com/bbottema/simple-java-mail"
+				]
+			}
+		</script>
+        <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open+Sans+300.400.600.700.css">
+        <link rel="stylesheet" href="pages/styles/main.css">
+        <link rel="stylesheet" href="assets/lib/prism.css">
+        <script type="text/javascript" src="assets/lib/prism.js"></script>
+
+		
+
+        <!-- for browser that support prerendering -->
+        <link rel="prerender" href="index.html">
+        <link rel="prerender" href="modules.html">
+        <link rel="prerender" href="features.html">
+        <link rel="prerender" href="cli.html">
+        <link rel="prerender" href="configuration.html">
+        <link rel="prerender" href="debugging.html">
+        <link rel="prerender" href="rfc-compliant.html">
+        <link rel="prerender" href="download.html">
+        <link rel="prerender" href="contact.html">
+	</head>
+	<body>
+		<a href="https://github.com/bbottema/simple-java-mail">
+			<img style="position: absolute; top: 0; right: 0; border: 0; width: 149px; height: 149px;" src="assets/github-ribbon-topright@2x.png" alt="Fork me on GitHub">
+		</a>
+		
+		<div class="index-demo">
+			<h1>Simple Java Mail</h1>
+			<h2>Simple API, Complex Emails</h2>
+		
+			
+		</div>
+		
+		<div id="navigation" class="bar-group">
+			<a class="bar-link " 		    href="index.html#navigation">About</a>
+			<a class="bar-link active" 		href="modules.html#navigation">Modules</a>
+			<a class="bar-link " 		href="features.html#navigation">Features</a>
+			<a class="bar-link " 			href="cli.html#navigation">CLI</a>
+			<a class="bar-link "   href="configuration.html#navigation">Configuration</a>
+			<a class="bar-link " 		href="debugging.html#navigation">Logging & Debugging</a>
+			<a class="bar-link "   href="rfc-compliant.html#navigation">RFC Compliant</a>
+			<a class="bar-link " 		href="download.html#navigation">Download</a>
+			<a class="bar-link " 		href="contact.html#navigation">Contact</a>
+		</div>
+		<main>
+			<div class="content">
+
+  <h1>Simple Java Mail Modules</h1>
+
+  <section>
+    <p class="wide">
+      Simple Java Mail core features can be used without any external libraries, but you can add some features by
+      depending on additional modules, which bring in some additional dependencies of their own.
+    </p>
+  </section>
+  <section>
+    <div class="view">
+      <p>
+        The Core Module is included by default when you add Simple Java Mail. The other modules from the implementation layer can be
+        added to complement Simple Java Mail.
+      </p>
+      <p>
+        On the other hand, if you depend on one of the integration modules, you get Simple Java Mail automatically as well. Again you
+      can add the other modules from the implementation layer to complement Simple Java Mail.
+      </p>
+    </div>
+    <div class="side">
+      <img src="../../assets/module_architecture.png">
+    </div>
+  </section>
+
+  <h2 id="batch-module">Batch and Clustering support</h2>
+
+  <section>
+    <p>
+      To enable support for async / batch mode sending and clustering (see <a href="configuration.html#section-batch-and-clustering">Configuration</a>), include the following library:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;batch-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds the following 3rd party dependencies:
+    </p>
+    <ul>
+      <li><a class="indent" href="https://github.com/chrisvest/stormpot/">com.github.chrisvest:stormpot</a></li>
+    </ul>
+    This allows you to send emails asynchronous with configuration options for thread management and SMTP connection
+    pooling. See <a href="configuration.html#section-batch-support">configuration</a> for more details.
+  </section>
+
+  <h2 id="authenticated-socks-module">Authenticated (SOCKS) proxy support</h2>
+
+  <section>
+    <p>
+      To enable support for authenticated SOCKS proxy servers (see <a href="features.html#section-proxy">Features</a>),
+      include the following library:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;authenticated-socks-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds no additional 3rd party dependencies.
+    </p>
+  </section>
+
+  <h2 id="outlook-module">Outlook support</h2>
+
+  <section>
+    <p>
+      To enable support for parsing Outlook messages (see <a href="features.html#section-generate-converting">Features</a>),
+      include the following library:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;outlook-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds the following 3rd party dependencies:
+    </p>
+    <ul>
+      <li><a class="indent" href="https://github.com/bbottema/outlook-message-parser">org.simplejavamail:outlook-message-parser</a></li>
+      <li>Which in turn adds:</li>
+      <li><a class="indent" href="https://poi.apache.org">org.apache.poi:poi</a></li>
+      <li><a class="indent" href="https://poi.apache.org">org.apache.poi:poi-scratchpad</a></li>
+    </ul>
+  </section>
+
+  <h2 id="dkim-module">DKIM support</h2>
+
+  <section>
+    <p>
+      To enable support for DKIM signing (see <a href="features.html#section-dkim">Features</a>),
+      include the following library:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;dkim-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds the following 3rd party dependencies:
+    </p>
+    <ul>
+      <li><a class="indent" href="https://github.com/markenwerk/java-utils-mail-dkim">net.markenwerk:utils-mail-dkim</a></li>
+    </ul>
+  </section>
+
+  <h2 id="smime-module">S/MIME support</h2>
+
+  <section>
+    <p>
+      To enable support for reading <a href="https://docs.ipswitch.com/moveit/central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME</a>
+      signed / encrypted email, (see <a href="features.html#section-smime">Features</a>),
+      include the following library:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;smime-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds the following 3rd party dependencies:
+    </p>
+    <ul>
+      <li><a class="indent" href="https://github.com/markenwerk/java-utils-mail-smime">net.markenwerk:utils-mail-smime</a></li>
+    </ul>
+  </section>
+
+  <h2 id="cli-module">CLI support</h2>
+
+  <section>
+    <p>
+        To enable CLI support (see <a href="cli.html#navigation">CLI</a>), include the following module:
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;cli-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds the following 3rd party dependencies:
+    </p>
+    <ul>
+      <li><a class="indent" href="https://github.com/remkop/picocli">info.picocli:picocli</a></li>
+      <li><a class="indent" href="https://github.com/dnault/therapi-runtime-javadoc">com.github.therapi:therapi-runtime-javadoc</a></li>
+    </ul>
+    <p class="wide">
+      <strong>Note:</strong> Simple Java Mail core has a 'provided' dependency on <em>com.github.therapi:therapi-runtime-javadoc-scribe</em>
+      which burns Javadoc into Simple Java Mail at compile time. This cannot be made optional. If this is a real concern, an option
+      could be to provide two versions of Simple Java Mail: one with embedded Javadoc and one without (incompatible with the Cli Module).
+      This is currently not in scope.
+    </p>
+  </section>
+
+  <h2 id="spring-module">Spring support</h2>
+
+  <section>
+    <p>
+      To enable support for Spring (see <a href="configuration.html#section-spring-support">Configuration</a>),
+      make sure the following libraries can be found on the classpath (in most cases will be there anyway):
+    </p>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+    <p>
+      This adds the Spring core dependency, which is assumed to be on the classpath already.
+    </p>
+  </section>
+
+</div>
+
+		</main>
+
+		<footer>
+			&copy; 2008 - 2019 by <a class="copyright" href="http://www.bennybottema.com" target="_blank">bennybottema.com</a>
+		</footer>
+
+        <script>Prism.highlightAll();</script>
+		
+	</body>
+</html>

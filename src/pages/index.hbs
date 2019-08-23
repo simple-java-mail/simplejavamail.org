@@ -1,48 +1,9 @@
-<!DOCTYPE html>
-<html lang="en" class="language-java">
-	<head>
-		<meta charset="UTF-8">
-		<title>Simple Java Mail - About</title>
-		<link rel="icon" href="data:;base64,=">
-		<script type="application/ld+json">
-			{
-				"@context": "http://schema.org",
-				"@type": "Organization",
-				"url": "http://www.simplejavamail.org",
-				"name": "Simple Java Mail",
-				"sameAs": [
-					"https://github.com/bbottema/simple-java-mail"
-				]
-			}
-		</script>
-        <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open+Sans+300.400.600.700.css">
-        <link rel="stylesheet" href="pages/styles/main.css">
-        <link rel="stylesheet" href="assets/lib/prism.css">
-        <script type="text/javascript" src="assets/lib/prism.js"></script>
+{{#> layouts/base sub-title="About" }}
 
-		
-
-        <!-- for browser that support prerendering -->
-        <link rel="prerender" href="index.html">
-        <link rel="prerender" href="modules.html">
-        <link rel="prerender" href="features.html">
-        <link rel="prerender" href="cli.html">
-        <link rel="prerender" href="configuration.html">
-        <link rel="prerender" href="debugging.html">
-        <link rel="prerender" href="rfc-compliant.html">
-        <link rel="prerender" href="download.html">
-        <link rel="prerender" href="contact.html">
-	</head>
-	<body>
-<a href="https://github.com/bbottema/simple-java-mail">
-	<img style="position: absolute; top: 0; right: 0; border: 0; width: 149px; height: 149px;" src="assets/github-ribbon-topright@2x.png" alt="Fork me on GitHub">
-</a>
-
-<div class="index-demo">
-	<h1>Simple Java Mail</h1>
-	<h2>Simple API, Complex Emails</h2>
-
-					<div>
+	{{#*inline "header-block"}}
+		{{#> includes/header topic="about" }}
+			{{#*inline "splash-content"}}
+				<div>
 					<div class="quick">
 <pre><code>Email email = EmailBuilder.startingBlank()
     .from("lollypop", "lolly.pop@pretzelfun.com")
@@ -57,22 +18,12 @@ mailer.sendMail(email);
 						<a href="download.html" class="index-demo-dl">Download Simple Java Mail</a>
 					</div>
 				</div>
+			{{/inline}}
+		{{/includes/header}}
+	{{/inline}}
 
-</div>
-
-<div id="navigation" class="bar-group">
-	<a class="bar-link active" 		    href="index.html#navigation">About</a>
-	<a class="bar-link " 		href="modules.html#navigation">Modules</a>
-	<a class="bar-link " 		href="features.html#navigation">Features</a>
-	<a class="bar-link " 			href="cli.html#navigation">CLI</a>
-	<a class="bar-link "   href="configuration.html#navigation">Configuration</a>
-	<a class="bar-link " 		href="debugging.html#navigation">Logging & Debugging</a>
-	<a class="bar-link "   href="rfc-compliant.html#navigation">RFC Compliant</a>
-	<a class="bar-link " 		href="download.html#navigation">Download</a>
-	<a class="bar-link " 		href="contact.html#navigation">Contact</a>
-</div>
-		<main>
-			<div class="content">
+	{{#*inline "body-block"}}
+<div class="content">
 
   <h3>Simple Java Mail: Simple API, Complex Emails</h3>
 
@@ -168,14 +119,6 @@ sjm --help
     </div>
   </section>
 </div>
+    {{/inline}}
 
-		</main>
-
-		<footer>
-			&copy; 2008 - 2019 by <a class="copyright" href="http://www.bennybottema.com" target="_blank">bennybottema.com</a>
-		</footer>
-
-        <script>Prism.highlightAll();</script>
-		
-	</body>
-</html>
+{{/layouts/base}}

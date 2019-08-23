@@ -7,45 +7,57 @@
       <changefreq>weekly</changefreq>
    </url>
    <url>
-      <loc>http://www.simplejavamail.org/#about</loc>
+      <loc>http://www.simplejavamail.org/index.html</loc>
       <priority>1.0</priority>
-      <lastmod>2016-05-29</lastmod>
+      <lastmod>2019-08-22</lastmod>
       <changefreq>weekly</changefreq>
    </url>
    <url>
-      <loc>http://www.simplejavamail.org/#features</loc>
+      <loc>http://www.simplejavamail.org/modules.html</loc>
+      <priority>0.8</priority>
+      <lastmod>2019-08-22</lastmod>
+      <changefreq>monthly</changefreq>
+   </url>
+   <url>
+      <loc>http://www.simplejavamail.org/features.html</loc>
       <priority>1.0</priority>
-      <lastmod>2016-05-29</lastmod>
+      <lastmod>2019-08-22</lastmod>
       <changefreq>weekly</changefreq>
    </url>
    <url>
-      <loc>http://www.simplejavamail.org/#configuration</loc>
+      <loc>http://www.simplejavamail.org/configuration.html</loc>
       <priority>1.0</priority>
-      <lastmod>2016-05-29</lastmod>
+      <lastmod>2019-08-22</lastmod>
       <changefreq>weekly</changefreq>
    </url>
    <url>
-      <loc>http://www.simplejavamail.org/#debugging</loc>
+      <loc>http://www.simplejavamail.org/cli.html</loc>
+      <priority>0.7</priority>
+      <lastmod>2019-08-22</lastmod>
+      <changefreq>monthly</changefreq>
+   </url>
+   <url>
+      <loc>http://www.simplejavamail.org/debugging.html</loc>
       <priority>0.5</priority>
-      <lastmod>2016-05-29</lastmod>
+      <lastmod>2019-08-22</lastmod>
+      <changefreq>monthly</changefreq>
+   </url>
+   <url>
+      <loc>http://www.simplejavamail.org/rfc-compliant.html</loc>
+      <priority>0.5</priority>
+      <lastmod>2019-08-22</lastmod>
+      <changefreq>monthly</changefreq>
+   </url>
+   <url>
+      <loc>http://www.simplejavamail.org/download.html</loc>
+      <priority>0.5</priority>
+      <lastmod>2019-08-22</lastmod>
       <changefreq>weekly</changefreq>
    </url>
    <url>
-      <loc>http://www.simplejavamail.org/#rfc-compliant</loc>
+      <loc>http://www.simplejavamail.org/contact</loc>
       <priority>0.5</priority>
-      <lastmod>2016-05-29</lastmod>
-      <changefreq>weekly</changefreq>
-   </url>
-   <url>
-      <loc>http://www.simplejavamail.org/#download</loc>
-      <priority>0.5</priority>
-      <lastmod>2016-05-29</lastmod>
-      <changefreq>weekly</changefreq>
-   </url>
-   <url>
-      <loc>http://www.simplejavamail.org/#contact</loc>
-      <priority>0.5</priority>
-      <lastmod>2016-05-29</lastmod>
-      <changefreq>weekly</changefreq>
+      <lastmod>2019-08-22</lastmod>
+      <changefreq>monthly</changefreq>
    </url>
 </urlset>

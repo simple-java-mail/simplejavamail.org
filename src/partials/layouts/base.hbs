@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" class="language-java">
+	<head>
+		<meta charset="UTF-8">
+		<title>Simple Java Mail{{#if sub-title}} - {{sub-title}}{{/if}}</title>
+		<link rel="icon" href="data:;base64,=">
+		<script type="application/ld+json">
+			{
+				"@context": "http://schema.org",
+				"@type": "Organization",
+				"url": "http://www.simplejavamail.org",
+				"name": "Simple Java Mail",
+				"sameAs": [
+					"https://github.com/bbottema/simple-java-mail"
+				]
+			}
+		</script>
+        <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open+Sans+300.400.600.700.css">
+        <link rel="stylesheet" href="pages/styles/main.css">
+        <link rel="stylesheet" href="assets/lib/prism.css">
+        <script type="text/javascript" src="assets/lib/prism.js"></script>
+
+		{{#> head-block}}{{/head-block}}
+
+        <!-- for browser that support prerendering -->
+        <link rel="prerender" href="index.html">
+        <link rel="prerender" href="modules.html">
+        <link rel="prerender" href="features.html">
+        <link rel="prerender" href="cli.html">
+        <link rel="prerender" href="configuration.html">
+        <link rel="prerender" href="debugging.html">
+        <link rel="prerender" href="rfc-compliant.html">
+        <link rel="prerender" href="download.html">
+        <link rel="prerender" href="contact.html">
+	</head>
+	<body>
+		{{#> header-block}}
+			{{> includes/header }}
+		{{/header-block}}
+
+		<main>
+			{{#> body-block}}{{/body-block}}
+		</main>
+
+		<footer>
+			&copy; 2008 - 2019 by <a class="copyright" href="http://www.bennybottema.com" target="_blank">bennybottema.com</a>
+		</footer>
+
+        <script>Prism.highlightAll();</script>
+		{{#> scripts-block}}{{/scripts-block}}
+	</body>
+</html>
