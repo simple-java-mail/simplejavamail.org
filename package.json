@@ -4,13 +4,15 @@
   "description": "Simple API, Complex Emails",
   "scripts": {
     "build": "gulp",
-    "server": "gulp --watch"
+    "server": "gulp --watch",
+    "verifyLinks": "blc http://localhost:3000 -ro"
   },
   "contributors": [
     "Benny Bottema <benny@bennybottema.com>"
   ],
   "license": "Apache-2.0",
   "devDependencies": {
+    "broken-link-checker": "^0.7.8",
     "browser-sync": "^2.14.0",
     "del": "^2.2.1",
     "gulp": "^3.9.1",
