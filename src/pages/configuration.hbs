@@ -656,14 +656,15 @@ mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
 </code></pre>
       </div>
       <p class="wide">
-        Note that the send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java Mail cannot determine
+        <strong>Note:</strong> the send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java Mail cannot determine
         how a send-action was botched and what the next course of action should be. You can monitor individual emails using the <code class="inline language-java">AsyncResponse</code>
         return value obtained from <code class="inline language-java">mailer.send()</code> and determine followup-actions for errored-out results.
       </p>
 
       <p class="wide">
+		    <strong>You set the limit</strong><br/>
         So really, there's no limit to the email performance you are looking for except maybe in the client which generates the emails. You can add as many servers
-        as you like to a cluster, use multiple clusters for different purposes and have as many pooled connections as you want spinned up at all time!
+        as you like to a cluster, use multiple clusters for different purposes and have as many pooled connections as you want dormant or spinned up at all time!
       </p>
     </div>
   </section>
