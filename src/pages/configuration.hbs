@@ -609,6 +609,7 @@ mailer.sendEmail(email, /*async = */ true);
       </div>
 
       <p class="wide">
+		    <strong>Reusing connections</strong><br/>
         However, you can really take performance to the next level by using the connection pooling introduced by the batch-module. To do this you simply include the module
         on the class path (add the maven dependency) which gives you a default of maximum four pooled connections, which auto-close 5 seconds after the last time they were
         utilized. What this means is if you have bursts of emails batches, the connections spin up to max four and stay alive until activity dies down.
@@ -634,6 +635,7 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
       </div>
 
       <p class="wide">
+        <strong>Clustering</strong><br/>
         To enable high-availability / fail-over or to really <strong>take performance to out-of-this world levels</strong> and handle truly enormous email batches,
         Simple Java Mail enables you to easily configure cluster(s) of SMTP servers. For example, for a simple fail-over setup with three SMTP servers,
         You can define a cluster with low/default connection pool settings and have three Mailer instances use the same cluster key. Then sending an email with any
@@ -655,17 +657,23 @@ mailer2InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
 mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
 </code></pre>
       </div>
-      <p class="wide">
-        <strong>Note:</strong> the send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java Mail cannot determine
-        how a send-action was botched and what the next course of action should be. You can monitor individual emails using the <code class="inline language-java">AsyncResponse</code>
-        return value obtained from <code class="inline language-java">mailer.send()</code> and determine followup-actions for errored-out results.
-      </p>
+		<p class="wide">
+			<strong>Note 1:</strong> The send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java Mail
+			cannot determine how a send-action was botched and what the next course of action should be. You can monitor individual emails using the <code
+				class="inline language-java">AsyncResponse</code> return value obtained from <code class="inline language-java">mailer.send()</code> and
+			determine followup-actions for errored-out results.
+		</p>
+		<p class="wide">
+			<strong>Note 2:</strong> The Connection Pool defaults (core size, max size etc.) are set and fixed by the first Mailer instance. Subsequent Mailer
+			instances cannot change these global settings. If they provide different global defaults, a warning will be logged.
+		</p>
 
-      <p class="wide">
-		    <strong>You set the limit</strong><br/>
-        So really, there's no limit to the email performance you are looking for except maybe in the client which generates the emails. You can add as many servers
-        as you like to a cluster, use multiple clusters for different purposes and have as many pooled connections as you want dormant or spinned up at all time!
-      </p>
+		<p class="wide">
+			<strong>You set the limit</strong><br/>
+			So really, there's no limit to the email performance you are looking for except maybe in the client which generates the emails. You can add as many
+			servers as you like to a cluster, use multiple clusters for different purposes and have as many pooled connections as you want dormant or spinned up
+			at all time!
+		</p>
     </div>
   </section>
 
