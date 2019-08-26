@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Simple API, Complex Emails",
   "scripts": {
+    "start": "npm run server",
     "build": "gulp",
     "server": "gulp --watch",
     "verifyLinks": "blc http://localhost:3000 -ro"
