@@ -101,6 +101,8 @@
       <li><a href="#section-combine-config">Combining both for multiple environments</a></li>
       <li><a href="#section-spring-support">Spring support</a></li>
       <li><a href="#section-batch-and-clustering">Batch and clustering support</a></li>
+      <li><a href="#section-reusing-connections" class="indent">Reusing connections</a></li>
+      <li><a href="#section-clustering" class="indent">Clustering</a></li>
     </ul>
   </section>
 
@@ -645,14 +647,14 @@ simplejavamail.proxy.password=&lt;proxy_password&gt;
   <a href="#section-batch-and-clustering" id="section-batch-and-clustering" class="section-link h2">&sect;</a>
   <h2>Batch and clustering support</h2>
 
-  <section>
-    <div>
-      <p class="wide">
-        Without using the <strong><a href="modules.html#batch-module">batch-module</a></strong>, you can send emails asynchronously,
-        in which case a single Transport connection is used without pooling it. This means for each email the connection is opened and closed. Depending on your
-        network and SMTP server's capacity, this in itself already provides a huge performance boost if you configure the thread pool accordingly.
-      </p>
-      <div>
+	<section>
+		<div>
+			<p class="wide">
+				Without using the <strong><a href="modules.html#batch-module">batch-module</a></strong>, you can send emails asynchronously, in which case a
+				single Transport connection is used without pooling it. This means for each email the connection is opened and closed. Depending on your network
+				and SMTP server's capacity, this in itself already provides a huge performance boost if you configure the thread pool accordingly.
+			</p>
+			<div>
         <pre><code class="language-java small">/* regular mailer: */
 Mailer mailer = mailerBuiler.(..).build();
 mailer.send(email); // blocks
@@ -664,47 +666,77 @@ mailer.send(email); // doesn't block
 /* or be explicit about it: */
 mailer.sendEmail(email, /*async = */ true);
 </code></pre>
-      </div>
+			</div>
+		</div>
+	</section>
 
-      <p class="wide">
-		    <strong>Reusing connections</strong><br/>
-        However, you can really take performance to the next level by using the connection pooling introduced by the batch-module. To do this you simply include the module
-        on the class path (add the maven dependency) which gives you a default of maximum four pooled connections, which auto-close 5 seconds after the last time they were
-        utilized. What this means is if you have bursts of emails batches, the connections spin up to max four and stay alive until activity dies down.
-      </p>
-      <p class="wide">
-        You can modify this behavior by defining a core connection pool size, max pool size and a custom expiry policy.
-      </p>
-      <div>
-        <pre><code class="language-java small">Mailer pooledMailer = mailerBuilder
-   .(..)
-   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it
-   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up
-   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour
-   .build();
-</code></pre>
-        <p class="wide">
-          Or using properties:
-        </p>
-        <pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2
+
+  <a href="#section-reusing-connections" id="section-reusing-connections" class="section-link h3">&sect;</a>
+  <h3>Reusing connections</h3>
+
+	<section>
+		<div>
+			<p class="wide">
+				However, you can really take performance to the next level by using the connection pooling introduced by the batch-module. To do this you simply
+				include the module on the class path (add the maven dependency) which gives you a default of maximum four pooled connections, which auto-close 5
+				seconds after the last time they were utilized. What this means is if you have bursts of emails batches, the connections spin up to max four and
+				stay alive until activity dies down.
+			</p>
+			<p class="wide">
+				You can modify this behavior by defining a core connection pool size, max pool size and a custom expiry policy.
+			</p>
+			<div>
+	        <pre><code class="language-java small">Mailer pooledMailer = mailerBuilder
+	   .(..)
+	   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it
+	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up
+	   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour
+	   .build();
+	</code></pre>
+				<p class="wide">
+					Or using properties:
+				</p>
+				<pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2
 simplejavamail.defaults.connectionpool.maxsize=10
 simplejavamail.defaults.connectionpool.expireafter.millis=1800000
-</code></pre>
-      </div>
+	</code></pre>
+			</div>
+		</div>
+	</section>
 
-      <p class="wide">
-        <strong>Clustering</strong><br/>
-        To enable high-availability / fail-over or to really <strong>take performance to out-of-this world levels</strong> and handle truly enormous email batches,
-        Simple Java Mail enables you to easily configure cluster(s) of SMTP servers. For example, for a simple fail-over setup with three SMTP servers,
-        You can define a cluster with low/default connection pool settings and have three Mailer instances use the same cluster key. Then sending an email with any
-        of these Mailer instances will result in a send-action resolved using the cluster.
-      </p>
-      <div>
-        <pre><code class="language-properties small">Mailer mailer1InFailoverCluster = mailerBuilderServer1.(..).withClusterKey(myClusterKey).build();
+
+	<a href="#section-clustering" id="section-clustering" class="section-link h3">&sect;</a>
+	<h3>Clustering</h3>
+
+	<section>
+		<div>
+			<div class="view">
+				<p>
+					To enable high-availability / fail-over or to really <strong>take performance to out-of-this world levels</strong> and handle truly enormous
+					email batches, Simple Java Mail enables you to easily configure cluster(s) of SMTP servers. For example, for a simple fail-over setup with
+					three SMTP servers, You can define a cluster with low/default connection pool settings and have three Mailer instances use the same cluster
+					key. Then sending an email with any of these Mailer instances will result in a send-action resolved using the cluster.
+				</p>
+			</div>
+
+			<div class="side">
+				Global cluster config:
+				<pre><code>Mailer clusteredMailer = mailerBuilder
+	   .(..) // normal settings
+	   .(..) // connection pool settings
+	   .withConnectionPoolLoadBalancingStrategy(LoadBalancingStrategy.ROUND_ROBIN)
+	   .build();</code></pre>
+				or using properties:
+				<pre><code class="language-properties">simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN</code></pre>
+			</div>
+
+			<p class="wide">
+			<p><strong>Mailer behavior in a cluster setup:</strong></p>
+			<pre><code class="language-properties small">Mailer mailer1InFailoverCluster = mailerBuilderServer1.(..).withClusterKey(myClusterKey).build();
 Mailer mailer2InFailoverCluster = mailerBuilderServer2.(..).withClusterKey(myClusterKey).build();
 Mailer mailer3InFailoverCluster = mailerBuilderServer3.(..).withClusterKey(myClusterKey).build();
 
-mailer1InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin) // FIXME make configurable
+mailer1InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
 mailer2InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
 mailer3InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
 
@@ -714,13 +746,15 @@ mailer1InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
 mailer2InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
 mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
 </code></pre>
-      </div>
+		</div>
+
 		<p class="wide">
-			<strong>Note 1:</strong> The send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java Mail
-			cannot determine how a send-action was botched and what the next course of action should be. You can monitor individual emails using the <code
+			<strong>Note 1:</strong> The send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java
+			Mail cannot determine how a send-action was botched and what the next course of action should be. You can monitor individual emails using the <code
 				class="inline language-java">AsyncResponse</code> return value obtained from <code class="inline language-java">mailer.send()</code> and
 			determine followup-actions for errored-out results.
 		</p>
+
 		<p class="wide">
 			<strong>Note 2:</strong> The Connection Pool defaults (core size, max size etc.) are set and fixed by the first Mailer instance. Subsequent Mailer
 			instances cannot change these global settings. If they provide different global defaults, a warning will be logged.
@@ -732,8 +766,7 @@ mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
 			servers as you like to a cluster, use multiple clusters for different purposes and have as many pooled connections as you want dormant or spinned up
 			at all time!
 		</p>
-    </div>
-  </section>
+	</section>
 
 </div>
 
