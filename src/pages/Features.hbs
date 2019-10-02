@@ -90,6 +90,7 @@
       <li><a href="#section-reply-forward">Replying to and forwarding emails</a></li>
       <li><a href="#section-proxy">Send using a proxy</a></li>
       <li><a href="#section-connection-test">Testing a server connection</a></li>
+		<li><a href="#section-serializing-emails">Serializing Email objects</a></li>
     </ul>
   </section>
 
@@ -1137,6 +1138,22 @@ mailer.testConnection(/* async? */); // no error means success
 </code></pre>
     </div>
   </section>
+
+
+	<a href="#section-serializing-emails" id="section-serializing-emails" class="section-link h2">&sect;</a>
+	<h2>Serializing Email objects</h2>
+
+	<section>
+			<p class="wide">
+				Simple Java Mail supports native Java serialization for Email objects with the following caveats:
+			</p>
+      <ul class="indent wide">
+        <li>AttachmentResource.dataSource of type DataSource is transient</li>
+        <li>Email.emailToForward of type MimeMessage is transient</li>
+        <li>Email.dkimPrivateKeyInputStream of type InputStream is transient</li>
+        <li>Email.pkcs12ConfigForSmimeSigning of type Pkcs12Config is transient</li>
+      </ul>
+	</section>
 
 </div>
     {{/inline}}
