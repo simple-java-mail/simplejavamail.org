@@ -355,17 +355,18 @@ Mailer mailer = mailerBuilder
 
 mailer.sendMail(email);
 </code></pre>
-      <p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
-        on how to set the thread pool size default or how to configure the executor service (thread pool manager).</p>
+		<p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
+			on how to set the thread pool size default or how to configure the executor service (thread pool manager).</p>
     </div>
   </section>
 
   <section>
     <div>
       <p class="wide">
+          <strong>Advanced batch processing</strong><br/>
         You can maximize performance by including the <strong><a href="modules.html#batch-module">batch-module</a></strong>,
         which allows you to pool the (Transport) connection over multiple sends, which generally saves 50% time for simpler emails). Going further, you can
-        allow for multiple pooled connections to the same server and further still: even <strong>cluster multiple pools of connections to different servers</strong>!
+        allow for multiple pooled connections to the same server and further still: even <strong>cluster multiple pools of connections</strong> to different servers!
       </p>
       <p class="wide">
         Refer to the <a href="configuration.html#section-batch-and-clustering">configuration section</a> for details.

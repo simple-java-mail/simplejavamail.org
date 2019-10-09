@@ -737,6 +737,9 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 Mailer mailer2InFailoverCluster = mailerBuilderServer2.(..).withClusterKey(myClusterKey).build();
 Mailer mailer3InFailoverCluster = mailerBuilderServer3.(..).withClusterKey(myClusterKey).build();
 
+// or default cluster using property:
+// simplejavamail.defaults.connectionpool.clusterkey.uuid=38400000-8cf0-11bd-b23e-10b96e4ef00d
+
 mailer1InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
 mailer2InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
 mailer3InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
@@ -756,10 +759,15 @@ mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
 			determine followup-actions for errored-out results.
 		</p>
 
-		<p class="wide">
-			<strong>Note 2:</strong> The Connection Pool defaults (core size, max size etc.) are set and fixed by the first Mailer instance. Subsequent Mailer
-			instances cannot change these global settings. If they provide different global defaults, a warning will be logged.
-		</p>
+	  <p class="wide">
+		  <strong>Note 2:</strong> The Connection Pool defaults (core size, max size etc.) are set and fixed by the first Mailer instance in the cluster.
+		  Subsequent Mailer instances cannot change these global settings. If they provide different global defaults, a warning will be logged.
+	  </p>
+
+	  <p class="wide">
+		  <strong>Note 3:</strong> Using the Java API, you can define any number of clusters. Using the default cluster uuid property, you can define only one
+        default cluster.
+	  </p>
 
 		<p class="wide">
 			<strong>You set the limit</strong><br/>
