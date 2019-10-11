@@ -101,8 +101,8 @@
       <li><a href="#section-combine-config">Combining both for multiple environments</a></li>
       <li><a href="#section-spring-support">Spring support</a></li>
       <li><a href="#section-batch-and-clustering">Batch and clustering support</a></li>
-      <li><a href="#section-reusing-connections" class="indent">Reusing connections</a></li>
-      <li><a href="#section-clustering" class="indent">Clustering</a></li>
+      <li><a href="#section-reusing-connections" class="indent">Reusing connections with a connection pool</a></li>
+      <li><a href="#section-clustering" class="indent">Clustering with multiple connection pools</a></li>
     </ul>
   </section>
 
@@ -472,6 +472,7 @@ simplejavamail.defaults.poolsize.keepalivetime=2000
 simplejavamail.defaults.connectionpool.clusterkey.uuid=38400000-8cf0-11bd-b23e-10b96e4ef00d
 simplejavamail.defaults.connectionpool.coresize=0
 simplejavamail.defaults.connectionpool.maxsize=4
+simplejavamail.defaults.connectionpool.claimtimeout.millis=10000
 simplejavamail.defaults.connectionpool.expireafter.millis=5000
 simplejavamail.defaults.sessiontimeoutmillis=60000
 simplejavamail.transport.mode.logging.only=true
@@ -672,7 +673,7 @@ mailer.sendEmail(email, /*async = */ true);
 
 
   <a href="#section-reusing-connections" id="section-reusing-connections" class="section-link h3">&sect;</a>
-  <h3>Reusing connections</h3>
+  <h3>Reusing connections with a connection pool</h3>
 
 	<section>
 		<div>
@@ -690,6 +691,7 @@ mailer.sendEmail(email, /*async = */ true);
 	   .(..)
 	   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it
 	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up
+	   .withConnectionPoolClaimTimeoutMillis(TimeUnit.MINUTES.toMillis(1)) // wait max 1 minute for available connection
 	   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour
 	   .build();
 	</code></pre>
@@ -698,6 +700,7 @@ mailer.sendEmail(email, /*async = */ true);
 				</p>
 				<pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2
 simplejavamail.defaults.connectionpool.maxsize=10
+simplejavamail.defaults.connectionpool.claimtimeout.millis=60000
 simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 	</code></pre>
 			</div>
@@ -706,7 +709,7 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 
 
 	<a href="#section-clustering" id="section-clustering" class="section-link h3">&sect;</a>
-	<h3>Clustering</h3>
+	<h3>Clustering with multiple connection pools</h3>
 
 	<section>
 		<div>
