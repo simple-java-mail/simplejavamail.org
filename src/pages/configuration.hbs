@@ -341,8 +341,11 @@ currentMailerBuilder.withKeepAliveTime(5000);
 // this negates all related properties such as pool size and keepAliveTime
 currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
 </code></pre>
-      <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
+		  <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
 currentMailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
+</code></pre>
+		  <pre><code class="small">// change the default sending logic to your own approach
+currentMailerBuilder.withCustomMailer(yourOwnMailSenderImpl); // send emails, test connections
 </code></pre>
     </div>
   </section>

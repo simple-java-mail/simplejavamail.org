@@ -90,7 +90,8 @@
       <li><a href="#section-reply-forward">Replying to and forwarding emails</a></li>
       <li><a href="#section-proxy">Send using a proxy</a></li>
       <li><a href="#section-connection-test">Testing a server connection</a></li>
-		<li><a href="#section-serializing-emails">Serializing Email objects</a></li>
+      <li><a href="#section-serializing-emails">Serializing Email objects</a></li>
+      <li><a href="#section-custom-mailer">Plug your own sending logic!</a></li>
     </ul>
   </section>
 
@@ -1154,6 +1155,40 @@ mailer.testConnection(/* async? */); // no error means success
         <li>Email.dkimPrivateKeyInputStream of type InputStream is transient</li>
         <li>Email.pkcs12ConfigForSmimeSigning of type Pkcs12Config is transient</li>
       </ul>
+	</section>
+
+
+	<a href="#section-custom-mailer" id="section-custom-mailer" class="section-link h2">&sect;</a>
+	<h2>Plug your own sending logic!</h2>
+
+	<section>
+        <p class="wide">
+          You want to benefit from Simple Java Mail's powerful features, but want to replace the actual
+            server testing and email sending with your own? <br/>Simple Java Mail's got your back!
+        </p>
+
+    <hr/>
+        <div class="wide">
+          <p>Send mail using MailGun REST API:</p>
+		    <pre><code>Mailer mailGunMailer = MailerBuilder
+      .(..)
+      .withCustomMailer(new MailGunMailer())
+      .buildMailer();
+</code></pre>
+		    <pre><code>public class MailGunMailer implements CustomMailer {
+
+	@Override
+	public void testConnection(OperationalConfig operationalConfig, Session session) {
+		// call MailGun rest service to test the provided config
+	}
+
+	@Override
+	public void sendMessage(OperationalConfig operationalConfig, Session session, Email email, MimeMessage message) {
+		// call MailGun rest service to send the email!
+	}
+}
+  </code></pre>
+      </div>
 	</section>
 
 </div>
