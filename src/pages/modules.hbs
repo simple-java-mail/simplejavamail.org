@@ -55,8 +55,15 @@
     <ul>
       <li><a class="indent" href="https://github.com/simple-java-mail/smtp-connection-pool">simple-java-mail:smtp-connection-pool</a></li>
     </ul>
-    This allows you to send emails asynchronous with configuration options for thread management and SMTP connection
-    pooling. See <a href="configuration.html#section-batch-support">configuration</a> for more details.
+	  <p class="wide">
+      This allows you to send emails asynchronous with configuration options for thread management and SMTP connection
+      pooling. See <a href="configuration.html#section-batch-support">configuration</a> for more details.
+    </p>
+	  <p class="wide">
+		  Note that with the batch-module enabled, the JVM won't shut down by itself anymore, as the connection pool stays alive until
+		  shutdown manually. To do this, just call <code>mailer.shutdownConnectionPool()</code> (repeat with each mailer you might have
+		  in a cluster).
+	  </p>
   </section>
 
   <h2 id="authenticated-socks-module">Authenticated (SOCKS) proxy support</h2>

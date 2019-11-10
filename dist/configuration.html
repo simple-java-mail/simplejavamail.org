@@ -692,7 +692,7 @@ mailer.sendEmail(email, /*async = */ true);
 	<section>
 		<div>
 			<p class="wide">
-				However, you can really take performance to the next level by using the connection pooling introduced by the batch-module. To do this you simply
+				You can really take performance to the next level by using the connection pooling introduced by the batch-module. To do this you simply
 				include the module on the class path (add the maven dependency) which gives you a default of maximum four pooled connections, which auto-close 5
 				seconds after the last time they were utilized. What this means is if you have bursts of emails batches, the connections spin up to max four and
 				stay alive until activity dies down.
@@ -703,20 +703,25 @@ mailer.sendEmail(email, /*async = */ true);
 			<div>
 	        <pre><code class="language-java small">Mailer pooledMailer = mailerBuilder
 	   .(..)
-	   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it
-	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up
-	   .withConnectionPoolClaimTimeoutMillis(TimeUnit.MINUTES.toMillis(1)) // wait max 1 minute for available connection
-	   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour
+	   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it (default 0)
+	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up (default 4)
+	   .withConnectionPoolClaimTimeoutMillis(TimeUnit.MINUTES.toMillis(1)) // wait max 1 minute for available connection (default forever)
+	   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour (default 5 seconds)
 	   .build();
 	</code></pre>
 				<p class="wide">
 					Or using properties:
 				</p>
-				<pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2
-simplejavamail.defaults.connectionpool.maxsize=10
-simplejavamail.defaults.connectionpool.claimtimeout.millis=60000
-simplejavamail.defaults.connectionpool.expireafter.millis=1800000
+				<pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2 (defaults to 0)
+simplejavamail.defaults.connectionpool.maxsize=10 (defaults to 4)
+simplejavamail.defaults.connectionpool.claimtimeout.millis=60000 (defaults to forever)
+simplejavamail.defaults.connectionpool.expireafter.millis=1800000 (defaults to 5000)
 	</code></pre>
+		  <p class="wide">
+			  Note that with the batch-module enabled, the JVM won't shut down by itself anymore, as the connection pool stays alive until
+          shutdown manually. To do this, just call <code>mailer.shutdownConnectionPool()</code> (repeat with each mailer you might have
+          in a cluster).
+		  </p>
 			</div>
 		</div>
 	</section>
