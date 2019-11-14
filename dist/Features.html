@@ -89,15 +89,17 @@
       <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/converter/EmailConverter.html" target="_blank">
         EmailConverter</a></strong> and
       <strong><a href="https://javadoc.io/page/com.github.bbottema/emailaddress-rfc2822/latest/org/hazlewood/connor/bottema/emailaddress/EmailAddressValidator.html" target="_blank">
-        EmailAddressValidator</a></strong> (the latter as alternative to the validation methods on the Mailer instance).
+        EmailAddressValidator</a></strong> (the latter as alternative to the validation methods on the Mailer instance). Finally,
+      <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/mailer/MailerHelper.html" target="_blank">
+        MailerHelper</a></strong> exposes some utilities in case you don't actually need to connect to a server.
     </p>
 
     <h3>Default features</h3>
     <p class="wide">
       Simple Java Mail will do some basic validation checks so that your email is always populated with enough data.
       It also checks for CRLF injection attacks. It even verifies email addresses against
-      <a href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> using the only complete
-      <a href="https://github.com/bbottema/email-rfc2822-validator">rfc2822 validator in java</a> in the world.
+      <a href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> using
+      <a href="https://github.com/bbottema/email-rfc2822-validator">email-rfc2822-validator</a>.
       Simple Java Mail also takes care of all the
       <a href="https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html">connection and security properties</a> for you.
     </p>

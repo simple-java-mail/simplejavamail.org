@@ -101,7 +101,11 @@ mailer.sendMail(email);
         configure a cluster of connection pools.</p>
       <br/>
       <p>Over the 13+ years of open source development, Simple Java Mail has matured, adding CLI support, DKIM, SMIME,
-        batch sending, CRLF injection protection and much more.</p>
+        batch sending, clustering, CRLF injection protection and much more.</p>
+      <br/>
+      <p>Simple Java Mail can also be used as a <strong>catalyst</strong> in your own project where you handle the ultimate
+          server connections and send emails. You want to use a REST service instead of the built-in SMTP support? Go
+          right ahead.</p>
     </div>
 
     <div class="side">
@@ -148,6 +152,11 @@ Mailer mailer = MailerBuilder
           .withProperty("mail.smtp.sendpartial", true)
           .withDebugLogging(true)
           .async()
+          // not enough? what about this:
+          .withClusterKey(myPowerfulMailingCluster);
+          .withThreadPoolSize(20); // multi-threaded batch handling
+          .withConnectionPoolCoreSize(10); // reusable connection(s) / multi-server sending
+          .manyMoreOptions()
           .buildMailer();
 
 mailer.sendMail(email);</code></pre>
