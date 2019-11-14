@@ -1,0 +1,103 @@
+{{#> layouts/base sub-title="Migrating to 6.0.0" }}
+
+	{{#*inline "header-block"}}
+		{{> includes/header topic="migration notes" }}
+	{{/inline}}
+
+	{{#*inline "body-block"}}
+<div class="content">
+
+	<h1>Migrating to 6.0.0</h1>
+
+	<section class="toc">
+		<ul>
+			<li><a href="#modules">A modular library</a></li>
+			<li><a href="#builder-api-and-cli">The Builder API and the CLI</a></li>
+			<li><a href="#mimemessage-structure">MimeMessage structure: not a one-size-fits-all anymore</a></li>
+		</ul>
+	</section>
+
+	<a href="#modules" id="modules" class="section-link h2">&sect;</a>
+	<h2>A modular library</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> You shouldn't include 3rd party dependencies anymore in maven, but use the various modules instead. Also, most packages
+			have been renamed or classes have been moved around.
+		</p>
+		<p class="wide">
+			Simple Java Mail is <em>growing</em>. In 5.0.0 the builder api was introduced to deal with ambiguous
+			<a href="http://codethataint.com/blog/telescoping-constructor-pattern-java/">telescoping constructors</a>, scattered documentation and
+			immutability.
+		</p>
+		<p class="wide">
+			But as new features was supported, it wasn't enough. Code was getting difficult to understand and the burden to include the right optional 3rd
+			party dependencies was on the end users. Something had to happen to ensure a healthy growth into the future.
+			<strong>Enter the module system.</strong>
+		</p>
+	</section>
+	<section>
+		<div class="view">
+			<p>
+				The project was divided into <a href="modules.html#navigation">modules</a>: a <em>core module</em>, containing the builder API and also interfaces
+				for the <em>optional modules</em> to be invoked from the <em>main module</em>. Internally the core module uses a "Module Loader" to help invoke
+				optional extra functionality.
+			</p>
+			<p>
+				Furthermore the individual optional modules each manage their own 3rd party dependencies. Users don't need to think about this anymore.
+			</p>
+			<p>
+				The decision which modules to create was straight forward: each function that had its own 3rd party dependencies became a module.
+			</p>
+		</div>
+
+		<div class="side">
+			<img src="../../assets/module_architecture.png">
+		</div>
+	</section>
+
+
+	<a href="#builder-api-and-cli" id="builder-api-and-cli" class="section-link h2">&sect;</a>
+	<h2>The Builder API and the CLI</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> To suit CLI usage better, Some email / mailer builder Java methods have been merged into one or have been renamed.
+		</p>
+		<p class="wide">
+			The <a href="cli.html#navigation">CLI</a> support works by directly translating the Builder API into CLI commands and options. However, not all
+			methods were suitable for CLI because of the many variations or simply because of java types that don't translate well from CLI input.
+		</p>
+		<p class="wide">
+			So to provide a concise CLI api, some java methods were merged into a single one with more options while others remained untouched, but were excluded
+			from CLI altogether in favor of the merged one (the merged one being a superset).
+		</p>
+	</section>
+
+
+	<a href="#mimemessage-structure" id="mimemessage-structure" class="section-link h2">&sect;</a>
+	<h2>MimeMessage structure: not a one-size-fits-all anymore</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> If you operate on a <code>MimeMessage</code> object that was the result of an <code>Email</code> conversion, then the
+			structure is not always the same anymore
+		</p>
+		<p class="wide">
+			Until now, Simple Java Mail operated under the assumption that as long as the generated email was properly structure conform the
+			<a href="rfc-compliant.html#navigation">RFC</a>, the most accommodating variant would always work in every email client. This was mostly true.
+		</p>
+		<p class="wide">
+			Until <a href="https://github.com/bbottema/simple-java-mail/issues/144" target="_blank">it wasn't</a>. With 6.0.0 Simple Java Mail takes the
+			perfect-fit approach and uses the exact mime message structural fit that matches the use case. Play around with the various possibilities below:
+		</p>
+	</section>
+
+	{{> components/mimemessage--structure-demo }}
+</div>
+	{{/inline}}
+
+    {{#*inline "scripts-block"}}
+        {{> components/mimemessage--structure-demo-script }}
+    {{/inline}}
+{{/layouts/base}}
