@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" class="language-java">
+	<head>
+		<meta charset="UTF-8">
+		<title>Simple Java Mail - Migrating to 6.0.0</title>
+		<link rel="icon" href="data:;base64,=">
+		<script type="application/ld+json">
+			{
+				"@context": "http://schema.org",
+				"@type": "Organization",
+				"url": "http://www.simplejavamail.org",
+				"name": "Simple Java Mail",
+				"sameAs": [ "https://github.com/bbottema/simple-java-mail" ]
+			}
+		</script>
+		<script type="application/ld+json">
+			{
+				"@context": "http://schema.org",
+				"@type": "WebPage",
+				"name": "Simple Java Mail",
+				"description": "Simple API, Complex Emails (JavaMail smtp wrapper)"
+			}
+		</script>
+        <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open+Sans+300.400.600.700.css">
+        <link rel="stylesheet" href="assets/lib/prism.css">
+        <link rel="stylesheet" href="pages/styles/main.css">
+        <script type="text/javascript" src="assets/lib/prism.js"></script>
+
+		
+
+        <!-- for browser that support prerendering -->
+        <link rel="prerender" href="index.html">
+        <link rel="prerender" href="modules.html">
+        <link rel="prerender" href="features.html">
+        <link rel="prerender" href="cli.html">
+        <link rel="prerender" href="configuration.html">
+        <link rel="prerender" href="debugging.html">
+        <link rel="prerender" href="rfc-compliant.html">
+        <link rel="prerender" href="download.html">
+        <link rel="prerender" href="contact.html">
+	</head>
+	<body>
+		<a href="https://github.com/bbottema/simple-java-mail">
+			<img style="position: absolute; top: 0; right: 0; border: 0; width: 149px; height: 149px;" src="assets/github-ribbon-topright@2x.png" alt="Fork me on GitHub">
+		</a>
+		
+		<div class="index-demo">
+			<h1>Simple Java Mail</h1>
+			<h2>Simple API, Complex Emails</h2>
+		
+			
+		</div>
+		
+		<div id="navigation" class="bar-group">
+			<a class="bar-link " href="index.html#navigation">About</a>
+			<a class="bar-link " href="modules.html#navigation">Modules</a>
+			<a class="bar-link " href="features.html#navigation">Features</a>
+			<a class="bar-link " href="cli.html#navigation">CLI</a>
+			<a class="bar-link " href="configuration.html#navigation">Configuration</a>
+			<a class="bar-link " href="debugging.html#navigation">Logging & Debugging</a>
+			<a class="bar-link " href="rfc-compliant.html#navigation">RFC Compliant</a>
+			<a class="bar-link " href="download.html#navigation">Download</a>
+			<a class="bar-link " href="contact.html#navigation">Contact</a>
+			<a class="bar-link active" href="migration-notes.html#navigation">Migration Notes</a>
+		</div>
+		<main>
+			<div class="content">
+
+	<h1>Migrating to 6.0.0</h1>
+
+	<section class="toc">
+		<ul>
+			<li><a href="#modules">A modular library</a></li>
+			<li><a href="#builder-api-and-cli">The Builder API and the CLI</a></li>
+			<li><a href="#mimemessage-structure">MimeMessage structure: not a one-size-fits-all anymore</a></li>
+		</ul>
+	</section>
+
+	<a href="#modules" id="modules" class="section-link h2">&sect;</a>
+	<h2>A modular library</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> You shouldn't include 3rd party dependencies anymore in maven, but use the various modules instead. Also, most packages
+			have been renamed or classes have been moved around.
+		</p>
+		<p class="wide">
+			Simple Java Mail is <em>growing</em>. In 5.0.0 the builder api was introduced to deal with ambiguous
+			<a href="http://codethataint.com/blog/telescoping-constructor-pattern-java/">telescoping constructors</a>, scattered documentation and
+			immutability.
+		</p>
+		<p class="wide">
+			But as new features was supported, it wasn't enough. Code was getting difficult to understand and the burden to include the right optional 3rd
+			party dependencies was on the end users. Something had to happen to ensure a healthy growth into the future.
+			<strong>Enter the module system.</strong>
+		</p>
+	</section>
+	<section>
+		<div class="view">
+			<p>
+				The project was divided into <a href="modules.html#navigation">modules</a>: a <em>core module</em>, containing the builder API and also interfaces
+				for the <em>optional modules</em> to be invoked from the <em>main module</em>. Internally the core module uses a "Module Loader" to help invoke
+				optional extra functionality.
+			</p>
+			<p>
+				Furthermore the individual optional modules each manage their own 3rd party dependencies. Users don't need to think about this anymore.
+			</p>
+			<p>
+				The decision which modules to create was straight forward: each function that had its own 3rd party dependencies became a module.
+			</p>
+		</div>
+
+		<div class="side">
+			<img src="../../assets/module_architecture.png">
+		</div>
+	</section>
+
+
+	<a href="#builder-api-and-cli" id="builder-api-and-cli" class="section-link h2">&sect;</a>
+	<h2>The Builder API and the CLI</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> To suit CLI usage better, Some email / mailer builder Java methods have been merged into one or have been renamed.
+		</p>
+		<p class="wide">
+			The <a href="cli.html#navigation">CLI</a> support works by directly translating the Builder API into CLI commands and options. However, not all
+			methods were suitable for CLI because of the many variations or simply because of java types that don't translate well from CLI input.
+		</p>
+		<p class="wide">
+			So to provide a concise CLI api, some java methods were merged into a single one with more options while others remained untouched, but were excluded
+			from CLI altogether in favor of the merged one (the merged one being a superset).
+		</p>
+	</section>
+
+
+	<a href="#mimemessage-structure" id="mimemessage-structure" class="section-link h2">&sect;</a>
+	<h2>MimeMessage structure: not a one-size-fits-all anymore</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> If you operate on a <code>MimeMessage</code> object that was the result of an <code>Email</code> conversion, then the
+			structure is not always the same anymore
+		</p>
+		<p class="wide">
+			Until now, Simple Java Mail operated under the assumption that as long as the generated email was properly structure conform the
+			<a href="rfc-compliant.html#navigation">RFC</a>, the most accommodating variant would always work in every email client. This was mostly true.
+		</p>
+		<p class="wide">
+			Until <a href="https://github.com/bbottema/simple-java-mail/issues/144" target="_blank">it wasn't</a>. With 6.0.0 Simple Java Mail takes the
+			perfect-fit approach and uses the exact mime message structural fit that matches the use case. Play around with the various possibilities below:
+		</p>
+	</section>
+
+		<section>
+			<div class="view">
+				<p>Configure your email:</p>
+	
+				<form>
+					<div>
+						<input type="checkbox" id="usePlainText" name="usePlainText" onclick="switchCheckbox('usePlainText', this.checked)">
+						<label for="usePlainText">Plain text body</label>
+					</div>
+					<div>
+						<input type="checkbox" id="useHTMLText" name="useHTMLText" onclick="switchCheckbox('useHTMLText', this.checked)">
+						<label for="useHTMLText">HTML text body</label>
+					</div>
+					<div class="indent">
+						<input type="checkbox" id="useEmbeddedContent" name="useEmbeddedContent" onclick="switchCheckbox('useEmbeddedContent', this.checked)"
+						       disabled="disabled">
+						<label for="useEmbeddedContent">HTML body contains embedded content (such as image)</label>
+					</div>
+					<div>
+						<input type="checkbox" id="useCalendarEvent" name="useCalendarEvent" onclick="switchCheckbox('useCalendarEvent', this.checked)">
+						<label for="useCalendarEvent">iCalendar event</label>
+					</div>
+					<div>
+						<input type="checkbox" id="useAttachments" name="useAttachments" onclick="switchCheckbox('useAttachments', this.checked)">
+						<label for="useAttachments">Downloadable attachments</label>
+					</div>
+					<div>
+						<input type="checkbox" id="useEmailForward" name="useEmailForward" onclick="switchCheckbox('useEmailForward', this.checked)">
+						<label for="useEmailForward">Forwards another email</label>
+					</div>
+				</form>
+	
+			</div>
+			<div class="side padded">
+				<p>Structure used for email:</p>
+				<div id="messageStructure">&nbsp;</div>
+			</div>
+		</section></div>
+
+		</main>
+
+		<footer>
+			&copy; 2008 - 2019 by <a class="copyright" href="http://www.bennybottema.com" target="_blank">bennybottema.com</a>
+		</footer>
+
+        <script>Prism.highlightAll();</script>
+		                <script type="module">
+                    import {RfcDemo} from "/pages/scripts/rfc-demo/rfc-demo.js";
+        
+                    let rfcDemo = new RfcDemo();
+        
+                    window.switchCheckbox = function(prop, value) {
+                        rfcDemo[prop] = value;
+                        if (rfcDemo.useHTMLText) {
+                            document.getElementById('useEmbeddedContent').removeAttribute("disabled");
+                        } else {
+                            document.getElementById('useEmbeddedContent').setAttribute("disabled", "disabled");
+                            document.getElementById('useEmbeddedContent').checked = false;
+                        }
+                        document.getElementById('messageStructure').innerHTML = rfcDemo.determineMessageStructure();
+                    };
+                </script>
+	</body>
+</html>

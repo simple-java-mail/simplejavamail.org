@@ -52,15 +52,16 @@
 		</div>
 		
 		<div id="navigation" class="bar-group">
-			<a class="bar-link " 		    href="index.html#navigation">About</a>
-			<a class="bar-link " 		href="modules.html#navigation">Modules</a>
-			<a class="bar-link " 		href="features.html#navigation">Features</a>
-			<a class="bar-link " 			href="cli.html#navigation">CLI</a>
-			<a class="bar-link "   href="configuration.html#navigation">Configuration</a>
-			<a class="bar-link " 		href="debugging.html#navigation">Logging & Debugging</a>
-			<a class="bar-link active"   href="rfc-compliant.html#navigation">RFC Compliant</a>
-			<a class="bar-link " 		href="download.html#navigation">Download</a>
-			<a class="bar-link " 		href="contact.html#navigation">Contact</a>
+			<a class="bar-link " href="index.html#navigation">About</a>
+			<a class="bar-link " href="modules.html#navigation">Modules</a>
+			<a class="bar-link " href="features.html#navigation">Features</a>
+			<a class="bar-link " href="cli.html#navigation">CLI</a>
+			<a class="bar-link " href="configuration.html#navigation">Configuration</a>
+			<a class="bar-link " href="debugging.html#navigation">Logging & Debugging</a>
+			<a class="bar-link active" href="rfc-compliant.html#navigation">RFC Compliant</a>
+			<a class="bar-link " href="download.html#navigation">Download</a>
+			<a class="bar-link " href="contact.html#navigation">Contact</a>
+			<a class="bar-link " href="migration-notes.html#navigation">Migration Notes</a>
 		</div>
 		<main>
 			<div class="content">
@@ -135,44 +136,44 @@
   <a href="#section-explore-multipart" id="section-explore-multipart" class="section-link h2">&sect;</a>
   <h2>Explore the multipart structures used by Simple Java Mail</h2>
 
-  <section>
-    <div class="view">
-      <p>Configure your email:</p>
-
-      <form>
-        <div>
-          <input type="checkbox" id="usePlainText" name="usePlainText" onclick="switchCheckbox('usePlainText', this.checked)">
-          <label for="usePlainText">Plain text body</label>
-        </div>
-        <div>
-          <input type="checkbox" id="useHTMLText" name="useHTMLText" onclick="switchCheckbox('useHTMLText', this.checked)">
-          <label for="useHTMLText">HTML text body</label>
-        </div>
-        <div class="indent">
-          <input type="checkbox" id="useEmbeddedContent" name="useEmbeddedContent" onclick="switchCheckbox('useEmbeddedContent', this.checked)" disabled="disabled">
-          <label for="useEmbeddedContent">HTML body contains embedded content (such as image)</label>
-        </div>
-        <div>
-          <input type="checkbox" id="useCalendarEvent" name="useCalendarEvent" onclick="switchCheckbox('useCalendarEvent', this.checked)">
-          <label for="useCalendarEvent">iCalendar event</label>
-        </div>
-        <div>
-          <input type="checkbox" id="useAttachments" name="useAttachments" onclick="switchCheckbox('useAttachments', this.checked)">
-          <label for="useAttachments">Downloadable attachments</label>
-        </div>
-        <div>
-          <input type="checkbox" id="useEmailForward" name="useEmailForward" onclick="switchCheckbox('useEmailForward', this.checked)">
-          <label for="useEmailForward">Forwards another email</label>
-        </div>
-      </form>
-
-    </div>
-    <div class="side padded">
-      <p>Structure used for email:</p>
-      <div id="messageStructure">&nbsp;</div>
-    </div>
-  </section>
-</div>
+  	<section>
+  		<div class="view">
+  			<p>Configure your email:</p>
+  
+  			<form>
+  				<div>
+  					<input type="checkbox" id="usePlainText" name="usePlainText" onclick="switchCheckbox('usePlainText', this.checked)">
+  					<label for="usePlainText">Plain text body</label>
+  				</div>
+  				<div>
+  					<input type="checkbox" id="useHTMLText" name="useHTMLText" onclick="switchCheckbox('useHTMLText', this.checked)">
+  					<label for="useHTMLText">HTML text body</label>
+  				</div>
+  				<div class="indent">
+  					<input type="checkbox" id="useEmbeddedContent" name="useEmbeddedContent" onclick="switchCheckbox('useEmbeddedContent', this.checked)"
+  					       disabled="disabled">
+  					<label for="useEmbeddedContent">HTML body contains embedded content (such as image)</label>
+  				</div>
+  				<div>
+  					<input type="checkbox" id="useCalendarEvent" name="useCalendarEvent" onclick="switchCheckbox('useCalendarEvent', this.checked)">
+  					<label for="useCalendarEvent">iCalendar event</label>
+  				</div>
+  				<div>
+  					<input type="checkbox" id="useAttachments" name="useAttachments" onclick="switchCheckbox('useAttachments', this.checked)">
+  					<label for="useAttachments">Downloadable attachments</label>
+  				</div>
+  				<div>
+  					<input type="checkbox" id="useEmailForward" name="useEmailForward" onclick="switchCheckbox('useEmailForward', this.checked)">
+  					<label for="useEmailForward">Forwards another email</label>
+  				</div>
+  			</form>
+  
+  		</div>
+  		<div class="side padded">
+  			<p>Structure used for email:</p>
+  			<div id="messageStructure">&nbsp;</div>
+  		</div>
+  	</section></div>
 
 		</main>
 
@@ -181,22 +182,21 @@
 		</footer>
 
         <script>Prism.highlightAll();</script>
-		        <script type="module">
-            import {RfcDemo} from "/pages/scripts/rfc-demo/rfc-demo.js";
-
-            let rfcDemo = new RfcDemo();
-
-            window.switchCheckbox = function(prop, value) {
-                rfcDemo[prop] = value;
-                if (rfcDemo.useHTMLText) {
-                    document.getElementById('useEmbeddedContent').removeAttribute("disabled");
-                } else {
-                    document.getElementById('useEmbeddedContent').setAttribute("disabled", "disabled");
-                    document.getElementById('useEmbeddedContent').checked = false;
-                }
-                document.getElementById('messageStructure').innerHTML = rfcDemo.determineMessageStructure();
-            };
-        </script>
-
+				        <script type="module">
+		            import {RfcDemo} from "/pages/scripts/rfc-demo/rfc-demo.js";
+		
+		            let rfcDemo = new RfcDemo();
+		
+		            window.switchCheckbox = function(prop, value) {
+		                rfcDemo[prop] = value;
+		                if (rfcDemo.useHTMLText) {
+		                    document.getElementById('useEmbeddedContent').removeAttribute("disabled");
+		                } else {
+		                    document.getElementById('useEmbeddedContent').setAttribute("disabled", "disabled");
+		                    document.getElementById('useEmbeddedContent').checked = false;
+		                }
+		                document.getElementById('messageStructure').innerHTML = rfcDemo.determineMessageStructure();
+		            };
+		        </script>
 	</body>
 </html>

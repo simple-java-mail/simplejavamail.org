@@ -52,15 +52,16 @@
 		</div>
 		
 		<div id="navigation" class="bar-group">
-			<a class="bar-link " 		    href="index.html#navigation">About</a>
-			<a class="bar-link " 		href="modules.html#navigation">Modules</a>
-			<a class="bar-link " 		href="features.html#navigation">Features</a>
-			<a class="bar-link " 			href="cli.html#navigation">CLI</a>
-			<a class="bar-link "   href="configuration.html#navigation">Configuration</a>
-			<a class="bar-link " 		href="debugging.html#navigation">Logging & Debugging</a>
-			<a class="bar-link "   href="rfc-compliant.html#navigation">RFC Compliant</a>
-			<a class="bar-link active" 		href="download.html#navigation">Download</a>
-			<a class="bar-link " 		href="contact.html#navigation">Contact</a>
+			<a class="bar-link " href="index.html#navigation">About</a>
+			<a class="bar-link " href="modules.html#navigation">Modules</a>
+			<a class="bar-link " href="features.html#navigation">Features</a>
+			<a class="bar-link " href="cli.html#navigation">CLI</a>
+			<a class="bar-link " href="configuration.html#navigation">Configuration</a>
+			<a class="bar-link " href="debugging.html#navigation">Logging & Debugging</a>
+			<a class="bar-link " href="rfc-compliant.html#navigation">RFC Compliant</a>
+			<a class="bar-link active" href="download.html#navigation">Download</a>
+			<a class="bar-link " href="contact.html#navigation">Contact</a>
+			<a class="bar-link " href="migration-notes.html#navigation">Migration Notes</a>
 		</div>
 		<main>
 			<div class="content">
@@ -75,8 +76,7 @@
       <a class="button" href="http://TODO" target="_blank">Download standalone package for CLI</a>
 
       <p>
-          Simple Java Mail is available in Maven central as dependency and you can also download the jar distribution directly from there. If you don't use
-          Maven, make sure you include external dependencies yourself. See NOTICE.txt which 3rd party projects are used.
+          Simple Java Mail is available in Maven central as dependency and you can also download the jar distribution directly from there.
       </p>
 
       <pre><code id="mavenDependency" class="language-xml">&lt;dependency&gt;
@@ -85,7 +85,13 @@
     &lt;version&gt;%s&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
 
-      <a class="button" href="http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22org.simplejavamail%22%20AND%20a%3A%22simple-java-mail%22" target="_blank">
+      <p>
+          If you don't use
+          Maven, make sure you include external dependencies yourself (including core and all enabled modules). See NOTICE.txt in each project to see which
+          3rd party projects are used. The projects are all in the same repo, nested as Maven projects.
+      </p>
+
+      <a class="button" href="https://search.maven.org/search?q=g:org.simplejavamail" target="_blank">
         Download sources, javadoc, distribution directly from Maven Central</a>
       <a class="button" href="https://oss.sonatype.org/content/repositories/snapshots/org/simplejavamail/simple-java-mail/" target="_blank">
         Snapshots from OSS Sonatype</a>
