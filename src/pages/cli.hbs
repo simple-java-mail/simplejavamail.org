@@ -120,14 +120,14 @@
       supported in <a href="https://picocli.info/#AtFiles">Picocli</a>, the library used under the hood:
     </p>
     <pre><code class="language-text">
-      # /home/foo/args
+      # file /home/foo/args
       --email:withSubject "My Subject"
       --mailer:withSMTPServer host=...
-      # ...other arguments
+      --other arguments
     </code></pre>
     <p class="wide">The command <code class="language-text inline">sjm @/home/foo/args</code> then is expanded to:</p>
     <pre><code class="language-text">
-      sjm --email:withSubject "My Subject" --mailer:withSMTPServer host=...
+      sjm --email:withSubject "My Subject" --mailer:withSMTPServer host=... --other arguments
     </code></pre>
     <p class="wide">
       Quoting the Picocli documentation:
