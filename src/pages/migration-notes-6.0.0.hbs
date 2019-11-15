@@ -68,7 +68,12 @@
 			<strong>Impact:</strong>
 		</p>
 		<p class="wide">
-
+			Until 6.0.0, a couple of 3rd party libraries were 'shaded' into the main jar and made part of the library that way.
+			This practice has been removed and not only is the dependency managed externally now, it has been made optional.
+		</p>
+		<p>
+			This means that if you relied on this functionality, or even used these renamed classes you will have to inlcude the
+			relevant module now instead and no longer use the renamed classes but the actual classes from the 3rd party library.
 		</p>
 	</section>
 
@@ -116,11 +121,10 @@
 	<h2>Outlook support is not included by default anymore</h2>
 
 	<section>
-		<p class="wide" style="font-size:smaller">
-			<strong>Impact:</strong>
-		</p>
 		<p class="wide">
-
+			As part of the modularisation, all 3rd party dependencies have been made optional through a module. This includes Outlook support,
+			which was previously included by default. In fact it used to be 'shaded' into the main jar as if it was part of the source code. This
+			has been removed.
 		</p>
 	</section>
 
@@ -129,12 +133,16 @@
 	<h2>Simple Java Mail now reverts to default server ports if omitted by the user</h2>
 
 	<section>
-		<p class="wide" style="font-size:smaller">
-			<strong>Impact:</strong>
-		</p>
 		<p class="wide">
-
+			When not provided through the builder API, then the following default ports will now be applied:
 		</p>
+		<table>
+			<tr><td><strong>default SMTP server port:</strong></td><td>25</td></tr>
+			<tr><td><strong>default SMTPS server port:</strong></td><td>465</td></tr>
+			<tr><td><strong>default TLS server port:</strong></td><td>587</td></tr>
+			<tr><td><strong>default proxy server port:</strong></td><td>1080</td></tr>
+			<tr><td><strong>default local proxy bridge:</strong></td><td>1081</td></tr>
+		</table>
 	</section>
 </div>
 	{{/inline}}
