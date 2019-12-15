@@ -205,9 +205,11 @@
   <h2 id="cli-module">CLI support</h2>
 
   <section>
-    <p>
-        To enable CLI support (see <a href="cli.html#navigation">CLI</a>), include the following module:
-    </p>
+	  <p class="wide">
+		  Normally, you would not need to CLI module on the class path, unless you wish to invoke the
+		  <code class="language-text">static void main</code> method from Java (see also <a href="cli.html#navigation">how to use CLI</a>).
+		  To do so, include the following module:
+	  </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
     &lt;artifactId&gt;cli-module&lt;/artifactId&gt;
