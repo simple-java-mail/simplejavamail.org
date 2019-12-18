@@ -1,0 +1,42 @@
+{
+  "name": "simple-java-mail",
+  "version": "1.0.0",
+  "description": "Simple API, Complex Emails",
+  "scripts": {
+    "start": "npm run server",
+    "build": "gulp",
+    "server": "gulp --watch",
+    "verifyLinks": "blc http://localhost:3000 -ro"
+  },
+  "contributors": [
+    "Benny Bottema <benny@bennybottema.com>"
+  ],
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "broken-link-checker": "^0.7.8",
+    "browser-sync": "^2.14.0",
+    "del": "^2.2.1",
+    "gulp": "^3.9.1",
+    "gulp-compile-handlebars": "^0.6.1",
+    "gulp-less": "^4.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^2.6.5",
+    "gulp-typescript": "^5.0.1",
+    "gulp-util": "^3.0.7",
+    "lodash.template": "^4.5.0",
+    "typescript": "^3.5.3"
+  },
+  "keywords": [
+    "email",
+    "smtp",
+    "javamail smtp wrapper"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bbottema/simple-java-mail.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bbottema/simple-java-mail/issues"
+  },
+  "homepage": "https://github.com/bbottema/simple-java-mail"
+}
