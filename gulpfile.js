@@ -76,7 +76,7 @@ gulp.task('ts', function () {
 });
 
 gulp.task('less', function () {
-  return gulp.src(`${config.src}/**/*.less`)
+  return gulp.src(`${config.src}/**/main.less`)
       .pipe(less())
       .pipe(gulp.dest(config.dest));
 });
