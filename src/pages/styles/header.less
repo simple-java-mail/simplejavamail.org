@@ -1,0 +1,80 @@
+.header-slogan {
+  padding: 50px 30px;
+  //noinspection CssOverwrittenProperties,CssReplaceWithShorthandSafely
+  background: #444444;
+  //noinspection CssOverwrittenProperties,CssReplaceWithShorthandSafely
+  background-color: #3a3a3a;
+  //noinspection CssOverwrittenProperties,CssReplaceWithShorthandSafely
+  background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c7c7c7' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+
+  h1 {
+	text-align: center;
+	font-weight: 700;
+	font-size: 40px;
+	color: #EEEEDD;
+	margin: 0;
+  }
+
+  h2 {
+	text-align: center;
+	color: #EEEEDD;
+	font-size: 20px;
+  }
+}
+
+.intro-code {
+  max-width: 550px;
+  margin: 0 auto;
+}
+
+.intro-code pre {
+  background: #F3F3F3 !important;
+  padding: 10px 30px 25px;
+  margin: 10px auto;
+  border: 1px solid #BDBDBD;
+}
+
+@media ( min-width: 800px ) {
+
+  .header-slogan {
+	padding: 100px 0 60px;
+
+	h1 {
+	  line-height: 100%;
+	  font-family: Trebuchet MS, serif;
+	  font-size: 100px;
+	  margin: 0 auto;
+	}
+
+	h2 {
+	  text-align: right;
+	  margin: -10px auto 30px;
+	  padding-right: 35px;
+	  font-size: 20px;
+	  font-family: Courier, serif;
+	  max-width: 480px;
+	}
+  }
+}
+
+@media only screen and (max-width: 580px) {
+  .intro-code {
+	font-size: 70%;
+
+	.language-java {
+	  padding: 3pt;
+	}
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  .intro-code {
+	font-size: 55%;
+  }
+
+  .header-slogan h1 {
+	font-weight: normal;
+	font-size: 25px;
+  }
+}
