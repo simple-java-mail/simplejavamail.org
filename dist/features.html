@@ -5,6 +5,7 @@
 		<title>Simple Java Mail - Features</title>
 		<link rel="icon" href="data:;base64,=">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="Description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures.">
 		<script type="application/ld+json">
 			{
 				"@context": "http://schema.org",
@@ -22,6 +23,12 @@
 				"description": "Simple API, Complex Emails (JavaMail smtp wrapper)"
 			}
 		</script>
+
+		<meta property="og:title" content="Simple Java Mail" />
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="http://www.simplejavamail.org" />
+		<meta property="og:description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures." />
+
         <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open%2BSans%2B300.400.600.700.css">
         <link rel="stylesheet" href="assets/lib/prism.css">
         <link rel="stylesheet" href="pages/styles/main.css">
@@ -908,7 +915,7 @@ EmailAddressValidator.isValid("your_address@domain.com",
         If you already have a MimeMessage, you can convert it into an Email instance, complete with embedded images and attachments, headers intact.
       </p>
       <p>
-        You can even build a mass Outlook .msg to <a href="http://forensicswiki.org/wiki/EML">EML</a> converter if you like!
+        You can even build a mass Outlook .msg to <a href="https://forensicswiki.xyz/page/EML">EML</a> converter if you like!
       </p>
       <br/>
       <p>
@@ -1057,7 +1064,7 @@ nonMergedEmail.getSmimeSignedEmail();
   <section>
     <p class="wide">
       Every conversion method optionally accepts a
-      <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/api/mailer/config/Pkcs12Config.html" target="_blank">Pkcs12Config</a>
+      <a href="https://javadoc.io/doc/org.simplejavamail/maven-master-project/latest/org/simplejavamail/api/mailer/config/Pkcs12Config.html" target="_blank">Pkcs12Config</a>
       instance, which contains details about your key store and certificate. With that, you can decrypt an S/MIME encrypted mail.
     </p>
 
