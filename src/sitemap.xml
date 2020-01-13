@@ -3,25 +3,25 @@
 	<url>
 		<loc>http://www.simplejavamail.org</loc>
 		<priority>1.0</priority>
-		<lastmod>2020-1-13</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
 		<loc>http://www.simplejavamail.org/index.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2020-1-13</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
 		<loc>http://www.simplejavamail.org/modules.html</loc>
 		<priority>0.8</priority>
-		<lastmod>2020-1-13</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
 		<loc>http://www.simplejavamail.org/features.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2020-1-13</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
@@ -39,7 +39,7 @@
 	<url>
 		<loc>http://www.simplejavamail.org/debugging.html</loc>
 		<priority>0.5</priority>
-		<lastmod>2020-1-13</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
@@ -51,7 +51,7 @@
 	<url>
 		<loc>http://www.simplejavamail.org/download.html</loc>
 		<priority>0.5</priority>
-		<lastmod>2020-1-13</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
