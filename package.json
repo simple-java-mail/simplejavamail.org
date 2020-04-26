@@ -4,8 +4,8 @@
   "description": "Simple API, Complex Emails",
   "scripts": {
     "start": "npm run server",
-    "build": "gulp",
-    "server": "gulp --watch",
+    "build": "gulp build",
+    "server": "gulp server",
     "verifyLinks": "blc http://localhost:3000 -ro"
   },
   "contributors": [
@@ -16,7 +16,7 @@
     "broken-link-checker": "^0.7.8",
     "browser-sync": "^2.14.0",
     "del": "^2.2.1",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.2",
     "gulp-compile-handlebars": "^0.6.1",
     "gulp-less": "^4.0.1",
     "gulp-rename": "^1.2.2",
