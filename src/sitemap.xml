@@ -3,13 +3,13 @@
 	<url>
 		<loc>http://www.simplejavamail.org</loc>
 		<priority>1.0</priority>
-		<lastmod>2020-01-13</lastmod>
+		<lastmod>2020-04-26</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
 		<loc>http://www.simplejavamail.org/index.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2020-01-13</lastmod>
+		<lastmod>2020-04-26</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
@@ -27,13 +27,13 @@
 	<url>
 		<loc>http://www.simplejavamail.org/configuration.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2019-12-17</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
 		<loc>http://www.simplejavamail.org/cli.html</loc>
 		<priority>0.7</priority>
-		<lastmod>2019-12-17</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
@@ -45,7 +45,7 @@
 	<url>
 		<loc>http://www.simplejavamail.org/rfc-compliant.html</loc>
 		<priority>0.5</priority>
-		<lastmod>2019-12-17</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>yearly</changefreq>
 	</url>
 	<url>
@@ -57,25 +57,25 @@
 	<url>
 		<loc>http://www.simplejavamail.org/contact.html</loc>
 		<priority>0.5</priority>
-		<lastmod>2019-12-17</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
 		<loc>http://www.simplejavamail.org/migration-notes.html</loc>
 		<priority>0.3</priority>
-		<lastmod>2019-12-17</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
 		<loc>http://www.simplejavamail.org/migration-notes-5.0.0.html</loc>
 		<priority>0.1</priority>
-		<lastmod>2019-12-17</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>yearly</changefreq>
 	</url>
 	<url>
 		<loc>http://www.simplejavamail.org/migration-notes-6.0.0.html</loc>
 		<priority>0.1</priority>
-		<lastmod>2019-12-17</lastmod>
+		<lastmod>2020-01-13</lastmod>
 		<changefreq>yearly</changefreq>
 	</url>
 </urlset>
