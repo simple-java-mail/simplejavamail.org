@@ -619,25 +619,90 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
   <a href="#section-embedding" id="section-embedding" class="section-link h2">&sect;</a>
   <h2>Embedding images</h2>
 
-  <section>
-    <div class="view">
-      <p>
-        Embedding images is simple, but you have to add the placeholders in the HTML yourself.
-      </p>
-    </div>
+	<section>
+		<div class="view">
+			<p>
+				Embedding images dead simple with two options:
+			</p>
+			<ol class="indent">
+				<li><strong>manual embedding:</strong> add <code class="inline language-text">cid:</code> placeholders in the HTML yourself</li>
+				<li><strong>auto resolution:</strong> enable auto-resolving image sources to files, class path resources or URL's</li>
+			</ol>
+		</div>
 
-    <div class="side">
-<pre><code class="small">currentEmailBuilder.withEmbeddedImage("smiley", new FileDataSource("smiley.jpg"));
-// this example is included in the demo package in MailTestApp.java
-String base64String = "iVBORw0KGgoAAAANSUhEUgAAA ...snip";
+		<div class="side">
+			<p>
+				Manual embedding:
+			</p>
+			<pre><code class="small">currentEmailBuilder.withEmbeddedImage("smiley", new FileDataSource("smiley.jpg"));
 currentEmailBuilder.withEmbeddedImage("thumbsup", parseBase64Binary(base64String), "image/png");
+// above example is included in the demo package in MailTestApp.java
 
 // the corresponding HTML should contain the placeholders
 &lt;p&gt;Let&#39;s go!&lt;/p&gt;&lt;img src=&#39;cid:thumbsup&#39;&gt;&lt;br/&gt;
 &lt;p&gt;Smile!&lt;/p&gt;&lt;img src=&#39;cid:smiley&#39;&gt;
 </code></pre>
-    </div>
-  </section>
+		</div>
+	</section>
+
+	<section>
+		<div class="view">
+			<p>
+				<strong>Auto resolution</strong> can be enabled for files, classpath resources and URL's and you can configure base dirs and optionally
+				enforce referenced resources should all be resolved succesfully. Useful for when you allow end users freely
+				enter HTML.
+			</p>
+		</div>
+
+		<div class="side">
+			<p>
+				Auto resolution:
+			</p>
+			<pre><code class="small">&lt;p&gt;Let&#39;s go!&lt;/p&gt;&lt;img src=&#39;smiley.jpg&#39;&gt;&lt;br/&gt;
+&lt;p&gt;Smile!&lt;/p&gt;&lt;img src=&#39;http://www.myplace.com/smiley.png&#39;&gt;
+
+// results in the following HTML when building the email:
+&lt;p&gt;Let&#39;s go!&lt;/p&gt;&lt;img src=&#39;cid:etweffxdeu&#39;&gt;&lt;br/&gt;
+&lt;p&gt;Smile!&lt;/p&gt;&lt;img src=&#39;cid:sienfddiew&#39;&gt;
+
+email.getEmbeddedImages(); // now contains two data sources!
+</code></pre>
+			<p>
+				To enable this:
+			</p>
+			<pre><code class="small">emailBuilder
+	// enable auto resolution
+	.withEmbeddedImageAutoResolutionForFiles(true) // default false
+	.withEmbeddedImageAutoResolutionForClassPathResources(true) // default false
+	.withEmbeddedImageAutoResolutionForURLs(true) // default false
+
+	// support for base dirs
+	.withEmbeddedImageBaseDir(RESOURCES_PATH + "/images")
+	.withEmbeddedImageBaseUrl("http://www.simplejavamail.org/static/")
+	.withEmbeddedImageBaseClassPath("/images")
+
+	// allow resources outside of basedir (careful, potential security attack surface!)
+	.allowingEmbeddedImageOutsideBaseDir(true) // default false
+	.allowingEmbeddedImageOutsideBaseClassPath(true) // default false
+	.allowingEmbeddedImageOutsideBaseUrl(true) // default false
+
+	// fail if a resource couldn't be resolved
+	.embeddedImageAutoResolutionMustBeSuccesful(true) // default false (lenient mode)
+</code></pre>
+			Also works with properties:
+			<pre><code class="language-properties small">simplejavamail.embeddedimages.dynamicresolution.enable.dir=true
+simplejavamail.embeddedimages.dynamicresolution.enable.url=true
+simplejavamail.embeddedimages.dynamicresolution.enable.classpath=true
+simplejavamail.embeddedimages.dynamicresolution.base.dir=...
+simplejavamail.embeddedimages.dynamicresolution.base.url=http://www.simplejavamail.org/static/
+simplejavamail.embeddedimages.dynamicresolution.base.classpath=/images
+simplejavamail.embeddedimages.dynamicresolution.outside.base.dir=true
+simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath=true
+simplejavamail.embeddedimages.dynamicresolution.outside.base.url=true
+simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
+</code></pre>
+		</div>
+	</section>
 
 
   <a href="#section-custom-headers" id="section-custom-headers" class="section-link h2">&sect;</a>
