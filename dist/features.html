@@ -732,15 +732,15 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
   <a href="#section-custom-properties" id="section-custom-properties" class="section-link h2">&sect;</a>
   <h2>Setting custom properties on the internal Session</h2>
 
-  <section>
-    <div class="view">
-      <p>
-        In case you need to modify the internal Session object itself, because you need a tailored configuration that is supported by the underlying
-        <code class="inline language-text">javax.mail</code>, that too is very easy.
-      </p>
-    </div>
+	<section>
+		<div class="view">
+			<p>
+				In case you need to modify the internal Session object itself, because you need a tailored configuration that is supported by the underlying
+				<code class="inline language-text">javax.mail</code>, that too is very easy.
+			</p>
+		</div>
 
-    <div class="side">
+		<div class="side">
 <pre><code>currentMailerBuilder
     .withProperty("mail.smtp.timeout", 30 * 1000)
     .withProperty("mail.smtp.connectiontimeout", 10 * 1000)
@@ -748,8 +748,27 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
     .withProperties(yourPropertiesObject)
     .withProperties(yourPropertiesMap)
 </code></pre>
-    </div>
-  </section>
+		</div>
+	</section>
+
+	<section>
+		<div class="view">
+			<p>
+				You can also set some default properties to automatically be added.
+			</p>
+			<p>
+				Every property prepended with <em>simplejavamail.extraproperties</em> will be loaded
+				directly on the internal Session object.
+			</p>
+		</div>
+
+		<div class="side">
+<pre><code class="language-properties small">simplejavamail.extraproperties.my.extra.property=value
+simplejavamail.extraproperties.mail.smtp.ssl.socketFactory.class=org.mypackage.MySSLSocketFactory
+simplejavamail.extraproperties.mail.smtp.timeout=30000
+</code></pre>
+		</div>
+	</section>
 
 
   <a href="#section-icalendar-vevent" id="section-icalendar-vevent" class="section-link h2">&sect;</a>

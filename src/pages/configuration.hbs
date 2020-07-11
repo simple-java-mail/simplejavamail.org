@@ -282,10 +282,14 @@ MailerBuilder
 
     <div class="side">
       <pre><code class="small">// make the underlying javax.mail produce more logging
-MailerBuilder.withDebugLogging(true);
+currentMailerBuilder.withDebugLogging(true);
 </code></pre>
       <pre><code class="small">// skip actually sending email, just log it
 currentMailerBuilder.withTransportModeLoggingOnly(true);
+</code></pre>
+      <pre><code class="small">// custom SSL connection factory (note: breaks setups with authenticated proxy!)
+currentMailerBuilder.withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
+currentMailerBuilder.withCustomSSLFactoryInstance(mySSLFactoryInstance);
 </code></pre>
       <pre><code class="small">
 // change email validation strategy
@@ -441,6 +445,22 @@ simplejavamail.smime.encryption.certificate=x509inStandardPEM.crt
 </code></pre>
     </div>
   </section>
+
+	<section>
+		<div class="view">
+			<p>
+				Then there are extra properties which will directly go on the internal Session object when
+				building a Mailer instance.
+			</p>
+		</div>
+
+		<div class="side">
+<pre><code class="language-properties">simplejavamail.extraproperties.my.extra.property=value
+simplejavamail.extraproperties.mail.smtp.ssl.socketFactory.class=org.mypackage.MySSLSocketFactory
+simplejavamail.extraproperties.mail.smtp.timeout=30000
+</code></pre>
+		</div>
+	</section>
 
   <a href="#section-combine-config" id="section-combine-config" class="section-link h2">&sect;</a>
   <h2>Combining both for multiple environments</h2>

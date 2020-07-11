@@ -168,6 +168,8 @@ Mailer mailer = MailerBuilder
           .withClusterKey(myPowerfulMailingCluster);
           .withThreadPoolSize(20); // multi-threaded batch handling
           .withConnectionPoolCoreSize(10); // reusable connection(s) / multi-server sending
+          .withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
+          .withCustomSSLFactoryInstance(mySSLFactoryInstance);
           .manyMoreOptions()
           .buildMailer();
 

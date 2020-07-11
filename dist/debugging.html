@@ -131,7 +131,7 @@ mailer.sendMail(email); // <-- this email will be logged but not sent
     </div>
 
     <div class="side">
-<pre><code>MailerBuilder.withDebugLogging();
+<pre><code>mailer.withDebugLogging(true);
 
 // or
 mailer.getSession().setDebug(true);
