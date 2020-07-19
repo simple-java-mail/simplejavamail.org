@@ -14,7 +14,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "broken-link-checker": "^0.7.8",
-    "browser-sync": "^2.14.0",
+    "browser-sync": "^2.26.10",
     "del": "^2.2.1",
     "gulp": "^4.0.2",
     "gulp-compile-handlebars": "^0.6.1",
@@ -24,7 +24,7 @@
     "gulp-typescript": "^5.0.1",
     "gulp-util": "^3.0.7",
     "lodash.template": "^4.5.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.9.7"
   },
   "keywords": [
     "email",
