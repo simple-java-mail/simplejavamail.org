@@ -5,29 +5,6 @@
 		<title>Simple Java Mail - Configuration</title>
 		<link rel="icon" href="data:;base64,=">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<meta name="Description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures.">
-		<script type="application/ld+json">
-			{
-				"@context": "http://schema.org",
-				"@type": "Organization",
-				"url": "http://www.simplejavamail.org",
-				"name": "Simple Java Mail",
-				"sameAs": [ "https://github.com/bbottema/simple-java-mail" ]
-			}
-		</script>
-		<script type="application/ld+json">
-			{
-				"@context": "http://schema.org",
-				"@type": "WebPage",
-				"name": "Simple Java Mail",
-				"description": "Simple API, Complex Emails (JavaMail smtp wrapper)"
-			}
-		</script>
-
-		<meta property="og:title" content="Simple Java Mail" />
-		<meta property="og:type" content="website" />
-		<meta property="og:url" content="http://www.simplejavamail.org" />
-		<meta property="og:description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures." />
 
         <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open%2BSans%2B300.400.600.700.css">
         <link rel="stylesheet" href="assets/lib/prism.css">
@@ -238,7 +215,7 @@ Mailer mailer = MailerBuilder.buildMailer();
   <section>
     <div>
       <p class="wide">
-        To quote FastMail on the <a href="https://www.fastmail.com/help/technical/ssltlsstarttls.html">differences between SSL and TLS</a>:
+        To quote FastMail on the <a href="https://www.fastmail.help/hc/en-us/articles/360058753834">differences between SSL and TLS</a>:
       </p>
       <blockquote>
         <p class="wide">
@@ -640,7 +617,7 @@ Mailer mailer = MailerBuilder
         Everything can be configured through Spring properties, allowing for robust profile-based configuration.
       </p>
       <p>
-        By importing the Spring support bean from Simple Java Mail, whatever properties are provided through Spring are then transfered to Simple Java Mail
+        By importing the Spring support bean from Simple Java Mail, whatever properties are provided through Spring are then transferred to Simple Java Mail
         using the ConfigLoader. It will add or overwrite whatever properties have been loaded before that (including the regular simplejavamail.properties).
       </p>
       <p>Here's a sample configuration using Java style configuration.</p>

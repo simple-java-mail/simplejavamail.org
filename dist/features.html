@@ -5,35 +5,13 @@
 		<title>Simple Java Mail - Features</title>
 		<link rel="icon" href="data:;base64,=">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<meta name="Description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures.">
-		<script type="application/ld+json">
-			{
-				"@context": "http://schema.org",
-				"@type": "Organization",
-				"url": "http://www.simplejavamail.org",
-				"name": "Simple Java Mail",
-				"sameAs": [ "https://github.com/bbottema/simple-java-mail" ]
-			}
-		</script>
-		<script type="application/ld+json">
-			{
-				"@context": "http://schema.org",
-				"@type": "WebPage",
-				"name": "Simple Java Mail",
-				"description": "Simple API, Complex Emails (JavaMail smtp wrapper)"
-			}
-		</script>
-
-		<meta property="og:title" content="Simple Java Mail" />
-		<meta property="og:type" content="website" />
-		<meta property="og:url" content="http://www.simplejavamail.org" />
-		<meta property="og:description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures." />
 
         <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open%2BSans%2B300.400.600.700.css">
         <link rel="stylesheet" href="assets/lib/prism.css">
         <link rel="stylesheet" href="pages/styles/main.css">
 
-		
+		<meta name="Description" content="Simple Java Mail features">
+
 
         <!-- for browser that support prerendering -->
         <link rel="prerender" href="index.html">
@@ -118,7 +96,7 @@
     <p class="wide">
       With all the possible ways to configure Email and Mailer instances, the library had only one option left to streamline API, avoid the
       <a href="http://codethataint.com/blog/telescoping-constructor-pattern-java/">Telescoping Constructor</a> anti-pattern and keep things
-      managable: <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builders</a>.
+      manageable: <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builders</a>.
     </p>
     <ol class="indent">
       <li>With fluent builders, we can tightly control <strong>valid combinations</strong>, logical <strong>decision paths</strong> and easily <strong>provide
@@ -404,7 +382,7 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
     <div class="view">
       <p>
         The default mode is to send emails synchronously, blocking execution until the email was processed completely and the STMP server sent a
-        succesful result.
+        successful result.
       </p>
       <p>
         You can also send anyschronously in parallel or batches, or simply send in a fire-and-forget way. If an authenticated proxy is used, the <a
@@ -649,7 +627,7 @@ currentEmailBuilder.withEmbeddedImage("thumbsup", parseBase64Binary(base64String
 		<div class="view">
 			<p>
 				<strong>Auto resolution</strong> can be enabled for files, classpath resources and URL's and you can configure base dirs and optionally
-				enforce referenced resources should all be resolved succesfully. Useful for when you allow end users freely
+				enforce referenced resources should all be resolved successfully. Useful for when you allow end users freely
 				enter HTML.
 			</p>
 		</div>
@@ -839,7 +817,7 @@ Session session = mailer.getSession();
   <section>
     <div class="view">
       <p>
-        Simple Java Mail also supports signing with <a href="http://blog.endpoint.com/2014/04/spf-dkim-and-dmarc-brief-explanation.html">DKIM</a>
+        Simple Java Mail also supports signing with <a href="https://www.endpoint.com/blog/2014/04/15/spf-dkim-and-dmarc-brief-explanation">DKIM</a>
         domain keys. It uses the
         <strong><a href="modules.html#dkim-module">dkim-module</a></strong>
         module to perform the DNS DKIM record check on the given domain.
@@ -855,7 +833,7 @@ Session session = mailer.getSession();
 mailer.sendMail(signedEmail);
 </code></pre>
       You can also directly use the helper method:
-      <pre><code>MailerHelper.signMessageWithDKIM(mimeMessageToSign, emailContainingSigningDetails);</code></pre>
+      <pre><code class="small">MailerHelper.signMessageWithDKIM(mimeMessageToSign, emailContainingSigningDetails);</code></pre>
     </div>
   </section>
 
@@ -1245,8 +1223,8 @@ currentEmailBuilder
       <p class="wide">
         Simple Java Mail supports sending emails through a proxy. It is also the only java mailing framework in the world that supports sending emails
         through <strong>authenticated</strong> proxies. The reason for this is that the underlying native
-        <a href="https://java.net/projects/javamail/pages/Home">Javax Mail framework</a> supports anonymous SOCKS5 proxies, but
-        <a href="http://www.oracle.com/technetwork/java/javamail/faq/index.html#proxy">not authenticated proxies</a>.
+        <a href="https://eclipse-ee4j.github.io/mail/">Jakarta Mail framework</a> supports anonymous SOCKS5 proxies, but
+        <a href="https://javaee.github.io/javamail/FAQ#proxy">not authenticated proxies</a>.
       </p>
       <p class="wide">
         To make this work with authentication, Simple Java Mail uses a trick: it sets up a temporary anonymous proxy server for Javax Mail to connect

@@ -5,35 +5,13 @@
 		<title>Simple Java Mail - RFC Compliant</title>
 		<link rel="icon" href="data:;base64,=">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<meta name="Description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures.">
-		<script type="application/ld+json">
-			{
-				"@context": "http://schema.org",
-				"@type": "Organization",
-				"url": "http://www.simplejavamail.org",
-				"name": "Simple Java Mail",
-				"sameAs": [ "https://github.com/bbottema/simple-java-mail" ]
-			}
-		</script>
-		<script type="application/ld+json">
-			{
-				"@context": "http://schema.org",
-				"@type": "WebPage",
-				"name": "Simple Java Mail",
-				"description": "Simple API, Complex Emails (JavaMail smtp wrapper)"
-			}
-		</script>
-
-		<meta property="og:title" content="Simple Java Mail" />
-		<meta property="og:type" content="website" />
-		<meta property="og:url" content="http://www.simplejavamail.org" />
-		<meta property="og:description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures." />
 
         <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open%2BSans%2B300.400.600.700.css">
         <link rel="stylesheet" href="assets/lib/prism.css">
         <link rel="stylesheet" href="pages/styles/main.css">
 
-		
+		<meta name="Description" content="Simple Java Mail is fully RFC compliant and why RFC compliancy matters">
+
 
         <!-- for browser that support prerendering -->
         <link rel="prerender" href="index.html">
@@ -109,7 +87,7 @@
         <li>attachments aren't handled correctly according to mime type, or</li>
         <li>header information is missing or incorrect so you can't see how long a download will take,</li>
         <li>from/to addresses being malformed (like missing the <code class="inline language-text">&lt;name&gt;</code> part in <code
-          class="inline language-text">&lt;name&gt; adres@domain.com</code>)
+          class="inline language-text">&lt;name&gt; address@domain.com</code>)
         </li>
       </ul>
 
@@ -127,7 +105,7 @@
     <div class="view">
       <p>Simple Java Mail is in two ways <a href="https://en.wikipedia.org/wiki/MIME">RFC (MIME) compliant</a>:</p>
       <ol class="indent paragraph">
-        <li>It is built on top of <a href="https://java.net/projects/javamail/pages/Home">JavaMail</a>, which is java's
+        <li>It is built on top of <a href="https://eclipse-ee4j.github.io/mail/">Jakarta Mail</a>, which is java's
           standard email library used by all other mail libraries. JavaMail itself implements various RFC's (including
           those for SMTP, POP3, IMAP etc).
         </li>
