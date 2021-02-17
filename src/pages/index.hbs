@@ -1,7 +1,36 @@
 {{#> layouts/base }}
 
+	{{#*inline "html-head-block"}}
+<meta name="Description" content="Simple Java Mail: Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures.">
+		<script type="application/ld+json">
+			{
+				"@context": "http://schema.org",
+				"@type": "Organization",
+				"url": "http://www.simplejavamail.org",
+				"name": "Simple Java Mail",
+				"sameAs": [ "https://github.com/bbottema/simple-java-mail" ]
+			}
+		</script>
+		<script type="application/ld+json">
+			{
+				"@context": "http://schema.org",
+				"@type": "WebPage",
+				"name": "Simple Java Mail",
+				"description": "Simple API, Complex Emails (JavaMail smtp wrapper)"
+			}
+		</script>
+
+		<meta property="og:title" content="Simple Java Mail" />
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="http://www.simplejavamail.org" />
+		<meta property="og:description" content="Simple API, Complex Emails (Jakarta Mail smtp wrapper). Provides a clean API which hides low level mime structures." />
+
+		<link rel="canonical" href="http://simplejavamail.org" />
+	{{/inline}}
+
 	{{#*inline "header-block"}}
 		{{#> includes/header topic="about" }}
+			<link rel="canonical" href="https://example.com/wordpress/seo-plugin/" />
 			{{#*inline "splash-content"}}
 				<div>
 					<div class="intro-code">
