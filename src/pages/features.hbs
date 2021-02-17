@@ -50,7 +50,7 @@
     <p class="wide">
       With all the possible ways to configure Email and Mailer instances, the library had only one option left to streamline API, avoid the
       <a href="http://codethataint.com/blog/telescoping-constructor-pattern-java/">Telescoping Constructor</a> anti-pattern and keep things
-      managable: <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builders</a>.
+      manageable: <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builders</a>.
     </p>
     <ol class="indent">
       <li>With fluent builders, we can tightly control <strong>valid combinations</strong>, logical <strong>decision paths</strong> and easily <strong>provide
@@ -336,7 +336,7 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
     <div class="view">
       <p>
         The default mode is to send emails synchronously, blocking execution until the email was processed completely and the STMP server sent a
-        succesful result.
+        successful result.
       </p>
       <p>
         You can also send anyschronously in parallel or batches, or simply send in a fire-and-forget way. If an authenticated proxy is used, the <a
@@ -581,7 +581,7 @@ currentEmailBuilder.withEmbeddedImage("thumbsup", parseBase64Binary(base64String
 		<div class="view">
 			<p>
 				<strong>Auto resolution</strong> can be enabled for files, classpath resources and URL's and you can configure base dirs and optionally
-				enforce referenced resources should all be resolved succesfully. Useful for when you allow end users freely
+				enforce referenced resources should all be resolved successfully. Useful for when you allow end users freely
 				enter HTML.
 			</p>
 		</div>
