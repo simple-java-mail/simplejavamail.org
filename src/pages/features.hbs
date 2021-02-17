@@ -775,7 +775,7 @@ Session session = mailer.getSession();
   <section>
     <div class="view">
       <p>
-        Simple Java Mail also supports signing with <a href="http://blog.endpoint.com/2014/04/spf-dkim-and-dmarc-brief-explanation.html">DKIM</a>
+        Simple Java Mail also supports signing with <a href="https://www.endpoint.com/blog/2014/04/15/spf-dkim-and-dmarc-brief-explanation">DKIM</a>
         domain keys. It uses the
         <strong><a href="modules.html#dkim-module">dkim-module</a></strong>
         module to perform the DNS DKIM record check on the given domain.
@@ -1181,8 +1181,8 @@ currentEmailBuilder
       <p class="wide">
         Simple Java Mail supports sending emails through a proxy. It is also the only java mailing framework in the world that supports sending emails
         through <strong>authenticated</strong> proxies. The reason for this is that the underlying native
-        <a href="https://java.net/projects/javamail/pages/Home">Javax Mail framework</a> supports anonymous SOCKS5 proxies, but
-        <a href="http://www.oracle.com/technetwork/java/javamail/faq/index.html#proxy">not authenticated proxies</a>.
+        <a href="https://eclipse-ee4j.github.io/mail/">Jakarta Mail framework</a> supports anonymous SOCKS5 proxies, but
+        <a href="https://javaee.github.io/javamail/FAQ#proxy">not authenticated proxies</a>.
       </p>
       <p class="wide">
         To make this work with authentication, Simple Java Mail uses a trick: it sets up a temporary anonymous proxy server for Javax Mail to connect
