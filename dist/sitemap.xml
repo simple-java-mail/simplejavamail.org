@@ -1,73 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
-		<loc>http://www.simplejavamail.org</loc>
+		<loc>https://www.simplejavamail.org</loc>
 		<priority>1.0</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/modules.html</loc>
+		<loc>https://www.simplejavamail.org/modules.html</loc>
 		<priority>0.8</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/features.html</loc>
+		<loc>https://www.simplejavamail.org/features.html</loc>
 		<priority>1.0</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/configuration.html</loc>
+		<loc>https://www.simplejavamail.org/configuration.html</loc>
 		<priority>1.0</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/cli.html</loc>
+		<loc>https://www.simplejavamail.org/cli.html</loc>
 		<priority>0.7</priority>
 		<lastmod>2021-02-23</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/debugging.html</loc>
+		<loc>https://www.simplejavamail.org/debugging.html</loc>
 		<priority>0.5</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/rfc-compliant.html</loc>
+		<loc>https://www.simplejavamail.org/rfc-compliant.html</loc>
 		<priority>0.5</priority>
 		<lastmod>2021-02-23</lastmod>
 		<changefreq>yearly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/download.html</loc>
+		<loc>https://www.simplejavamail.org/download.html</loc>
 		<priority>0.5</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/contact.html</loc>
+		<loc>https://www.simplejavamail.org/contact.html</loc>
 		<priority>0.5</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/migration-notes.html</loc>
+		<loc>https://www.simplejavamail.org/migration-notes.html</loc>
 		<priority>0.3</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/migration-notes-5.0.0.html</loc>
+		<loc>https://www.simplejavamail.org/migration-notes-5.0.0.html</loc>
 		<priority>0.1</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>yearly</changefreq>
 	</url>
 	<url>
-		<loc>http://www.simplejavamail.org/migration-notes-6.0.0.html</loc>
+		<loc>https://www.simplejavamail.org/migration-notes-6.0.0.html</loc>
 		<priority>0.1</priority>
 		<lastmod>2021-02-22</lastmod>
 		<changefreq>yearly</changefreq>
