@@ -3,25 +3,25 @@
 	<url>
 		<loc>https://www.simplejavamail.org</loc>
 		<priority>1.0</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/modules.html</loc>
 		<priority>0.8</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/features.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/configuration.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
@@ -33,7 +33,7 @@
 	<url>
 		<loc>https://www.simplejavamail.org/debugging.html</loc>
 		<priority>0.5</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
@@ -45,31 +45,31 @@
 	<url>
 		<loc>https://www.simplejavamail.org/download.html</loc>
 		<priority>0.5</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/contact.html</loc>
 		<priority>0.5</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/migration-notes.html</loc>
 		<priority>0.3</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/migration-notes-5.0.0.html</loc>
 		<priority>0.1</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>yearly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/migration-notes-6.0.0.html</loc>
 		<priority>0.1</priority>
-		<lastmod>2021-02-22</lastmod>
+		<lastmod>2021-02-23</lastmod>
 		<changefreq>yearly</changefreq>
 	</url>
 </urlset>
