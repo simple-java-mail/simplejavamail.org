@@ -1,4 +1,4 @@
-{{#> layouts/base sub-title="RFC Compliant" }}
+{{#> layouts/base head-sub-title="RFC Compliant" page-title="Simple Java Mail is RFC compliant" }}
 
 	{{#*inline "html-head-block"}}
 <meta name="Description" content="Simple Java Mail is fully RFC compliant and why RFC compliancy matters">
@@ -9,10 +9,6 @@
 	{{/inline}}
 
 	{{#*inline "body-block"}}
-<div class="content">
-
-  <h1>Simple Java Mail is RFC compliant</h1>
-
   <section class="toc">
     <ul>
       <li><a href="#section-why">Why RFC compliancy matters</a></li>
@@ -82,7 +78,6 @@
   <h2>Explore the multipart structures used by Simple Java Mail</h2>
 
   {{> components/mimemessage--structure-demo }}
-</div>
     {{/inline}}
 
     {{#*inline "scripts-block"}}

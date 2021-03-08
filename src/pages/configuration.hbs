@@ -1,4 +1,4 @@
-{{#> layouts/base sub-title="Configuration" }}
+{{#> layouts/base head-sub-title="Configuration" page-title="Configuring Simple Java Mail" }}
 
 	{{#*inline "html-head-block"}}
 		<meta name="Description" content="Simple Java Mail can be configured through java, properties or system variables, with defaults and overrides, Spring profiles, server clustering.">
@@ -9,10 +9,6 @@
 	{{/inline}}
 
 	{{#*inline "body-block"}}
-<div class="content">
-
-  <h1>Configuring Simple Java Mail</h1>
-
     <section>
       <p class="wide">
         Simple Java Mail provides full configuration through <strong>programmatic API</strong> as well as <strong>system variables</strong>, <strong>environment variables</strong> and <strong>properties files</strong> (including Spring).
@@ -777,8 +773,6 @@ mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
 			at all time!
 		</p>
 	</section>
-
-</div>
     {{/inline}}
 
 {{/layouts/base}}
