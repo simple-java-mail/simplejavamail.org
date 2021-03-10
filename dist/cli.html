@@ -23,6 +23,8 @@
 		<link rel="prerender prefetch" href="rfc-compliant.html">
 		<link rel="prerender prefetch" href="download.html">
 		<link rel="prerender prefetch" href="contact.html">
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2.6.3/dist/cdn/docsearch.min.css"/>
 	</head>
 	<body>
 		<a href="https://github.com/bbottema/simple-java-mail">
@@ -52,6 +54,14 @@
 		</div>
 		<main>
 			<div class="content">
+				<style>
+					@media only screen and (min-width: 600px) {  #docsearch-wrapper { float: right; }  }
+				</style>
+
+				<div id="docsearch-wrapper" style="position: sticky; top: 0;">
+					<input type="text" id="docsearch" placeholder="🔎 Search documentation">
+				</div>
+
 				<h1>Simple Java Mail CLI</h1>
 
 				  <section class="introduction">
@@ -284,6 +294,17 @@
 		<script type="text/javascript" src="assets/lib/prism.js"></script>
 		<script>Prism.highlightAll();</script>
 		<script type="text/javascript" src="pages/scripts/back-to-top.js"></script>
+
+		<script src="https://cdn.jsdelivr.net/npm/docsearch.js@2.6.3/dist/cdn/docsearch.min.js"></script>
+		<script>
+			docsearch({
+				apiKey: '4eed82b17c1a25c5561b64a748d34e2f', // '25626fae796133dc1e734c6bcaaeac3c',
+				indexName: 'simplejavamail', // 'docsearch',
+				inputSelector: '#docsearch',
+				debug: false,
+			});
+		</script>
+
 		
 	</body>
 </html>
