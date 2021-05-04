@@ -1,4 +1,4 @@
-document.querySelectorAll('.section-link + h2, .section-link + h3')
+document.querySelectorAll('.section-link + h2, .section-link + h3, h2.with-back-to-top')
     .forEach(function (header) {
     var space = document.createElement('span');
     space.innerHTML = '&nbsp;&nbsp;&nbsp;';
