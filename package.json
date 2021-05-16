@@ -14,7 +14,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "broken-link-checker": "0.7.8",
-    "browser-sync": "2.26.10",
+    "browser-sync": "^2.26.14",
     "del": "2.2.2",
     "gulp": "4.0.2",
     "gulp-compile-handlebars": "0.6.1",
