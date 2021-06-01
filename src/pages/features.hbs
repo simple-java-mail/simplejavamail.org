@@ -797,20 +797,24 @@ mailer.sendMail(signedEmail);
   <section>
     <div class="view">
       <p>
-        Simple Java Mail also supports signing and encrypting with <a href="https://www.globalsign.com/en/blog/what-is-s-mime/">S/MIME</a>.
-        It uses the <strong><a href="modules.html#smime-module">smime-module</a></strong>
-        module to perform the signing / encryption.
+        Simple Java Mail supports signing and encrypting with <a href="https://www.globalsign.com/en/blog/what-is-s-mime/">S/MIME</a>.
+        It uses the <strong><a href="modules.html#smime-module">smime-module</a></strong> module to perform the signing / encryption.
       </p>
       <br/>
       <p>
         You can sign, encrypt or both sign and encrypt an email. In the latter case the email will first be signed
         and then encrypted, as per
         <a href="https://github.com/markenwerk/java-utils-mail-smime#using-the-library-as-a-sender-" target="_blank">
-          advice</a> of the underlying library.
+        advice</a> of the underlying library. All signing/encrypting is performed when the email is being sent.
+      </p>
+      <br/>
+      <p>
+        You can <strong>sign individual emails</strong> or <strong>sign all emails</strong> by configuring S/MIME on the <em>Mailer</em>
+        instead.
       </p>
     </div>
     <div class="side">
-      Signing:
+      Signing an email:
       <pre><code>Pkcs12Config myKeyInfo = Pkcs12Config.builder()
     .pkcs12Store("my_smime_keystore.pkcs12")
     .storePassword("my_store_password")
@@ -825,7 +829,7 @@ Email emailToBeSigned = currentEmailBuilder.
 
 mailer.sendMail(emailToBeSigned);
 </code></pre>
-      Encrypting:
+      Encrypting an email:
       <pre><code>Email emailToBeEncrypted = currentEmailBuilder.
     .(..)
     .encryptWithSmime("x509CertificateInStandardPEM.crt")
@@ -833,11 +837,20 @@ mailer.sendMail(emailToBeSigned);
 
 mailer.sendMail(emailToBeEncrypted);
 </code></pre>
-      Also works with properties:
-      <pre><code class="language-properties small">simplejavamail.smime.signing.keystore=my_smime_keystore.pkcs12
+      Sign all emails by default:
+      <pre><code>currentEmailBuilder.
+    .signByDefaultWithSmime(myPkcs12Config)
+    (...)
+    .buildMailer();
+</code></pre>
+		Or with properties:
+      <pre><code class="language-properties small"># defaults on Mailer level:
+simplejavamail.smime.signing.keystore=my_smime_keystore.pkcs12
 simplejavamail.smime.signing.keystore_password=keystore_password
 simplejavamail.smime.signing.key_alias=key_alias
 simplejavamail.smime.signing.key_password=key_password
+# encryption can only be applied to individual Email instances
+# but this can be default behaviour (not recommended as users would need to share private keys)
 simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
 </code></pre>
     </div>

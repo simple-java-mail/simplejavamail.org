@@ -135,10 +135,10 @@ mailer.sendMail(email);</code></pre>
 mailer.validate(email);</code></pre>
       <pre><code class="small">mailer.getServerConfig();
 mailer.getOperationalConfig();
+mailer.getEmailGovernance(); // default S/MIME signing, validation criteria etc.
 mailer.getProxyConfig();
 mailer.getTransportStrategy();
-mailer.getSession();
-mailer.getEmailAddressCriteria();</code></pre>
+mailer.getSession();</code></pre>
       S/MIME signed and/or encrypted Outlook messages? No problem!
       <pre><code class="small">Email email = EmailConverter.outlookMsgToEmail("smimeSignedEmail.msg", pkcs12Config);</code></pre>
     </div>
