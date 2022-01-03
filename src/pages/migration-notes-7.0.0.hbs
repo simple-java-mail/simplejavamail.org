@@ -1,0 +1,102 @@
+{{#> layouts/base head-sub-title="Migrating to 6.0.0" page-title="Migrating to Simple Java Mail 7.0.0" }}
+
+	{{#*inline "html-head-block"}}
+<meta name="Description" content="Migration notes for users upgrading to Simple Java Mail 7.0.0 and above">
+	{{/inline}}
+
+	{{#*inline "header-block"}}
+		{{> includes/header topic="migration notes" }}
+	{{/inline}}
+
+	{{#*inline "body-block"}}
+	<section class="toc">
+		<ul>
+			<li><a href="#jakarta-mail">From JavaMail to Jakarta Mail</a></li>
+			<li><a href="#java-8">From Java 7 to Java 8</a></li>
+			<li><a href="#email-validation">A new Email Validation library</a></li>
+			<li><a href="#completable-futures">Async responses are now CompletableFutures</a></li>
+		</ul>
+	</section>
+
+
+	<a href="#jakarta-mail" id="jakarta-mail" class="section-link h2">&sect;</a>
+	<h2>From JavaMail to Jakarta Mail</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Your server may need to switch dependencies as well
+		</p>
+		<p class="wide">
+			<a href="https://javaee.github.io/javamail/" target="_blank">JavaMail hasn't been maintained since 2018</a> and Jakarta Mail has picked up the torch
+			as the official successor. More and more projects are updating to Jakarta Mail now, and it is time Simple Java Mail can be there in the trenches with them.
+		</p>
+		<p class="wide">
+			Generally this should not be an issue, but I already got an (invalid) bug report where a Geranimo server failed because dependencies are manually
+			managed on the server side. So if you switch to 7.0.0, make sure your server does as well.
+		</p>
+	</section>
+
+
+	<a href="#java-8" id="java-8" class="section-link h2">&sect;</a>
+	<h2>From Java 7 to Java 8</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Your project won't work in Java7 JVM's anymore
+		</p>
+		<p class="wide">
+			For the longest time I held off upgrading to Java 8, because there was always a small user base of around
+			<a href="https://www.baeldung.com/java-in-2018" target="_blank">5-10% with Java7</a>. However I think it's finally time to let go of trusty Java7
+			and switch to Java8 and benefit from language features such as lambda's and CompletableFuture.
+		</p>
+		<p class="wide">
+			If you are still on Java7, then congrats: you are a rare and special breed indeed. You must go on without me (a single teardrop falling).
+		</p>
+	</section>
+
+
+	<a href="#email-validation" id="email-validation" class="section-link h2">&sect;</a>
+	<h2>A new Email Validation library</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> You need to replace mailer api calls for configuring validation criteria and if you have them, any direct calls to EmailAddressValidator.
+		</p>
+		<p class="wide">
+			Until 7.0.0, Simple Java Mail relied on
+			<a href="https://github.com/bbottema/email-rfc2822-validator" target="_blank">email-rfc2822-validator</a> for email address validation that
+			was the most RFC compatible validator around. However, it became clear the aging project was not able to keep up with current needs. Being a regex
+			based solution and with bug reports coming in that were difficult to reproduce, it was always a headache, and sometimes we just had to turn bug reporters
+			away.
+		</p>
+		<p class="wide">
+			That is, until we got a bug reporter that claimed to have the first <em>lexer</em> based email address validation library that was not only easier to debug and documented better,
+			it was correcter, up-to-date with recent RFC's and much, much faster. The switch then was an easy descision. and luckily the migration is relatively simple.
+		</p>
+		<p class="wide">
+			Fixing compile issues regarding this is straightforward, and I will just point to the updated
+			<a href="features.html#section-email-validation">feature section for address validation</a>.
+		</p>
+	</section>
+
+
+	<a href="#completable-futures" id="completable-futures" class="section-link h2">&sect;</a>
+	<h2>Async responses are now CompletableFutures</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Any handlers you registered on AsyncResponse need to replaced with CompletableFuture versions
+		</p>
+		<p class="wide">
+			With the release of 7.0.0 your async result handlers will not compile anymore because AsyncResponse (and contained Java7 Future) is gone.
+			Instead, the much more robuust Java8 CompletableFuture is in place now.
+		</p>
+		<p class="wide">
+			I've updated the <a href="features.html#section-handling-async-result">feature section on async response handling</a> with examples and links to tutorials,
+			so you should be able to easily migrate your handlers.
+		</p>
+	</section>
+
+	{{/inline}}
+
+{{/layouts/base}}
