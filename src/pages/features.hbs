@@ -30,8 +30,8 @@
         MailerBuilder</a></strong>. Other entry classes are
       <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/converter/EmailConverter.html" target="_blank">
         EmailConverter</a></strong> and
-      <strong><a href="https://javadoc.io/page/com.github.bbottema/emailaddress-rfc2822/latest/org/hazlewood/connor/bottema/emailaddress/EmailAddressValidator.html" target="_blank">
-        EmailAddressValidator</a></strong> (the latter as alternative to the validation methods on the Mailer instance). Finally,
+      <strong><a href="https://javadoc.io/doc/com.sanctionco.jmail/jmail/latest/com.sanctionco.jmail/com/sanctionco/jmail/JMail.html" target="_blank">
+        JMail</a></strong> (the latter as alternative to using the validation methods on the Mailer instance). Finally,
       <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/mailer/MailerHelper.html" target="_blank">
         MailerHelper</a></strong> exposes some utilities in case you don't actually need to connect to a server.
     </p>
@@ -892,34 +892,36 @@ simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
     <div class="view">
       <p>
         Simple Java Mail can validate your email addresses. It's not just a simple regex check, but a complete and robust full validation against <a
-        href="https://tools.ietf.org/html/rfc2822">RFC-2822</a>. It does this by including <a href="https://github.com/RohanNagar/jmail">JMail</a> in the library.
+        href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> and others. It does this by including <a href="https://github.com/RohanNagar/jmail">JMail</a> in the library.
       </p>
       <p>
         Address validation is performed automatically when sending emails, but you can also directly perform validations.
+      </p>
+      <p>
+        See <a href="https://github.com/RohanNagar/jmail">JMail</a> for more examples and configurations.
       </p>
     </div>
 
     <div class="side">
 <pre><code>currentMailerBuilder
-    .withEmailAddressCriteria(EmailAddressCriteria.RFC_COMPLIANT)
+    .withEmailValidator(
+		JMail.strictValidator()
+    		.requireOnlyTopLevelDomains(TopLevelDomain.DOT_COM)
+    		.withRule(email -> email.localPart().startsWith("allowed"))
+	)
     // or
-    .withEmailAddressCriteria(
-      of(ALLOW_QUOTED_IDENTIFIERS, ALLOW_PARENS_IN_LOCALPART)
-    )
-    // or
-    .clearEmailAddressCriteria() // turn off validation
-    .resetEmailAddressCriteria() // reset to default
+    .clearEmailValidator() // turn off validation
+    .resetEmailValidator() // reset to default (strict)
 </code></pre>
-      <pre><code>// you can also directly perform validations.
-mailer.validate(email);
+      <pre><code>// you can also directly perform validations:
+mailer.validate(email); // does all checks including address validation
 
-// or use the underlying library included for this
-EmailAddressValidator.isValid("your_address@domain.com",
-   EmailAddressCriteria.RFC_COMPLIANT);
+// or just do the address validation
+JMail.isValid("your_address@domain.com");
 
-// or, fine-tuned to be less strict:
-EmailAddressValidator.isValid("your_address@domain.com",
-   of(ALLOW_QUOTED_IDENTIFIERS, ALLOW_PARENS_IN_LOCALPART));
+// or, fine-tuned to be stricter
+JMail.strictValidator()
+	.isValid("your_address@domain.com");
 </code></pre>
     </div>
   </section>
