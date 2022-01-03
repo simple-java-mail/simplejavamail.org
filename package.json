@@ -28,7 +28,7 @@
   "keywords": [
     "email",
     "smtp",
-    "javamail smtp wrapper"
+    "jakarta mail smtp wrapper"
   ],
   "repository": {
     "type": "git",
