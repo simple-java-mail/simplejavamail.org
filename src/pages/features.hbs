@@ -40,17 +40,17 @@
     <p class="wide">
       Simple Java Mail will do some basic validation checks so that your email is always populated with enough data.
       It also checks for CRLF injection attacks. It even verifies email addresses against
-      <a href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> and others using
-      <a href="https://github.com/RohanNagar/jmail">JMail</a>.
+      <a href="https://tools.ietf.org/html/rfc2822" target="_blank">RFC-2822</a> and others using
+      <a href="https://github.com/RohanNagar/jmail" target="_blank">JMail</a>.
       Simple Java Mail also takes care of all the
-      <a href="https://javadoc.io/doc/com.sun.mail/jakarta.mail/2.0.1/jakarta.mail/com/sun/mail/smtp/package-summary.html">connection and security properties</a> for you.
+      <a href="https://javadoc.io/doc/com.sun.mail/jakarta.mail/2.0.1/jakarta.mail/com/sun/mail/smtp/package-summary.html" target="_blank">connection and security properties</a> for you.
     </p>
 
     <h3>Builders all the way down</h3>
     <p class="wide">
       With all the possible ways to configure Email and Mailer instances, the library had only one option left to streamline API, avoid the
-      <a href="http://codethataint.com/blog/telescoping-constructor-pattern-java/">Telescoping Constructor</a> anti-pattern and keep things
-      manageable: <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builders</a>.
+      <a href="https://codethataint.com/blog/builder-pattern/" target="_blank">Telescoping Constructor</a> anti-pattern and keep things
+      manageable: <a href="https://martinfowler.com/bliki/FluentInterface.html" target="_blank">fluent builders</a>.
     </p>
     <ol class="indent">
       <li>With fluent builders, we can tightly control <strong>valid combinations</strong>, logical <strong>decision paths</strong> and easily <strong>provide
@@ -206,9 +206,9 @@ public Mailer inhouseMailer() {
       </p>
       <p class="wide">
         For example, when building an email, you can add recipients using
-        <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/src/main/java/org/simplejavamail/api/email/Recipient.java">Recipient</a>
+        <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/src/main/java/org/simplejavamail/api/email/Recipient.java" target="_blank">Recipient</a>
         objects, <a href="">RFC822 compiant String addresses</a> (each can be comma delimited and include optional nested names),
-        <a href="https://jakarta.ee/specifications/platform/8/apidocs/javax/mail/internet/internetaddress">InternetAddress</a>
+        <a href="https://jakarta.ee/specifications/platform/8/apidocs/javax/mail/internet/internetaddress" target="_blank">InternetAddress</a>
         objects, collections of said addresses, default address names or fixed address names.
       </p>
     </div>
@@ -383,33 +383,33 @@ mailer.sendMail(email);
   <section>
     <div class="view">
       <p>
-        To handle the successful or erroneous result of an async sent email, you can utilize one of the response's async helpers:
-        <em>Handlers</em> or <em>Future</em>.
+        To handle the successful or erroneous result of an async sent email, you can just register your handlers on the returned
+		  <em><a href="https://www.baeldung.com/java-completablefuture" target="_blank">CompletableFuture</a></em>.
+      </p>
+      <p>
+		  Also read this excellent primer on
+		  <a href="https://mincong.io/2020/05/30/exception-handling-in-completable-future/" target="_blank">how to process exceptions with CompletableFuture</a>.
+      </p>
+      <p>
+		  Note that non-async sending or testing connections return a CompletableFuture that is completed
+		  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html#completedFuture-U-" target="_blank">immediately</a>.
       </p>
     </div>
 
     <div class="side">
-      <p>Using Handlers:</p>
-      <pre><code class="small">AsyncResponse asyncResponse = mailer.sendMail(email, true); // or mailerBuilder.async()
-// also! mailer.testConnection(email, true);
+      <pre><code class="small">CompletableFuture&lt;Void&gt; f = mailer.sendMail(email, true);
+// also mailer.testConnection(email, true)
+// or mailerBuilder.async() and then just mailer.sendMail(email)
 
-asyncResponse.onSuccess(() -> System.out.println("Success"));
-asyncResponse.onException((e) -> System.err.println("error"));
-</code></pre>
-      <p>Using Java's native Future:</p>
-      <pre><code class="small">Future<?> f = asyncResponse.getFuture();
-
-// f.get() actually blocks until done, below is an example custom loop
-// for checking result in a non-blocking way:
-while (!f.isDone()) Thread.sleep(100); // normally you do your own thing here
-
-// result is in, check it
-try {
-        f.get(); // without the above loop, this would actually block until done
-  System.err.println("success");
-} catch (ExecutionException e) {
-        System.err.println("error");
-}
+// one of the many ways you can handle the result:
+mailer.testConnection(true)
+	.whenComplete((result, ex) -> {
+		if (ex != null) {
+			System.err.printf("Execution failed %s", ex);
+		} else {
+			System.err.printf("Execution completed: %s", result);
+		}
+	});
 </code></pre>
     </div>
   </section>
@@ -590,7 +590,7 @@ currentEmailBuilder.withEmbeddedImage("thumbsup", parseBase64Binary(base64String
 				Auto resolution:
 			</p>
 			<pre><code class="small">&lt;p&gt;Let&#39;s go!&lt;/p&gt;&lt;img src=&#39;smiley.jpg&#39;&gt;&lt;br/&gt;
-&lt;p&gt;Smile!&lt;/p&gt;&lt;img src=&#39;http://www.myplace.com/smiley.png&#39;&gt;
+&lt;p&gt;Smile!&lt;/p&gt;&lt;img src=&#39;https://www.myplace.com/smiley.png&#39;&gt;
 
 // results in the following HTML when building the email:
 &lt;p&gt;Let&#39;s go!&lt;/p&gt;&lt;img src=&#39;cid:etweffxdeu&#39;&gt;&lt;br/&gt;
@@ -1153,8 +1153,8 @@ currentEmailBuilder
       <div>
         <p>
           <strong>Note:</strong> due to the nature of the underlying Jakarta Mail framework (also see
-          <a href="https://eclipse-ee4j.github.io/mail/FAQ#reply">reply</a> /
-          <a href="https://eclipse-ee4j.github.io/mail/FAQ#forward">forward</a>):
+          <a href="https://eclipse-ee4j.github.io/mail/FAQ#reply" target="_blank">reply</a> /
+          <a href="https://eclipse-ee4j.github.io/mail/FAQ#forward" target="_blank">forward</a>):
         </p>
         <ul class="indent">
           <li>In case of replying, the original email is quoted in the body of the reply itself.</li>
@@ -1190,8 +1190,8 @@ currentEmailBuilder
       <p class="wide">
         Simple Java Mail supports sending emails through a proxy. It is also the only java mailing framework in the world that supports sending emails
         through <strong>authenticated</strong> proxies. The reason for this is that the underlying native
-        <a href="https://eclipse-ee4j.github.io/mail/">Jakarta Mail framework</a> supports anonymous SOCKS5 proxies, but
-        <a href="https://eclipse-ee4j.github.io/mail/FAQ#proxy">not authenticated proxies</a>.
+        <a href="https://eclipse-ee4j.github.io/mail/" target="_blank">Jakarta Mail framework</a> supports anonymous SOCKS5 proxies, but
+        <a href="https://eclipse-ee4j.github.io/mail/FAQ#proxy" target="_blank">not authenticated proxies</a>.
       </p>
       <p class="wide">
         To make this work with authentication, Simple Java Mail uses a trick: it sets up a temporary anonymous proxy server for Javax Mail to connect
