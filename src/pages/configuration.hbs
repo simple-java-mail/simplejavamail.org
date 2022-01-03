@@ -293,15 +293,16 @@ currentMailerBuilder.withCustomSSLFactoryInstance(mySSLFactoryInstance);
 </code></pre>
       <pre><code class="small">
 // change email validation strategy
-currentMailerBuilder.withEmailAddressCriteria(EmailAddressCriteria.DEFAULT);
-currentMailerBuilder.withEmailAddressCriteria(EmailAddressCriteria.RFC_COMPLIANT);
-currentMailerBuilder.withEmailAddressCriteria(EnumSet
-       .of(ALLOW_QUOTED_IDENTIFIERS, ALLOW_PARENS_IN_LOCALPART));
+currentMailerBuilder.withEmailValidator(
+	JMail.strictValidator()
+		.requireOnlyTopLevelDomains(TopLevelDomain.DOT_COM)
+		.withRule(email -> email.localPart().startsWith("allowed"))
+)
 
 // reset to default RFC compliant checks:
-currentMailerBuilder.resetmailAddressCriteria();
+currentMailerBuilder.clearEmailValidator();
 // deactivate email validation completely:
-currentMailerBuilder.clearEmailAddressCriteria();
+currentMailerBuilder.resetEmailValidator();
 </code></pre>
 <pre><code class="small">
 // change SOCKS5 bridge port in case of authenticated proxy
