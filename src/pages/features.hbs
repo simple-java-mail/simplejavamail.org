@@ -40,8 +40,8 @@
     <p class="wide">
       Simple Java Mail will do some basic validation checks so that your email is always populated with enough data.
       It also checks for CRLF injection attacks. It even verifies email addresses against
-      <a href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> using
-      <a href="https://github.com/bbottema/email-rfc2822-validator">email-rfc2822-validator</a>.
+      <a href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> and others using
+      <a href="https://github.com/RohanNagar/jmail">JMail</a>.
       Simple Java Mail also takes care of all the
       <a href="https://javadoc.io/doc/com.sun.mail/jakarta.mail/2.0.1/jakarta.mail/com/sun/mail/smtp/package-summary.html">connection and security properties</a> for you.
     </p>
@@ -892,8 +892,7 @@ simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
     <div class="view">
       <p>
         Simple Java Mail can validate your email addresses. It's not just a simple regex check, but a complete and robust full validation against <a
-        href="https://tools.ietf.org/html/rfc2822">RFC-2822</a>. It does this by including <a
-        href="https://github.com/bbottema/email-rfc2822-validator">email-rfc2822-validator</a> in the library.
+        href="https://tools.ietf.org/html/rfc2822">RFC-2822</a>. It does this by including <a href="https://github.com/RohanNagar/jmail">JMail</a> in the library.
       </p>
       <p>
         Address validation is performed automatically when sending emails, but you can also directly perform validations.
