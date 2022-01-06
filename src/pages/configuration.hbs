@@ -645,9 +645,9 @@ simplejavamail.proxy.password=&lt;proxy_password&gt;
 	<section>
 		<div>
 			<p class="wide">
-				Without using the <strong><a href="modules.html#batch-module">batch-module</a></strong>, you can send emails asynchronously, in which case a
-				single Transport connection is used without pooling it. This means for each email the connection is opened and closed. Depending on your network
-				and SMTP server's capacity, this in itself already provides a huge performance boost if you configure the thread pool accordingly.
+				Even without using the <strong><a href="modules.html#batch-module">batch-module</a></strong>, you can send emails <em>asynchronously</em>, in which case a
+				single Transport connection is used without pooling it. This does still mean that for each email the connection is opened and closed. Depending on your network
+				and SMTP server's capacity though, sending async like this already provides a huge performance boost if you configure the thread pool accordingly.
 			</p>
 			<div>
         <pre><code class="language-java small">/* regular mailer: */
@@ -672,7 +672,7 @@ mailer.sendEmail(email, /*async = */ true);
 	<section>
 		<div>
 			<p class="wide">
-				You can really take performance to the next level by using the connection pooling introduced by the batch-module. To do this you simply
+				You can really take performance to the next level by using the connection pooling introduced by the <strong><a href="modules.html#batch-module">batch-module</a></strong>. To do this you simply
 				include the module on the class path (add the maven dependency) which gives you a default of maximum four pooled connections, which auto-close 5
 				seconds after the last time they were utilized. What this means is if you have bursts of emails batches, the connections spin up to max four and
 				stay alive until activity dies down.
@@ -698,7 +698,7 @@ simplejavamail.defaults.connectionpool.claimtimeout.millis=60000 (defaults to fo
 simplejavamail.defaults.connectionpool.expireafter.millis=1800000 (defaults to 5000)
 	</code></pre>
 		  <p class="wide">
-			  Note that with the batch-module enabled, the JVM won't shut down by itself anymore, as the connection pool stays alive until
+			  <strong>Note that with the batch-module enabled, the JVM won't shut down by itself anymore</strong>, as the connection pool stays alive until
           shutdown manually. To do this, just call <code>mailer.shutdownConnectionPool()</code> (repeat with each mailer you might have
           in a cluster).
 		  </p>
@@ -715,7 +715,10 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000 (defaults to 5
 			<div class="view">
 				<p>
 					To enable high-availability / fail-over or to really <strong>take performance to out-of-this world levels</strong> and handle truly enormous
-					email batches, Simple Java Mail enables you to easily configure cluster(s) of SMTP servers. For example, for a simple fail-over setup with
+					email batches, Simple Java Mail enables you to easily configure cluster(s) of SMTP servers.
+				</p>
+				<p>
+					For example, for a simple fail-over setup with
 					three SMTP servers, You can define a cluster with low/default connection pool settings and have three Mailer instances use the same cluster
 					key. Then sending an email with any of these Mailer instances will result in a send-action resolved using the cluster.
 				</p>
@@ -756,9 +759,9 @@ mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
 
 		<p class="wide">
 			<strong>Note 1:</strong> The send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java
-			Mail cannot determine how a send-action was botched and what the next course of action should be. You can monitor individual emails using the <code
-				class="inline language-java">AsyncResponse</code> return value obtained from <code class="inline language-java">mailer.send()</code> and
-			determine followup-actions for errored-out results.
+			Mail cannot determine how a send-action was botched and what the next course of action should be. You can monitor individual emails using
+			<a href="features.html#section-handling-async-result">the <em>CompletableFuture</em> async return value</a> obtained from
+			<code class="inline language-java">mailer.send()</code> and determine followup-actions for errored-out results.
 		</p>
 
 	  <p class="wide">
