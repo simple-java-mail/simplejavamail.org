@@ -647,7 +647,8 @@ simplejavamail.proxy.password=&lt;proxy_password&gt;
 			<p class="wide">
 				Even without using the <strong><a href="modules.html#batch-module">batch-module</a></strong>, you can send emails <em>asynchronously</em>, in which case a
 				single Transport connection is used without pooling it. This does still mean that for each email the connection is opened and closed. Depending on your network
-				and SMTP server's capacity though, sending async like this already provides a huge performance boost if you configure the thread pool accordingly.
+				and SMTP server's capacity though, sending async like this already provides a huge performance boost if you configure the thread pool accordingly with
+				<code class="inline language-java">MailerBuilder</code>.
 			</p>
 			<div>
         <pre><code class="language-java small">/* regular mailer: */
