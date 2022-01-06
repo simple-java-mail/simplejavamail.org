@@ -148,10 +148,10 @@ MailerBuilder
         MailerBuilder</a>.
     </p>
     <p class="wide">
-      For <strong>EmailBuilder</strong>, the first method initializes the builder differently, either preconfiguring it
+      For <strong>EmailBuilder</strong>, the first method initializes the builder in different ways, leaving it with defaults
+		(<code class="inline language-java">EmailBuilder.startingBlank()</code>, preconfiguring it
       (<code class="inline language-java">EmailBuilder.copying()</code>, <code class="inline language-java">EmailBuilder.replyingTo()</code>),
-      or by setting values otherwise not possible
-      (<code class="inline language-java">EmailBuilder.forwarding()</code>).
+      or by setting values otherwise not possible (<code class="inline language-java">EmailBuilder.forwarding()</code>).
     </p>
     <p class="wide">
       For <strong>MailerBuilder</strong>, the first method determines if you get a full builder API or a reduced API because you provided
@@ -186,7 +186,7 @@ public Mailer inhouseMailer() {
         .buildMailer();
 }
 </code></pre>
-      Or the default one from Spring support:
+      Or the default one from the <a href="configuration.html#section-spring-support">Spring support module</a>:
       <pre><code>
 @Import(SimpleJavaMailSpringSupport.class)
 
