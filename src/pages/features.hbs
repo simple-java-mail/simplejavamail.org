@@ -69,9 +69,10 @@
       <li><a href="#section-add-recipients" class="indent">Alternative API for almost everything</a></li>
       <li><a href="#section-sending-asynchronously" class="indent">Asynchronous parallel batch sending and clustering</a></li>
       <li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
+      <li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
       <li><a href="#section-custom-session">Sending with your own Session instance</a></li>
-		<li><a href="#section-custom-id">Setting a custom message ID on sent email</a></li>
-		<li><a href="#section-custom-sentdate">Setting a custom sent date on sent email</a></li>
+      <li><a href="#section-custom-id">Setting a custom message ID on sent email</a></li>
+      <li><a href="#section-custom-sentdate">Setting a custom sent date on sent email</a></li>
       <li><a href="#section-sent-id">Getting the generated email id after sending</a></li>
       <li><a href="#section-ssl-tls">Sending with SSL and TLS</a></li>
       <li><a href="#section-gmail" class="indent">SSL and TLS with Google mail</a></li>
@@ -436,6 +437,60 @@ MailerBuilder
     .sendMail(email);
 </code></pre>
     </div>
+  </section>
+
+
+  <a href="#section-content-transfer-encoding" id="section-content-transfer-encoding" class="section-link h2">&sect;</a>
+  <h2>Changing the content encoding</h2>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  By default content is encoded in the target MimeMessage or EML using <a href="https://docs.microsoft.com/en-us/previous-versions/office/developer/exchange-server-2010/aa579632(v=exchg.140)" target="_blank">quoted-printable</a>,
+			  so the EML is nicely and safely readable. However, you can change it to many other encoders such as base64, which for example is useful if you want to add an extra layer of obfuscation.
+		  </p>
+	  </div>
+
+	  <div class="side">
+		  quoted-printable (the default) results in the following EML subsection:
+<pre><code class="language-text small">------=_Part_2_1226020905.1657715639009
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+We should meet up!
+</code></pre>
+		  base64 on the other hand, produces the following:
+<pre><code class="small">currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+</code></pre>
+		  <pre><code class="language-text small">------=_Part_2_1226020905.1657715871203
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
+
+V2Ugc2hvdWxkIG1lZXQgdXAh
+</code></pre>
+	  </div>
+  </section>
+
+  <section>
+	  <p class="wide">
+		  You can choose any of the following encoders:.
+	  </p>
+
+	  <div class="wide">
+<pre><code>currentEmailBuilder
+    .withContentTransferEncoding(ContentTransferEncoding.BINARY)
+    .withContentTransferEncoding(ContentTransferEncoding.B)
+    .withContentTransferEncoding(ContentTransferEncoding.Q)
+    .withContentTransferEncoding(ContentTransferEncoding.BIT7)
+    .withContentTransferEncoding(ContentTransferEncoding.BIT8)
+    .withContentTransferEncoding(ContentTransferEncoding.UU)
+    .withContentTransferEncoding(ContentTransferEncoding.X_UU)
+    .withContentTransferEncoding(ContentTransferEncoding.X_UUE)
+
+	// or default back to quoted-printable
+    .clearContentTransferEncoding()
+</code></pre>
+	  </div>
   </section>
 
 
