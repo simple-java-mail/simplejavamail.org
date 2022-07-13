@@ -993,6 +993,9 @@ Pkcs12Config myKeyInfo = Pkcs12Config.builder()
     .build();
 
 Email decryptedEmail =    EmailConverter.emlToEmail(emlDataString, myKeyInfo);
+Email decryptedEmail =    EmailConverter.mimeMessageToEmail(yourMimeMessage, myKeyInfo);
+Email decryptedEmail =    EmailConverter.mimeMessageToEmail(yourMimeMessage, myKeyInfo, /*fetchAttachments*/ false);
+emailBuilder   	     =    EmailConverter.mimeMessageToEmailBuilder(yourMimeMessage, /*Pkcs12Config*/ null, /*fetchAttachments*/ true);
 </code></pre>
     </div>
   </section>
