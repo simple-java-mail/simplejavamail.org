@@ -103,6 +103,7 @@ Email email = EmailBuilder.startingBlank()
           .withEmbeddedImage("wink2", imageDatesource)
           .withAttachment("invitation", pdfByteArray, "application/pdf")
           .withAttachment("dresscode", odfDatasource)
+          .withAttachment("spoilers", mySpoilerText, "Spoilers", ContentTransferEncoding.BASE_64)
           .withHeader("X-Priority", 5)
           .withReturnReceiptTo()
           .withDispositionNotificationTo("notify-read-emails@candyshop.com")
@@ -110,6 +111,7 @@ Email email = EmailBuilder.startingBlank()
           .signWithDomainKey(privateKeyData, "somemail.com", "selector") // DKIM
           .signWithSmime(pkcs12Config)
           .encryptWithSmime(x509Certificate)
+          .withContentTransferEncoding(BASE_64)
           .buildEmail();
 
 Mailer mailer = MailerBuilder
