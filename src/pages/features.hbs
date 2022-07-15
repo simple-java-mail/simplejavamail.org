@@ -450,21 +450,21 @@ MailerBuilder
 			  so the EML is nicely and safely readable. However, you can change it to many other encoders such as base64, which for example is useful if you want to add an extra layer of obfuscation.
 		  </p>
 		  <p>
-			  The email header that governs this feature is <a href="" target="_blank">Content-Transfer-Encoding and Simple Java Mail takes care of inserting this header in the right places, which varies depending on the
+			  The email header that governs this feature is <a href="https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html" target="_blank">Content-Transfer-Encoding</a> and Simple Java Mail takes care of inserting this header in the right places, which varies depending on the
 			  <a href="https://www.simplejavamail.org/rfc-compliant.html#section-explore-multipart">nescesary email structure</a>.
 		  </p>
 	  </div>
 
 	  <div class="side">
-		  quoted-printable (the default) results in the following EML subsection:
-<pre><code class="language-text small">------=_Part_2_1226020905.1657715639009
+		  <strong>quoted-printable</strong> (the default) results in the following EML subsection:
+		  <pre><code class="language-text small">------=_Part_2_1226020905.1657715639009
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 
 We should meet up!
 </code></pre>
-		  base64 on the other hand, produces the following:
-<pre><code class="small">currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+		  <strong>base64</strong> on the other hand, produces the following:
+		  <pre><code class="small">currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64)
 </code></pre>
 		  <pre><code class="language-text small">------=_Part_2_1226020905.1657715871203
 Content-Type: text/plain; charset=UTF-8
@@ -476,12 +476,34 @@ V2Ugc2hvdWxkIG1lZXQgdXAh
   </section>
 
   <section>
+	  <div class="view">
+		  <p>
+			  <strong>Encoding attachments</strong>
+		  </p>
+		  <p>
+			  You can control encoding seperately for attachments, so your text files for examples can be encoded differently too.
+		  </p>
+	  </div>
+
+	  <div class="side">
+		  <pre><code class="language-java">.withAttachment("invitation.pdf", yourDataSource,
+                "Invitation flyer", ContentTransferEncoding.BASE_64)
+
+// or by create attachment objects directly
+new AttachmentResource(..., ContentTransferEncoding.BINARY)
+</code></pre>
+	  </div>
+  </section>
+
+  <section>
 	  <p class="wide">
-		  You can choose any of the following encoders:.
+		  <strong>Available encoders</strong>
 	  </p>
 
 	  <div class="wide">
 <pre><code>currentEmailBuilder
+    .withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+    .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
     .withContentTransferEncoding(ContentTransferEncoding.BINARY)
     .withContentTransferEncoding(ContentTransferEncoding.B)
     .withContentTransferEncoding(ContentTransferEncoding.Q)
@@ -626,21 +648,55 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
   <h2>Adding attachments</h2>
 
   <section>
-    <div class="view">
-      <p>
-        You can add attachments very easily, but you'll have to provide the data yourself. Simple Java Mail accepts <code class="inline language-java">byte[]</code>
-        and <code class="inline language-java">DataSource</code> objects.
-      </p>
-    </div>
+	  <div class="view">
+		  <p>
+			  You can add attachments very easily, but you'll have to provide the data yourself. Simple Java Mail accepts <code class="inline language-java">byte[]</code>
+			  and <code class="inline language-java">DataSource</code> objects.
+		  </p>
+	  </div>
 
-    <div class="side">
+	  <div class="side">
 <pre><code class="small">currentEmailBuilder
     .withAttachment("dresscode.txt", new ByteArrayDataSource("Black Tie Optional", "text/plain"))
     .withAttachment("location.txt", "On the moon!".getBytes(Charset.defaultCharset()), "text/plain")
     // ofcourse it can be anything: a pdf, doc, image, csv or anything else
     .withAttachment("invitation.pdf", new FileDataSource("invitation_v8.3.pdf"))
+	// you can provide your own list of attachments as well
+    .withAttachments(yourAttachmentResourceCollection))
 </code></pre>
-    </div>
+	  </div>
+  </section>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  If for some reason you need the <em>Content-Description</em> header set as well, you can provide a content description on any attachment.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">currentEmailBuilder.withAttachment(
+	        "dresscode.txt",
+	        new ByteArrayDataSource("Black Tie Optional", "text/plain"),
+	        "The dresscode for the party")
+</code></pre>
+		  Which results in something like this:
+		  <pre><code class="language-text">Content-Type: text/plain; filename="dresscode.txt"; name="dresscode.txt"
+Content-Disposition: attachment; filename="dresscode.txt"
+Content-ID: &lt;dresscode.txt&gt;
+Content-Description: The dresscode for the party
+
+Black Tie Optional
+</code></pre>
+	  </div>
+  </section>
+
+  <section>
+	  <p class="wide">
+		  You can further control how the attachment is encoded in the MimeMessage / EML until the data read back from the MimeMessage,
+		  by <a href="#section-content-transfer-encoding"><strong>providing a content transfer encoding</strong></a> (resulting in a
+		  Content-Transfer-Encoding header for the attachment).
+	  </p>
   </section>
 
 
