@@ -281,7 +281,12 @@ MailerBuilder
     </div>
 
     <div class="side">
-      <pre><code class="small">// make the underlying javax.mail produce more logging
+      <pre><code class="small">// ignore invalid email addresses (if email validator was provided)
+// and ignore CRLF injection suspicions
+// useful in case you want to delegate all responsibility to the server
+currentMailerBuilder.disablingAllClientValidation(true);
+</code></pre>
+		<pre><code class="small">// make the underlying javax.mail produce more logging
 currentMailerBuilder.withDebugLogging(true);
 </code></pre>
       <pre><code class="small">// skip actually sending email, just log it

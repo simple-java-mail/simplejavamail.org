@@ -1041,20 +1041,20 @@ simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
   <h2>Validating Email Addresses</h2>
 
   <section>
-    <div class="view">
-      <p>
-        Simple Java Mail can validate your email addresses. It's not just a simple regex check, but a complete and robust full validation against <a
-        href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> and others. It does this by including <a href="https://github.com/RohanNagar/jmail">JMail</a> in the library.
-      </p>
-      <p>
-        Address validation is performed automatically when sending emails, but you can also directly perform validations.
-      </p>
-      <p>
-        See <a href="https://github.com/RohanNagar/jmail">JMail</a> for more examples and configurations.
-      </p>
-    </div>
+	  <div class="view">
+		  <p>
+			  Simple Java Mail can validate your email addresses. It's not just a simple regex check, but a complete and robust full validation against <a
+				  href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> and others. It does this by including <a href="https://github.com/RohanNagar/jmail">JMail</a> in the library.
+		  </p>
+		  <p>
+			  Address validation is performed automatically when sending emails, but you can also directly perform validations.
+		  </p>
+		  <p>
+			  See <a href="https://github.com/RohanNagar/jmail">JMail</a> for more examples and configurations.
+		  </p>
+	  </div>
 
-    <div class="side">
+	  <div class="side">
 <pre><code>currentMailerBuilder
     .withEmailValidator(
 		JMail.strictValidator()
@@ -1065,7 +1065,7 @@ simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
     .clearEmailValidator() // turn off validation
     .resetEmailValidator() // reset to default (strict)
 </code></pre>
-      <pre><code>// you can also directly perform validations:
+		  <pre><code>// you can also directly perform validations:
 mailer.validate(email); // does all checks including address validation
 
 // or just do the address validation
@@ -1075,7 +1075,24 @@ JMail.isValid("your_address@domain.com");
 JMail.strictValidator()
 	.isValid("your_address@domain.com");
 </code></pre>
-    </div>
+	  </div>
+  </section>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  <strong>Note</strong>: any email address validation behaviour you have defined will be overridden
+			  if you disable client-side validations completely (which also disables CRLF injection scanning).
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code>currentMailerBuilder
+    .disablingAllClientValidation(true)
+    // or
+    .resetDisableAllClientValidations() // reset to default (false)
+</code></pre>
+	  </div>
   </section>
 
 
