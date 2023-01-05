@@ -110,17 +110,20 @@
   <h2>Basic usage</h2>
 
   <section>
-    <div class="view">
-      <p>
-        Simply build an <code class="inline language-java">Email</code>, populate it with your data, build a <code class="inline language-java">Mailer</code> and send the Email
-        instance. The mailer can be <a href="#section-custom-session">created with your own <code class="inline language-java">Session</code> instance as well</a>.
-      </p>
-      <p>
-        A Mailer instance is reusable.
-      </p>
-    </div>
+	  <div class="view">
+		  <p>
+			  Simply build an <code class="inline language-java">Email</code>, populate it with your data, build a <code class="inline language-java">Mailer</code> and send the Email
+			  instance. The mailer can be <a href="#section-custom-session">created with your own <code class="inline language-java">Session</code> instance as well</a>.
+		  </p>
+		  <p>
+			  A Mailer instance is reusable.
+		  </p>
+		  <p>
+			  Muliple Mailer instances can form a <a href="configuration.html#section-clustering">powerful cluster</a>.
+		  </p>
+	  </div>
 
-    <div class="side">
+	  <div class="side">
 <pre><code>Email email = EmailBuilder.startingBlank()
     .from("Michel Baker", "m.baker@mbakery.com")
     .to("mom", "jean.baker@hotmail.com")
@@ -134,7 +137,35 @@ MailerBuilder
   .buildMailer()
   .sendMail(email);
 </code></pre>
-    </div>
+	  </div>
+  </section>
+
+  <section>
+	  <p class="wide">
+		  <strong>Authentication and OAUTH2 support</strong><br/>
+		  You can use one of the builder methods on <em>MailerBuilder</em> for defining the server properties like host, port, username and password.
+		  Simple Java Mail supports plain SMTP (not recommended), SMTPS (legacy SSL) or TLS (recommended). The last authentication option to join the family
+		  is OAuth2 (by means of XOAUTH2 which comes built-in in Jakarta Mail, the underlying SMTP framework).
+	  </p>
+	  <p class="wide">
+		  Then depending on the transport strategy that you choose, the password represents the SMTP server password or the OAuth2 token.
+		  However, obtaining the OAuth2 token and refreshing tokens etc. is outside the scope of this library, which varies from platform to platform.
+	  </p>
+
+	  <div class="wide">
+<pre><code>MailerBuilder
+  .withSMTPServer("server host", 587, "username", yourPassword)
+  .withTransportStrategy(TransportStrategy.SMTP_TLS)
+  .buildMailer()
+  .sendMail(email);
+</code></pre>
+		  <pre><code>MailerBuilder
+  .withSMTPServer("server host", 587, "username", yourOAuth2Token)
+  .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+  .buildMailer()
+  .sendMail(email);
+</code></pre>
+	  </div>
   </section>
 
 
@@ -489,7 +520,7 @@ V2Ugc2hvdWxkIG1lZXQgdXAh
 		  <pre><code class="language-java">.withAttachment("invitation.pdf", yourDataSource,
                 "Invitation flyer", ContentTransferEncoding.BASE_64)
 
-// or by create attachment objects directly
+// or fix encoding by creating attachment objects directly
 new AttachmentResource(..., ContentTransferEncoding.BINARY)
 </code></pre>
 	  </div>
@@ -587,6 +618,7 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
 MailerBuilder.withTransportStrategy(TransportStrategy.SMTP); // default if omitted
 MailerBuilder.withTransportStrategy(TransportStrategy.SMTPS);
 MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
+MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 </code></pre>
     </div>
   </section>
