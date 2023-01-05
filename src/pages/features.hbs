@@ -63,39 +63,40 @@
 
   <section class="toc">
     <ul>
-      <li><a href="#section-basic-usage">Basic usage</a></li>
-      <li><a href="#section-builder-api" class="indent">About the fluent API with the Builder pattern</a></li>
-      <li><a href="#section-reusable-mailer" class="indent">Configure once, reuse many times</a></li>
-      <li><a href="#section-add-recipients" class="indent">Alternative API for almost everything</a></li>
-      <li><a href="#section-sending-asynchronously" class="indent">Asynchronous parallel batch sending and clustering</a></li>
-      <li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
-      <li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
-      <li><a href="#section-custom-session">Sending with your own Session instance</a></li>
-      <li><a href="#section-custom-id">Setting a custom message ID on sent email</a></li>
-      <li><a href="#section-custom-sentdate">Setting a custom sent date on sent email</a></li>
-      <li><a href="#section-sent-id">Getting the generated email id after sending</a></li>
-      <li><a href="#section-ssl-tls">Sending with SSL and TLS</a></li>
-      <li><a href="#section-gmail" class="indent">SSL and TLS with Google mail</a></li>
-      <li><a href="#section-attachments">Adding attachments</a></li>
-      <li><a href="#section-embedding">Embedding images</a></li>
-      <li><a href="#section-custom-headers">Setting custom headers</a></li>
-      <li><a href="#section-custom-properties">Setting custom properties on the internal Session</a></li>
-      <li><a href="#section-icalendar-vevent">Sending a Calendar event (iCalendar vEvent)</a></li>
-      <li><a href="#section-session-access">Direct access to the internal Session</a></li>
-      <li><a href="#section-dkim">Signing emails with DKIM</a></li>
-      <li><a href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
-      <li><a href="#section-return-receipt">Configure delivery / read receipt</a></li>
-      <li><a href="#section-email-validation">Validating Email Addresses</a></li>
-      <li><a href="#section-converting">Converting between email formats</a></li>
-      <li><a href="#section-smime">Reading S/MIME signed / encrypted attachments</a></li>
-      <li><a href="#section-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
-      <li><a href="#section-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
-      <li><a href="#section-bouncing-emails">Setting custom recipient for bouncing emails</a></li>
-      <li><a href="#section-reply-forward">Replying to and forwarding emails</a></li>
-      <li><a href="#section-proxy">Send using a proxy</a></li>
-      <li><a href="#section-connection-test">Testing a server connection</a></li>
-      <li><a href="#section-serializing-emails">Serializing Email objects</a></li>
-      <li><a href="#section-custom-mailer">Plug your own sending logic</a></li>
+		<li><a href="#section-basic-usage">Basic usage</a></li>
+		<li><a href="#section-builder-api" class="indent">About the fluent API with the Builder pattern</a></li>
+		<li><a href="#section-reusable-mailer" class="indent">Configure once, reuse many times</a></li>
+		<li><a href="#section-add-recipients" class="indent">Alternative API for almost everything</a></li>
+		<li><a href="#authentication" class="indent">Authentication and OAUTH2 support</a></li>
+		<li><a href="#section-sending-asynchronously" class="indent">Asynchronous parallel batch sending and clustering</a></li>
+		<li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
+		<li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
+		<li><a href="#section-custom-session">Sending with your own Session instance</a></li>
+		<li><a href="#section-custom-id">Setting a custom message ID on sent email</a></li>
+		<li><a href="#section-custom-sentdate">Setting a custom sent date on sent email</a></li>
+		<li><a href="#section-sent-id">Getting the generated email id after sending</a></li>
+		<li><a href="#section-ssl-tls">Sending with SSL and TLS</a></li>
+		<li><a href="#section-gmail" class="indent">SSL and TLS with Google mail</a></li>
+		<li><a href="#section-attachments">Adding attachments</a></li>
+		<li><a href="#section-embedding">Embedding images</a></li>
+		<li><a href="#section-custom-headers">Setting custom headers</a></li>
+		<li><a href="#section-custom-properties">Setting custom properties on the internal Session</a></li>
+		<li><a href="#section-icalendar-vevent">Sending a Calendar event (iCalendar vEvent)</a></li>
+		<li><a href="#section-session-access">Direct access to the internal Session</a></li>
+		<li><a href="#section-dkim">Signing emails with DKIM</a></li>
+		<li><a href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
+		<li><a href="#section-return-receipt">Configure delivery / read receipt</a></li>
+		<li><a href="#section-email-validation">Validating Email Addresses</a></li>
+		<li><a href="#section-converting">Converting between email formats</a></li>
+		<li><a href="#section-smime">Reading S/MIME signed / encrypted attachments</a></li>
+		<li><a href="#section-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
+		<li><a href="#section-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
+		<li><a href="#section-bouncing-emails">Setting custom recipient for bouncing emails</a></li>
+		<li><a href="#section-reply-forward">Replying to and forwarding emails</a></li>
+		<li><a href="#section-proxy">Send using a proxy</a></li>
+		<li><a href="#section-connection-test">Testing a server connection</a></li>
+		<li><a href="#section-serializing-emails">Serializing Email objects</a></li>
+		<li><a href="#section-custom-mailer">Plug your own sending logic</a></li>
     </ul>
   </section>
 
@@ -134,34 +135,6 @@
 
 MailerBuilder
   .withSMTPServer("server", 25, "username", "password")
-  .buildMailer()
-  .sendMail(email);
-</code></pre>
-	  </div>
-  </section>
-
-  <section>
-	  <p class="wide">
-		  <strong>Authentication and OAUTH2 support</strong><br/>
-		  You can use one of the builder methods on <em>MailerBuilder</em> for defining the server properties like host, port, username and password.
-		  Simple Java Mail supports plain SMTP (not recommended), SMTPS (legacy SSL) or TLS (recommended). The last authentication option to join the family
-		  is OAuth2 (by means of XOAUTH2 which comes built-in in Jakarta Mail, the underlying SMTP framework).
-	  </p>
-	  <p class="wide">
-		  Then depending on the transport strategy that you choose, the password represents the SMTP server password or the OAuth2 token.
-		  However, obtaining the OAuth2 token and refreshing tokens etc. is outside the scope of this library, which varies from platform to platform.
-	  </p>
-
-	  <div class="wide">
-<pre><code>MailerBuilder
-  .withSMTPServer("server host", 587, "username", yourPassword)
-  .withTransportStrategy(TransportStrategy.SMTP_TLS)
-  .buildMailer()
-  .sendMail(email);
-</code></pre>
-		  <pre><code>MailerBuilder
-  .withSMTPServer("server host", 587, "username", yourOAuth2Token)
-  .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
   .buildMailer()
   .sendMail(email);
 </code></pre>
@@ -359,6 +332,36 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 .withRecipient(Recipient recipient)</code></pre>
       </div>
     </div>
+  </section>
+  
+
+  <a href="#authentication" id="authentication" class="section-link h2">&sect;</a>
+  <h3>Authentication and OAUTH2 support</h3>
+  <section>
+	  <p class="wide">
+		  You can use one of the builder methods on <em>MailerBuilder</em> for defining the server properties like host, port, username and password.
+		  Simple Java Mail supports plain SMTP (not recommended), SMTPS (legacy SSL) or TLS (recommended). The last authentication option to join the family
+		  is OAuth2 (by means of XOAUTH2 which comes built-in in Jakarta Mail, the underlying SMTP framework).
+	  </p>
+	  <p class="wide">
+		  Then depending on the transport strategy that you choose, the password represents the SMTP server password or the OAuth2 token.
+		  However, obtaining the OAuth2 token and refreshing tokens etc. is outside the scope of this library, which varies from platform to platform.
+	  </p>
+
+	  <div class="wide">
+<pre><code>MailerBuilder
+  .withSMTPServer("server host", 587, "username", yourPassword)
+  .withTransportStrategy(TransportStrategy.SMTP_TLS)
+  .buildMailer()
+  .sendMail(email);
+</code></pre>
+		  <pre><code>MailerBuilder
+  .withSMTPServer("server host", 587, "username", yourOAuth2Token)
+  .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+  .buildMailer()
+  .sendMail(email);
+</code></pre>
+	  </div>
   </section>
 
 
