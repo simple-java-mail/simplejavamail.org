@@ -60,17 +60,17 @@ mailer.sendMail(email);
 			  catch constructions, inner classes and other nonsense. You just want to send an email!</p>
 		  <br/>
 		  <p>But don't let looks deceive you, this library does everything: it is a <strong>robust, feature complete</strong>
-			  mailing library, yet it is <strong>small</strong> and <strong>lightweight</strong> (the core library clocking in at only 134kb).
+			  mailing library, yet it is <strong>small</strong> and <strong>lightweight</strong>.
 		  </p>
 		  <br/>
 		  <p>It is fully <strong><a href="rfc-compliant.html#navigation">RFC compliant</a></strong> and
 			  looks good in all email clients.</p>
 		  <br/>
 		  <p>It's also the only java mailing library in the world that can send through authenticated SOCKS proxy or let you
-			  configure a cluster of connection pools.</p>
+			  configure an advanced cluster of connection pools.</p>
 		  <br/>
-		  <p>Over the 13+ years of open source development, Simple Java Mail has matured, adding CLI support, DKIM, SMIME,
-			  batch sending, clustering, CRLF injection protection and much more.</p>
+		  <p>Over the 15+ years of open source development, Simple Java Mail has matured, adding CLI support, DKIM, SMIME,
+			  batch sending, clustering, CRLF injection protection, OAUTH2 and much more.</p>
 		  <br/>
 		  <p>Simple Java Mail can also be used as a <strong>catalyst</strong> in your own project where you handle the ultimate
 			  server connections and send emails. You want to use a REST service instead of the built-in SMTP support? Go
@@ -133,6 +133,7 @@ Mailer mailer = MailerBuilder
           .withConnectionPoolCoreSize(10); // reusable connection(s) / multi-server sending
           .withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
           .withCustomSSLFactoryInstance(mySSLFactoryInstance);
+		  .withDefaultsEmail(myEmailWithADefaultBCCRecipient);
           .manyMoreOptions()
           .buildMailer();
 
@@ -141,7 +142,7 @@ mailer.sendMail(email);</code></pre>
 mailer.validate(email);</code></pre>
       <pre><code class="small">mailer.getServerConfig();
 mailer.getOperationalConfig();
-mailer.getEmailGovernance(); // default S/MIME signing, validation criteria etc.
+mailer.getEmailGovernance(); // default S/MIME, validation criteria, overrides etc.
 mailer.getProxyConfig();
 mailer.getTransportStrategy();
 mailer.getSession();</code></pre>
