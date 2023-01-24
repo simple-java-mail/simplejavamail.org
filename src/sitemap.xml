@@ -15,13 +15,13 @@
 	<url>
 		<loc>https://www.simplejavamail.org/features.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2023-01-17</lastmod>
+		<lastmod>2023-01-24</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/configuration.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2023-01-17</lastmod>
+		<lastmod>2023-01-24</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
@@ -33,7 +33,7 @@
 	<url>
 		<loc>https://www.simplejavamail.org/debugging.html</loc>
 		<priority>0.5</priority>
-		<lastmod>2022-01-03</lastmod>
+		<lastmod>2023-01-24</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>

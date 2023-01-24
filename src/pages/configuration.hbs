@@ -37,6 +37,7 @@
       <li><a href="#section-transport-strategy-smtp" class="indent">TransportStrategy.SMTP</a></li>
       <li><a href="#section-transport-strategy-smtps" class="indent">TransportStrategy.SMTPS</a></li>
       <li><a href="#section-transport-strategy-tls" class="indent">TransportStrategy.SMTP_TLS</a></li>
+      <li><a href="#section-transport-strategy-oauth2" class="indent">TransportStrategy.OAUTH2</a></li>
       <li><a href="#section-programmatic-api-common">Programmatic API - common settings</a></li>
       <li><a href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
@@ -187,6 +188,25 @@ Mailer mailer = MailerBuilder.buildMailer();
       </blockquote>
     </div>
   </section>
+
+
+	<a href="#section-transport-strategy-oauth2" id="section-transport-strategy-oauth2" class="section-link h3">&sect;</a>
+	<h3>TransportStrategy.OAUTH2</h3>
+
+	<section>
+		<div class="view">
+			<p>OAUTH2 authentication where the password should be the OAUTH2 token</p>
+		</div>
+		<div class="side">
+<pre><code>
+MailerBuilder.withTransportStrategy(TransportStrategy.OAUTH2);
+
+// or through property defaults, skipping builder API:
+simplejavamail.transportstrategy=OAUTH2
+Mailer mailer = MailerBuilder.buildMailer();
+</code></pre>
+		</div>
+	</section>
 
 
   <a href="#section-programmatic-api-common" id="section-programmatic-api-common" class="section-link h2">&sect;</a>

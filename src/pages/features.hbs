@@ -97,6 +97,7 @@
 		<li><a href="#section-connection-test">Testing a server connection</a></li>
 		<li><a href="#section-serializing-emails">Serializing Email objects</a></li>
 		<li><a href="#section-custom-mailer">Plug your own sending logic</a></li>
+		<li><a href="#section-maximum-emailsize">Limit the maximum email size</a></li>
     </ul>
   </section>
 
@@ -1477,8 +1478,8 @@ mailer.testConnection(/* async? */); // no error means success
         <div class="wide">
           <p>Send mail using MailGun REST API:</p>
 		    <pre><code>Mailer mailGunMailer = MailerBuilder
-      .(..)
       .withCustomMailer(new MailGunMailer())
+      .(..)
       .buildMailer();
 </code></pre>
 		    <pre><code>public class MailGunMailer implements CustomMailer {
@@ -1494,6 +1495,35 @@ mailer.testConnection(/* async? */); // no error means success
 	}
 }
   </code></pre>
+      </div>
+	</section>
+
+
+	<a href="#section-maximum-emailsize" id="section-maximum-emailsize" class="section-link h2">&sect;</a>
+	<h2>Limit the maximum email size</h2>
+
+	<section>
+        <p class="wide">
+          Do you know your server's maximum allowed email size? Then it might be helpful to have Simple Java Mail reject
+			emails that exceed this before trying to send them.
+        </p>
+    <hr/>
+		<p class="wide">
+			The following throws an EmailTooBig exception as the <em>cause</em> in a parent MailerException instance
+		</p>
+        <div class="wide">
+		    <pre><code>Mailer mailer = MailerBuilder
+      .(..)
+      .withMaximumEmailSize(4) // 4 bytes, that's not much
+      .buildMailer();
+
+try {
+	mailer.sendMail(emailBiggerThan4Bytes)
+} catch(Exception e) {
+	// Email size of 277 bytes exceeds maximum allowed size of 4 bytes
+	e.getCause().printStrackTrace();
+}
+</code></pre>
       </div>
 	</section>
     {{/inline}}

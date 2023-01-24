@@ -38,8 +38,8 @@
 
     <div class="side">
 <pre><code>Mailer mailer = MailerBuilder
-    .(...)
     .withTransportModeLoggingOnly()
+    .(...)
     .buildMailer();
 
 mailer.sendMail(email); // <-- this email will be logged but not sent
