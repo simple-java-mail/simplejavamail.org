@@ -1520,7 +1520,8 @@ mailer.testConnection(/* async? */); // no error means success
 try {
 	mailer.sendMail(emailBiggerThan4Bytes)
 } catch(Exception e) {
-	// Email size of 277 bytes exceeds maximum allowed size of 4 bytes
+	// cause: EmailTooBigException
+	// msg: "Email size of 277 bytes exceeds maximum allowed size of 4 bytes"
 	e.getCause().printStrackTrace();
 }
 </code></pre>
