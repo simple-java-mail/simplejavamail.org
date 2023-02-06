@@ -195,7 +195,7 @@ Mailer mailer = MailerBuilder.buildMailer();
 
 	<section>
 		<div class="view">
-			<p>OAUTH2 authentication where the password should be the OAUTH2 token</p>
+			<p>OAUTH2 authentication is easy, just use the OAUTH2 TransportStrategy and provide the OAUTH2 token as the server password.</p>
 		</div>
 		<div class="side">
 <pre><code>
@@ -440,6 +440,7 @@ simplejavamail.proxy.port=1080
 simplejavamail.proxy.username=username proxy
 simplejavamail.proxy.password=password proxy
 simplejavamail.proxy.socks5bridge.port=1081
+simplejavamail.defaults.content.transfer.encoding=BINARY
 simplejavamail.defaults.subject=Sweet News
 simplejavamail.defaults.from.name=From Default
 simplejavamail.defaults.from.address=from@default.com
@@ -460,6 +461,7 @@ simplejavamail.defaults.connectionpool.coresize=0
 simplejavamail.defaults.connectionpool.maxsize=4
 simplejavamail.defaults.connectionpool.claimtimeout.millis=10000
 simplejavamail.defaults.connectionpool.expireafter.millis=5000
+simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
 simplejavamail.defaults.sessiontimeoutmillis=60000
 simplejavamail.defaults.trustallhosts=false
 # following property is ignored when trustallhosts is true:
