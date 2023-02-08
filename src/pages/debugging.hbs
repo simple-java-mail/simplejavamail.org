@@ -79,7 +79,7 @@ MailerBuilder.usingSession(yourSession);
   </section>
 
 
-  <a href="#section-debug-logging" id="section-inspect-mailer-email" class="section-link h2">&sect;</a>
+  <a href="#section-inspect-mailer-email" id="section-inspect-mailer-email" class="section-link h2">&sect;</a>
   <h2>Inspect a mailer or an email</h2>
 
   <section>
@@ -100,7 +100,8 @@ mailer.getTransportStrategy();
 mailer.getServerConfig();
 mailer.getProxyConfig();
 mailer.getOperationalConfig();
-mailer.getEmailGovernance();  // default S/MIME signing, validation criteria etc.
+// default S/MIME signing, validation criteria etc.
+mailer.getEmailGovernance();
 </code></pre>
     </div>
   </section>
