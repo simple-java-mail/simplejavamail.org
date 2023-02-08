@@ -340,8 +340,10 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
   <h3>Authentication and OAUTH2 support</h3>
   <section>
 	  <p class="wide">
-		  You can use one of the builder methods on <em>MailerBuilder</em> for defining the server properties like host, port, username and password.
-		  Simple Java Mail supports plain SMTP (not recommended), SMTPS (legacy SSL) or TLS (recommended). The last authentication option to join the family
+		  You use one of the builder methods on <em>MailerBuilder</em> for defining the server properties like host, port, username and password.
+	  </p>
+	  <p class="wide">
+		  Simple Java Mail supports plain SMTP (default, but not recommended), SMTPS (legacy SSL) or TLS (recommended). The last authentication option to join the family
 		  is OAuth2 (by means of XOAUTH2 which comes built-in in Jakarta Mail, the underlying SMTP framework).
 	  </p>
 	  <p class="wide">
@@ -363,6 +365,10 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
   .sendMail(email);
 </code></pre>
 	  </div>
+
+	  <p class="wide">
+		  See the security page for a more <a href="security.html#section-authentication-methods">in-depth explanation of transport strategies</a>.
+	  </p>
   </section>
 
 
@@ -624,6 +630,11 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTPS);
 MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
 MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 </code></pre>
+
+		Or with property default:
+<pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP
+# or: SMTPS, SMTP_TLS, SMTP_OATH2
+</code></pre>
     </div>
   </section>
 
@@ -637,13 +648,13 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 	  </div>
 
 	  <div class="side">
-		  <pre><code>mailerBuilder
-		   .withCustomSSLFactoryClass(theClassName)
-		   .withCustomSSLFactoryInstance(theInstance) // takes precedence
-		   .buildMailer();
-		  </code></pre>
+<pre><code>mailerBuilder
+	.withCustomSSLFactoryClass(theClassName)
+	.withCustomSSLFactoryInstance(theInstance) // takes precedence
+	.buildMailer();
+</code></pre>
 
-		  Or with property:
+		  Or with property default:
 		  <pre><code class="language-properties small">simplejavamail.custom.sslfactory.class=you.project.YourSSLSocketFactory</code></pre>
 	  </div>
   </section>

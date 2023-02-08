@@ -1,0 +1,298 @@
+{{#> layouts/base head-sub-title="Security" page-title="Simple Java Mail Security settings" }}
+
+	{{#*inline "html-head-block"}}
+		<meta name="Description" content="Summary of all security related settings in Simple Java Mail">
+	{{/inline}}
+
+	{{#*inline "header-block"}}
+		{{> includes/header topic="security" }}
+	{{/inline}}
+
+	{{#*inline "body-block"}}
+		<section>
+			<p class="wide">
+				Simple Java Mail provides an easy API to access all underlying Jakarta Mail security related
+				settings as well as a few extra options, provided by Simple Java Mail itself.
+			</p>
+		</section>
+
+		<section class="toc">
+			<ul>
+				<li><a href="#section-authentication-methods">Authentication methods with transport strategies</a></li>
+				<li><a href="#section-transport-strategy-smtp" class="indent">TransportStrategy.SMTP</a></li>
+				<li><a href="#section-transport-strategy-smtps" class="indent">TransportStrategy.SMTPS</a></li>
+				<li><a href="#section-transport-strategy-tls" class="indent">TransportStrategy.SMTP_TLS</a></li>
+				<li><a href="#section-transport-strategy-oauth2" class="indent">TransportStrategy.OAUTH2</a></li>
+				<li><a href="#section-custom-ssl-factory">Configure your own SSL connection factory</a></li>
+				<li><a href="#section-whitelist-hosts">Whitelisting hosts</a></li>
+				<li><a href="#section-verify-server-identity">Verifying server identity</a></li>
+				<li><a href="#section-crlf-scanning">Scanning for suspicious content</a></li>
+			</ul>
+		</section>
+
+
+		<a href="#section-authentication-methods" id="section-authentication-methods" class="section-link h2">&sect;</a>
+		<h2>Authentication methods with transport strategies</h2>
+
+		<section>
+			<div>
+				<p class="wide">
+					Although Simple Java Mail started out as a library to help produce RFC-anatomically correct emails, one of its
+					primary drivers now is to simplify configuration, using <em>transport strategies</em>.
+				</p>
+				<p class="wide">
+					There are four strategies:
+				</p>
+				<pre><code>MailerBuilder
+  .withSMTPServer("host", port, "username", passwordOrOAUTH2Token)
+  .withTransportStrategy(TransportStrategy.SMTP)
+  .withTransportStrategy(TransportStrategy.SMTPS)
+  .withTransportStrategy(TransportStrategy.SMTP_TLS)
+  .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+</code></pre>
+				<p class="wide">
+					Or with property default:
+				</p>
+				<pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP
+# or: SMTPS, SMTP_TLS, SMTP_OATH2
+</code></pre>
+				<p>Let's quickly review them one-by-one.</p>
+			</div>
+		</section>
+
+
+		<a href="#section-transport-strategy-smtp" id="section-transport-strategy-smtp" class="section-link h3">&sect;</a>
+		<h3>TransportStrategy.SMTP</h3>
+
+		<section>
+			<div class="view">
+				<p>
+					This transport strategy falls back to plaintext when a mail server does not indicate support for
+					STARTTLS. Additionally, even if a TLS session is negotiated, <strong>server certificates are not validated in
+					any way</strong>.
+				</p>
+			</div>
+			<div class="side">
+<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTP);</code></pre>
+			</div>
+		</section>
+		<section>
+			<div>
+				<p class="wide">
+					Furthermore, this transport strategy only offers protection against passive network eavesdroppers when the mail server
+					indicates support for STARTTLS. Active network attackers can trivially bypass the encryption 1) by tampering with
+					the STARTTLS indicator, 2) by presenting a self-signed certificate, 3) by presenting a certificate issued by an
+					untrusted certificate authority; or 4) by presenting a certificate that was issued by a valid certificate
+					authority to a domain other than the mail server's.
+				</p>
+				<p class="wide">
+					For proper mail transport encryption, use <code class="inline language-java">TransportStrategy.SMTPS</code> or <code class="inline language-java">TransportStrategy.SMTP_TLS</code>.
+				</p>
+			</div>
+		</section>
+		<section>
+			<div class="view">
+				<p>
+					To disable opportunistic TLS and revert back to the legacy SMTP_PLAIN behavior prior to 5.0.0
+					(not recommended), you can turn it off programmatically or by setting the property
+					<code class="inline language-properties">simplejavamail.opportunistic.tls</code>.
+				</p>
+			</div>
+			<div class="side">
+      <pre><code>
+TransportStrategy.SMTP.setOpportunisticTLS(false);
+MailerBuilder.withTransportStrategy(TransportStrategy.SMTP);
+// or as property:
+simplejavamail.opportunistic.tls=false
+</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-transport-strategy-smtps" id="section-transport-strategy-smtps" class="section-link h3">&sect;</a>
+		<h3>TransportStrategy.SMTPS</h3>
+
+		<section>
+			<p class="wide">
+				SMTP entirely encapsulated by TLS. Commonly known as SMTPS.
+			</p>
+			<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTPS);</code></pre>
+
+			<p class="wide">
+				Strict validation of server certificates is enabled. Server certificates must be issued
+			</p>
+			<ol class="indent">
+				<li>by a certificate authority in the system trust store; and</li>
+				<li>to a subject matching the identity of the remote SMTP server.</li>
+			</ol>
+		</section>
+
+
+		<a href="#section-transport-strategy-tls" id="section-transport-strategy-tls" class="section-link h3">&sect;</a>
+		<h3>TransportStrategy.SMTP_TLS</h3>
+
+		<section>
+			<p class="wide">
+				Plaintext SMTP with a mandatory, authenticated STARTTLS upgrade.
+			</p>
+			<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);</code></pre>
+
+			<p class="wide">
+				Strict validation of server certificates is enabled. Server certificates must be issued
+			</p>
+			<ol class="indent">
+				<li>by a certificate authority in the system trust store; and</li>
+				<li>to a subject matching the identity of the remote SMTP server.</li>
+			</ol>
+		</section>
+		<section>
+			<div>
+				<p class="wide">
+					To quote FastMail on the <a href="https://www.fastmail.help/hc/en-us/articles/360058753834">differences between SSL and TLS</a>:
+				</p>
+				<blockquote>
+					<p class="wide">
+						<strong>SSL and TLS</strong> both provide a way to encrypt a communication channel between two computers (e.g. your computer
+						and our server). TLS is the successor to SSL and the terms SSL and TLS are used interchangeably unless you're
+						referring to a specific version of the protocol.
+					</p>
+				</blockquote>
+				<blockquote>
+					<p class="wide">
+						The ordering of protocols in terms of oldest to newest is: SSL v2, SSL v3, TLS v1.0, TLS v1.1, TLS v1.2, TLS v1.3 (currently proposed).
+					</p>
+				</blockquote>
+			</div>
+		</section>
+
+
+		<a href="#section-transport-strategy-oauth2" id="section-transport-strategy-oauth2" class="section-link h3">&sect;</a>
+		<h3>TransportStrategy.OAUTH2</h3>
+
+		<section>
+			<p class="wide">
+				OAUTH2 authentication is easy, just use the OAUTH2 TransportStrategy and provide the OAUTH2 token as the server password.
+			</p>
+<pre><code>MailerBuilder
+  .withSMTPServer("host", port, "username", yourOAUTH2Token)
+  .withTransportStrategy(TransportStrategy.OAUTH2);</code></pre>
+		</section>
+
+
+		<a href="#section-custom-ssl-factory" id="section-custom-ssl-factory" class="section-link h2">&sect;</a>
+		<h2>Configure your own SSL connection factory</h2>
+
+		<section>
+			<div class="view">
+				<p>
+					Furthermore, you can take complete control of SSL connections by providing your own SSL connection factory:
+				</p>
+			</div>
+			<div class="side">
+<pre><code>MailerBuilder
+	.withCustomSSLFactoryClass(theClassName) // or:
+	.withCustomSSLFactoryInstance(theInstance) // takes precedence
+	.buildMailer();
+</code></pre>
+				Or with property default:
+				<pre><code class="language-properties small">simplejavamail.custom.sslfactory.class=you.project.YourSSLSocketFactory</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-whitelist-hosts" id="section-whitelist-hosts" class="section-link h2">&sect;</a>
+		<h2>Whitelisting hosts</h2>
+
+		<section>
+			<div class="view">
+				<p>
+					Simple Java Mail by default trusts all hosts for SSL connections, but you can also selectively whitelist hosts.
+				</p>
+				<p>
+					Note that this is not the same as server identity verification, which is enabled through <code class="inline language-java">verifyingServerIdentity(boolean)</code>.
+					It would be prudent to have at least one of these features turned on, lest you be vulnerable to man-in-the-middle attacks.
+				</p>
+			</div>
+			<div class="side">
+<pre><code>MailerBuilder
+	// disable trust all hosts for SSL connections
+	.trustingAllHosts(false);
+	// or white list hosts for SSL connections (identity key validation notwithstanding)
+	.trustingSSLHosts("a", "b", "c", ...);
+</code></pre>
+				Or with property default:
+				<pre><code class="language-properties small">simplejavamail.defaults.trustallhosts=false
+# following property is ignored when trustallhosts is true:
+simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-verify-server-identity" id="section-verify-server-identity" class="section-link h2">&sect;</a>
+		<h2>Verifying server identity</h2>
+
+		<section>
+			<p class="wide">
+				Simple Java Mail also enables server identity verification for SSL connections by default (also see <a href="http://www.ietf.org/rfc/rfc2595.txt">RFC 2595</a>,
+				2.4. Server Identity Check). This is a security feature that verifies the server identity by checking the server's certificate against
+				the host name used by the client to start the connection.
+			</p>
+			<p class="wide">
+				Note that this is not the same as <code class="inline language-java">trustingAllHosts(boolean)</code> or <code class="inline language-java">trustingSSLHosts(String...)</code>.
+				Again, it would be prudent to have at least one of these features turned on, lest you be vulnerable to man-in-the-middle attacks.
+			</p>
+<pre><code>MailerBuilder
+	.verifyingServerIdentity(false);
+</code></pre>
+				Or with property default:
+				<pre><code class="language-properties small">simplejavamail.defaults.verifyserveridentity=true</code></pre>
+		</section>
+
+
+		<a href="#section-crlf-scanning" id="section-crlf-scanning" class="section-link h2">&sect;</a>
+		<h2>Scanning for suspicious content</h2>
+
+		<section>
+			<p class="wide">
+				Finally, Simple Java Mail by default tests most fields and headers for suspicious content, which could indicate a
+				<strong>CRLF injection attack</strong>. This is a unique feature of Simple Java Mail.
+			</p>
+
+			<p class="wide" style="margin-top: 1em">
+				The values being scanned are:
+			</p>
+			<ul class="indent">
+				<li>subject</li>
+				<li>every header name and value</li>
+				<li>every attachment name, nested datasource name and description</li>
+				<li>every embedded image name, nested datasource name and description</li>
+				<li>from recipient name and address</li>
+				<li>replyTo recipient name and address, if provided</li>
+				<li>bounceTo recipient name and address, if provided</li>
+				<li>every TO/CC/BCC recipient name and address</li>
+				<li>disposition-notification-to recipient name and address, if provided</li>
+				<li>return-receipt-to recipient name and address, if provided</li>
+			</ul>
+
+			<p class="wide">
+				Here's some more info on this topic:
+			</p>
+			<ul class="indent">
+				<li><a href="https://web.archive.org/web/20160331233647/http://www.cakesolutions.net/teamblogs/2008/05/08/email-header-injection-security">Email Header Injection security</a></li>
+				<li><a href="https://security.stackexchange.com/a/54100/110048">StackExchange - What threats come from CRLF in email generation?</a></li>
+				<li><a href="https://archive.ph/NuETu">OWASP - Testing for IMAP SMTP Injection</a></li>
+				<li><a href="https://archive.ph/uReuD">CWE-93: Improper Neutralization of CRLF Sequences ('CRLF Injection')</a></li>
+			</ul>
+
+			<p class="wide">
+				This behaviour can only be turned off by turning off all client validations, which also includes checking for email completeness and email-address validations.
+				The scans will still be performed, but issues found will only be logged as warnings.
+			</p>
+<pre><code>MailerBuilder
+	.disablingAllClientValidation(true);
+</code></pre>
+		</section>
+
+	{{/inline}}
+
+{{/layouts/base}}
