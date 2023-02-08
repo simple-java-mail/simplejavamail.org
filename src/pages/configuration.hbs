@@ -352,15 +352,15 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 				With property files and system variables you can define global defaults. But sometimes that is not enough.
 			</p>
 			<p>
-				When you have multiple mailer instances for multiple SMTP servers clustered together (see <a href="#section-clustering">clustering</a>),
-				you may want to define defaults or overrides for specific servers. You can do that by defining a reference Email instance and set it as
+				When you have multiple mailer instances, each for a separate SMTP server clustered together (see <a href="#section-clustering">clustering</a>),
+				you may want to define defaults or overrides for a specific server. You can do that by defining a reference Email instance and set it as
 				<em>defaults</em> or <em>overrides</em> parameter.
 			</p>
 		</div>
 
 		<div class="side">
 <pre><code class="language-java">
-Mailer mailer = mailerBuiler.
+Mailer adminServer = mailerBuiler.
 	(..)
 	.withEmailDefaults(yourServerLevelDefaults)
 	.withEmailOverrides(yourServerLevelOverrides)

@@ -1,0 +1,301 @@
+{{#> layouts/base head-sub-title="Feature Comparison Matrix" page-title="Feature Comparison Matrix" }}
+
+	{{#*inline "html-head-block"}}
+<meta name="Description" content="How does Simple Java Mail compare to toher mailing frameworks?">
+<style>
+	table {
+		border-collapse: collapse;
+	}
+	table, th, td {
+		border: 1px solid black;
+	}
+	th, td {
+		padding: 5px;
+		vertical-align: top;
+		text-align: center;
+	}
+
+	td:first-child {
+		font-size: small;
+	}
+
+	.yes::before { content: '\2713\a0'; } /* &check;&nbsp; */
+	.meh::before { content: '\2014\a0'; } /* &mdash;&nbsp; */
+	.no::before { content: '\2717\a0'; } /* &cross;&nbsp; */
+
+	.yes { color: green; }
+	.meh { color: orange; }
+	.no { color: red; }
+
+	.yes *, .meh *, .no * {
+		color: initial;
+		font-size: xx-small;
+	}
+</style>
+	{{/inline}}
+
+	{{#*inline "header-block"}}
+		{{> includes/header topic="features" }}
+	{{/inline}}
+
+	{{#*inline "body-block"}}
+
+	<p class="wide">
+		Due to the fact most libraries are based on JavaMail / Jakarta Mail, in theory all libraries should be able to do the same things
+		if you start tweaking under hood directly on the related low level components (such as manually setting Session properties). However, since
+		we are comparing Simple Java Mail in the context of its mission, being the easiest to use SMTP library in the world, when a library doesn't support a
+		feature as first class API, it will be marked as not-supported in the matrix below.
+	</p>
+
+	<p class="wide">
+		Also, I consider Apache Commons Email a half-hearted attempt at wrapping JavaMail with a useful API that lost its momentum, ultimately failed
+		and seemingly has been abandoned (last release in 2017 and no real code changes since). Therefore, I will limit my remarks to feature differences
+		simply to "there was an attempt".
+	</p>
+
+	<p class="wide">
+		Each feature is linked to the appropriate documentation.
+	</p>
+
+	<p class="wide">
+		<strong>I did my best to be objective and verify all the claims below, but if you find any inaccuracies, please
+		<a href="https://github.com/bbottema/simple-java-mail/issues/new">raise an issue</a>.</strong>
+	</p>
+
+	<p class="wide">
+		In 2023, it is surprising to find that there are only a few major Java libraries for SMTP, compared to Simple Java Mail. There is a scarcity of
+		libraries specifically focused on SMTP mailing, with Apache Commons appearing inactive and Spring Mail not receiving enough development as a primary
+		library. Other libraries I found are rarely still active, or are too small and limited compared to Simple Java Mail to be considered as a main alternative.
+	</p>
+
+	<section>
+		<table style="margin-top: 1em">
+			<thead>
+				<tr>
+					<th>&nbsp;</th>
+					<th>Simple Java Mail</th>
+					<th>Apache Commons Email</th>
+					<th>Spring Mail</th>
+				</tr>
+			</thead>
+			<tr>
+				<td><a href="features.html#section-basic-usage">All RFC stuff hidden<br>behind clean (fluent) API?</a></td>
+				<td class="yes"></td>
+				<td class="meh"><p>there was an attempt</p></td>
+				<td class="no"><p>focus on ease of integration,<br>not on ease of use</p></td>
+			</tr>
+			<tr>
+				<td><a href="https://github.com/bbottema/simple-java-mail">Actively maintained?</a></td>
+				<td class="yes"><p>16 years and still going strong</p></td>
+				<td class="no"><p>last released 2017</p></td>
+				<td class="meh"><p>Mostly just as part of<br>general Spring maintenance</p></td>
+			</tr>
+			<tr>
+				<td><a href="https://www.simplejavamail.org/">Excellent (searchable) documentation<br>with lots of examples?</a></td>
+				<td class="yes"></td>
+				<td class="no"><p>relies on your knowledge of<br>underlying JavaMail / Jakarta Mail</p></td>
+				<td class="no"><p>relies on your knowledge of<br>underlying JavaMail / Jakarta Mail</p></td>
+			</tr>
+			<tr>
+				<td>Lightweight?</td>
+				<td class="yes"><p>298kb (core)</p></td>
+				<td class="yes"><p>54kb</p></td>
+				<td class="no"><p>4.47Mb spring-context-support + deps<br>(165kb if you already have Spring)</p></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-reply-forward">Support for replying to / forwarding<br>emails?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="cli.html#navigation">CLI support for sending emails?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-email-validation">Can read Outlook .msg files?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="configuration.html#section-config-properties">Supports properties / property files?</a></td>
+				<td class="yes"><p>for everything</p></td>
+				<td class="no"></td>
+				<td class="meh"><p>limited to the most<br>basic server config</p></td>
+			</tr>
+			<tr>
+				<td><a href="configuration.html#section-spring-support">Integrates with Spring?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="yes"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#authentication">First class authentication?</a></td>
+				<td class="yes"></td>
+				<td class="meh"><p>no OAUTH2</p></td>
+				<td class="meh"><p>no OAUTH2</p></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-proxy">Support for (authenticated) proxy?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="security.html#navigation">Robust security?</a></td>
+				<td class="yes"></td>
+				<td class="meh"><p>there was an attempt</p></td>
+				<td class="no"><p>limited, moreover it relies<br>on you for Jakarta Mail properties</p></td>
+			</tr>
+			<tr>
+				<td><a href="security.html#section-crlf-scanning">Safe-guards against CRLF injection attacks?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="configuration.html#section-batch-and-clustering">Advanced performance tuning?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="debugging.html#section-inspect-mailer-email">All configuration can be inspected easily?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-handling-async-result">Ready for the async world?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="meh"><p>only with Spring's @Async<br>(messy exception handling)</p></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-add-recipients">Has robust recipient parsing?</a></td>
+				<td class="yes"></td>
+				<td class="meh"><p>there was an attempt</p></td>
+				<td class="yes"><p>(but no name defaults/overrides<br>or support for delimited strings)</p></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-custom-session">Allows custom Session instance?</a></td>
+				<td class="yes"></td>
+				<td class="yes"></td>
+				<td class="yes"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-content-transfer-encoding">Custom content (and attachments)<br>transfer encoding?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="meh"><p>basic encoding ticket has<br>been
+					<a href="https://github.com/spring-projects/spring-framework/issues/13569" rel="nofollow">pending</a> since 2011</p></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-custom-id">Supports custom messageId?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="yes"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-custom-sentdate">Supports custom sent date?</a></td>
+				<td class="yes"></td>
+				<td class="yes"></td>
+				<td class="yes"></td>
+			</tr>
+			<tr>
+				<td>Supports core complexity?
+					<ul>
+						<li>- <a href="features.html#section-basic-usage">html alternative content</a></li>
+						<li>- <a href="features.html#section-attachments">attachments</a></li>
+						<li>- <a href="features.html#section-embedding">embedded images</a></li>
+					</ul>
+				</td>
+				<td class="yes"></td>
+				<td class="yes"></td>
+				<td class="yes"></td>
+			</tr>
+			<tr>
+				<td><a href="rfc-compliant.html#section-explore-multipart">Auto-determines best<br>MimeMessage composition?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="yes"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-icalendar-vevent">Supports iCalendar vEvent?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="security.html#section-sending-dkim">Supports DKIM signing?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="security.html#section-sending-smime">Supports S/MIME<br>signing / encryption?<br>(sending / reading, +attachments)</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td>
+					<a href="features.html#section-return-receipt">Delivery / read receipt support?<br>
+					(dispositionNotificationTo / returnReceiptTo)</a>
+				</td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-email-validation">Email address validation?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-bouncing-emails">Supports bounce address</a></td>
+				<td class="yes"></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-connection-test">Can be used just to test a server connection?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-serializing-emails">Emails can be serialized?</a></td>
+				<td class="meh"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-custom-mailer">Library allows for custom sending logic?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="features.html#section-maximum-emailsize">Can set maximum allowed email size?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+			<tr>
+				<td><a href="configuration.html#section-config-mailer">Support sender-level email defaults / overrides?</a></td>
+				<td class="yes"></td>
+				<td class="no"></td>
+				<td class="no"></td>
+			</tr>
+		</table>
+
+	</section>
+
+	{{/inline}}
+
+{{/layouts/base}}

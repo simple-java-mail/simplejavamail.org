@@ -61,6 +61,7 @@ mailer.sendMail(email);
 		  <br/>
 		  <p>But don't let looks deceive you, this library does everything: it is a <strong>robust, feature complete</strong>
 			  mailing library, yet it is <strong>small</strong> and <strong>lightweight</strong>.
+			  <strong><a href="feature-matrix.html#navigation">Compare</a></strong> it to other popular mailing libraries!
 		  </p>
 		  <br/>
 		  <p>It is fully <strong><a href="rfc-compliant.html#navigation">RFC compliant</a></strong> and
@@ -133,7 +134,8 @@ Mailer mailer = MailerBuilder
           .withConnectionPoolCoreSize(10); // reusable connection(s) / multi-server sending
           .withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
           .withCustomSSLFactoryInstance(mySSLFactoryInstance);
-		  .withDefaultsEmail(myEmailWithADefaultBCCRecipient);
+		  .withEmailDefaults(myEmailWithADefaultBCCRecipient);
+		  .withEmailOverrides(myEmailWithFixedFromAddress);
           .manyMoreOptions()
           .buildMailer();
 
