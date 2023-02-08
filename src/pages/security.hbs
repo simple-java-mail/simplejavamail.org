@@ -12,7 +12,7 @@
 		<section>
 			<p class="wide">
 				Simple Java Mail provides an easy API to access all underlying Jakarta Mail security related
-				settings as well as a few extra options, provided by Simple Java Mail itself.
+				settings as well as a few extra options, including CLRF injection scanning, DKIM and S/MIME support.
 			</p>
 		</section>
 
@@ -27,6 +27,11 @@
 				<li><a href="#section-whitelist-hosts">Whitelisting hosts</a></li>
 				<li><a href="#section-verify-server-identity">Verifying server identity</a></li>
 				<li><a href="#section-crlf-scanning">Scanning for suspicious content</a></li>
+				<li><a href="#section-sending-dkim">Signing emails with DKIM</a></li>
+				<li><a href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
+				<li><a href="#section-reading-smime">Reading S/MIME signed / encrypted attachments</a></li>
+				<li><a href="#section-reading-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
+				<li><a href="#section-reading-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
 			</ul>
 		</section>
 
@@ -291,6 +296,215 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 <pre><code>MailerBuilder
 	.disablingAllClientValidation(true);
 </code></pre>
+		</section>
+
+
+		<a href="#section-sending-dkim" id="section-sending-dkim" class="section-link h2">&sect;</a>
+		<h2>Signing emails with DKIM</h2>
+
+		<section>
+			<div class="view">
+				<p>
+					Simple Java Mail also supports signing with <a href="https://www.endpointdev.com/blog/2014/04/spf-dkim-and-dmarc-brief-explanation/">DKIM</a>
+					domain keys. It uses the
+					<strong><a href="modules.html#dkim-module">dkim-module</a></strong>
+					module to perform the DNS DKIM record check on the given domain.
+				</p>
+			</div>
+			<div class="side">
+<pre><code>currentEmailBuilder.
+    .signWithDomainKey(
+       privateKey byte[] / File / InputStream,
+       "your_domain.org",
+       "your_selector");
+
+mailer.sendMail(signedEmail);
+</code></pre>
+				You can also directly use the helper method:
+				<pre><code class="small">MailerHelper.signMessageWithDKIM(mimeMessageToSign, emailContainingSigningDetails);</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-sending-smime" id="section-sending-smime" class="section-link h2">&sect;</a>
+		<h2>Signing / encrypting emails with S/MIME</h2>
+
+		<section>
+			<div class="view">
+				<p>
+					Simple Java Mail supports signing and encrypting with <a href="https://www.globalsign.com/en/blog/what-is-s-mime/">S/MIME</a>.
+					It uses the <strong><a href="modules.html#smime-module">smime-module</a></strong> module to perform the signing / encryption.
+				</p>
+				<br/>
+				<p>
+					You can sign, encrypt or both sign and encrypt an email. In the latter case the email will first be signed
+					and then encrypted, as per
+					<a href="https://github.com/markenwerk/java-utils-mail-smime#using-the-library-as-a-sender-" target="_blank">
+						advice</a> of the underlying library. All signing/encrypting is performed when the email is being sent.
+				</p>
+				<br/>
+				<p>
+					You can <strong>sign individual emails</strong> or <strong>sign all emails</strong> by configuring S/MIME on the <em>Mailer</em>
+					instead.
+				</p>
+			</div>
+			<div class="side">
+				Signing an email:
+				<pre><code>Pkcs12Config myKeyInfo = Pkcs12Config.builder()
+    .pkcs12Store("my_smime_keystore.pkcs12")
+    .storePassword("my_store_password")
+    .keyAlias("my_key_alias")
+    .keyPassword("my_key_password")
+    .build();
+
+Email emailToBeSigned = currentEmailBuilder.
+    .(..)
+    .signWithSmime(myKeyInfo)
+    .buildEmail();
+
+mailer.sendMail(emailToBeSigned);
+</code></pre>
+				Encrypting an email:
+				<pre><code>Email emailToBeEncrypted = currentEmailBuilder.
+    .(..)
+    .encryptWithSmime("x509CertificateInStandardPEM.crt")
+    .buildEmail();
+
+mailer.sendMail(emailToBeEncrypted);
+</code></pre>
+				Sign all emails by default:
+				<pre><code>currentEmailBuilder.
+    .signByDefaultWithSmime(myPkcs12Config)
+    (...)
+    .buildMailer();
+</code></pre>
+				Or with properties:
+				<pre><code class="language-properties small"># defaults on Mailer level:
+simplejavamail.smime.signing.keystore=my_smime_keystore.pkcs12
+simplejavamail.smime.signing.keystore_password=keystore_password
+simplejavamail.smime.signing.key_alias=key_alias
+simplejavamail.smime.signing.key_password=key_password
+# encryption can only be applied to individual Email instances
+# but this can be default behaviour (not recommended as users would need to share private keys)
+simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
+</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-reading-smime" id="section-reading-smime" class="section-link h2">&sect;</a>
+		<h2>Reading S/MIME signed / encrypted attachments</h2>
+
+		<section>
+			<div class="view">
+				<p>
+					Simple Java Mail can automatically handle
+					<a href="https://docs.ipswitch.com/moveit/central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME signed messages</a>
+					or attachments and has some useful extras such as providing you with metadata.
+				</p>
+				<p>S/MIME is an optional feature and if you want to use it, you need to include the
+					<strong><a href="modules.html#smime-module">smime-module</a></strong>.
+				</p>
+			</div>
+			<div class="side">
+<pre><code class="small">Email mergedEmail = EmailConverter.outlookMsgToEmail("yourSMIMESignedMessage.msg"); // or
+Email mergedEmail = EmailConverter.emlToEmail("yourSMIMESignedMessage.eml");
+
+// all attachments as-is:
+mergedEmail.getAttachments(); // smime.p7m, my-doc.docx
+// all attachments with the encrypted ones replaced:
+mergedEmail.getDecryptedAttachments(); // signed-email.eml, my-doc.docx
+
+// if the message itself was signed (rather than a independently signed attachment):
+OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
+details.getSmimeMode(); // SIGNED
+details.getSmimeMime(); // application/pkcs7-mime or multipart/signed
+details.getSmimeType(); // signed-data, enveloped-data
+details.getSmimeName(); // smime.p7m or smime.p7s
+details.getSmimeMicalg(); // ie. sha-512
+details.getSmimeSignedBy(); // email or name used
+</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-reading-smime-merging" id="section-reading-smime-merging" class="section-link h3">&sect;</a>
+		<h3>S/MIME signed messages are merged by default</h3>
+
+		<section>
+			<div class="view">
+				<p>
+					As an S/MIME signed message is actually nested as an attachment, the default behavior is to merge the S/MIME signed content into the root message.
+					This only happens if there was exactly one S/MIME signed attachment and the decrypted version is of type "message/rfc822".
+				</p>
+				<p>
+					This default behavior can be deactivated. For your convenience, the decrypted message is available as a separate Email instance:
+				</p>
+			</div>
+
+			<div class="side">
+<pre><code class="small">Email nonMergedEmail = EmailBuilder
+                .copying(mergedEmail)
+                .clearSMIMESignedAttachmentMergingBehavior()
+                .buildEmail();
+
+// or by configuring the intermediary builder:
+emailBuilder = EmailConverter.outlookMsgToEmailBuilder(msgFile); // or
+emailBuilder = EmailConverter.emlToEmailBuilder(emlFile);
+Email nonMergedEmail = emailBuilder
+                .notMergingSingleSMIMESignedAttachment()
+                .buildEmail();</code></pre>
+				You always have access to the nested decrypted message:
+				<pre><code class="small">mergedEmail.getSmimeSignedEmail();
+nonMergedEmail.getSmimeSignedEmail();
+</code></pre>
+			</div>
+		</section>
+
+		<section>
+			<div class="view">
+				<p>If a message is <em>both</em> signed and encrypted, <code class="inline language-java">getSmimeSignedEmail()</code>
+					will itself have a nested <code class="inline language-java">getOriginalSmimeDetails().</code></p>
+			</div>
+
+			<div class="side">
+      <pre><code class="small">
+        signedAndEncrypted.getOriginalSmimeDetails().smimeMode(); // SIGNED_ENCRYPTED
+        Email signedOrEncrypted = signedAndEncrypted.getSmimeSignedEmail();
+
+        signedOrEncrypted.getOriginalSmimeDetails().smimeMode(); // SIGNED or ENCRYPTED
+
+        // whether it is SIGNED or ENCRYPTED depends on the order in which the original
+        // email client handled this S/MIME scenario
+</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-reading-smime-decryption" id="section-reading-smime-decryption" class="section-link h3">&sect;</a>
+		<h3>Decrypting S/MIME attachments using certificate</h3>
+
+		<section>
+			<p class="wide">
+				Every conversion method optionally accepts a
+				<a href="https://javadoc.io/doc/org.simplejavamail/maven-master-project/latest/org/simplejavamail/api/mailer/config/Pkcs12Config.html" target="_blank">Pkcs12Config</a>
+				instance, which contains details about your key store and certificate. With that, you can decrypt an S/MIME encrypted mail.
+			</p>
+
+			<div class="wide">
+<pre><code>Pkcs12Config yourPkcs12Config = Pkcs12Config.builder()
+      .pkcs12Store("smime_keystore.pkcs12") // path, File or InputStream
+      .storePassword("letmein")
+      .keyAlias("smime_test_user_alias")
+      .keyPassword("letmein")
+      .build();
+
+EmailConverter.outlookMsgToEmail("yourSMIMEEncryptedMessage.msg", yourPkcs12Config); // or
+EmailConverter.emlToEmail("yourSMIMEEncryptedMessage.eml", yourPkcs12Config);
+
+mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENCRYPTED
+</code></pre>
+			</div>
 		</section>
 
 	{{/inline}}
