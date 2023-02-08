@@ -15,25 +15,31 @@
 	<url>
 		<loc>https://www.simplejavamail.org/features.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2023-01-24</lastmod>
+		<lastmod>2023-02-08</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/configuration.html</loc>
 		<priority>1.0</priority>
-		<lastmod>2023-02-06</lastmod>
+		<lastmod>2023-02-08</lastmod>
 		<changefreq>weekly</changefreq>
 	</url>
 	<url>
-		<loc>https://www.simplejavamail.org/cli.html</loc>
-		<priority>0.7</priority>
-		<lastmod>2022-01-03</lastmod>
+		<loc>https://www.simplejavamail.org/security.html</loc>
+		<priority>1.0</priority>
+		<lastmod>2023-02-08</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
 		<loc>https://www.simplejavamail.org/debugging.html</loc>
 		<priority>0.5</priority>
 		<lastmod>2023-01-24</lastmod>
+		<changefreq>monthly</changefreq>
+	</url>
+	<url>
+		<loc>https://www.simplejavamail.org/cli.html</loc>
+		<priority>0.7</priority>
+		<lastmod>2022-01-03</lastmod>
 		<changefreq>monthly</changefreq>
 	</url>
 	<url>
@@ -75,7 +81,7 @@
 	<url>
 		<loc>https://www.simplejavamail.org/migration-notes-7.0.0.html</loc>
 		<priority>0.1</priority>
-		<lastmod>2022-01-03</lastmod>
+		<lastmod>2023-02-08</lastmod>
 		<changefreq>yearly</changefreq>
 	</url>
 </urlset>
