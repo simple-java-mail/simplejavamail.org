@@ -11,8 +11,8 @@
     {{#*inline "body-block"}}
   <section class="introduction">
     <p class="wide" style="font-size:smaller">
-      (also check the <a href="configuration.html#navigation">configuration section</a> if you're missing a
-      feature)
+      (also check <a href="configuration.html#navigation">configuration</a> and <a href="security.html#navigation">security</a>
+		if you're missing a feature)
     </p>
 
     <p class="wide">
@@ -52,13 +52,18 @@
       <a href="https://codethataint.com/blog/builder-pattern/" target="_blank">Telescoping Constructor</a> anti-pattern and keep things
       manageable: <a href="https://martinfowler.com/bliki/FluentInterface.html" target="_blank">fluent builders</a>.
     </p>
-    <ol class="indent">
+    <ol class="indent" style="margin-bottom: 1em">
       <li>With fluent builders, we can tightly control <strong>valid combinations</strong>, logical <strong>decision paths</strong> and easily <strong>provide
         alternative methods</strong>.
       </li>
       <li>At the same time we can concentrate all mutation logic in the builders and produce mostly <strong>immutable objects</strong>.</li>
       <li>Finally, we're able to <strong>centralize our documentation</strong> around the builders and refer to it from wherever this library is used.</li>
     </ol>
+
+	<h3>Migrating from an older version?</h3>
+	<p class="wide">
+		Checkout the <a href="migration-notes.html#navigation">migration notes</a> to see exactly what changed.
+	</p>
   </section>
 
   <section class="toc">
