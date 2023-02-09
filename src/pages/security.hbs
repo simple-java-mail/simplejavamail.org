@@ -306,9 +306,8 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 			<div class="view">
 				<p>
 					Simple Java Mail also supports signing with <a href="https://www.endpointdev.com/blog/2014/04/spf-dkim-and-dmarc-brief-explanation/">DKIM</a>
-					domain keys. It uses the
-					<strong><a href="modules.html#dkim-module">dkim-module</a></strong>
-					module to perform the DNS DKIM record check on the given domain.
+					domain keys. DKIM is an optional feature and if you want to use it, you need to include the
+					<strong><a href="modules.html#dkim-module">dkim-module</a></strong>.
 				</p>
 			</div>
 			<div class="side">
@@ -333,7 +332,8 @@ mailer.sendMail(signedEmail);
 			<div class="view">
 				<p>
 					Simple Java Mail supports signing and encrypting with <a href="https://www.globalsign.com/en/blog/what-is-s-mime/">S/MIME</a>.
-					It uses the <strong><a href="modules.html#smime-module">smime-module</a></strong> module to perform the signing / encryption.
+					S/MIME is an optional feature and if you want to use it, you need to include the
+					<strong><a href="modules.html#smime-module">smime-module</a></strong>.
 				</p>
 				<br/>
 				<p>
