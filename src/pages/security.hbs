@@ -311,16 +311,33 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 				</p>
 			</div>
 			<div class="side">
-<pre><code>currentEmailBuilder.
-    .signWithDomainKey(
-       privateKey byte[] / File / InputStream,
-       "your_domain.org",
-       "your_selector");
-
-mailer.sendMail(signedEmail);
+<pre><code>currentEmailBuilder.signWithDomainKey(
+	DkimConfig.builder()
+		.dkimPrivateKeyData(byte[] / File / InputStream)
+		.dkimSigningDomain("your_domain.org")
+		.dkimSelector("your_selector")
+		.build()
+);
 </code></pre>
-				You can also directly use the helper method:
+				You can also use the helper method yo sign a message yourself, but beware that the signing
+				is only triggered when the MimeMessage streamed to a transport (or file):
 				<pre><code class="small">MailerHelper.signMessageWithDKIM(mimeMessageToSign, emailContainingSigningDetails);</code></pre>
+			</div>
+		</section>
+
+		<section>
+			<div class="view">
+				<p>
+					By default, DKIM signs a fixed list of possible headers. If you need more control of which headers are signed,
+					you can provide a list of headers that should be skipped from this list.
+				</p>
+			</div>
+			<div class="side">
+<pre><code class="small">	DkimConfig.builder()
+		(..)
+		.excludedHeadersFromDkimDefaultSigningList("Message-ID", "Date", "Return-Path", "Bounces-To")
+		.build()
+</code></pre>
 			</div>
 		</section>
 
