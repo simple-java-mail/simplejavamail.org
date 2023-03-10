@@ -114,6 +114,8 @@ Email email = EmailBuilder.startingBlank()
           .signWithDomainKey(privateKeyData, "somemail.com", "selector") // DKIM
           .signWithSmime(pkcs12Config)
           .encryptWithSmime(x509Certificate)
+          .dontApplyDefaultValueFor(FROM)
+          .dontApplyOverrideValueFor(REPLY_TO)
           .withContentTransferEncoding(BASE_64)
           .buildEmail();
 
