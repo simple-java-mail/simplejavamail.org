@@ -351,30 +351,67 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 	<h2>Mailer level email defaults and overrides</h2>
 
 	<section>
-		<div class="view">
-			<p>
-				With property files and system variables you can define global defaults. But sometimes that is not enough.
-			</p>
-			<p>
-				When you have multiple mailer instances, each for a separate SMTP server clustered together (see <a href="#section-clustering">clustering</a>),
-				you may want to define defaults or overrides for a specific server. You can do that by defining a reference Email instance and set it as
-				<em>defaults</em> or <em>overrides</em> parameter.
-			</p>
-		</div>
+		<p class="wide">
+			With property files and system variables you can define global defaults. But sometimes that is not enough.
+		</p>
+		<p class="wide">
+			With Simple Java Mail, you can set both defaults and overrides on the Mailer level using Java code. This will override
+			global defaults loaded from a property file for example. However, before using it as defaults Email reference, you can still have your defaults
+			initialized with global defaults, by using <code>emailBuilder.buildEmailCompletedWithDefaultsAndOverrides()</code>.
+		</p>
+		<div class="wide">
+<pre><code class="language-java">Email yourServerLevelDefaults = EmailBuilder.startingBlank()
+	/* set your defaults here */
+	.buildEmailCompletedWithDefaultsAndOverrides(); // complete the instance with global defaults
 
-		<div class="side">
-<pre><code class="language-java">
 Mailer adminServer = mailerBuiler.
 	(..)
 	.withEmailDefaults(yourServerLevelDefaults)
 	.withEmailOverrides(yourServerLevelOverrides)
 	.build();
+</code></pre>
+		</div>
 
-// for example: force FROM to be always the
-// same for the specific SMTP server above:
+		<p class="wide">
+			One use case for this is when you have multiple mailer instances, each for a separate SMTP server clustered together (see
+			<a href="#section-clustering">clustering</a>), you may want to define defaults or overrides for a specific server. You can do that by defining
+			a reference Email instance and set it as <em>defaults</em> or <em>overrides</em> parameter.
+		</p>
+		<div class="wide">
+			<pre><code class="language-java">// for example: force FROM to be always the same for the
+// specific SMTP adminServer from the previous example:
 Email yourServerLevelOverrides = EmailBuilder.startingBlank()
     .from("Admin", "admin@yourcompany.com")
     .buildEmail();
+</code></pre>
+		</div>
+	</section>
+
+	<section>
+		<div class="view">
+			<p>
+				You can exclude specific emails completely from having defaults or overrides applied by using <code>ignoreDefaults</code> or <code>ignoreOverrides</code>.
+			</p>
+		</div>
+
+		<div class="side">
+<pre><code class="language-java">emailBuilder.ignoringDefaults(true)
+emailBuilder.ignoringOverrides(true)
+</code></pre>
+		</div>
+	</section>
+
+	<section>
+		<div class="view">
+			<p>
+				You can even exclude specific fields from the defaults or overrides if you want to make very specific exceptions.
+			</p>
+		</div>
+
+		<div class="side">
+<pre><code class="language-java">emailBuilder
+	.dontApplyDefaultValueFor(EmailProperty.FROM, EmailProperty.REPLY_TO)
+	.dontApplyOverrideValueFor(EmailProperty.DKIM_SIGNING_CONFIG)
 </code></pre>
 		</div>
 	</section>
