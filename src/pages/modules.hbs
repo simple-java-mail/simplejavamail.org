@@ -183,16 +183,32 @@
   <h2 id="spring-module" class="with-back-to-top">Spring support</h2>
 
   <section>
-    <p>
-        To enable Spring support (see <a href="configuration.html#section-spring-support">Configuration</a>), include the following module:
-    </p>
-    <pre><code class="language-xml">&lt;dependency&gt;
+	  <p>
+		  To enable Spring support (see <a href="configuration.html#section-spring-support">Configuration</a>), include the following module:
+	  </p>
+	  <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
     &lt;artifactId&gt;spring-module&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
-    <p>
-      This adds the Spring core dependency, which is assumed to be on the classpath already.
-    </p>
+	  <p>
+		  This adds the Spring core dependency, which is assumed to be on the classpath already.
+	  </p>
+  </section>
+
+  <h2 id="karaf-module" class="with-back-to-top">Apache Karaf support</h2>
+
+  <section>
+	  <p>
+		  To enable Apache Karaf support, include the following module:
+	  </p>
+	  <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;karaf-module&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+	  <p>
+		  NOTE: the artifact is currently temporarily named: 'simplejavamail-karaf-feature'.
+		  It will be named correctly in the next release.
+	  </p>
   </section>
   {{/inline}}
 
