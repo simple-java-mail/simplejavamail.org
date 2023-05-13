@@ -213,7 +213,7 @@ currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor()
 currentMailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
 </code></pre>
 		  <pre><code class="small">// change the default sending logic to your own approach
-currentMailerBuilder.withCustomMailer(yourOwnMailSenderImpl); // send emails, test connections
+currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test connections
 </code></pre>
     </div>
   </section>
