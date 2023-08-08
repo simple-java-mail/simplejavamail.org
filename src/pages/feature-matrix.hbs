@@ -48,12 +48,6 @@
 	</p>
 
 	<p class="wide">
-		Also, as this comparison matrix is taking shape, it's becoming apparent how much Apache Commons Email is a half-hearted attempt at wrapping JavaMail in a useful
-		API that lost its momentum, ultimately failed and seemingly has been abandoned (last release in 2017 and no meaningful code changes since).
-		Therefore, remarks on feature differences will be mostly limited simply to "there was an attempt".
-	</p>
-
-	<p class="wide">
 		Each feature is linked to the appropriate documentation.
 	</p>
 
@@ -63,9 +57,18 @@
 	</p>
 
 	<p class="wide">
-		In 2023, it is surprising to find that there are only a few major Java libraries for SMTP, compared to Simple Java Mail. There is a scarcity of
+		<strong>Note 1:</strong>
+		In 2023, it is surprising to find only a few major Java libraries for SMTP, next to Simple Java Mail. There seems to be a scarcity of
 		libraries specifically focused on SMTP mailing, with Apache Commons appearing inactive and Spring Mail not receiving enough development as a primary
-		library. Other libraries out there are rarely still active, or are too small and limited compared to Simple Java Mail to be considered as a main alternative.
+		library. Other libraries out there are rarely still active, or are too small and limited compared to Simple Java Mail to be considered as a real alternative.
+	</p>
+
+	<p class="wide">
+		<strong>Note 2:</strong>
+		As this comparison matrix is taking shape, and the source code of other SMTP libraries is being examined more closely, it is becoming apparent how
+		much Apache Commons Email is a half-hearted attempt at wrapping JavaMail in a useful API that lost its momentum completely, ultimately failed as a project
+		and seemingly has been abandoned (last release in 2017 and no meaningful code changes since). Therefore, remarks on feature differences will be mostly
+		limited simply to "there was an attempt".
 	</p>
 
 	<section>
@@ -270,7 +273,7 @@
 			</tr>
 			<tr>
 				<td><a href="features.html#section-serializing-emails">Emails can be serialized?</a></td>
-				<td class="meh"></td>
+				<td class="meh"><p>(partial support)</p></td>
 				<td class="no"></td>
 				<td class="no"></td>
 			</tr>
