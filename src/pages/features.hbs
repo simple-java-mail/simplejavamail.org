@@ -983,6 +983,10 @@ Session session = mailer.getSession();
         You can explicitly define the email address to return the receipts to or else Simple Java Mail will default
         to the <em>replyTo</em> address if available or else the <em>fromAddress</em>.
       </p>
+      <p>
+        If you simply enabled <code>Return-Receipt-To</code> without providing a address, it will default to the first Reply-To recipient if provided or
+		  From recipient otherwise.
+      </p>
     </div>
 
     <div class="side">
