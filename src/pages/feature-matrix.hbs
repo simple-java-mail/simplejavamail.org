@@ -53,22 +53,23 @@
 
 	<p class="wide">
 		<strong>All claims below were made objectively with due diligence and in good faith, but if you find any inaccuracies, please
-		<a href="https://github.com/bbottema/simple-java-mail/issues/new">raise an issue</a>.</strong>
+		<a href="https://github.com/bbottema/simple-java-mail/issues/new" rel="nofollow" target="_blank">raise an issue</a>.</strong>
 	</p>
 
 	<p class="wide">
 		<strong>Note 1:</strong>
 		In 2023, it is surprising to find only a few major Java libraries for SMTP, next to Simple Java Mail. There seems to be a scarcity of
 		libraries specifically focused on SMTP mailing, with Apache Commons appearing inactive and Spring Mail not receiving enough development as a primary
-		library. Other libraries out there are rarely still active, or are too small and limited compared to Simple Java Mail to be considered as a real alternative.
+		library. Other libraries out there are rarely still active, or are too small and limited compared to Simple Java Mail to be considered a real alternative.
 	</p>
 
-	<p class="wide">
+	<a class="wide">
 		<strong>Note 2:</strong>
 		As this comparison matrix is taking shape, and the source code of other SMTP libraries is being examined more closely, it is becoming apparent how
-		much Apache Commons Email is a half-hearted attempt at wrapping JavaMail in a useful API that lost its momentum completely, ultimately failed as a project
-		and seemingly has been abandoned (last release in 2017 and no meaningful code changes since). Therefore, remarks on feature differences will be mostly
-		limited simply to "there was an attempt".
+		much Apache Commons Email has been a half-hearted attempt at wrapping JavaMail in a useful API, that lost its momentum completely and ultimately failed
+		as a project and seemingly has been abandoned (last release in 2017 and
+		<a href="https://github.com/apache/commons-email/commits/master" rel="nofollow" target="_blank">no meaningful code changes</a> since, last verified Oct
+		2023). Therefore, remarks on feature differences will be mostly limited simply to "there was an attempt".
 	</p>
 
 	<section>
@@ -118,7 +119,7 @@
 				<td class="no"></td>
 			</tr>
 			<tr>
-				<td><a href="features.html#section-email-validation">Can read Outlook .msg files?</a></td>
+				<td><a href="features.html#section-converting">Can read Outlook .msg files?</a></td>
 				<td class="yes"></td>
 				<td class="no"></td>
 				<td class="no"></td>
@@ -193,8 +194,7 @@
 				<td><a href="features.html#section-content-transfer-encoding">Custom content (and attachments)<br>transfer encoding?</a></td>
 				<td class="yes"></td>
 				<td class="no"></td>
-				<td class="meh"><p>basic encoding ticket has<br>been
-					<a href="https://github.com/spring-projects/spring-framework/issues/13569" rel="nofollow">pending</a> since 2011</p></td>
+				<td class="no"><p>2011 <a href="https://github.com/spring-projects/spring-framework/issues/13569" rel="nofollow" target="_blank">ticket</a> (basic support)<br>finally declined in 2023</p></td>
 			</tr>
 			<tr>
 				<td><a href="features.html#section-custom-id">Supports custom messageId?</a></td>
@@ -261,9 +261,9 @@
 			</tr>
 			<tr>
 				<td><a href="features.html#section-email-validation">Quality of Email address validation</a></td>
-				<td class="yes"><p>delegates to <a href="https://www.rohannagar.com/jmail/">JMail's</a><br>excellent (and fast) validation</p></td>
-				<td class="meh"><p>delegates to JavaMail's / Jakarta Mail's<br><a href="https://www.rohannagar.com/jmail/">fallible</a> implementation</p></td>
-				<td class="meh"><p>delegates to JavaMail's / Jakarta Mail's<br><a href="https://www.rohannagar.com/jmail/">fallible</a> implementation</p></td>
+				<td class="yes"><p>delegates to <a href="https://www.rohannagar.com/jmail/" target="_blank">JMail's</a><br>excellent (and fast) validation</p></td>
+				<td class="meh"><p>delegates to JavaMail's / Jakarta Mail's<br><a href="https://www.rohannagar.com/jmail/" target="_blank">fallible</a> implementation</p></td>
+				<td class="meh"><p>delegates to JavaMail's / Jakarta Mail's<br><a href="https://www.rohannagar.com/jmail/" target="_blank">fallible</a> implementation</p></td>
 			</tr>
 			<tr>
 				<td><a href="features.html#section-connection-test">Can be used just to test a server connection?</a></td>
