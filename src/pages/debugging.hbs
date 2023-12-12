@@ -11,14 +11,15 @@
 	{{#*inline "body-block"}}
   <section class="toc">
     <ul>
-      <li><a href="#section-debug-mode">Logging emails instead of sending</a></li>
-      <li><a href="#section-debug-logging">Enable javax.mail debug logging</a></li>
-      <li><a href="#section-inspect-mailer-email">Inspect a mailer or an email</a></li>
-      <li><a href="#section-mailexception">Catching exceptions</a></li>
-      <li><a href="#section-logging">Logging output</a></li>
-      <li><a href="#section-log4j12" class="indent">Example with log4j12</a></li>
-      <li><a href="#section-log4j2" class="indent">Example with log4j2</a></li>
-      <li><a href="#section-logback" class="indent">Example with logback</a></li>
+		<li><a href="#section-debug-mode">Logging emails instead of sending</a></li>
+		<li><a href="#section-override-receivers">Override envelope-level receivers</a></li>
+		<li><a href="#section-debug-logging">Enable javax.mail debug logging</a></li>
+		<li><a href="#section-inspect-mailer-email">Inspect a mailer or an email</a></li>
+		<li><a href="#section-mailexception">Catching exceptions</a></li>
+		<li><a href="#section-logging">Logging output</a></li>
+		<li><a href="#section-log4j12" class="indent">Example with log4j12</a></li>
+		<li><a href="#section-log4j2" class="indent">Example with log4j2</a></li>
+		<li><a href="#section-logback" class="indent">Example with logback</a></li>
     </ul>
   </section>
 
@@ -27,16 +28,16 @@
   <h2>Logging emails instead of sending</h2>
 
   <section>
-    <div class="view">
-      <p>
-        You can configure the <code>Mailer</code> to log emails instead of sending them.
-      </p>
-      <p>
-        Note: normally emails are always logged on <code>Level.DEBUG</code> level, but in logging mode emails are logged in <code>Level.INFO</code>.
-      </p>
-    </div>
+	  <div class="view">
+		  <p>
+			  You can configure the <code>Mailer</code> to log emails instead of sending them.
+		  </p>
+		  <p>
+			  Note: normally emails are always logged on <code>Level.DEBUG</code> level, but in logging mode emails are logged in <code>Level.INFO</code>.
+		  </p>
+	  </div>
 
-    <div class="side">
+	  <div class="side">
 <pre><code>Mailer mailer = MailerBuilder
     .withTransportModeLoggingOnly()
     .(...)
@@ -44,10 +45,28 @@
 
 mailer.sendMail(email); // <-- this email will be logged but not sent
 </code></pre>
-      or:
-      <pre><code class="language-properties">simplejavamail.transport.mode.logging.only=true
+		  or:
+		  <pre><code class="language-properties">simplejavamail.transport.mode.logging.only=true
 </code></pre>
-    </div>
+	  </div>
+  </section>
+
+
+  <a href="#section-override-receivers" id="section-override-receivers" class="section-link h2">&sect;</a>
+  <h2>Override envelope-level receivers</h2>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  For testing purposes, you can change where the email is sent to, without touching the actual email being sent, by override the envelope-level
+			  receivers. It's super easy.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="small">// send the email to your testers
+currentEmailBuilder.withOverrideReceivers(tester1Recipient, testGroupInboxRecipient...);</code></pre>
+	  </div>
   </section>
 
 
