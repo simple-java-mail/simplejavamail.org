@@ -379,6 +379,13 @@ simplejavamail.dkim.signing.excluded_headers_from_default_signing_list=From
 					You can <strong>sign individual emails</strong> or <strong>sign all emails</strong> by configuring S/MIME on the <em>Mailer</em>
 					instead.
 				</p>
+				<br/>
+				<p>
+					For maximum flexibility, you can configure all algorithms and certificates specific to S/MIME signing and encryption. This includes
+					choosing the key encapsulation algorithm and cipher algorithm for encryption, and the signature algorithm for signing. For a list of
+					available algorithms, see the <code class="inline language-java">SmimeEncryptConfig</code> and
+					<code class="inline language-java">SmimeSignConfig</code> classes.
+				</p>
 			</div>
 			<div class="side">
 				Signing an email:
@@ -391,7 +398,10 @@ simplejavamail.dkim.signing.excluded_headers_from_default_signing_list=From
 
 Email emailToBeSigned = currentEmailBuilder.
     .(..)
-    .signWithSmime(myKeyInfo)
+    .signWithSmime(SmimeSignConfig.builder
+		.pkcs12Config(myKeyInfo)
+		.signatureAlgorithm("SHA256withRSA") // optional
+		.build())
     .buildEmail();
 
 mailer.sendMail(emailToBeSigned);
@@ -399,15 +409,21 @@ mailer.sendMail(emailToBeSigned);
 				Encrypting an email:
 				<pre><code>Email emailToBeEncrypted = currentEmailBuilder.
     .(..)
-    .encryptWithSmime("x509CertificateInStandardPEM.crt")
+    .encryptWithSmime(SmimeEncryptConfig.builder()
+		.x509Certificate("x509CertificateInStandardPEM.crt")
+		.keyEncapsulationAlgorithm("RSA_OAEP_SHA384") // optional
+		.cipherAlgorithm("AES256_CBC") // optional
+		.build())
     .buildEmail();
 
 mailer.sendMail(emailToBeEncrypted);
 </code></pre>
-				Sign all emails by default:
-				<pre><code>currentEmailBuilder.
-    .signByDefaultWithSmime(myPkcs12Config)
+				Sign all emails by default (this works for encryption as well):
+				<pre><code>currentMailerBuilder
     (...)
+    .withEmailDefaults(EmailBuilder.startingBlank()
+		.signWithSmime(myPkcs12Config)
+		.buildEmail())
     .buildMailer();
 </code></pre>
 				Or with properties:
@@ -416,9 +432,12 @@ simplejavamail.smime.signing.keystore=my_smime_keystore.pkcs12
 simplejavamail.smime.signing.keystore_password=keystore_password
 simplejavamail.smime.signing.key_alias=key_alias
 simplejavamail.smime.signing.key_password=key_password
+simplejavamail.smime.signing.algorithm=SHA256withRSA
 # encryption can only be applied to individual Email instances
 # but this can be default behaviour (not recommended as users would need to share private keys)
 simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
+simplejavamail.smime.encryption.key_encapsulation_algorithm=RSA
+simplejavamail.smime.encryption.cipher_algorithm=DES_EDE3_CBC
 </code></pre>
 			</div>
 		</section>
