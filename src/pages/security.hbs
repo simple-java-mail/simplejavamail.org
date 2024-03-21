@@ -407,7 +407,7 @@ Email emailToBeSigned = currentEmailBuilder.
 mailer.sendMail(emailToBeSigned);
 </code></pre>
 				Encrypting an email:
-				<pre><code>Email emailToBeEncrypted = currentEmailBuilder.
+				<pre><code>Email emailToBeEncrypted = currentEmailBuilder
     .(..)
     .encryptWithSmime(SmimeEncryptConfig.builder()
 		.x509Certificate("x509CertificateInStandardPEM.crt")
