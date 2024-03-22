@@ -316,6 +316,11 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 		.dkimPrivateKeyData(byte[] / File / InputStream)
 		.dkimSigningDomain("your_domain.org")
 		.dkimSelector("your_selector")
+		.useLengthParam(true) // default is false
+		.excludedHeadersFromDkimDefaultSigningList("From", "Subject") // default is none
+		.headerCanonicalization(SIMPLE) // default is RELAXED
+		.bodyCanonicalization(SIMPLE) // default is RELAXED
+		.signingAlgorithm(SHA256_WITH_ED25519) // default is SHA256_WITH_RSA
 		.build()
 );
 </code></pre>
@@ -324,7 +329,11 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 simplejavamail.dkim.signing.private_key_file_or_data=my_dkim_key.der # or key as base64
 simplejavamail.dkim.signing.selector=dkim1
 simplejavamail.dkim.signing.signing_domain=your-domain.com
+simplejavamail.dkim.signing.use_length_param=true
 simplejavamail.dkim.signing.excluded_headers_from_default_signing_list=From
+simplejavamail.dkim.signing.header_canonicalization=SIMPLE
+simplejavamail.dkim.signing.body_canonicalization=SIMPLE
+simplejavamail.dkim.signing.algorithm=SHA256_WITH_ED25519
 </code></pre>
 			</div>
 		</section>
