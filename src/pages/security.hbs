@@ -311,16 +311,16 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 				</p>
 			</div>
 			<div class="side">
-<pre><code>currentEmailBuilder.signWithDomainKey(
+<pre><code class="small">currentEmailBuilder.signWithDomainKey(
 	DkimConfig.builder()
 		.dkimPrivateKeyData(byte[] / File / InputStream)
 		.dkimSigningDomain("your_domain.org")
 		.dkimSelector("your_selector")
 		.useLengthParam(true) // default is false
 		.excludedHeadersFromDkimDefaultSigningList("From", "Subject") // default is none
-		.headerCanonicalization(SIMPLE) // default is RELAXED
-		.bodyCanonicalization(SIMPLE) // default is RELAXED
-		.signingAlgorithm(SHA256_WITH_ED25519) // default is SHA256_WITH_RSA
+		.headerCanonicalization(Canonicalization.SIMPLE) // default is RELAXED
+		.bodyCanonicalization(Canonicalization.SIMPLE) // default is RELAXED
+		.signingAlgorithm("SHA256_WITH_ED25519") // default is SHA256_WITH_RSA
 		.build()
 );
 </code></pre>
