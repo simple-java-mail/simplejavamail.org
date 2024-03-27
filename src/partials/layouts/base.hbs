@@ -23,7 +23,8 @@
 		<link rel="prerender prefetch" href="download.html">
 		<link rel="prerender prefetch" href="contact.html">
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2.6.3/dist/cdn/docsearch.min.css"/>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3" />
+		<link rel="preconnect" href="https://5SC0G3JQXD-dsn.algolia.net" crossorigin />
 	</head>
 	<body>
 		{{#> header-block}}
@@ -33,12 +34,10 @@
 		<main>
 			<div class="content">
 				<style>
-					@media only screen and (min-width: 600px) {  #docsearch-wrapper { float: right; }  }
+					@media only screen and (min-width: 600px) {  #docsearch { float: right; }  }
 				</style>
 
-				<div id="docsearch-wrapper" style="position: sticky; top: 0;">
-					<input type="text" id="docsearch" placeholder="🔎 Search documentation">
-				</div>
+				<div id="docsearch" style="position: sticky; top: 0;"></div>
 
 				<h1>{{page-title}}</h1>
 
@@ -55,12 +54,13 @@
 		<script>Prism.highlightAll();</script>
 		<script type="text/javascript" src="pages/scripts/back-to-top.js"></script>
 
-		<script src="https://cdn.jsdelivr.net/npm/docsearch.js@2.6.3/dist/cdn/docsearch.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@docsearch/js@3"></script>
 		<script>
 			docsearch({
-				apiKey: '4eed82b17c1a25c5561b64a748d34e2f', // '25626fae796133dc1e734c6bcaaeac3c',
-				indexName: 'simplejavamail', // 'docsearch',
-				inputSelector: '#docsearch',
+				appId: '5SC0G3JQXD',
+				apiKey: '9355c6505b2c99b09af272dfcf122f96',
+				indexName: 'simplejavamail',
+				container: '#docsearch',
 				debug: false,
 			});
 		</script>
