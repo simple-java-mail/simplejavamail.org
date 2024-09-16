@@ -40,8 +40,9 @@
       <li><a href="#section-combine-config">Combining everything for multiple environments</a></li>
       <li><a href="#section-spring-support">Spring support</a></li>
       <li><a href="#section-batch-and-clustering">Batch and clustering support</a></li>
-      <li><a href="#section-reusing-connections" class="indent">Reusing connections with a connection pool</a></li>
-      <li><a href="#section-clustering" class="indent">Clustering with multiple connection pools</a></li>
+      <li><a href="#section-not-reusing-connections" class="indent">How connections work without batch-module</a></li>
+      <li><a href="#section-reusing-connections" class="indent">Reusing connections with batch-module's connection pool</a></li>
+      <li><a href="#section-clustering" class="indent">Advanced performance tuning: Clustering with multiple connection pools</a></li>
     </ul>
   </section>
 
@@ -585,47 +586,72 @@ simplejavamail.proxy.password=&lt;proxy_password&gt;
   <a href="#section-batch-and-clustering" id="section-batch-and-clustering" class="section-link h2">&sect;</a>
   <h2>Batch and clustering support</h2>
 
-	<section>
-		<div>
-			<p class="wide">
-				Even without using the <strong><a href="modules.html#batch-module">batch-module</a></strong>, you can send emails <em>asynchronously</em>, in which case a
-				single Transport connection is used without pooling it. This does still mean that for each email the connection is opened and closed. Depending on your network
-				and SMTP server's capacity though, sending async like this already provides a huge performance boost if you configure the thread pool accordingly with
-				<code class="inline language-java">MailerBuilder</code>.
-			</p>
-			<div>
-        <pre><code class="language-java small">/* regular mailer: */
-Mailer mailer = mailerBuiler.(..).build();
-mailer.send(email); // blocks
+  <section>
+  	<div>
+  		<p class="wide">
+  			Simple Java Mail provides three ways of optimizing performance for high-volume email sending:
+  		</p>
+		<ol class="indent">
+  			<li>asynchronous sending using a user-provided <code class="inline language-java">ExecutorService</code></li>
+  			<li>connection pooling with the <strong><a href="modules.html#batch-module">batch module</a></strong> reusing server connections</li>
+  			<li>server clustering with multiple connection pools dedicated to different SMTP servers</li>
+  		</ol>
+  	</div>
+  </section>
 
-/* mailer that defaults to async sending: */
-Mailer mailer = mailerBuiler.(..).async().build();
-mailer.send(email); // doesn't block
+  <a href="#section-not-reusing-connections" id="section-not-reusing-connections" class="section-link h3">&sect;</a>
+  <h3>How connections work without batch-module</h3>
+
+  <section>
+  	<div>
+		<p class="wide">
+			Without the <strong><a href="modules.html#batch-module">batch module</a></strong>, Simple Java Mail supports asynchronous email sending, where each
+			message is handled in its own thread using a single Transport connection. This process involves opening and closing the connection for each email, managed independently
+			of a connection pool. Additionally, Simple Java Mail allows the configuration of a custom <code class="inline language-java">ExecutorService</code> to enhance
+			performance through a custom thread pool. Adjusting these settings to match your server’s specifications can optimize performance. However, without the
+			batch module, each thread maintains a dedicated Transport connection that is repeatedly opened and closed for each email, which is less efficient in high-volume scenarios.
+			Additionally, you may find you will hit your maximum concurrent connections for your server more easily without the batch module.
+		</p>
+		<div>
+			<pre><code class="language-java small">Mailer regularMailer = mailerBuiler.(..).build();
+regularMailer.send(email); // blocks
+
+Mailer defaultAsyncMailer = mailerBuiler.(..).async().build();
+defaultAsyncMailer.send(email); // doesn't block
 
 /* or be explicit about it: */
 mailer.sendEmail(email, /*async = */ true);
 </code></pre>
-			</div>
+		</div><br/>
+		Defining your own thread pool using a ExecutorService (default is <code class="inline language-java">Executors.newSingleThreadExecutor</code>):
+		<div>
+			<pre><code class="language-java small">currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
 		</div>
-	</section>
+  	</div>
+  </section>
 
 
   <a href="#section-reusing-connections" id="section-reusing-connections" class="section-link h3">&sect;</a>
-  <h3>Reusing connections with a connection pool</h3>
+  <h3>Reusing connections with batch-module's connection pool</h3>
 
 	<section>
 		<div>
 			<p class="wide">
-				You can really take performance to the next level by using the connection pooling introduced by the <strong><a href="modules.html#batch-module">batch-module</a></strong>. To do this you simply
-				include the module on the class path (add the maven dependency) which gives you a default of maximum four pooled connections, which auto-close 5
-				seconds after the last time they were utilized. What this means is if you have bursts of emails batches, the connections spin up to max four and
-				stay alive until activity dies down.
+				The <strong><a href="modules.html#batch-module">batch module</a></strong> significantly boosts performance by introducing connection pooling. Simply include
+				the module in your classpath (add the Maven dependency) to enable up to four pooled connections. The default setup provides up to four pooled connections,
+				which automatically close if inactive for five seconds following their last use. This mechanism is optimal for managing bursts of email traffic, keeping
+				up to four connections active as long as needed.
 			</p>
 			<p class="wide">
-				You can modify this behavior by defining a core connection pool size, max pool size and a custom expiry policy.
+				The connection pool configuration is flexible, allowing adjustments to core connection pool size, maximum pool size, and connection expiry policy.
 			</p>
-			<div>
-	        <pre><code class="language-java small">Mailer pooledMailer = mailerBuilder
+			<p>
+				While the default setup without the batch module allows for the creation of a custom thread pool to manage email sending, the batch module introduces
+				a connection pool. This addition enables threads to reuse Transport connections more efficiently, significantly improving performance even with fewer
+				threads, as it eliminates the need to repeatedly open and close connections for each email.
+			</p>
+		<div>
+		<pre><code class="language-java small">Mailer pooledMailer = mailerBuilder
 	   .(..)
 	   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it (default 0)
 	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up (default 4)
@@ -652,14 +678,14 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000 (defaults to 5
 
 
 	<a href="#section-clustering" id="section-clustering" class="section-link h3">&sect;</a>
-	<h3>Clustering with multiple connection pools</h3>
+	<h3>Advanced performance tuning: Clustering with multiple connection pools</h3>
 
 	<section>
 		<div>
 			<div class="view">
 				<p>
 					To enable high-availability / fail-over or to really <strong>take performance to out-of-this world levels</strong> and handle truly enormous
-					email batches, Simple Java Mail enables you to easily configure cluster(s) of SMTP servers.
+					email batch loads, Simple Java Mail enables you to easily configure cluster(s) of SMTP servers.
 				</p>
 				<p>
 					For example, for a simple fail-over setup with

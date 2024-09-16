@@ -70,23 +70,28 @@
 		<h3>TransportStrategy.SMTP</h3>
 
 		<section>
-			<div class="view">
-				<p>
-					This transport strategy falls back to plaintext when a mail server does not indicate support for
-					STARTTLS. Additionally, even if a TLS session is negotiated, <strong>server certificates are not validated in
-					any way</strong>.
+			<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTP);</code></pre>
+			<div>
+				<p class="wide">
+					The SMTP legacy strategy is the oldest and simplest strategy, which works with simple username and password. This transport strategy
+					attempts a TLS upgrade, but falls back to plaintext when a mail server does not indicate support for STARTTLS.
 				</p>
-			</div>
-			<div class="side">
-<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTP);</code></pre>
 			</div>
 		</section>
 		<section>
 			<div>
 				<p class="wide">
+					Since 8.6.0, with the switch from the deprecated Jakarta Mail to its successor Angus Mail, whenever a TLS session is negotiated,
+					server certificates are also validated for SMTP. To revert back to pre-8.6.0 (legacy) behaviour, you can turn this off with
+					<code class="inline language-java">mailerBuilder.verifyingServerIdentity(false)</code>. However, this is only recommended for testing purposes as
+					you leave yourself open to <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack" target="_blank">Man In The Middle</a> (MITM)
+					attacks, even if you think you fully control your (private) network.
+				</p>
+				<p class="wide">
 					Furthermore, this transport strategy only offers protection against passive network eavesdroppers when the mail server
 					indicates support for STARTTLS. Active network attackers can trivially bypass the encryption 1) by tampering with
-					the STARTTLS indicator, 2) by presenting a self-signed certificate, 3) by presenting a certificate issued by an
+					the STARTTLS indicator, 2) by presenting a self-signed certificate (if you set verifyingServerIdentity to
+					<code class="inline language-java">false</code>), 3) by presenting a certificate issued by an
 					untrusted certificate authority; or 4) by presenting a certificate that was issued by a valid certificate
 					authority to a domain other than the mail server's.
 				</p>
@@ -106,8 +111,13 @@
 			<div class="side">
       <pre><code>
 TransportStrategy.SMTP.setOpportunisticTLS(false);
-MailerBuilder.withTransportStrategy(TransportStrategy.SMTP);
+
+MailerBuilder
+	  .verifyingServerIdentity(false)
+	  .withTransportStrategy(TransportStrategy.SMTP)
+
 // or as property:
+simplejavamail.defaults.verifyserveridentity=false
 simplejavamail.opportunistic.tls=false
 </code></pre>
 			</div>
@@ -311,11 +321,16 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 				</p>
 			</div>
 			<div class="side">
-<pre><code>currentEmailBuilder.signWithDomainKey(
+<pre><code class="small">currentEmailBuilder.signWithDomainKey(
 	DkimConfig.builder()
 		.dkimPrivateKeyData(byte[] / File / InputStream)
 		.dkimSigningDomain("your_domain.org")
 		.dkimSelector("your_selector")
+		.useLengthParam(true) // default is false
+		.excludedHeadersFromDkimDefaultSigningList("From", "Subject") // default is none
+		.headerCanonicalization(Canonicalization.SIMPLE) // default is RELAXED
+		.bodyCanonicalization(Canonicalization.SIMPLE) // default is RELAXED
+		.signingAlgorithm("SHA256_WITH_ED25519") // default is SHA256_WITH_RSA
 		.build()
 );
 </code></pre>
@@ -324,7 +339,11 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 simplejavamail.dkim.signing.private_key_file_or_data=my_dkim_key.der # or key as base64
 simplejavamail.dkim.signing.selector=dkim1
 simplejavamail.dkim.signing.signing_domain=your-domain.com
+simplejavamail.dkim.signing.use_length_param=true
 simplejavamail.dkim.signing.excluded_headers_from_default_signing_list=From
+simplejavamail.dkim.signing.header_canonicalization=SIMPLE
+simplejavamail.dkim.signing.body_canonicalization=SIMPLE
+simplejavamail.dkim.signing.algorithm=SHA256_WITH_ED25519
 </code></pre>
 			</div>
 		</section>
