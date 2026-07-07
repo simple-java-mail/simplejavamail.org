@@ -1,0 +1,391 @@
+{{#> layouts/base head-sub-title="Migrating to 9.0.0" page-title="Migrating to Simple Java Mail 9.0.0" }}
+
+	{{#*inline "html-head-block"}}
+<meta name="Description" content="Migration notes for users upgrading to Simple Java Mail 9.0.0 and above">
+	{{/inline}}
+
+	{{#*inline "header-block"}}
+		{{> includes/header topic="features" }}
+	{{/inline}}
+
+	{{#*inline "body-block"}}
+	<section class="toc">
+		<ul>
+			<li><a href="#recipient-builders">Dedicated recipient builders</a></li>
+			<li><a href="#per-recipient-smime">Per-recipient S/MIME certificates</a></li>
+			<li><a href="#outlook-conversion-result">Outlook conversion results expose source data</a></li>
+			<li><a href="#dsn">Delivery Status Notification API</a></li>
+			<li><a href="#content-transfer-encoding">Per-body Content-Transfer-Encoding defaults</a></li>
+			<li><a href="#pre-encoded-resources">Pre-encoded attachments and embedded images</a></li>
+			<li><a href="#resource-content-id">Explicit resource Content-ID values</a></li>
+			<li><a href="#debug-output">Jakarta Mail debug output targets</a></li>
+			<li><a href="#local-bind-address">Local bind address configuration</a></li>
+			<li><a href="#default-dkim">Mailer-level default DKIM signing</a></li>
+			<li><a href="#simple-batch">Simple sequential batch sending</a></li>
+			<li><a href="#batch-cluster-config">Batch-module cluster configuration</a></li>
+			<li><a href="#async-test-connection">Async mailer defaults apply to testConnection</a></li>
+			<li><a href="#resource-filenames">Resource filenames moved out of Content-Type filename</a></li>
+		</ul>
+	</section>
+
+	<a href="#recipient-builders" id="recipient-builders" class="section-link h2">&sect;</a>
+	<h2>Dedicated recipient builders</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> The old repeated <code class="inline">to(...)</code>, <code class="inline">cc(...)</code> and
+			<code class="inline">bcc(...)</code> recipient method matrix has been replaced by dedicated recipient builders plus the canonical
+			<code class="inline">withRecipients(...)</code> methods on the email builder.
+		</p>
+		<p class="wide">
+			Build one recipient with <code class="inline">RecipientBuilder</code> or a group with <code class="inline">RecipientsBuilder</code>, then add the
+			result to the email using <code class="inline">withRecipients(Recipient...)</code> or
+			<code class="inline">withRecipients(Collection&lt;Recipient&gt;)</code>. The string-based generic
+			<code class="inline">withRecipients(name, fixedName, type, addresses...)</code> method remains for CLI and property-driven integration code.
+		</p>
+		<p class="wide">
+			For grouped recipients, <code class="inline">RecipientsBuilder</code> is also the place to express local governance: default names/certificates fill
+			missing values, while fixed names/certificates override source values for the group before email-level and mailer-level defaults are applied.
+		</p>
+		<pre><code>Recipient recipient = new RecipientBuilder()
+    .withAddressAndNameOrDefault("Alice &lt;alice@example.com&gt;", null)
+    .withType(Message.RecipientType.TO)
+    .build();
+
+Email email = EmailBuilder.startingBlank()
+    .from("me@example.com")
+    .withRecipients(recipient)
+    .withPlainText("Hello")
+    .buildEmail();</code></pre>
+	</section>
+
+	<a href="#per-recipient-smime" id="per-recipient-smime" class="section-link h2">&sect;</a>
+	<h2>Per-recipient S/MIME certificates</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Existing email-level and mailer-level S/MIME defaults still work. Use recipient certificates when recipients need different certificates.
+		</p>
+		<p class="wide">
+			Recipients can now carry their own S/MIME encryption certificate. Recipient-level certificates, including certificates materialized by
+			<code class="inline">RecipientsBuilder</code> group defaults or fixed group values, take precedence over governance-resolved email and mailer
+			encryption defaults. This makes multi-recipient encrypted email practical without one shared certificate source.
+		</p>
+		<p class="wide">
+			When reusing recipients, <code class="inline">RecipientsBuilder.clearingSmimeCertificates()</code> removes existing recipient certificate state so
+			the current email can fall back to its email-level or mailer-level S/MIME encryption configuration.
+		</p>
+		<pre><code>Recipient alice = new RecipientBuilder()
+    .withAddress("alice@example.com")
+    .withType(Message.RecipientType.TO)
+    .withSmimeCertificate(aliceCertificate)
+    .build();
+
+Email email = EmailBuilder.startingBlank()
+    .from("me@example.com")
+    .withRecipients(alice)
+    .withPlainText("Encrypted for Alice")
+    .buildEmail();</code></pre>
+	</section>
+
+	<a href="#outlook-conversion-result" id="outlook-conversion-result" class="section-link h2">&sect;</a>
+	<h2>Outlook conversion results expose source data</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Code using the old direct Outlook-to-email conversion methods can keep doing so. Use the new result API when source
+			<code class="inline">.msg</code> metadata is needed.
+		</p>
+		<p class="wide">
+			Outlook conversion now has an explicit result API that separates the converted email builder from Outlook-specific source data. Structural
+			source headers and MAPI metadata no longer need to be copied into the converted email just to remain inspectable.
+		</p>
+		<pre><code>OutlookEmailConversionResult result =
+    EmailConverter.outlookMsgToEmailBuilderWithOutlookData(msgFile);
+
+Email email = result.buildEmail();
+OutlookMessageData outlookData = result.getOutlookMessageData();
+List&lt;String&gt; receivedHeaders = outlookData.getHeaderValues("Received");</code></pre>
+		<p class="wide">
+			The old <code class="inline">InputStream</code> overloads returning <code class="inline">EmailFromOutlookMessage</code> are deprecated in favor
+			of <code class="inline">outlookMsgToEmailBuilderWithOutlookData(...)</code>.
+		</p>
+	</section>
+
+	<a href="#dsn" id="dsn" class="section-link h2">&sect;</a>
+	<h2>Delivery Status Notification API</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New API only. Projects can now request SMTP DSN behavior through Java, property files and Spring configuration.
+		</p>
+		<p class="wide">
+			Delivery Status Notification settings can be attached to an email using
+			<code class="inline">DeliveryStatusNotification</code> and the new email builder methods.
+		</p>
+		<pre><code>Email email = EmailBuilder.startingBlank()
+    .from("sender@example.com")
+    .withRecipients(new RecipientBuilder()
+        .withAddress("receiver@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withPlainText("Hello")
+    .withDeliveryStatusNotification(
+        DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+        DeliveryStatusNotification.NotifyOption.FAILURE,
+        DeliveryStatusNotification.NotifyOption.DELAY)
+    .buildEmail();</code></pre>
+		<p class="wide">
+			Property-file defaults are available as:
+		</p>
+		<pre><code>simplejavamail.defaults.delivery.status.notification.notify=FAILURE,DELAY
+simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY</code></pre>
+	</section>
+
+	<a href="#content-transfer-encoding" id="content-transfer-encoding" class="section-link h2">&sect;</a>
+	<h2>Per-body Content-Transfer-Encoding defaults</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Existing global content-transfer encoding behavior remains the fallback. Use the new per-body settings when text,
+			HTML and calendar parts need different encodings.
+		</p>
+		<p class="wide">
+			The existing <code class="inline">withContentTransferEncoding(...)</code> setting can now be refined per body part.
+		</p>
+		<pre><code>Email email = EmailBuilder.startingBlank()
+    .from("sender@example.com")
+    .withRecipients(new RecipientBuilder()
+        .withAddress("receiver@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withPlainText("Plain")
+    .withHTMLText("&lt;b&gt;HTML&lt;/b&gt;")
+    .withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+    .withPlainTextContentTransferEncoding(ContentTransferEncoding.BIT7)
+    .withHTMLTextContentTransferEncoding(ContentTransferEncoding.BASE_64)
+    .buildEmail();</code></pre>
+		<p class="wide">
+			Property-file defaults are available as:
+		</p>
+		<pre><code>simplejavamail.defaults.content.transfer.encoding=quoted-printable
+simplejavamail.defaults.body.text.content.transfer.encoding=7bit
+simplejavamail.defaults.body.html.content.transfer.encoding=base64
+simplejavamail.defaults.body.calendar.content.transfer.encoding=quoted-printable</code></pre>
+	</section>
+
+	<a href="#pre-encoded-resources" id="pre-encoded-resources" class="section-link h2">&sect;</a>
+	<h2>Pre-encoded attachments and embedded images</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New API only. Existing attachment APIs still represent raw data that Simple Java Mail may encode for MIME transport.
+		</p>
+		<p class="wide">
+			When attachment or embedded-image data is already encoded, use the new pre-encoded APIs so Simple Java Mail preserves the payload instead
+			of encoding it again.
+		</p>
+		<pre><code>Email email = EmailBuilder.startingBlank()
+    .from("sender@example.com")
+    .withRecipients(new RecipientBuilder()
+        .withAddress("receiver@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withPlainText("See attachment")
+    .withPreEncodedAttachment(
+        "report.pdf",
+        alreadyBase64EncodedBytes,
+        "application/pdf",
+        ContentTransferEncoding.BASE_64)
+    .buildEmail();</code></pre>
+		<p class="wide">
+			The same concept exists for embedded images using
+			<code class="inline">withPreEncodedEmbeddedImage(...)</code>.
+		</p>
+	</section>
+
+	<a href="#resource-content-id" id="resource-content-id" class="section-link h2">&sect;</a>
+	<h2>Explicit resource Content-ID values</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New API only. Generated fallback Content-ID values are now opaque and safe, while caller-supplied values are preserved.
+		</p>
+		<p class="wide">
+			Attachment and embedded-image APIs now support separating the display filename/resource name from the MIME
+			<code class="inline">Content-ID</code>. This matters for round-tripping and for HTML that references a stable
+			<code class="inline">cid:...</code> value.
+		</p>
+		<pre><code>Email email = EmailBuilder.startingBlank()
+    .from("sender@example.com")
+    .withRecipients(new RecipientBuilder()
+        .withAddress("receiver@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withHTMLText("&lt;img src='cid:logo-content-id'&gt;")
+    .withEmbeddedImage("logo.png", logoDataSource, "logo-content-id")
+    .buildEmail();</code></pre>
+	</section>
+
+	<a href="#debug-output" id="debug-output" class="section-link h2">&sect;</a>
+	<h2>Jakarta Mail debug output targets</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New API only. Existing <code class="inline">withDebugLogging(true)</code> behavior remains available.
+		</p>
+		<p class="wide">
+			Jakarta Mail debug output can now be redirected to one of the built-in targets, or to a custom
+			<code class="inline">PrintStream</code> from Java code.
+		</p>
+		<pre><code>Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user", "password")
+    .withDebugLogging(true)
+    .withDebugOutput(SessionDebugOutput.SLF4J)
+    .buildMailer();</code></pre>
+		<p class="wide">
+			Property-file configuration uses:
+		</p>
+		<pre><code>simplejavamail.javaxmail.debug=true
+simplejavamail.javaxmail.debug.out=SLF4J</code></pre>
+	</section>
+
+	<a href="#local-bind-address" id="local-bind-address" class="section-link h2">&sect;</a>
+	<h2>Local bind address configuration</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New API only. This hides the transport-specific Jakarta Mail property names behind Simple Java Mail configuration.
+		</p>
+		<p class="wide">
+			On multi-IP machines, the outgoing SMTP socket can now be bound to a specific local/source address. The local port is supported as an
+			advanced option, but should normally be left empty.
+		</p>
+		<pre><code>Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withLocalBindAddress("203.0.113.10")
+    .buildMailer();</code></pre>
+		<p class="wide">
+			Property-file configuration uses:
+		</p>
+		<pre><code>simplejavamail.smtp.localaddress=203.0.113.10
+simplejavamail.smtp.localport=25252</code></pre>
+		<p class="wide">
+			See the <a href="features.html#section-local-bind-address">feature docs</a> and
+			<a href="configuration.html#section-available-properties">configuration reference</a> for the full examples.
+		</p>
+	</section>
+
+	<a href="#default-dkim" id="default-dkim" class="section-link h2">&sect;</a>
+	<h2>Mailer-level default DKIM signing</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New API only. Existing per-email DKIM signing still takes precedence.
+		</p>
+		<p class="wide">
+			DKIM signing can now be configured once on the mailer. This is a convenience wrapper around the mailer defaults mechanism and preserves
+			other configured email defaults.
+		</p>
+		<pre><code>Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user", "password")
+    .withDefaultDkimSigning(defaultDkimConfig)
+    .buildMailer();</code></pre>
+		<p class="wide">
+			Property-driven DKIM defaults continue to use <code class="inline language-properties">simplejavamail.dkim.signing.*</code>.
+			See <a href="security.html#section-sending-dkim">DKIM signing</a> for usage.
+		</p>
+	</section>
+
+	<a href="#simple-batch" id="simple-batch" class="section-link h2">&sect;</a>
+	<h2>Simple sequential batch sending</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New API only. This does not replace the batch-module.
+		</p>
+		<p class="wide">
+			<code class="inline">Mailer.sendMailsInSimpleBatch(...)</code> sends multiple emails sequentially over one SMTP connection. It is meant for
+			caller-managed loops where reconnecting for each email is the only problem to solve.
+		</p>
+		<pre><code>mailer.sendMailsInSimpleBatch(emails);        // uses the mailer's configured async default
+mailer.sendMailsInSimpleBatch(emails, false); // blocks until the sequential batch is done
+mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole sequential batch asynchronously</code></pre>
+		<p class="wide">
+			This API is not concurrent, pooled, retry-oriented or clustered. For those use cases, keep using the batch-module.
+			See <a href="configuration.html#section-batch-and-clustering">batch and clustering support</a> for the full distinction.
+		</p>
+	</section>
+
+	<a href="#batch-cluster-config" id="batch-cluster-config" class="section-link h2">&sect;</a>
+	<h2>Batch-module cluster configuration</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Cluster pool defaults are now scoped per cluster key instead of effectively behaving like one global JVM-level pool default.
+		</p>
+		<p class="wide">
+			With the Java API, the first <code class="inline language-java">Mailer</code> registered for a cluster key defines that cluster's pool defaults,
+			claim timeout, expiry and load-balancing strategy. Different cluster keys can now have different defaults.
+		</p>
+		<p class="wide">
+			Property-file and Spring users can also define multiple cluster configs using
+			<code class="inline language-properties">simplejavamail.defaults.connectionpool.clusters.*</code>.
+		</p>
+		<pre><code>Mailer ordersMailer = MailerBuilder
+    .withSMTPServer("orders-smtp.example.com", 587, "user", "password")
+    .withClusterKey(ordersCluster)
+    .withConnectionPoolMaxSize(3)
+    .withConnectionPoolLoadBalancingStrategy(LoadBalancingStrategy.RANDOM_ACCESS)
+    .buildMailer();</code></pre>
+		<pre><code>simplejavamail.defaults.connectionpool.clusters.orders.clusterkey.uuid=00000000-0000-0000-0000-000000000301
+simplejavamail.defaults.connectionpool.clusters.orders.maxsize=3
+simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RANDOM_ACCESS</code></pre>
+		<p class="wide">
+			See <a href="configuration.html#section-clustering">clustering configuration</a> for alias-based, UUID-keyed and Spring examples.
+		</p>
+	</section>
+
+	<a href="#async-test-connection" id="async-test-connection" class="section-link h2">&sect;</a>
+	<h2>Async mailer defaults apply to testConnection</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> If a mailer is configured with <code class="inline">async()</code>, no-arg
+			<code class="inline">testConnection()</code> now follows that configured default.
+		</p>
+		<p class="wide">
+			This aligns <code class="inline">testConnection()</code> with no-arg <code class="inline">sendMail(...)</code>: both use the mailer's
+			configured async default. Use <code class="inline">testConnection(false)</code> when a blocking connection test is required.
+		</p>
+	</section>
+
+	<a href="#resource-filenames" id="resource-filenames" class="section-link h2">&sect;</a>
+	<h2>Resource filenames moved out of Content-Type filename</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Only code or tests that inspect generated raw MIME headers should need attention.
+		</p>
+		<p class="wide">
+			Simple Java Mail no longer adds the non-standard <code class="inline">filename</code> parameter to attachment and embedded-image
+			<code class="inline">Content-Type</code> headers. The filename remains available from the standard
+			<code class="inline">Content-Disposition</code> <code class="inline">filename</code> parameter, while
+			<code class="inline">Content-Type</code> keeps the legacy-compatible <code class="inline">name</code> parameter.
+		</p>
+		<p class="wide">
+			If you compare generated EML literally, update expectations from this:
+		</p>
+		<pre><code>Content-Type: application/pdf; filename=report.pdf; name=report.pdf
+Content-Disposition: attachment; filename=report.pdf</code></pre>
+		<p class="wide">
+			to this:
+		</p>
+		<pre><code>Content-Type: application/pdf; name=report.pdf
+Content-Disposition: attachment; filename=report.pdf</code></pre>
+	</section>
+
+	{{/inline}}
+
+{{/layouts/base}}

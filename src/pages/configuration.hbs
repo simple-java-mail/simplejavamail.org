@@ -36,6 +36,7 @@
       <li><a href="#section-programmatic-api-common">Programmatic API - common settings</a></li>
       <li><a href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
+      <li><a href="#section-available-properties" class="indent">Available properties</a></li>
       <li><a href="#section-config-mailer">Mailer level email defaults and overrides</a></li>
       <li><a href="#section-combine-config">Combining everything for multiple environments</a></li>
       <li><a href="#section-spring-support">Spring support</a></li>
@@ -145,8 +146,10 @@ MailerBuilder
 // useful in case you want to delegate all responsibility to the server
 currentMailerBuilder.disablingAllClientValidation(true);
 </code></pre>
-		<pre><code class="small">// make the underlying javax.mail produce more logging
-currentMailerBuilder.withDebugLogging(true);
+		<pre><code class="small">// make the underlying Jakarta Mail Session produce debug output
+currentMailerBuilder
+    .withDebugLogging(true)
+    .withDebugOutput(SessionDebugOutput.SLF4J); // STDOUT, STDERR or SLF4J
 </code></pre>
       <pre><code class="small">// skip actually sending email, just log it
 currentMailerBuilder.withTransportModeLoggingOnly(true);
@@ -213,6 +216,15 @@ currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor()
 		  <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
 currentMailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
 </code></pre>
+		  <pre><code class="small">// bind the outgoing SMTP socket to a local/source address
+// the local port is advanced and usually should be omitted
+currentMailerBuilder.withLocalBindAddress("203.0.113.10");
+currentMailerBuilder.withLocalBindAddress("203.0.113.10", 25252);
+</code></pre>
+		  <pre><code class="small">// configure DKIM once for all emails sent through this mailer
+// individual emails can still provide their own DKIM config
+currentMailerBuilder.withDefaultDkimSigning(defaultDkimConfig);
+</code></pre>
 		  <pre><code class="small">// change the default sending logic to your own approach
 currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test connections
 </code></pre>
@@ -266,19 +278,35 @@ ConfigLoader.loadProperties(usingMyOwnPropertiesObject, addProperties);
     </div>
 
     <div class="side">
-<pre><code class="language-properties">simplejavamail.javaxmail.debug=true
-simplejavamail.transportstrategy=SMTPS
+<pre><code class="language-properties"># Debugging and transport
+simplejavamail.javaxmail.debug=true
+simplejavamail.javaxmail.debug.out=SLF4J
+simplejavamail.transportstrategy=SMTP_TLS
+simplejavamail.transport.mode.logging.only=false
+simplejavamail.opportunistic.tls=false
+
+# SMTP destination and local/source binding
 simplejavamail.smtp.host=smtp.default.com
-simplejavamail.smtp.port=25
+simplejavamail.smtp.port=587
 simplejavamail.smtp.username=username
 simplejavamail.smtp.password=password
+simplejavamail.smtp.localaddress=203.0.113.10
+simplejavamail.smtp.localport=25252
+
+# Validation, SSL and proxying
+simplejavamail.disable.all.clientvalidation=false
 simplejavamail.custom.sslfactory.class=org.mypackage.ssl.MySSLSocketFactoryClass
 simplejavamail.proxy.host=proxy.default.com
 simplejavamail.proxy.port=1080
 simplejavamail.proxy.username=username proxy
 simplejavamail.proxy.password=password proxy
 simplejavamail.proxy.socks5bridge.port=1081
-simplejavamail.defaults.content.transfer.encoding=BINARY
+simplejavamail.defaults.sessiontimeoutmillis=60000
+simplejavamail.defaults.trustallhosts=false
+simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y
+simplejavamail.defaults.verifyserveridentity=true
+
+# Email defaults
 simplejavamail.defaults.subject=Sweet News
 simplejavamail.defaults.from.name=From Default
 simplejavamail.defaults.from.address=from@default.com
@@ -292,34 +320,59 @@ simplejavamail.defaults.cc.name=CC Default
 simplejavamail.defaults.cc.address=cc@default.com
 simplejavamail.defaults.bcc.name=
 simplejavamail.defaults.bcc.address=bcc1@default.com;bcc2@default.com
+
+# Delivery Status Notification defaults
+simplejavamail.defaults.delivery.status.notification.notify=FAILURE,DELAY
+simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
+
+# Content-Transfer-Encoding defaults
+simplejavamail.defaults.content.transfer.encoding=QUOTED_PRINTABLE
+simplejavamail.defaults.body.text.content.transfer.encoding=BIT7
+simplejavamail.defaults.body.html.content.transfer.encoding=BASE_64
+simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
+
+# Async thread defaults for regular non-batch sending
 simplejavamail.defaults.poolsize=10
 simplejavamail.defaults.poolsize.keepalivetime=2000
+
+# Batch-module connection pool defaults
 simplejavamail.defaults.connectionpool.clusterkey.uuid=38400000-8cf0-11bd-b23e-10b96e4ef00d
 simplejavamail.defaults.connectionpool.coresize=0
 simplejavamail.defaults.connectionpool.maxsize=4
 simplejavamail.defaults.connectionpool.claimtimeout.millis=10000
 simplejavamail.defaults.connectionpool.expireafter.millis=5000
 simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
-simplejavamail.defaults.sessiontimeoutmillis=60000
-simplejavamail.defaults.trustallhosts=false
-# following property is ignored when trustallhosts is true:
-simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y
-simplejavamail.defaults.verifyserveridentity=true
-simplejavamail.transport.mode.logging.only=true
-simplejavamail.opportunistic.tls=false
-# following properties are used as defaults on Mailer level
+
+# Batch-module per-cluster defaults
+simplejavamail.defaults.connectionpool.clusters.orders.clusterkey.uuid=00000000-0000-0000-0000-000000000301
+simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
+simplejavamail.defaults.connectionpool.clusters.orders.maxsize=3
+simplejavamail.defaults.connectionpool.clusters.orders.claimtimeout.millis=30000
+simplejavamail.defaults.connectionpool.clusters.orders.expireafter.millis=600000
+simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RANDOM_ACCESS
+simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.maxsize=8
+
+# S/MIME defaults
 simplejavamail.smime.signing.keystore=my_keystore.pkcs12
 simplejavamail.smime.signing.keystore_password=keystore_password
 simplejavamail.smime.signing.key_alias=key_alias
 simplejavamail.smime.signing.key_password=key_password
-simplejavamail.smime.signing.algorithm=SHA3-256withECDSA # default SHA256withRSA
+simplejavamail.smime.signing.algorithm=SHA3-256withECDSA
 simplejavamail.smime.encryption.certificate=x509inStandardPEM.crt
-simplejavamail.smime.encryption.key_encapsulation_algorithm=RSA_OAEP_SHA384 # default RSA
-simplejavamail.smime.encryption.cipher=DES_EDE3_WRAP # default DES_EDE3_CBC
-simplejavamail.dkim.signing.private_key_file_or_data=my_dkim_key.der # or key as base64
+simplejavamail.smime.encryption.key_encapsulation_algorithm=RSA_OAEP_SHA384
+simplejavamail.smime.encryption.cipher=DES_EDE3_WRAP
+
+# DKIM defaults
+simplejavamail.dkim.signing.private_key_file_or_data=my_dkim_key.der
 simplejavamail.dkim.signing.selector=dkim1
 simplejavamail.dkim.signing.signing_domain=your-domain.com
+simplejavamail.dkim.signing.use_length_param=false
 simplejavamail.dkim.signing.excluded_headers_from_default_signing_list=From
+simplejavamail.dkim.signing.header_canonicalization=RELAXED
+simplejavamail.dkim.signing.body_canonicalization=RELAXED
+simplejavamail.dkim.signing.algorithm=SHA256_WITH_RSA
+
+# Embedded image dynamic resolution
 simplejavamail.embeddedimages.dynamicresolution.enable.dir=true
 simplejavamail.embeddedimages.dynamicresolution.enable.url=false
 simplejavamail.embeddedimages.dynamicresolution.enable.classpath=true
@@ -333,6 +386,28 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 </code></pre>
     </div>
   </section>
+
+	<section>
+		<div class="view">
+			<p>
+				Spring Boot users can use the same canonical property names. A few generated metadata aliases exist for IDE compatibility where Spring's
+				relaxed binding cannot represent the original name cleanly.
+			</p>
+		</div>
+
+		<div class="side">
+<pre><code class="language-properties small">simplejavamail.javaxmail.debug-out=SLF4J
+simplejavamail.custom.sslfactory.clazz=org.mypackage.ssl.MySSLSocketFactoryClass
+simplejavamail.defaults.poolsize-more.keepalivetime=2000
+simplejavamail.smime.signing.keystore-password=keystore_password
+simplejavamail.smime.signing.key-alias=key_alias
+simplejavamail.smime.signing.key-password=key_password
+simplejavamail.dkim.signing.private-key-file-or-data=my_dkim_key.der
+simplejavamail.dkim.signing.signing-domain=your-domain.com
+simplejavamail.dkim.signing.excluded-headers-from-default-signing-list=From
+</code></pre>
+		</div>
+	</section>
 
 	<section>
 		<div class="view">
@@ -368,11 +443,11 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 	/* set your defaults here */
 	.buildEmailCompletedWithDefaultsAndOverrides(); // complete the instance with global defaults
 
-Mailer adminServer = mailerBuiler.
+Mailer adminServer = mailerBuilder
 	(..)
 	.withEmailDefaults(yourServerLevelDefaults)
 	.withEmailOverrides(yourServerLevelOverrides)
-	.build();
+	.buildMailer();
 </code></pre>
 		</div>
 
@@ -490,7 +565,7 @@ if (ditchOwnAndTrustOtherSource) {
 </code></pre>
 <pre><code>
 // maybe the config service has something?
-ConfigLoader.loadProperties(socket.getInpuStream(), true);
+ConfigLoader.loadProperties(socket.getInputStream(), true);
 // or you have your own Properties source?
 ConfigLoader.loadProperties(myOwnProperties, true);
 </code></pre>
@@ -579,6 +654,19 @@ simplejavamail.smtp.password=&lt;password&gt;
 simplejavamail.proxy.username=&lt;proxy_username&gt;
 simplejavamail.proxy.password=&lt;proxy_password&gt;
 </code></pre>
+      For per-cluster batch-module settings, Spring properties use the same dynamic namespace as regular property files:
+      <pre><code class="language-properties small">#application.properties
+simplejavamail.defaults.connectionpool.clusters.orders.clusterkey.uuid=00000000-0000-0000-0000-000000000301
+simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
+simplejavamail.defaults.connectionpool.clusters.orders.maxsize=3
+simplejavamail.defaults.connectionpool.clusters.orders.claimtimeout.millis=30000
+simplejavamail.defaults.connectionpool.clusters.orders.expireafter.millis=600000
+simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RANDOM_ACCESS
+
+# or key the config directly by UUID
+simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.maxsize=8
+simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.loadbalancing.strategy=ROUND_ROBIN
+</code></pre>
     </div>
   </section>
 
@@ -587,16 +675,17 @@ simplejavamail.proxy.password=&lt;proxy_password&gt;
   <h2>Batch and clustering support</h2>
 
   <section>
-  	<div>
-  		<p class="wide">
-  			Simple Java Mail provides three ways of optimizing performance for high-volume email sending:
-  		</p>
+	<div>
+		<p class="wide">
+			Simple Java Mail provides four ways of sending more than one email, each meant for a different level of control and throughput:
+		</p>
 		<ol class="indent">
-  			<li>asynchronous sending using a user-provided <code class="inline language-java">ExecutorService</code></li>
-  			<li>connection pooling with the <strong><a href="modules.html#batch-module">batch module</a></strong> reusing server connections</li>
-  			<li>server clustering with multiple connection pools dedicated to different SMTP servers</li>
-  		</ol>
-  	</div>
+			<li>regular synchronous sending, one email at a time</li>
+			<li>asynchronous sending using the mailer's configured <code class="inline language-java">ExecutorService</code></li>
+			<li>simple sequential batch sending over one SMTP connection, without the batch-module</li>
+			<li>pooled and clustered sending with the <strong><a href="modules.html#batch-module">batch-module</a></strong></li>
+		</ol>
+	</div>
   </section>
 
   <a href="#section-not-reusing-connections" id="section-not-reusing-connections" class="section-link h3">&sect;</a>
@@ -605,29 +694,48 @@ simplejavamail.proxy.password=&lt;proxy_password&gt;
   <section>
   	<div>
 		<p class="wide">
-			Without the <strong><a href="modules.html#batch-module">batch module</a></strong>, Simple Java Mail supports asynchronous email sending, where each
+			Without the <strong><a href="modules.html#batch-module">batch-module</a></strong>, Simple Java Mail supports asynchronous email sending, where each
 			message is handled in its own thread using a single Transport connection. This process involves opening and closing the connection for each email, managed independently
 			of a connection pool. Additionally, Simple Java Mail allows the configuration of a custom <code class="inline language-java">ExecutorService</code> to enhance
 			performance through a custom thread pool. Adjusting these settings to match your server’s specifications can optimize performance. However, without the
-			batch module, each thread maintains a dedicated Transport connection that is repeatedly opened and closed for each email, which is less efficient in high-volume scenarios.
+			batch-module, each thread maintains a dedicated SMTP connection that is repeatedly opened and closed for each email, which is less efficient in high-volume scenarios.
 			Additionally, you may find you will hit your maximum concurrent connections for your server more easily without the batch module.
 		</p>
 		<div>
-			<pre><code class="language-java small">Mailer regularMailer = mailerBuiler.(..).build();
-regularMailer.send(email); // blocks
+			<pre><code class="language-java small">Mailer regularMailer = mailerBuilder.(..).buildMailer();
+regularMailer.sendMail(email); // blocks
 
-Mailer defaultAsyncMailer = mailerBuiler.(..).async().build();
-defaultAsyncMailer.send(email); // doesn't block
+Mailer defaultAsyncMailer = mailerBuilder.(..).async().buildMailer();
+defaultAsyncMailer.sendMail(email); // doesn't block
 
 /* or be explicit about it: */
-mailer.sendEmail(email, /*async = */ true);
+mailer.sendMail(email, /*async = */ true);
 </code></pre>
 		</div><br/>
 		Defining your own thread pool using a ExecutorService (default is <code class="inline language-java">Executors.newSingleThreadExecutor</code>):
 		<div>
 			<pre><code class="language-java small">currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
 		</div>
-  	</div>
+	</div>
+  </section>
+
+  <section>
+	<div class="view">
+		<p>
+			When reconnecting for every message is the only problem you need to solve, use simple sequential batch sending. It sends all provided emails
+			over one SMTP connection and does not require the batch-module. It is not pooled, concurrent, retried or clustered.
+		</p>
+	</div>
+
+	<div class="side">
+<pre><code class="language-java small">mailer.sendMailsInSimpleBatch(emails);        // uses the mailer's async default
+mailer.sendMailsInSimpleBatch(emails, false); // blocks until the batch is done
+mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch asynchronously
+</code></pre>
+		<p>
+			For sustained high-volume sending, prefer the <a href="#section-reusing-connections">batch-module connection pool</a>.
+		</p>
+	</div>
   </section>
 
 
@@ -637,7 +745,7 @@ mailer.sendEmail(email, /*async = */ true);
 	<section>
 		<div>
 			<p class="wide">
-				The <strong><a href="modules.html#batch-module">batch module</a></strong> significantly boosts performance by introducing connection pooling. Simply include
+				The <strong><a href="modules.html#batch-module">batch-module</a></strong> significantly boosts performance by introducing connection pooling. Simply include
 				the module in your classpath (add the Maven dependency) to enable up to four pooled connections. The default setup provides up to four pooled connections,
 				which automatically close if inactive for five seconds following their last use. This mechanism is optimal for managing bursts of email traffic, keeping
 				up to four connections active as long as needed.
@@ -646,7 +754,7 @@ mailer.sendEmail(email, /*async = */ true);
 				The connection pool configuration is flexible, allowing adjustments to core connection pool size, maximum pool size, and connection expiry policy.
 			</p>
 			<p>
-				While the default setup without the batch module allows for the creation of a custom thread pool to manage email sending, the batch module introduces
+				While the default setup without the batch-module allows for the creation of a custom thread pool to manage email sending, the batch-module introduces
 				a connection pool. This addition enables threads to reuse Transport connections more efficiently, significantly improving performance even with fewer
 				threads, as it eliminates the need to repeatedly open and close connections for each email.
 			</p>
@@ -657,18 +765,18 @@ mailer.sendEmail(email, /*async = */ true);
 	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up (default 4)
 	   .withConnectionPoolClaimTimeoutMillis(TimeUnit.MINUTES.toMillis(1)) // wait max 1 minute for available connection (default forever)
 	   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour (default 5 seconds)
-	   .build();
+	   .buildMailer();
 	</code></pre>
 				<p class="wide">
 					Or using properties:
 				</p>
-				<pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2 (defaults to 0)
-simplejavamail.defaults.connectionpool.maxsize=10 (defaults to 4)
-simplejavamail.defaults.connectionpool.claimtimeout.millis=60000 (defaults to forever)
-simplejavamail.defaults.connectionpool.expireafter.millis=1800000 (defaults to 5000)
+				<pre><code class="language-properties small">simplejavamail.defaults.connectionpool.coresize=2
+simplejavamail.defaults.connectionpool.maxsize=10
+simplejavamail.defaults.connectionpool.claimtimeout.millis=60000
+simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 	</code></pre>
 		  <p class="wide">
-			  <strong>Note that with the batch-module enabled, the JVM won't shut down by itself anymore</strong>, as the connection pool stays alive until
+			  <strong>Note that with the batch-module enabled, the JVM will not shut down by itself anymore</strong>, as the connection pool stays alive until
           shutdown manually. To do this, just call <code>mailer.shutdownConnectionPool()</code> (repeat with each mailer you might have
           in a cluster).
 		  </p>
@@ -684,7 +792,7 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000 (defaults to 5
 		<div>
 			<div class="view">
 				<p>
-					To enable high-availability / fail-over or to really <strong>take performance to out-of-this world levels</strong> and handle truly enormous
+					To enable high-availability / fail-over or to handle truly enormous
 					email batch loads, Simple Java Mail enables you to easily configure cluster(s) of SMTP servers.
 				</p>
 				<p>
@@ -695,35 +803,42 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000 (defaults to 5
 			</div>
 
 			<div class="side">
-				Global cluster config:
-				<pre><code>Mailer clusteredMailer = mailerBuilder
-	   .(..) // normal settings
-	   .(..) // connection pool settings
-	   .withConnectionPoolLoadBalancingStrategy(LoadBalancingStrategy.ROUND_ROBIN)
-	   .build();</code></pre>
+				Cluster-level Java config:
+				<pre><code>UUID ordersCluster = UUID.fromString("00000000-0000-0000-0000-000000000301");
+
+Mailer clusteredMailer = mailerBuilder
+    .(..) // normal SMTP settings
+    .withClusterKey(ordersCluster)
+    .withConnectionPoolCoreSize(2)
+    .withConnectionPoolMaxSize(10)
+    .withConnectionPoolClaimTimeoutMillis(60000)
+    .withConnectionPoolExpireAfterMillis(1800000)
+    .withConnectionPoolLoadBalancingStrategy(LoadBalancingStrategy.ROUND_ROBIN)
+    .buildMailer();</code></pre>
 				or using properties:
-				<pre><code class="language-properties small">simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
-# valid values: ROUND_ROBIN, RANDOM</code></pre>
+				<pre><code class="language-properties small">simplejavamail.defaults.connectionpool.clusterkey.uuid=00000000-0000-0000-0000-000000000301
+simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
+# valid values: ROUND_ROBIN, RANDOM_ACCESS</code></pre>
 			</div>
 
 			<p class="wide">
 			<p><strong>Mailer behavior in a cluster setup:</strong></p>
-			<pre><code class="language-properties small">Mailer mailer1InFailoverCluster = mailerBuilderServer1.(..).withClusterKey(myClusterKey).build();
-Mailer mailer2InFailoverCluster = mailerBuilderServer2.(..).withClusterKey(myClusterKey).build();
-Mailer mailer3InFailoverCluster = mailerBuilderServer3.(..).withClusterKey(myClusterKey).build();
+			<pre><code class="language-java small">Mailer mailer1InFailoverCluster = mailerBuilderServer1.(..).withClusterKey(myClusterKey).buildMailer();
+Mailer mailer2InFailoverCluster = mailerBuilderServer2.(..).withClusterKey(myClusterKey).buildMailer();
+Mailer mailer3InFailoverCluster = mailerBuilderServer3.(..).withClusterKey(myClusterKey).buildMailer();
 
 // or default cluster using property:
 // simplejavamail.defaults.connectionpool.clusterkey.uuid=38400000-8cf0-11bd-b23e-10b96e4ef00d
 
-mailer1InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
-mailer2InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
-mailer3InFailoverCluster.send(email); // 1 of 3 servers is selected (default Round Robin)
+mailer1InFailoverCluster.sendMail(email); // 1 of 3 servers is selected
+mailer2InFailoverCluster.sendMail(email); // 1 of 3 servers is selected
+mailer3InFailoverCluster.sendMail(email); // 1 of 3 servers is selected
 
 // now server 2 breaks down and becomes unreachable or produces errors
 // server 2 is removed from the cluster, but all mailers still work:
-mailer1InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
-mailer2InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
-mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Round Robin)
+mailer1InFailoverCluster.sendMail(email); // 1 of 2 servers is selected
+mailer2InFailoverCluster.sendMail(email); // 1 of 2 servers is selected
+mailer3InFailoverCluster.sendMail(email); // 1 of 2 servers is selected
 </code></pre>
 		</div>
 
@@ -731,18 +846,36 @@ mailer3InFailoverCluster.send(email); // 1 of 2 servers is selected (default Rou
 			<strong>Note 1:</strong> The send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java
 			Mail cannot determine how a send-action was botched and what the next course of action should be. You can monitor individual emails using
 			<a href="features.html#section-handling-async-result">the <em>CompletableFuture</em> async return value</a> obtained from
-			<code class="inline language-java">mailer.send()</code> and determine followup-actions for errored-out results.
+			<code class="inline language-java">mailer.sendMail()</code> and determine followup-actions for errored-out results.
 		</p>
 
 	  <p class="wide">
-		  <strong>Note 2:</strong> The Connection Pool defaults (core size, max size etc.) are set and fixed by the first Mailer instance in the cluster.
-		  Subsequent Mailer instances cannot change these global settings. If they provide different global defaults, a warning will be logged.
+		  <strong>Note 2:</strong> Connection pool defaults are scoped by cluster key. The first Mailer instance in a cluster sets that cluster's
+		  pool defaults; later Mailer instances in the same cluster cannot change them. Different cluster keys can use different pool defaults.
 	  </p>
 
 	  <p class="wide">
-		  <strong>Note 3:</strong> Using the Java API, you can define any number of clusters. Using the default cluster uuid property, you can define only one
-        default cluster.
+		  <strong>Note 3:</strong> Using Java API, you can define any number of clusters. Using
+		  <code class="inline language-properties">simplejavamail.defaults.connectionpool.clusterkey.uuid</code>, you define one default cluster key.
+		  Using <code class="inline language-properties">simplejavamail.defaults.connectionpool.clusters.*</code>, property files and Spring can also define
+		  separate pool defaults for multiple cluster keys.
 	  </p>
+
+		<div class="wide">
+			<p><strong>Property-defined cluster configs:</strong></p>
+			<pre><code class="language-properties small"># Alias-based config. The alias is only a property-file name; clusterkey.uuid is the actual cluster key.
+simplejavamail.defaults.connectionpool.clusters.orders.clusterkey.uuid=00000000-0000-0000-0000-000000000301
+simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
+simplejavamail.defaults.connectionpool.clusters.orders.maxsize=3
+simplejavamail.defaults.connectionpool.clusters.orders.claimtimeout.millis=30000
+simplejavamail.defaults.connectionpool.clusters.orders.expireafter.millis=600000
+simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RANDOM_ACCESS
+
+# Direct UUID-keyed config. If clusterkey.uuid is omitted, the alias itself must be a UUID.
+simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.maxsize=8
+simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.loadbalancing.strategy=ROUND_ROBIN
+</code></pre>
+		</div>
 
 		<p class="wide">
 			<strong>You set the limit</strong><br/>

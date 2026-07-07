@@ -59,7 +59,7 @@
 					Or with property default:
 				</p>
 				<pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP
-# or: SMTPS, SMTP_TLS, SMTP_OATH2
+# or: SMTPS, SMTP_TLS, SMTP_OAUTH2
 </code></pre>
 				<p>Let's quickly review them one-by-one.</p>
 			</div>
@@ -163,7 +163,7 @@ simplejavamail.opportunistic.tls=false
 		<section>
 			<div>
 				<p class="wide">
-					To quote FastMail on the <a href="https://www.fastmail.help/hc/en-us/articles/360058753834">differences between SSL and TLS</a>:
+					To quote FastMail on the <a href="https://www.fastmail.help/hc/en-us/articles/360058753834-SSL-TLS-and-STARTTLS">differences between SSL and TLS</a>:
 				</p>
 				<blockquote>
 					<p class="wide">
@@ -248,7 +248,7 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 
 		<section>
 			<p class="wide">
-				Simple Java Mail also enables server identity verification for SSL connections by default (also see <a href="http://www.ietf.org/rfc/rfc2595.txt">RFC 2595</a>,
+				Simple Java Mail also enables server identity verification for SSL connections by default (also see <a href="https://www.ietf.org/rfc/rfc2595.txt">RFC 2595</a>,
 				2.4. Server Identity Check). This is a security feature that verifies the server identity by checking the server's certificate against
 				the host name used by the client to start the connection.
 			</p>
@@ -294,7 +294,7 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 			</p>
 			<ul class="indent">
 				<li><a href="https://web.archive.org/web/20160331233647/http://www.cakesolutions.net/teamblogs/2008/05/08/email-header-injection-security">Email Header Injection security</a></li>
-				<li><a href="https://security.stackexchange.com/a/54100/110048">StackExchange - What threats come from CRLF in email generation?</a></li>
+				<li><a href="https://security.stackexchange.com/questions/54099/what-threats-come-from-crlf-in-email-generation/54100#54100">StackExchange - What threats come from CRLF in email generation?</a></li>
 				<li><a href="https://archive.ph/NuETu">OWASP - Testing for IMAP SMTP Injection</a></li>
 				<li><a href="https://archive.ph/uReuD">CWE-93: Improper Neutralization of CRLF Sequences ('CRLF Injection')</a></li>
 			</ul>
@@ -333,6 +333,16 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 		.signingAlgorithm("SHA256_WITH_ED25519") // default is SHA256_WITH_RSA
 		.build()
 );
+</code></pre>
+				Or configure DKIM once for every email sent through a mailer:
+				<pre><code class="small">currentMailerBuilder
+    .withDefaultDkimSigning(
+        DkimConfig.builder()
+            .dkimPrivateKeyData(byte[] / File / InputStream)
+            .dkimSigningDomain("your_domain.org")
+            .dkimSelector("your_selector")
+            .build())
+    .buildMailer();
 </code></pre>
 				Or with properties:
 				<pre><code class="language-properties small"># defaults on Mailer level:
@@ -395,15 +405,27 @@ simplejavamail.dkim.signing.algorithm=SHA256_WITH_ED25519
 				</p>
 				<br/>
 				<p>
-					You can <strong>sign individual emails</strong> or <strong>sign all emails</strong> by configuring S/MIME on the <em>Mailer</em>
-					instead.
+					You can <strong>sign individual emails</strong> or <strong>sign all emails</strong> by configuring S/MIME defaults on the
+					<em>Mailer</em> or through properties.
+				</p>
+				<p>
+					For encryption, Simple Java Mail can use one email-level encryption certificate, or different certificates per recipient. When any
+					TO/CC/BCC recipient carries a certificate, that recipient certificate is used first. Recipients without a certificate fall back to the
+					email-level or mailer-level <code class="inline language-java">SmimeEncryptionConfig</code>, if one is configured.
+				</p>
+				<p>
+					For a mailing list, department or other governed group, use <code class="inline language-java">RecipientsBuilder</code> before adding the
+					flat recipient list to the email. <code class="inline language-java">withDefaultSmimeCertificate(...)</code> fills only missing certificates,
+					<code class="inline language-java">withFixedSmimeCertificate(...)</code> replaces every recipient certificate in that group, and
+					<code class="inline language-java">clearingSmimeCertificates()</code> removes certificate state from reused recipients so the email-level
+					or mailer-level fallback certificate can apply.
 				</p>
 				<br/>
 				<p>
 					For maximum flexibility, you can configure all algorithms and certificates specific to S/MIME signing and encryption. This includes
 					choosing the key encapsulation algorithm and cipher algorithm for encryption, and the signature algorithm for signing. For a list of
-					available algorithms, see the <code class="inline language-java">SmimeEncryptConfig</code> and
-					<code class="inline language-java">SmimeSignConfig</code> classes.
+					available algorithms, see the <code class="inline language-java">SmimeEncryptionConfig</code> and
+					<code class="inline language-java">SmimeSigningConfig</code> classes.
 				</p>
 			</div>
 			<div class="side">
@@ -417,7 +439,7 @@ simplejavamail.dkim.signing.algorithm=SHA256_WITH_ED25519
 
 Email emailToBeSigned = currentEmailBuilder.
     .(..)
-    .signWithSmime(SmimeSignConfig.builder
+    .signWithSmime(SmimeSigningConfig.builder()
 		.pkcs12Config(myKeyInfo)
 		.signatureAlgorithm("SHA256withRSA") // optional
 		.build())
@@ -428,7 +450,7 @@ mailer.sendMail(emailToBeSigned);
 				Encrypting an email:
 				<pre><code>Email emailToBeEncrypted = currentEmailBuilder
     .(..)
-    .encryptWithSmime(SmimeEncryptConfig.builder()
+    .encryptWithSmime(SmimeEncryptionConfig.builder()
 		.x509Certificate("x509CertificateInStandardPEM.crt")
 		.keyEncapsulationAlgorithm("RSA_OAEP_SHA384") // optional
 		.cipherAlgorithm("AES256_CBC") // optional
@@ -437,7 +459,60 @@ mailer.sendMail(emailToBeSigned);
 
 mailer.sendMail(emailToBeEncrypted);
 </code></pre>
-				Sign all emails by default (this works for encryption as well):
+				Encrypting with different recipient certificates:
+				<pre><code>SmimeEncryptionConfig algorithmsAndFallback = SmimeEncryptionConfig.builder()
+    .x509Certificate(fallbackCertificate)
+    .keyEncapsulationAlgorithm("RSA_OAEP_SHA384")
+    .cipherAlgorithm("AES256_CBC")
+    .build();
+
+Recipient alice = new RecipientBuilder()
+    .withAddress("alice@example.com")
+    .withType(Message.RecipientType.TO)
+    .withSmimeCertificate(aliceCertificate)
+    .build();
+
+Recipient bob = new RecipientBuilder()
+    .withAddress("bob@example.com")
+    .withType(Message.RecipientType.TO)
+    .withSmimeCertificate(bobCertificate)
+    .build();
+
+Email emailToBeEncrypted = currentEmailBuilder
+    .withRecipients(alice, bob)
+    .encryptWithSmime(algorithmsAndFallback)
+    .buildEmail();
+</code></pre>
+				Encrypting a group with exactly one certificate:
+				<pre><code>Collection&lt;Recipient&gt; finance = new RecipientsBuilder()
+    .withFixedSmimeCertificate(financeCertificate)
+    .withRecipientsWithDefaultName("Finance", Message.RecipientType.TO,
+            "alice@example.com", "bob@example.com")
+    .buildRecipients();
+
+Email emailToBeEncrypted = currentEmailBuilder
+    .withRecipients(finance)
+    .buildEmail();
+</code></pre>
+				Defaulting only missing certificates in a group:
+				<pre><code>Collection&lt;Recipient&gt; finance = new RecipientsBuilder()
+    .withDefaultSmimeCertificate(financeFallbackCertificate)
+    .withRecipients(previousFinanceRecipients)
+    .buildRecipients();
+// recipients that already had their own certificates keep them;
+// the others receive financeFallbackCertificate</code></pre>
+				Clearing reused recipient certificates so the email-level certificate applies:
+				<pre><code>Collection&lt;Recipient&gt; reusableRecipients = new RecipientsBuilder()
+    .clearingSmimeCertificates()
+    .withRecipients(previousRecipients)
+    .buildRecipients();
+
+Email emailToBeEncrypted = currentEmailBuilder
+    .withRecipients(reusableRecipients)
+    .encryptWithSmime(emailLevelSmimeEncryptConfig)
+    .buildEmail();
+</code></pre>
+				Sign all emails by default from Java:
 				<pre><code>currentMailerBuilder
     (...)
     .withEmailDefaults(EmailBuilder.startingBlank()
@@ -445,19 +520,29 @@ mailer.sendMail(emailToBeEncrypted);
 		.buildEmail())
     .buildMailer();
 </code></pre>
-				Or with properties:
-				<pre><code class="language-properties small"># defaults on Mailer level:
+				Property-only S/MIME defaults:
+				<pre><code class="language-properties small"># Sign every email sent through a property-configured mailer.
 simplejavamail.smime.signing.keystore=my_smime_keystore.pkcs12
 simplejavamail.smime.signing.keystore_password=keystore_password
 simplejavamail.smime.signing.key_alias=key_alias
 simplejavamail.smime.signing.key_password=key_password
 simplejavamail.smime.signing.algorithm=SHA256withRSA
-# encryption can only be applied to individual Email instances
-# but this can be default behaviour (not recommended as users would need to share private keys)
-simplejavamail.smime.encryption.certificate=x509CertificateInStandardPEM.crt
+
+# Encrypt with one fallback certificate and the selected algorithms.
+# Recipient-level certificates configured in Java still take precedence.
+simplejavamail.smime.encryption.certificate=shared-recipient-certificate.pem
 simplejavamail.smime.encryption.key_encapsulation_algorithm=RSA
-simplejavamail.smime.encryption.cipher_algorithm=DES_EDE3_CBC
+simplejavamail.smime.encryption.cipher=DES_EDE3_CBC
+
+# Optional when the application is fully property-driven.
+simplejavamail.defaults.to.name=Finance
+simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 </code></pre>
+				<p class="small">
+					Properties can configure the signing identity and a single encryption fallback. They cannot express different S/MIME certificates per
+					recipient; use <code class="inline language-java">RecipientBuilder</code> or <code class="inline language-java">RecipientsBuilder</code>
+					for per-recipient or group certificate policy.
+				</p>
 			</div>
 		</section>
 
@@ -469,7 +554,7 @@ simplejavamail.smime.encryption.cipher_algorithm=DES_EDE3_CBC
 			<div class="view">
 				<p>
 					Simple Java Mail can automatically handle
-					<a href="https://docs.ipswitch.com/moveit/central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME signed messages</a>
+					<a href="https://docs.ipswitch.com/MOVEit/Central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME signed messages</a>
 					or attachments and has some useful extras such as providing you with metadata.
 				</p>
 				<p>S/MIME is an optional feature and if you want to use it, you need to include the

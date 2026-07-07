@@ -6,7 +6,9 @@
     "start": "npm run server",
     "build": "gulp build",
     "server": "gulp server",
-    "verifyLinks": "blc http://localhost:3000 -ro"
+    "verifyLinks": "node scripts/verify-links.js all",
+    "verifyLinks:internal": "node scripts/verify-links.js internal",
+    "verifyLinks:external": "node scripts/verify-links.js external"
   },
   "contributors": [
     "Benny Bottema <benny@bennybottema.com>"

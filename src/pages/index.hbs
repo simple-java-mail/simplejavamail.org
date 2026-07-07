@@ -35,8 +35,15 @@
 					<div class="intro-code">
 <pre><code>Email email = EmailBuilder.startingBlank()
     .from("lollypop", "lolly.pop@pretzelfun.com")
-    .to("C. Cane", "candycane@candyshop.org")
-    .cc("C. Bo &lt;chocobo@candyshop.org&gt;")
+    .withRecipients(new RecipientBuilder()
+        .withName("C. Cane")
+        .withAddress("candycane@candyshop.org")
+        .withType(TO)
+        .build())
+    .withRecipients(new RecipientBuilder()
+        .withAddressAndNameOrDefault("C. Bo &lt;chocobo@candyshop.org&gt;", null)
+        .withType(CC)
+        .build())
     .withSubject("hey")
     .withPlainText("We should meet up! ;)")
     .buildEmail();
@@ -90,26 +97,54 @@ EmailBuilder.copying(email)</code></pre>
 ConfigLoader.loadProperties("simplejavamail.properties"); // optional default
 ConfigLoader.loadProperties("overrides.properties"); // optional extra
 
-Email email = EmailBuilder.startingBlank()
-          .to("lollypop", "lolly.pop@somemail.com")
-          .to("C. Cane", "candycane@candyshop.org")
-          .ccWithFixedName("C. Bo group", "chocobo1@candyshop.org", "chocobo2@candyshop.org")
-          .withRecipientsUsingFixedName("Tasting Group", BCC,
+Recipient alice = new RecipientBuilder()
+          .withAddressAndNameOrDefault("Alice &lt;alice@candyshop.org&gt;", null)
+          .withType(TO)
+          .withSmimeCertificate(aliceCertificate)
+          .build();
+
+Collection&lt;Recipient&gt; groupRecipients = new RecipientsBuilder()
+          .withDefaultSmimeCertificate(candyShopGroupCertificate)
+          .withRecipientsWithFixedName("C. Bo group", CC,
+                        "chocobo1@candyshop.org", "chocobo2@candyshop.org")
+          .withRecipientsWithFixedName("Tasting Group", BCC,
                         "taster1@cgroup.org;taster2@cgroup.org;tester &lt;taster3@cgroup.org&gt;")
-          .bcc("Mr Sweetnose &lt;snose@candyshop.org&gt;")
+          .withRecipient(new RecipientBuilder()
+                        .withAddressAndNameOrDefault("Mr Sweetnose &lt;snose@candyshop.org&gt;", null)
+                        .withType(BCC)
+                        .build())
+          .buildRecipients();
+
+Email email = EmailBuilder.startingBlank()
+          .from("lollypop", "lolly.pop@somemail.com")
+          .withRecipients(alice)
+          .withRecipients(new RecipientBuilder()
+                        .withName("lollypop")
+                        .withAddress("lolly.pop@somemail.com")
+                        .withType(TO)
+                        .build())
+          .withRecipients(new RecipientBuilder()
+                        .withName("C. Cane")
+                        .withAddress("candycane@candyshop.org")
+                        .withType(TO)
+                        .build())
+          .withRecipients(groupRecipients)
           .withReplyTo("lollypop", "lolly.pop@othermail.com")
           .withSubject("hey")
           .withHTMLText("&lt;img src=&#39;cid:wink1&#39;&gt;&lt;b&gt;We should meet up!&lt;/b&gt;&lt;img src=&#39;cid:wink2&#39;&gt;")
           .withPlainText("Please view this email in a modern email client!")
           .withCalendar(CalendarMethod.REQUEST, iCalendarText)
           .withEmbeddedImage("wink1", imageByteArray, "image/png")
-          .withEmbeddedImage("wink2", imageDatesource)
+          .withEmbeddedImage("wink2.png", imageDatasource, "wink2")
+          .withPreEncodedEmbeddedImage("wink3.png", encodedImageData, "image/png", BASE_64)
           .withAttachment("invitation", pdfByteArray, "application/pdf")
           .withAttachment("dresscode", odfDatasource)
-          .withAttachment("spoilers", mySpoilerText, "Spoilers", ContentTransferEncoding.BASE_64)
+          .withAttachment("spoilers", spoilerDatasource, "Spoilers", BASE_64, "spoilers-cid")
+          .withPreEncodedAttachment("report.pdf", encodedPdfData, "application/pdf", BASE_64)
           .withHeader("X-Priority", 5)
           .withReturnReceiptTo()
           .withDispositionNotificationTo("notify-read-emails@candyshop.com")
+          .withDeliveryStatusNotification(HEADERS_ONLY, FAILURE, DELAY)
           .withBounceTo("tech@candyshop.com")
           .signWithDomainKey(privateKeyData, "somemail.com", "selector") // DKIM
           .signWithDomainKey(dkimConfig) // fine-grained control
@@ -118,6 +153,9 @@ Email email = EmailBuilder.startingBlank()
           .dontApplyDefaultValueFor(FROM)
           .dontApplyOverrideValueFor(REPLY_TO)
           .withContentTransferEncoding(BASE_64)
+          .withPlainTextContentTransferEncoding(BIT7)
+          .withHTMLTextContentTransferEncoding(QUOTED_PRINTABLE)
+          .withCalendarTextContentTransferEncoding(BASE_64)
           .buildEmail();
 
 Mailer mailer = MailerBuilder
@@ -125,6 +163,7 @@ Mailer mailer = MailerBuilder
           .withTransportStrategy(TransportStrategy.SMTP_TLS)
           .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password")
           .withSessionTimeout(10 * 1000)
+          .withLocalBindAddress("203.0.113.10")
           .clearEmailValidator() // turns off email validation
 		  .withEmailValidator( // or not
 		  	JMail.strictValidator()
@@ -132,19 +171,23 @@ Mailer mailer = MailerBuilder
 		  		.withRule(email -> email.localPart().startsWith("allowed")))
           .withProperty("mail.smtp.sendpartial", true)
           .withDebugLogging(true)
+          .withDebugOutput(SessionDebugOutput.SLF4J)
+          .withDefaultDkimSigning(defaultDkimConfig)
           .async()
           // not enough? what about this:
-          .withClusterKey(myPowerfulMailingCluster);
-          .withThreadPoolSize(20); // multi-threaded batch handling
-          .withConnectionPoolCoreSize(10); // reusable connection(s) / multi-server sending
-          .withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
-          .withCustomSSLFactoryInstance(mySSLFactoryInstance);
-		  .withEmailDefaults(myEmailWithADefaultBCCRecipient);
-		  .withEmailOverrides(myEmailWithFixedFromAddress);
+          .withClusterKey(myPowerfulMailingCluster)
+          .withThreadPoolSize(20) // async handling without batch-module
+          .withConnectionPoolCoreSize(10) // reusable connection(s) / multi-server sending
+          .withConnectionPoolLoadBalancingStrategy(ROUND_ROBIN)
+          .withCustomSSLFactoryClass("org.mypackage.MySSLFactory")
+          .withCustomSSLFactoryInstance(mySSLFactoryInstance)
+		  .withEmailDefaults(myEmailWithADefaultBCCRecipient)
+		  .withEmailOverrides(myEmailWithFixedFromAddress)
           .manyMoreOptions()
           .buildMailer();
 
-mailer.sendMail(email);</code></pre>
+mailer.sendMail(email);
+mailer.sendMailsInSimpleBatch(Arrays.asList(email, anotherEmail), false);</code></pre>
       <pre><code class="small">mailer.testConnection();
 mailer.validate(email);</code></pre>
       <pre><code class="small">mailer.getServerConfig();
@@ -154,7 +197,11 @@ mailer.getProxyConfig();
 mailer.getTransportStrategy();
 mailer.getSession();</code></pre>
       S/MIME signed and/or encrypted Outlook messages? No problem!
-      <pre><code class="small">Email email = EmailConverter.outlookMsgToEmail("smimeSignedEmail.msg", pkcs12Config);</code></pre>
+      <pre><code class="small">OutlookEmailConversionResult result =
+    EmailConverter.outlookMsgToEmailBuilderWithOutlookData("smimeSignedEmail.msg", pkcs12Config);
+
+Email email = result.buildEmail();
+OutlookMessageData outlookData = result.getOutlookMessageData();</code></pre>
     </div>
   </section>
 

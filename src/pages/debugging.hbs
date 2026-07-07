@@ -13,7 +13,7 @@
     <ul>
 		<li><a href="#section-debug-mode">Logging emails instead of sending</a></li>
 		<li><a href="#section-override-receivers">Override envelope-level receivers</a></li>
-		<li><a href="#section-debug-logging">Enable javax.mail debug logging</a></li>
+		<li><a href="#section-debug-logging">Enable Jakarta Mail debug logging</a></li>
 		<li><a href="#section-inspect-mailer-email">Inspect a mailer or an email</a></li>
 		<li><a href="#section-mailexception">Catching exceptions</a></li>
 		<li><a href="#section-logging">Logging output</a></li>
@@ -71,18 +71,22 @@ currentEmailBuilder.withOverrideReceivers(tester1Recipient, testGroupInboxRecipi
 
 
   <a href="#section-debug-logging" id="section-debug-logging" class="section-link h2">&sect;</a>
-  <h2>Enable javax.mail debug logging</h2>
+  <h2>Enable Jakarta Mail debug logging</h2>
 
   <section>
     <div class="view">
       <p>
-        By default javax.mail's debug logging is turned off, but you can turn it on for more diagnostic info. All this does is enabling debug mode on
-        the internal Session instance.
+        By default Jakarta Mail's debug logging is turned off, but you can turn it on for more diagnostic info. You can also route the debug stream
+        to stdout, stderr or SLF4J without touching the internal Session instance directly.
       </p>
     </div>
 
     <div class="side">
-<pre><code>mailer.withDebugLogging(true);
+<pre><code>Mailer mailer = MailerBuilder
+    .withSMTPServer("host", 587, "username", "password")
+    .withDebugLogging(true)
+    .withDebugOutput(SessionDebugOutput.SLF4J)
+    .buildMailer();
 
 // or
 mailer.getSession().setDebug(true);
@@ -93,6 +97,7 @@ MailerBuilder.usingSession(yourSession);
 </code></pre>
       or:
       <pre><code class="language-properties">simplejavamail.javaxmail.debug=true
+simplejavamail.javaxmail.debug.out=SLF4J
 </code></pre>
     </div>
   </section>
@@ -154,7 +159,7 @@ try {
   <section>
     <div class="view">
       <p>
-        Simple Java Mail uses <a href="http://www.slf4j.org/">SLF4J</a> to log, which means you can use any logging framework you like that supports
+        Simple Java Mail uses <a href="https://www.slf4j.org/">SLF4J</a> to log, which means you can use any logging framework you like that supports
         it. Also read this excellent summary of <a href="https://learnjava-soa.blogspot.com/2015/06/slf4j-with-log4j2-example.html">how to configure
                                                                                                                                   slf4j with
                                                                                                                                   log4j2</a>.
@@ -193,7 +198,7 @@ try {
   <section>
     <div class="view">
       <p>
-        Here's an example configuration for <a href="http://logging.apache.org/log4j/2.x/index.html">log4j12</a>, make sure you have the
+        Here's an example configuration for <a href="https://logging.apache.org/log4j/2.x/index.html">log4j12</a>, make sure you have the
         slf4j-to-log4j impl included on the classpath as well as log4j12 itself and the log4j.xml with the config.
       </p>
     </div>
@@ -238,7 +243,7 @@ try {
   <section>
     <div class="view">
       <p>
-        Here's an example configuration for <a href="http://logging.apache.org/log4j/2.x/">log4j2</a>, make sure you have the log4j-slf4j-impl impl
+        Here's an example configuration for <a href="https://logging.apache.org/log4j/2.x/">log4j2</a>, make sure you have the log4j-slf4j-impl impl
         included on the classpath as well as log4j2 itself and the log4j2.xml with the config.
       </p>
     </div>
@@ -277,7 +282,7 @@ try {
   <section>
     <div class="view">
       <p>
-        Here's an example configuration for <a href="http://logback.qos.ch/">logback</a>, make sure you have the logback-classic included on the
+        Here's an example configuration for <a href="https://logback.qos.ch/">logback</a>, make sure you have the logback-classic included on the
         classpath as well as logback-core and the logback.xml with the config.
       </p>
     </div>

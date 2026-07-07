@@ -17,8 +17,8 @@
 
     <p class="wide">
       Creating and sending emails is very simple with Simple Java Mail; you don't need to know about the mailing RFC, MimeMessage or any other low
-      level <code class="inline language-text">javax.mail</code> API. No anonymous inner classes needed and no <a
-      href="http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mail.html">large frameworks</a> needed nor XML.
+      level <code class="inline language-text">Jakarta Mail</code> API. No anonymous inner classes needed and no <a
+      href="https://docs.spring.io/spring-framework/reference/integration/email.html">large frameworks</a> needed nor XML.
     </p>
 
     <h3>Entry classes</h3>
@@ -40,7 +40,7 @@
     <p class="wide">
       Simple Java Mail will do some basic validation checks so that your email is always populated with enough data.
       It also checks for CRLF injection attacks. It even verifies email addresses against
-      <a href="https://tools.ietf.org/html/rfc2822" target="_blank">RFC-2822</a> and others using
+      <a href="https://datatracker.ietf.org/doc/html/rfc2822" target="_blank">RFC-2822</a> and others using
       <a href="https://github.com/RohanNagar/jmail" target="_blank">JMail</a>.
       Simple Java Mail also takes care of all the
       <a href="https://javadoc.io/doc/com.sun.mail/jakarta.mail/2.0.1/jakarta.mail/com/sun/mail/smtp/package-summary.html" target="_blank">connection and security properties</a> for you.
@@ -78,6 +78,7 @@
 		<li><a href="#section-builder-api" class="indent">About the fluent API with the Builder pattern</a></li>
 		<li><a href="#section-reusable-mailer" class="indent">Configure once, reuse many times</a></li>
 		<li><a href="#section-add-recipients" class="indent">Alternative API for almost everything</a></li>
+		<li><a href="#section-recipient-builders" class="indent">Dedicated recipient builders</a></li>
 		<li><a href="#authentication" class="indent">Authentication and OAUTH2 support</a></li>
 		<li><a href="#section-sending-asynchronously" class="indent">Asynchronous parallel batch sending and clustering</a></li>
 		<li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
@@ -92,9 +93,12 @@
 		<li><a href="#section-embedding">Embedding images</a></li>
 		<li><a href="#section-custom-headers">Setting custom headers</a></li>
 		<li><a href="#section-custom-properties">Setting custom properties on the internal Session</a></li>
+		<li><a href="#section-debug-output">Routing Jakarta Mail debug output</a></li>
+		<li><a href="#section-local-bind-address">Binding the local/source SMTP address</a></li>
 		<li><a href="#section-icalendar-vevent">Sending a Calendar event (iCalendar vEvent)</a></li>
 		<li><a href="#section-session-access">Direct access to the internal Session</a></li>
 		<li><a href="#section-return-receipt">Configure delivery / read receipt</a></li>
+		<li><a href="#section-delivery-status-notification">Configure Delivery Status Notification</a></li>
 		<li><a href="#section-email-validation">Validating Email Addresses</a></li>
 		<li><a href="#section-converting">Converting between email formats</a></li>
 		<li><a href="#section-bouncing-emails">Setting custom recipient for bouncing emails</a></li>
@@ -127,15 +131,23 @@
 			  A Mailer instance is reusable.
 		  </p>
 		  <p>
-			  Muliple Mailer instances can form a <a href="configuration.html#section-clustering">powerful cluster</a>.
+			  Multiple Mailer instances can form a <a href="configuration.html#section-clustering">powerful cluster</a>.
 		  </p>
 	  </div>
 
 	  <div class="side">
 <pre><code class="small">Email email = EmailBuilder.startingBlank()
     .from("Michel Baker", "m.baker@mbakery.com")
-    .to("mom", "jean.baker@hotmail.com")
-    .to("dad", "StevenOakly1963@hotmail.com")
+    .withRecipients(new RecipientBuilder()
+        .withName("mom")
+        .withAddress("jean.baker@hotmail.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withRecipients(new RecipientBuilder()
+        .withName("dad")
+        .withAddress("StevenOakly1963@hotmail.com")
+        .withType(Message.RecipientType.TO)
+        .build())
     .withSubject("My Bakery is finally open!")
     .withPlainText("Mom, Dad. We did the opening ceremony of our bakery!!!")
 	.withHTMLText("&lt;p&gt;Mom, Dad. We did the opening ceremony of &lt;strong&gt;our bakery&lt;/strong&gt;!!!&lt;/p&gt;")
@@ -219,29 +231,54 @@ public Mailer inhouseMailer() {
         Simple Java Mail has alternative ways to do things for almost everything...
       </p>
       <p class="wide">
-        For example, when building an email, you can add recipients using
+        For example, when building an email, add
         <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/src/main/java/org/simplejavamail/api/email/Recipient.java" target="_blank">Recipient</a>
-        objects, <a href="">RFC822 compliant String addresses</a> (each can be comma delimited and include optional nested names),
-        <a href="https://jakarta.ee/specifications/platform/8/apidocs/javax/mail/internet/internetaddress" target="_blank">InternetAddress</a>
-        objects, collections of said addresses, default address names or fixed address names.
+        objects directly, or use <code class="inline">RecipientsBuilder</code> when a list needs RFC822 parsing, default names, fixed names, mixed recipient types
+        or a group-level S/MIME certificate.
+        The email builder itself keeps only the canonical <code class="inline">withRecipients(...)</code> entry points.
+      </p>
+      <p class="wide">
+        Think of <code class="inline">RecipientsBuilder</code> as recipient-group governance. Default values fill gaps, fixed values intentionally override
+        source data, and S/MIME certificate policies can preserve source recipients, fill missing certificates, replace all certificates or clear them so the
+        email/mailer S/MIME fallback can apply.
       </p>
     </div>
 
     <div>
-      <pre><code>// You can add your own Recipient instances for example
+      <pre><code>// Add your own Recipient instances
 currentEmailBuilder.withRecipients(yourRecipient1, yourRecipient2...);</code></pre>
 
-      <pre><code>// or add comma / semicolon separated addresses (without names)
+      <pre><code>// Or build comma / semicolon separated recipient lists first
 String list = "twister@sweets.com,blue.tongue@sweets.com;honey@sweets.com";
-currentEmailBuilder.bcc(list);</code></pre>
-      <pre><code>// or:
-currentEmailBuilder.bccWithDefaultName("maintenance group", list);
-currentEmailBuilder.bccWithFixedName("maintenance group", list); // same as .bcc()</code></pre>
+Collection&lt;Recipient&gt; archive = new RecipientsBuilder()
+    .withDefaultSmimeCertificate(archiveCertificate)
+    .withRecipientsWithDefaultName("maintenance group", Message.RecipientType.BCC, list)
+    .buildRecipients();
+currentEmailBuilder.withRecipients(archive);</code></pre>
 
       <pre><code>// what about a group with one deviating name?
 String list = "bob@sweets.com, gene@sweets.com; Security Group &lt;security@sweets.com&gt;";
-currentEmailBuilder.toWithDefaultName("stakeholders", list);
-// bob and gene are named "stakeholders", "Security Group" get its own name</code></pre>
+Collection&lt;Recipient&gt; stakeholders = new RecipientsBuilder()
+    .withRecipientsWithDefaultName("stakeholders", Message.RecipientType.TO, list)
+    .buildRecipients();
+currentEmailBuilder.withRecipients(stakeholders);
+// bob and gene are named "stakeholders", "Security Group" keeps its own name</code></pre>
+      <pre><code>// or force both display name and certificate for a controlled group
+Collection&lt;Recipient&gt; legal = new RecipientsBuilder()
+    .withFixedSmimeCertificate(legalDepartmentCertificate)
+    .withRecipientsWithFixedName("Legal Department", Message.RecipientType.CC,
+            "reviewer@example.com", "Counsel &lt;counsel@example.com&gt;")
+    .buildRecipients();
+currentEmailBuilder.withRecipients(legal);
+// all recipients are shown as "Legal Department" and use the same group certificate</code></pre>
+      <pre><code>// or strip certificate state from reused recipients
+Collection&lt;Recipient&gt; reusedWithoutCertificates = new RecipientsBuilder()
+    .clearingSmimeCertificates()
+    .withRecipients(reusedRecipients)
+    .buildRecipients();
+currentEmailBuilder
+    .withRecipients(reusedWithoutCertificates)
+    .encryptWithSmime(emailLevelFallbackCertificate);</code></pre>
       <p>Through properties:</p>
       <pre><code class="language-properties">simplejavamail.defaults.bcc.name=
 simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;honey@sweets.com
@@ -250,95 +287,69 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 
     <div>
       <div class="view">
-        <p>To give you an idea of how flexible the API is for <strong>just adding recipients:</strong></p>
+        <p>The email builder recipient surface is intentionally compact:</p>
       </div>
       <div class="side">
-      <pre><code class="small">// TO
-.to(Recipient... recipients)
-.to(Collection&lt;Recipient&gt; recipients)
-.to(String name, String address)
-.to(String oneOrMoreAddresses)
-.to(String name, String... oneOrMoreAddressesEach)
-.to(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.toMultiple(String... oneOrMoreAddressesEach)
-.toMultiple(Collection&lt;String&gt; oneOrMoreAddressesEach)
-.toWithFixedName(String name, String... oneOrMoreAddressesEach)
-.toWithDefaultName(String name, String... oneOrMoreAddressesEach)
-.toWithFixedName(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.toWithDefaultName(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.to(String name, InternetAddress address)
-.to(InternetAddress address)
-.to(String name, InternetAddress... oneOrMoreAddressesEach)
-.toAddresses(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.toMultiple(InternetAddress... oneOrMoreAddressesEach)
-.toMultipleAddresses(Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.toAddressesWithFixedName(String name, InternetAddress... oneOrMoreAddressesEach)
-.toAddressesWithDefaultName(String name, InternetAddress... oneOrMoreAddressesEach)
-.toAddressesWithFixedName(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.toAddressesWithDefaultName(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-// CC
-.cc(Recipient... recipients)
-.cc(Collection&lt;Recipient&gt; recipients)
-.cc(String name, String address)
-.cc(String oneOrMoreAddresses)
-.cc(String name, String... oneOrMoreAddressesEach)
-.cc(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.ccMultiple(String... oneOrMoreAddressesEach)
-.ccAddresses(Collection&lt;String&gt; oneOrMoreAddressesEach)
-.ccWithFixedName(String name, String... oneOrMoreAddressesEach)
-.ccWithDefaultName(String name, String... oneOrMoreAddressesEach)
-.ccWithFixedName(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.ccWithDefaultName(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.cc(String name, InternetAddress address)
-.cc(InternetAddress address)
-.cc(String name, InternetAddress... oneOrMoreAddressesEach)
-.ccAddresses(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.ccMultiple(InternetAddress... oneOrMoreAddressesEach)
-.ccMultipleAddresses(Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.ccAddressesWithFixedName(String name, InternetAddress... oneOrMoreAddressesEach)
-.ccAddressesWithDefaultName(String name, InternetAddress... oneOrMoreAddressesEach)
-.ccAddressesWithFixedName(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.ccAddressesWithDefaultName(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-// BCC
-.bcc(Recipient... recipients)
-.bcc(Collection&lt;Recipient&gt; recipients)
-.bcc(String name, String address)
-.bcc(String oneOrMoreAddresses)
-.bcc(String name, String... oneOrMoreAddressesEach)
-.bcc(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.bccMultiple(String... oneOrMoreAddressesEach)
-.bccAddresses(Collection&lt;String&gt; oneOrMoreAddressesEach)
-.bccWithFixedName(String name, String... oneOrMoreAddressesEach)
-.bccWithDefaultName(String name, String... oneOrMoreAddressesEach)
-.bccWithFixedName(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.bccWithDefaultName(String name, Collection&lt;String&gt; oneOrMoreAddressesEach)
-.bcc(String name, InternetAddress address)
-.bcc(InternetAddress address)
-.bcc(String name, InternetAddress... oneOrMoreAddressesEach)
-.bccAddresses(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.bccMultiple(InternetAddress... oneOrMoreAddressesEach)
-.bccMultipleAddresses(Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.bccAddressesWithFixedName(String name, InternetAddress... oneOrMoreAddressesEach)
-.bccAddressesWithDefaultName(String name, InternetAddress... oneOrMoreAddressesEach)
-.bccAddressesWithFixedName(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-.bccAddressesWithDefaultName(String name, Collection&lt;InternetAddress&gt; oneOrMoreAddressesEach)
-// GENERIC
-.withRecipientsWithDefaultName(String defaultName, Collection&lt;String&gt; oneOrMoreAddressesEach, RecipientType recipientType)
-.withRecipientsWithFixedName(String fixedName, Collection&lt;String&gt; oneOrMoreAddressesEach, RecipientType recipientType)
+      <pre><code class="small">// EmailPopulatingBuilder
+.withRecipients(Recipient... recipients)
+.withRecipients(Collection&lt;Recipient&gt; recipients)
+.withRecipients(String name, boolean fixedName, RecipientType recipientType, String... oneOrMoreAddressesEach)
+
+// RecipientsBuilder
 .withRecipientsWithDefaultName(String name, RecipientType recipientType, String... oneOrMoreAddressesEach)
 .withRecipientsWithFixedName(String name, RecipientType recipientType, String... oneOrMoreAddressesEach)
-.withRecipients(String name, boolean fixedName, RecipientType recipientType, String... oneOrMoreAddressesEach)
-.withRecipients(String name, boolean fixedName, Collection&lt;String&gt; oneOrMoreAddressesEach, RecipientType recipientType)
-.withAddressesWithDefaultName(String defaultName, Collection&lt;InternetAddress&gt; addresses, RecipientType recipientType)
-.withAddressesWithFixedName(String fixedName, Collection&lt;InternetAddress&gt; addresses, RecipientType recipientType)
-.withAddresses(String name, boolean fixedName, Collection&lt;InternetAddress&gt; addresses, RecipientType recipientType)
+.withRecipientsFromAddressesWithDefaultName(String name, Collection&lt;InternetAddress&gt; addresses, RecipientType recipientType)
+.withRecipientsFromAddressesWithFixedName(String name, Collection&lt;InternetAddress&gt; addresses, RecipientType recipientType)
+.withDefaultSmimeCertificate(X509Certificate smimeCertificate)
+.withFixedSmimeCertificate(X509Certificate smimeCertificate)
+.clearingSmimeCertificates()
 .withRecipients(Collection&lt;Recipient&gt; recipients)
 .withRecipients(Recipient... recipients)
-.withRecipients(Collection&lt;Recipient&gt; recipients, RecipientType fixedRecipientType)
-.withRecipient(String singleAddress, RecipientType recipientType)
-.withRecipient(String name, String singleAddress, RecipientType recipientType)
-.withRecipient(Recipient recipient)</code></pre>
+.buildRecipients()</code></pre>
       </div>
+    </div>
+  </section>
+
+
+  <a href="#section-recipient-builders" id="section-recipient-builders" class="section-link h3">&sect;</a>
+  <h3>Dedicated recipient builders</h3>
+
+  <section>
+    <div class="view">
+      <p>
+        If a recipient needs to be assembled outside an email builder call, use the dedicated recipient builders. This keeps address parsing,
+        recipient type and optional recipient metadata in one small object before it is added to an email. When several recipients belong to one
+        operational group, <code class="inline">RecipientsBuilder</code> can govern that group before it enters the email.
+      </p>
+      <p>
+        Default names and default certificates only fill missing values. Fixed names and fixed certificates override source data for the whole group.
+        <code class="inline">clearingSmimeCertificates()</code> removes certificate state from reused recipients when the current email should use its own
+        S/MIME fallback instead.
+      </p>
+      <p>
+        Recipient-level S/MIME certificates are described in the <a href="security.html#section-sending-smime">S/MIME security section</a>.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="small">Recipient alice = new RecipientBuilder()
+    .withAddressAndNameOrDefault("Alice &lt;alice@example.com&gt;", null)
+    .withType(Message.RecipientType.TO)
+    .withSmimeCertificate(aliceCertificate)
+    .build();
+
+Collection&lt;Recipient&gt; archive = new RecipientsBuilder()
+    .withDefaultSmimeCertificate(archiveCertificate)
+    .withRecipientsWithDefaultName("Archive", Message.RecipientType.BCC, "audit@example.com", "records@example.com")
+    .buildRecipients();
+
+Email email = EmailBuilder.startingBlank()
+    .from("sender@example.com")
+    .withRecipients(alice)
+    .withRecipients(archive)
+    .withPlainText("Hello")
+    .buildEmail();
+</code></pre>
     </div>
   </section>
 
@@ -380,16 +391,16 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 
 
   <a href="#section-sending-asynchronously" id="section-sending-asynchronously" class="section-link h3">&sect;</a>
-  <h3>Asynchronous parallel batch sending and clustering</h3>
+  <h3>Asynchronous sending, simple batches and clustering</h3>
 
   <section>
     <div class="view">
       <p>
-        The default mode is to send emails synchronously, blocking execution until the email was processed completely and the STMP server sent a
+        The default mode is to send emails synchronously, blocking execution until the email was processed completely and the SMTP server sent a
         successful result.
       </p>
       <p>
-        You can also send anyschronously in parallel or batches, or simply send in a fire-and-forget way. If an authenticated proxy is used, the <a
+        You can also send asynchronously in parallel or batches, or simply send in a fire-and-forget way. If an authenticated proxy is used, the <a
         href="#section-proxy">proxy bridging server</a> is kept alive until the last email has been sent.</p>
       <p>
         Depending on the SMTP server (and proxy server if used) this can greatly influence how fast emails are sent.
@@ -416,10 +427,18 @@ mailer.sendMail(email);
   <section>
     <div>
       <p class="wide">
-          <strong>Advanced batch processing</strong><br/>
-        You can maximize performance by including the <strong><a href="modules.html#batch-module">batch-module</a></strong>,
-        which allows you to pool the (Transport) connection over multiple sends, which generally saves 50% time for simpler emails). Going further, you can
-        allow for multiple pooled connections to the same server and further still: even <strong>cluster multiple pools of connections</strong> to different servers!
+        <strong>Simple sequential batch sending</strong><br/>
+        If reconnecting for each email is the only overhead you need to avoid, use <code class="inline language-java">sendMailsInSimpleBatch(...)</code>.
+        It sends multiple emails sequentially over one SMTP connection and does not require the batch-module.
+      </p>
+      <pre><code class="small">mailer.sendMailsInSimpleBatch(emails);        // uses the mailer's async default
+mailer.sendMailsInSimpleBatch(emails, false); // blocks until the batch is done
+mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch asynchronously
+</code></pre>
+      <p class="wide">
+          <strong>Advanced pooled batch processing</strong><br/>
+        For sustained high-volume sending, include the <strong><a href="modules.html#batch-module">batch-module</a></strong>.
+        It pools SMTP connections over multiple sends and can cluster multiple pools for different SMTP servers.
       </p>
       <p class="wide">
         Refer to the <a href="configuration.html#section-batch-and-clustering">configuration section</a> for details.
@@ -494,12 +513,12 @@ MailerBuilder
   <section>
 	  <div class="view">
 		  <p>
-			  By default content is encoded in the target MimeMessage or EML using <a href="https://docs.microsoft.com/en-us/previous-versions/office/developer/exchange-server-2010/aa579632(v=exchg.140)" target="_blank">quoted-printable</a>,
+			  By default content is encoded in the target MimeMessage or EML using <a href="https://learn.microsoft.com/en-us/previous-versions/office/developer/exchange-server-2010/aa579632(v=exchg.140)" target="_blank">quoted-printable</a>,
 			  so the EML is nicely and safely readable. However, you can change it to many other encoders such as base64, which for example is useful if you want to add an extra layer of obfuscation.
 		  </p>
 		  <p>
 			  The email header that governs this feature is <a href="https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html" target="_blank">Content-Transfer-Encoding</a> and Simple Java Mail takes care of inserting this header in the right places, which varies depending on the
-			  <a href="https://www.simplejavamail.org/rfc-compliant.html#section-explore-multipart">nescesary email structure</a>.
+			  <a href="https://www.simplejavamail.org/rfc-compliant.html#section-explore-multipart">necessary email structure</a>.
 		  </p>
 	  </div>
 
@@ -529,7 +548,7 @@ V2Ugc2hvdWxkIG1lZXQgdXAh
 			  <strong>Encoding attachments</strong>
 		  </p>
 		  <p>
-			  You can control encoding seperately for attachments, so your text files for examples can be encoded differently too.
+			  You can control encoding separately for attachments, so your text files for examples can be encoded differently too.
 		  </p>
 	  </div>
 
@@ -563,6 +582,32 @@ new AttachmentResource(..., ContentTransferEncoding.BINARY)
 
 	// or default back to quoted-printable
     .clearContentTransferEncoding()
+</code></pre>
+	  </div>
+	  </section>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  <strong>Encoding body parts separately</strong>
+		  </p>
+		  <p>
+			  The global content-transfer encoding is still the fallback, but plain text, HTML and calendar body parts can override it individually.
+			  The same defaults can be supplied through <a href="configuration.html#section-available-properties">properties</a>.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">currentEmailBuilder
+    .withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+    .withPlainTextContentTransferEncoding(ContentTransferEncoding.BIT7)
+    .withHTMLTextContentTransferEncoding(ContentTransferEncoding.BASE_64)
+    .withCalendarTextContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+</code></pre>
+<pre><code class="language-properties small">simplejavamail.defaults.content.transfer.encoding=QUOTED_PRINTABLE
+simplejavamail.defaults.body.text.content.transfer.encoding=BIT7
+simplejavamail.defaults.body.html.content.transfer.encoding=BASE_64
+simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
 </code></pre>
 	  </div>
   </section>
@@ -640,7 +685,7 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 
 		Or with property default:
 <pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP
-# or: SMTPS, SMTP_TLS, SMTP_OATH2
+# or: SMTPS, SMTP_TLS, SMTP_OAUTH2
 </code></pre>
     </div>
   </section>
@@ -676,7 +721,7 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
         Here's an example of SSL and TLS using gMail.
       </p>
       <p>
-        If you have two-factor login turned on, you need to generate an <a href="https://security.google.com/settings/security/apppasswords">application
+        If you have two-factor login turned on, you need to generate an <a href="https://support.google.com/accounts/answer/185833?hl=en">application
         specific
         password</a>
         from your Google account.
@@ -735,7 +780,7 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 	        "The dresscode for the party")
 </code></pre>
 		  Which results in something like this:
-		  <pre><code class="language-text">Content-Type: text/plain; filename="dresscode.txt"; name="dresscode.txt"
+		  <pre><code class="language-text">Content-Type: text/plain; name="dresscode.txt"
 Content-Disposition: attachment; filename="dresscode.txt"
 Content-ID: &lt;dresscode.txt&gt;
 Content-Description: The dresscode for the party
@@ -751,6 +796,34 @@ Black Tie Optional
 		  by <a href="#section-content-transfer-encoding"><strong>providing a content transfer encoding</strong></a> (resulting in a
 		  Content-Transfer-Encoding header for the attachment).
 	  </p>
+  </section>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  If attachment data is already encoded, use a pre-encoded attachment method. This tells Simple Java Mail to preserve the payload and use
+			  the provided <code class="inline language-java">ContentTransferEncoding</code> value instead of encoding the data again.
+		  </p>
+		  <p>
+			  Attachment resource names and MIME <code class="inline language-text">Content-ID</code> values can also be set separately.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">currentEmailBuilder
+    .withPreEncodedAttachment(
+        "report.pdf",
+        alreadyBase64EncodedData,
+        "application/pdf",
+        ContentTransferEncoding.BASE_64)
+    .withAttachment(
+        "report-display-name.pdf",
+        reportDataSource,
+        "Monthly report",
+        ContentTransferEncoding.BASE_64,
+        "stable-report-content-id")
+</code></pre>
+	  </div>
   </section>
 
 
@@ -774,11 +847,37 @@ Black Tie Optional
 			</p>
 			<pre><code class="small">currentEmailBuilder.withEmbeddedImage("smiley", new FileDataSource("smiley.jpg"));
 currentEmailBuilder.withEmbeddedImage("thumbsup", parseBase64Binary(base64String), "image/png");
+currentEmailBuilder.withEmbeddedImage("brand-logo.png", logoDataSource, "brand-logo-cid");
 // above example is included in the demo package in MailTestApp.java
 
 // the corresponding HTML should contain the placeholders
 &lt;p&gt;Let&#39;s go!&lt;/p&gt;&lt;img src=&#39;cid:thumbsup&#39;&gt;&lt;br/&gt;
 &lt;p&gt;Smile!&lt;/p&gt;&lt;img src=&#39;cid:smiley&#39;&gt;
+&lt;p&gt;Logo&lt;/p&gt;&lt;img src=&#39;cid:brand-logo-cid&#39;&gt;
+</code></pre>
+		</div>
+	</section>
+
+	<section>
+		<div class="view">
+			<p>
+				Pre-encoded embedded images work the same way as pre-encoded attachments: provide the already-encoded data and the encoding that is
+				already present.
+			</p>
+		</div>
+
+		<div class="side">
+<pre><code class="language-java small">currentEmailBuilder
+    .withPreEncodedEmbeddedImage(
+        "logo.png",
+        alreadyBase64EncodedLogo,
+        "image/png",
+        ContentTransferEncoding.BASE_64)
+    .withPreEncodedEmbeddedImage(
+        "logo.png",
+        logoDataSource,
+        ContentTransferEncoding.BASE_64,
+        "stable-logo-content-id")
 </code></pre>
 		</div>
 	</section>
@@ -873,7 +972,7 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 		<div class="view">
 			<p>
 				In case you need to modify the internal Session object itself, because you need a tailored configuration that is supported by the underlying
-				<code class="inline language-text">javax.mail</code>, that too is very easy.
+				<code class="inline language-text">Jakarta Mail</code>, that too is very easy.
 			</p>
 		</div>
 
@@ -908,6 +1007,59 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 	</section>
 
 
+  <a href="#section-debug-output" id="section-debug-output" class="section-link h2">&sect;</a>
+  <h2>Routing Jakarta Mail debug output</h2>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  Jakarta Mail can produce low-level protocol debug output. Simple Java Mail can keep the old console behavior, route it to stderr, or send it to
+			  the <code class="inline language-text">org.simplejavamail.javamail.debug</code> SLF4J logger.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user", "password")
+    .withDebugLogging(true)
+    .withDebugOutput(SessionDebugOutput.SLF4J)
+    .buildMailer();
+</code></pre>
+<pre><code class="language-properties small">simplejavamail.javaxmail.debug=true
+simplejavamail.javaxmail.debug.out=SLF4J
+</code></pre>
+	  </div>
+  </section>
+
+
+  <a href="#section-local-bind-address" id="section-local-bind-address" class="section-link h2">&sect;</a>
+  <h2>Binding the local/source SMTP address</h2>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  On machines with multiple local IP addresses, the outgoing SMTP socket can be bound to a specific local/source address.
+			  Simple Java Mail applies this to the right Jakarta Mail property for the configured transport strategy.
+		  </p>
+		  <p>
+			  Leave the local port empty unless you specifically need it. Binding a fixed local port can conflict with another connection.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withLocalBindAddress("203.0.113.10")
+    .buildMailer();
+</code></pre>
+<pre><code class="language-properties small">simplejavamail.smtp.localaddress=203.0.113.10
+simplejavamail.smtp.localport=25252
+</code></pre>
+	  </div>
+  </section>
+
+
   <a href="#section-icalendar-vevent" id="section-icalendar-vevent" class="section-link h2">&sect;</a>
   <h2>Sending a Calendar event (iCalendar vEvent)</h2>
 
@@ -918,7 +1070,7 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
       </p>
       <p>Easy!</p>
       <p>
-        Produce a Calendar event String (manually or by using a library such as <a href="https://github.com/ical4j/ical4j/wiki/Examples">ical4j</a>) and pass it to
+        Produce a Calendar event String (manually or by using a library such as <a href="https://github.com/ical4j/ical4j">ical4j</a>) and pass it to
         the <code class="inline language-java">EmailBuilder</code>.
       </p>
       <p>
@@ -1002,6 +1154,41 @@ Session session = mailer.getSession();
   </section>
 
 
+  <a href="#section-delivery-status-notification" id="section-delivery-status-notification" class="section-link h2">&sect;</a>
+  <h2>Configure Delivery Status Notification</h2>
+
+  <section>
+    <div class="view">
+      <p>
+        Delivery Status Notification (DSN) asks the SMTP server for delivery-status reports such as failure, delay or success notifications.
+        This is separate from read receipts: DSN is about delivery status at SMTP/server level.
+      </p>
+      <p>
+        DSN can be configured per email, through mailer defaults or through properties.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java small">Email email = EmailBuilder.startingBlank()
+    .from("sender@example.com")
+    .withRecipients(new RecipientBuilder()
+        .withAddress("receiver@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withPlainText("Hello")
+    .withDeliveryStatusNotification(
+        DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+        DeliveryStatusNotification.NotifyOption.FAILURE,
+        DeliveryStatusNotification.NotifyOption.DELAY)
+    .buildEmail();
+</code></pre>
+<pre><code class="language-properties small">simplejavamail.defaults.delivery.status.notification.notify=FAILURE,DELAY
+simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
+</code></pre>
+    </div>
+  </section>
+
+
   <a href="#section-email-validation" id="section-email-validation" class="section-link h2">&sect;</a>
   <h2>Validating Email Addresses</h2>
 
@@ -1009,7 +1196,7 @@ Session session = mailer.getSession();
 	  <div class="view">
 		  <p>
 			  Simple Java Mail can validate your email addresses. It's not just a simple regex check, but a complete and robust full validation against <a
-				  href="https://tools.ietf.org/html/rfc2822">RFC-2822</a> and others. It does this by including <a href="https://github.com/RohanNagar/jmail">JMail</a> in the library.
+				  href="https://datatracker.ietf.org/doc/html/rfc2822">RFC-2822</a> and others. It does this by including <a href="https://github.com/RohanNagar/jmail">JMail</a> in the library.
 		  </p>
 		  <p>
 			  Address validation is performed automatically when sending emails, but you can also directly perform validations.
@@ -1133,6 +1320,29 @@ emailBuilder   	     =    EmailConverter.mimeMessageToEmailBuilder(yourMimeMessa
     </div>
   </section>
 
+  <section>
+    <div class="view">
+      <p>
+        When converting Outlook <code class="inline language-text">.msg</code> files, use the result API if you need to inspect source-specific Outlook data.
+        The converted email keeps only meaningful email headers; structural Outlook source headers stay available through
+        <code class="inline language-java">OutlookMessageData</code>.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java small">OutlookEmailConversionResult result =
+    EmailConverter.outlookMsgToEmailBuilderWithOutlookData(msgFile);
+
+Email email = result.buildEmail();
+OutlookMessageData outlookData = result.getOutlookMessageData();
+
+List&lt;String&gt; receivedHeaders = outlookData.getHeaderValues("Received");
+String messageClass = outlookData.getMessageClass();
+String rawHeaders = outlookData.getRawHeaders();
+</code></pre>
+    </div>
+  </section>
+
 
   <a href="#section-bouncing-emails" id="section-bouncing-emails" class="section-link h2">&sect;</a>
   <h2>Setting custom recipient for bouncing emails</h2>
@@ -1214,8 +1424,8 @@ currentEmailBuilder
         <a href="https://jakartaee.github.io/mail-api/FAQ.html#proxy" target="_blank">not authenticated proxies</a>.
       </p>
       <p class="wide">
-        To make this work with authentication, Simple Java Mail uses a trick: it sets up a temporary anonymous proxy server for Javax Mail to connect
-        to and then the bridge relays the connection to the target proxy performing the authentication outside of Javax Mail.
+        To make this work with authentication, Simple Java Mail uses a trick: it sets up a temporary anonymous proxy server for Jakarta Mail to connect
+        to and then the bridge relays the connection to the target proxy performing the authentication outside of Jakarta Mail.
       </p>
       <p class="wide">
         This temporary server is referred to as the <strong>Proxy Bridging Server</strong>.
@@ -1229,7 +1439,7 @@ currentMailerBuilder.withProxy("proxy.host.com", 1080)
 // authenticated proxy
 currentMailerBuilder.withProxy("proxy.host.com", 1080, "proxy username", "proxy password");
 </code></pre>
-      <p>Refer to the <a href="configuration.html#section-other-settings">configuration section</a>
+      <p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
         on how to set proxy server defaults and the port on which the proxy bridge runs.</p>
     </div>
   </section>
@@ -1248,6 +1458,11 @@ currentMailerBuilder.withProxy("proxy.host.com", 1080, "proxy username", "proxy 
         The connection test can also be done asynchronously and the result can be handled asynchronously as well. Take a look at
         <a href="#section-handling-async-result">Handling asynchronous mailing result</a>.
       </p>
+      <p>
+        If the mailer was configured with <code class="inline language-java">async()</code>, no-arg
+        <code class="inline language-java">testConnection()</code> uses that async default. Use
+        <code class="inline language-java">testConnection(false)</code> when you need a blocking test.
+      </p>
     </div>
 
     <div class="side">
@@ -1255,7 +1470,9 @@ currentMailerBuilder.withProxy("proxy.host.com", 1080, "proxy username", "proxy 
 Mailer mailer = ...;
 
 // perform connection test
-mailer.testConnection(/* async? */); // no error means success
+mailer.testConnection();      // uses the mailer's async default
+mailer.testConnection(false); // explicitly blocking
+mailer.testConnection(true);  // explicitly asynchronous
 </code></pre>
     </div>
   </section>
