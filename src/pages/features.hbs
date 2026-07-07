@@ -80,7 +80,7 @@
 		<li><a href="#section-add-recipients" class="indent">Alternative API for almost everything</a></li>
 		<li><a href="#section-recipient-builders" class="indent">Dedicated recipient builders</a></li>
 		<li><a href="#authentication" class="indent">Authentication and OAUTH2 support</a></li>
-		<li><a href="#section-sending-asynchronously" class="indent">Asynchronous parallel batch sending and clustering</a></li>
+		<li><a href="#section-sending-asynchronously" class="indent">Asynchronous sending, simple batches and clustering</a></li>
 		<li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
 		<li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
 		<li><a href="#section-custom-session">Sending with your own Session instance</a></li>
@@ -434,6 +434,19 @@ mailer.sendMail(email);
       <pre><code class="small">mailer.sendMailsInSimpleBatch(emails);        // uses the mailer's async default
 mailer.sendMailsInSimpleBatch(emails, false); // blocks until the batch is done
 mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch asynchronously
+</code></pre>
+      <p class="wide">
+        If the caller owns the queue and needs custom work between sends, use
+        <code class="inline language-java">withOpenConnection(...)</code>. The scoped sender keeps one SMTP connection open for the callback, but it is still
+        caller-managed, sequential and not pooled.
+      </p>
+      <pre><code class="small">mailer.withOpenConnection(sender -> {
+    while (database.hasPendingMail()) {
+        Email next = database.nextPendingMail();
+        sender.sendMail(next);
+        database.markSent(next);
+    }
+});
 </code></pre>
       <p class="wide">
           <strong>Advanced pooled batch processing</strong><br/>
@@ -1264,7 +1277,7 @@ JMail.strictValidator()
         If you already have a MimeMessage, you can convert it into an Email instance, complete with embedded images and attachments (or just the metadata), headers intact.
       </p>
       <p>
-        You can even build a mass Outlook .msg to <a href="https://forensicswiki.xyz/page/EML">EML</a> converter if you like!
+        You can even build a mass Outlook .msg to <a href="https://en.wikipedia.org/wiki/Email#Filename_extensions">EML</a> converter if you like!
       </p>
       <br/>
       <p>
@@ -1340,6 +1353,11 @@ List&lt;String&gt; receivedHeaders = outlookData.getHeaderValues("Received");
 String messageClass = outlookData.getMessageClass();
 String rawHeaders = outlookData.getRawHeaders();
 </code></pre>
+      <p class="small">
+        Outlook conversion is lenient about unsupported encrypted S/MIME payloads. For signed S/MIME content, parsed email content is preserved
+        even when signature validation fails; check <code class="inline language-java">email.getOriginalSmimeDetails().getSmimeSignatureValid()</code> when
+        the validation result matters.
+      </p>
     </div>
   </section>
 

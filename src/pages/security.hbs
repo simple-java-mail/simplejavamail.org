@@ -437,7 +437,7 @@ simplejavamail.dkim.signing.algorithm=SHA256_WITH_ED25519
     .keyPassword("my_key_password")
     .build();
 
-Email emailToBeSigned = currentEmailBuilder.
+Email emailToBeSigned = currentEmailBuilder
     .(..)
     .signWithSmime(SmimeSigningConfig.builder()
 		.pkcs12Config(myKeyInfo)
@@ -554,7 +554,7 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 			<div class="view">
 				<p>
 					Simple Java Mail can automatically handle
-					<a href="https://docs.ipswitch.com/MOVEit/Central/onlineguide/en/MICSMIMEEmailOverview.htm">S/MIME signed messages</a>
+					<a href="https://en.wikipedia.org/wiki/S/MIME">S/MIME signed messages</a>
 					or attachments and has some useful extras such as providing you with metadata.
 				</p>
 				<p>S/MIME is an optional feature and if you want to use it, you need to include the
@@ -578,8 +578,17 @@ details.getSmimeType(); // signed-data, enveloped-data
 details.getSmimeName(); // smime.p7m or smime.p7s
 details.getSmimeMicalg(); // ie. sha-512
 details.getSmimeSignedBy(); // email or name used
+details.getSmimeSignatureValid(); // true, false or null when not applicable
 </code></pre>
 			</div>
+		</section>
+
+		<section>
+			<p class="wide">
+				When S/MIME signature validation fails, Simple Java Mail keeps the parsed signed content available and exposes the invalid status through
+				<code class="inline language-java">getOriginalSmimeDetails().getSmimeSignatureValid()</code>. Unsupported encrypted S/MIME payloads in Outlook
+				messages are treated leniently so the surrounding message can still be converted when possible.
+			</p>
 		</section>
 
 
@@ -624,10 +633,10 @@ nonMergedEmail.getSmimeSignedEmail();
 
 			<div class="side">
       <pre><code class="small">
-        signedAndEncrypted.getOriginalSmimeDetails().smimeMode(); // SIGNED_ENCRYPTED
+        signedAndEncrypted.getOriginalSmimeDetails().getSmimeMode(); // SIGNED_ENCRYPTED
         Email signedOrEncrypted = signedAndEncrypted.getSmimeSignedEmail();
 
-        signedOrEncrypted.getOriginalSmimeDetails().smimeMode(); // SIGNED or ENCRYPTED
+        signedOrEncrypted.getOriginalSmimeDetails().getSmimeMode(); // SIGNED or ENCRYPTED
 
         // whether it is SIGNED or ENCRYPTED depends on the order in which the original
         // email client handled this S/MIME scenario

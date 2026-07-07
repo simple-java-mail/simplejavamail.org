@@ -21,10 +21,11 @@
 			<li><a href="#debug-output">Jakarta Mail debug output targets</a></li>
 			<li><a href="#local-bind-address">Local bind address configuration</a></li>
 			<li><a href="#default-dkim">Mailer-level default DKIM signing</a></li>
-			<li><a href="#simple-batch">Simple sequential batch sending</a></li>
+			<li><a href="#simple-batch">Simple sequential batch and open-connection sending</a></li>
 			<li><a href="#batch-cluster-config">Batch-module cluster configuration</a></li>
 			<li><a href="#async-test-connection">Async mailer defaults apply to testConnection</a></li>
 			<li><a href="#resource-filenames">Resource filenames moved out of Content-Type filename</a></li>
+			<li><a href="#module-descriptors">Java module descriptors</a></li>
 		</ul>
 	</section>
 
@@ -44,8 +45,10 @@
 			<code class="inline">withRecipients(name, fixedName, type, addresses...)</code> method remains for CLI and property-driven integration code.
 		</p>
 		<p class="wide">
-			For grouped recipients, <code class="inline">RecipientsBuilder</code> is also the place to express local governance: default names/certificates fill
-			missing values, while fixed names/certificates override source values for the group before email-level and mailer-level defaults are applied.
+			For grouped recipients, <code class="inline">RecipientsBuilder</code> is also the place to express local governance. Default names and certificates
+			fill missing values, fixed names and certificates intentionally replace source values for that group, and
+			<code class="inline">clearingSmimeCertificates()</code> strips reused recipient certificate state before the flat recipient list is added to the
+			email. After that, recipient certificates take precedence over email-level and mailer-level S/MIME encryption fallbacks.
 		</p>
 		<pre><code>Recipient recipient = new RecipientBuilder()
     .withAddressAndNameOrDefault("Alice &lt;alice@example.com&gt;", null)
@@ -299,7 +302,7 @@ simplejavamail.smtp.localport=25252</code></pre>
 	</section>
 
 	<a href="#simple-batch" id="simple-batch" class="section-link h2">&sect;</a>
-	<h2>Simple sequential batch sending</h2>
+	<h2>Simple sequential batch and open-connection sending</h2>
 
 	<section>
 		<p class="wide" style="font-size:smaller">
@@ -316,6 +319,17 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole sequential 
 			This API is not concurrent, pooled, retry-oriented or clustered. For those use cases, keep using the batch-module.
 			See <a href="configuration.html#section-batch-and-clustering">batch and clustering support</a> for the full distinction.
 		</p>
+		<p class="wide">
+			For caller-owned queues that need custom work between successful sends, use <code class="inline">Mailer.withOpenConnection(...)</code>. It opens one
+			SMTP connection for the callback and provides a scoped sender; each send is still sequential and processed like a normal blocking send.
+		</p>
+		<pre><code>mailer.withOpenConnection(sender -> {
+    while (database.hasPendingMail()) {
+        Email next = database.nextPendingMail();
+        sender.sendMail(next);
+        database.markSent(next);
+    }
+});</code></pre>
 	</section>
 
 	<a href="#batch-cluster-config" id="batch-cluster-config" class="section-link h2">&sect;</a>
@@ -384,6 +398,25 @@ Content-Disposition: attachment; filename=report.pdf</code></pre>
 		</p>
 		<pre><code>Content-Type: application/pdf; name=report.pdf
 Content-Disposition: attachment; filename=report.pdf</code></pre>
+	</section>
+
+	<a href="#module-descriptors" id="module-descriptors" class="section-link h2">&sect;</a>
+	<h2>Java module descriptors</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New metadata only. Classpath users do not need to change anything.
+		</p>
+		<p class="wide">
+			The facade and core jars now include Java module descriptors, completing the multi-release jar support for modular applications. Applications using
+			the Java Platform Module System can require <code class="inline language-java">org.simplejavamail</code> directly.
+		</p>
+		<pre><code>module com.example.mailer {
+    requires org.simplejavamail;
+}</code></pre>
+		<p class="wide">
+			See <a href="modules.html#navigation">modules</a> for the module layout.
+		</p>
 	</section>
 
 	{{/inline}}

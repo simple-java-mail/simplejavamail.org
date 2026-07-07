@@ -738,6 +738,31 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 	</div>
   </section>
 
+  <section>
+	<div class="view">
+		<p>
+			When the caller owns the queue and needs custom work between successful sends, use
+			<code class="inline language-java">withOpenConnection(...)</code>. Simple Java Mail owns and closes the SMTP connection for the callback, while the
+			callback decides what to send next. This is useful for database-backed queues where a message should be marked as sent before the next one is read.
+		</p>
+	</div>
+
+	<div class="side">
+<pre><code class="language-java small">mailer.withOpenConnection(sender -> {
+    while (database.hasPendingMail()) {
+        Email next = database.nextPendingMail();
+        sender.sendMail(next);
+        database.markSent(next);
+    }
+});
+</code></pre>
+		<p>
+			The scoped sender is sequential, not asynchronous, not pooled and not clustered. For throughput, retries, queueing or clustered sending, use the
+			<a href="#section-reusing-connections">batch-module connection pool</a>.
+		</p>
+	</div>
+  </section>
+
 
   <a href="#section-reusing-connections" id="section-reusing-connections" class="section-link h3">&sect;</a>
   <h3>Reusing connections with batch-module's connection pool</h3>

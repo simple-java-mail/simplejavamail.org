@@ -187,7 +187,11 @@ Mailer mailer = MailerBuilder
           .buildMailer();
 
 mailer.sendMail(email);
-mailer.sendMailsInSimpleBatch(Arrays.asList(email, anotherEmail), false);</code></pre>
+mailer.sendMailsInSimpleBatch(Arrays.asList(email, anotherEmail), false);
+mailer.withOpenConnection(sender -> {
+          sender.sendMail(email);
+          sender.sendMail(anotherEmail);
+});</code></pre>
       <pre><code class="small">mailer.testConnection();
 mailer.validate(email);</code></pre>
       <pre><code class="small">mailer.getServerConfig();
@@ -201,7 +205,8 @@ mailer.getSession();</code></pre>
     EmailConverter.outlookMsgToEmailBuilderWithOutlookData("smimeSignedEmail.msg", pkcs12Config);
 
 Email email = result.buildEmail();
-OutlookMessageData outlookData = result.getOutlookMessageData();</code></pre>
+OutlookMessageData outlookData = result.getOutlookMessageData();
+Boolean smimeSignatureValid = email.getOriginalSmimeDetails().getSmimeSignatureValid();</code></pre>
     </div>
   </section>
 
