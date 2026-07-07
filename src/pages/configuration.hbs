@@ -84,31 +84,31 @@ currentMailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS)
 currentMailerBuilder.withProxy("proxy.host.com", 1080);
 // or
 currentMailerBuilder
-  .withProxyHost("smtp.host.com")
-  .withProxyPort(25);
+  .withProxyHost("proxy.host.com")
+  .withProxyPort(1080);
 
 // or authenticated proxy
 currentMailerBuilder
   .withProxy("proxy.host.com", 1080, "proxy username", "proxy password");
 // or
 currentMailerBuilder
-  .withProxyHost("smtp.host.com")
-  .withProxyPort(25)
-  .withProxyUsername(25)
-  .withProxyPassword(25);
+  .withProxyHost("proxy.host.com")
+  .withProxyPort(1080)
+  .withProxyUsername("proxy username")
+  .withProxyPassword("proxy password");
 </code></pre>
       <pre><code class="small">
 // anonymous smtp + anonymous proxy + default SMTP protocol strategy
 currentMailerBuilder
-        .withSMTPServer("smtp.host.com").withSMTPServerPort(25)
+        .withSMTPServerHost("smtp.host.com").withSMTPServerPort(25)
         .withProxyHost("proxy.host.com").withProxyPort(1080);
 </code></pre>
       <pre><code class="small">
 // configure everything!
 MailerBuilder
         .withSMTPServer("smtp.host.com", 587, "user@host.com", "password")
-        .withTransportStrategy(TransportStrategy.SMTP_TLS);
-        .withProxyHost("socksproxy.host.com", 1080, "proxy user", "proxy password");
+        .withTransportStrategy(TransportStrategy.SMTP_TLS)
+        .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password")
         .buildMailer()
         .sendMail(email);
 </code></pre>
@@ -119,12 +119,12 @@ MailerBuilder.usingSession(session);
 // preconfigured but you need anonymous proxy?
 MailerBuilder
         .usingSession(session)
-        .withProxyHost("socksproxy.host.com", 1080);
+        .withProxy("socksproxy.host.com", 1080);
 
 // preconfigured but you need authenticated proxy?
 MailerBuilder
         .usingSession(session)
-        .withProxyHost("socksproxy.host.com", 1080, "proxy user", "proxy password");
+        .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password");
 </code></pre>
     </div>
   </section>
@@ -203,11 +203,10 @@ currentMailerBuilder.resetTrustingAllHosts();
 currentMailerBuilder.verifyingServerIdentity(false);
 currentMailerBuilder.resetVerifyingServerIdentity();
 </code></pre>
-<pre><code class="small">// change the pool size (default 10) for concurrent threads, each sending an email
+<pre><code class="small">// batch-module executor defaults (used when batch-module is loaded)
 currentMailerBuilder.withThreadPoolSize(3);
-// change keepAliveTime for other behavior.
-// 0: threads don't die, !0: threads die after delay (default 1)
-currentMailerBuilder.withKeepAliveTime(5000);
+// 0: core threads stay alive, !0: threads die after delay (default 1)
+currentMailerBuilder.withThreadPoolKeepAliveTime(5000);
 
 // completely replace the thread pool executor with your own
 // this negates all related properties such as pool size and keepAliveTime
@@ -331,7 +330,7 @@ simplejavamail.defaults.body.text.content.transfer.encoding=BIT7
 simplejavamail.defaults.body.html.content.transfer.encoding=BASE_64
 simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
 
-# Async thread defaults for regular non-batch sending
+# Batch-module executor defaults
 simplejavamail.defaults.poolsize=10
 simplejavamail.defaults.poolsize.keepalivetime=2000
 
@@ -694,12 +693,12 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
   <section>
   	<div>
 		<p class="wide">
-			Without the <strong><a href="modules.html#batch-module">batch-module</a></strong>, Simple Java Mail supports asynchronous email sending, where each
-			message is handled in its own thread using a single Transport connection. This process involves opening and closing the connection for each email, managed independently
-			of a connection pool. Additionally, Simple Java Mail allows the configuration of a custom <code class="inline language-java">ExecutorService</code> to enhance
-			performance through a custom thread pool. Adjusting these settings to match your server’s specifications can optimize performance. However, without the
-			batch-module, each thread maintains a dedicated SMTP connection that is repeatedly opened and closed for each email, which is less efficient in high-volume scenarios.
-			Additionally, you may find you will hit your maximum concurrent connections for your server more easily without the batch module.
+			Without the <strong><a href="modules.html#batch-module">batch-module</a></strong>, Simple Java Mail supports asynchronous email sending by scheduling
+			send tasks on the mailer's configured <code class="inline language-java">ExecutorService</code>. Each send still opens and closes its own Transport
+			connection, managed independently of a connection pool. By default this non-batch executor is a single-thread executor; provide a custom
+			<code class="inline language-java">ExecutorService</code> if you want different concurrency. However, without the batch-module, every concurrent
+			send still needs its own SMTP connection, which is less efficient in high-volume scenarios. Additionally, you may find you will hit your maximum
+			concurrent connections for your server more easily without the batch module.
 		</p>
 		<div>
 			<pre><code class="language-java small">Mailer regularMailer = mailerBuilder.(..).buildMailer();
@@ -712,7 +711,8 @@ defaultAsyncMailer.sendMail(email); // doesn't block
 mailer.sendMail(email, /*async = */ true);
 </code></pre>
 		</div><br/>
-		Defining your own thread pool using a ExecutorService (default is <code class="inline language-java">Executors.newSingleThreadExecutor</code>):
+		Defining your own thread pool using an ExecutorService (without batch-module the default is
+		<code class="inline language-java">Executors.newSingleThreadExecutor</code>; with batch-module the default executor uses the batch-module pool settings):
 		<div>
 			<pre><code class="language-java small">currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
 		</div>

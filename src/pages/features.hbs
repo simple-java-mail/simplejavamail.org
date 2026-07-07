@@ -420,7 +420,7 @@ Mailer mailer = mailerBuilder
 mailer.sendMail(email);
 </code></pre>
 		<p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
-			on how to set the thread pool size default or how to configure the executor service (thread pool manager).</p>
+			on how to set batch-module thread pool defaults or configure the executor service (thread pool manager).</p>
     </div>
   </section>
 
@@ -1405,7 +1405,7 @@ currentEmailBuilder
       <pre><code>EmailBuilder
     .forwarding(receivedEmail) // Email or MimeMessage
     .from("dummy@domain.com")
-    .text("Hello? This is Forward. See below email:")
+    .withPlainText("Hello? This is Forward. See below email:")
     .buildEmail();
 </code></pre>
     </div>
