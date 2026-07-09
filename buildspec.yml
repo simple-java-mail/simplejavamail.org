@@ -1,16 +1,18 @@
 version: 0.2
 
 phases:
-  install:
-    runtime-versions:
-      java: corretto11
-    commands:
-      - npm install -g gulp
-      - npm install -i
-  build:
-    commands:
-      - gulp build
+    install:
+        runtime-versions:
+            nodejs: 20
+        commands:
+            - npm ci --no-audit --no-fund
+    build:
+        commands:
+            - npx gulp build
 artifacts:
-  files:
-    - '**/*'
-  base-directory: dist
+    files:
+        - '**/*'
+    base-directory: dist
+cache:
+    paths:
+        - /root/.npm/**/*
