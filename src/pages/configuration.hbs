@@ -220,6 +220,11 @@ currentMailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disc
 currentMailerBuilder.withLocalBindAddress("203.0.113.10");
 currentMailerBuilder.withLocalBindAddress("203.0.113.10", 25252);
 </code></pre>
+		  <pre><code class="small">// identify the SMTP client hostname sent in EHLO/HELO
+// useful for corporate relay policy, logging, tracing and diagnostics
+currentMailerBuilder.withSmtpClientHostname("orders-service.prod.example.com");
+currentMailerBuilder.clearSmtpClientHostname();
+</code></pre>
 		  <pre><code class="small">// configure DKIM once for all emails sent through this mailer
 // individual emails can still provide their own DKIM config
 currentMailerBuilder.withDefaultDkimSigning(defaultDkimConfig);
@@ -284,11 +289,12 @@ simplejavamail.transportstrategy=SMTP_TLS
 simplejavamail.transport.mode.logging.only=false
 simplejavamail.opportunistic.tls=false
 
-# SMTP destination and local/source binding
+# SMTP destination, protocol identity and local/source binding
 simplejavamail.smtp.host=smtp.default.com
 simplejavamail.smtp.port=587
 simplejavamail.smtp.username=username
 simplejavamail.smtp.password=password
+simplejavamail.smtp.clienthostname=orders-service.prod.example.com
 simplejavamail.smtp.localaddress=203.0.113.10
 simplejavamail.smtp.localport=25252
 
@@ -759,6 +765,10 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 		<p>
 			The scoped sender is sequential, not asynchronous, not pooled and not clustered. For throughput, retries, queueing or clustered sending, use the
 			<a href="#section-reusing-connections">batch-module connection pool</a>.
+		</p>
+		<p>
+			Use <code class="inline language-java">sender.sendMailAndGetReceipt(next)</code> instead when the checkpoint needs the SMTP submission response
+			that was returned by the server.
 		</p>
 	</div>
   </section>

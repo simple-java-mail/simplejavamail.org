@@ -87,6 +87,7 @@
 		<li><a href="#section-custom-id">Setting a custom message ID on sent email</a></li>
 		<li><a href="#section-custom-sentdate">Setting a custom sent date on sent email</a></li>
 		<li><a href="#section-sent-id">Getting the generated email id after sending</a></li>
+		<li><a href="#section-submission-receipts">Reading SMTP submission receipts</a></li>
 		<li><a href="#section-ssl-tls">Sending with SSL and TLS</a></li>
 		<li><a href="#section-gmail" class="indent">SSL and TLS with Google mail</a></li>
 		<li><a href="#section-attachments">Adding attachments</a></li>
@@ -95,6 +96,7 @@
 		<li><a href="#section-custom-properties">Setting custom properties on the internal Session</a></li>
 		<li><a href="#section-debug-output">Routing Jakarta Mail debug output</a></li>
 		<li><a href="#section-local-bind-address">Binding the local/source SMTP address</a></li>
+		<li><a href="#section-smtp-client-hostname">Setting the SMTP EHLO/HELO client hostname</a></li>
 		<li><a href="#section-icalendar-vevent">Sending a Calendar event (iCalendar vEvent)</a></li>
 		<li><a href="#section-session-access">Direct access to the internal Session</a></li>
 		<li><a href="#section-return-receipt">Configure delivery / read receipt</a></li>
@@ -677,6 +679,47 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
   </section>
 
 
+  <a href="#section-submission-receipts" id="section-submission-receipts" class="section-link h2">&sect;</a>
+  <h2>Reading SMTP submission receipts</h2>
+
+  <section>
+    <div class="view">
+      <p>
+        When an audit log, trace id or operational workflow needs the SMTP server response for a submitted message, use
+        <code class="inline language-java">sendMailAndGetReceipt(...)</code>. It follows the same send path as
+        <code class="inline language-java">sendMail(...)</code>, but returns a <code class="inline language-java">MailSubmissionReceipt</code>.
+      </p>
+      <p>
+        With the built-in Angus SMTP transport, the receipt contains the return code and final SMTP response, such as a
+        <code class="inline language-text">250 ... queued as ...</code> response. Logging-only transport mode and custom mailers still return a receipt after
+        successful processing, but without an SMTP response.
+      </p>
+      <p>
+        This confirms submission acceptance by the SMTP server, not final recipient mailbox delivery. Use Delivery Status Notification, bounces, read
+        receipts or provider-specific tracking when you need final delivery signals.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java small">MailSubmissionReceipt receipt = mailer
+    .sendMailAndGetReceipt(email, false)
+    .get();
+
+receipt.getSmtpResponse().ifPresent(response ->
+    System.out.printf("SMTP accepted %s: %d %s%n",
+        receipt.getEmailId(),
+        response.getReturnCode(),
+        response.getResponse()));
+</code></pre>
+<pre><code class="language-java small">mailer.withOpenConnection(sender -> {
+    MailSubmissionReceipt receipt = sender.sendMailAndGetReceipt(email);
+    database.markSubmitted(email, receipt.getSmtpResponse().orElse(null));
+});
+</code></pre>
+    </div>
+  </section>
+
+
   <a href="#section-ssl-tls" id="section-ssl-tls" class="section-link h2">&sect;</a>
   <h2>Sending with SSL and TLS</h2>
 
@@ -1068,6 +1111,35 @@ simplejavamail.javaxmail.debug.out=SLF4J
 </code></pre>
 <pre><code class="language-properties small">simplejavamail.smtp.localaddress=203.0.113.10
 simplejavamail.smtp.localport=25252
+</code></pre>
+	  </div>
+  </section>
+
+  <a href="#section-smtp-client-hostname" id="section-smtp-client-hostname" class="section-link h2">&sect;</a>
+  <h2>Setting the SMTP EHLO/HELO client hostname</h2>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  Corporate SMTP relays sometimes expect a stable, recognizable client hostname in the SMTP <code class="inline language-text">EHLO</code> or
+			  <code class="inline language-text">HELO</code> command. Even when the relay does not enforce it, this makes application traffic recognizable
+			  in mail-server logs, tracing, audit trails and SMTP diagnostics.
+		  </p>
+		  <p>
+			  This is the SMTP protocol identity and maps to <code class="inline language-properties">mail.smtp.localhost</code> or
+			  <code class="inline language-properties">mail.smtps.localhost</code> depending on the transport strategy. It is not the same as
+			  <a href="#section-local-bind-address">binding the local/source socket address</a>, and it does not change the SMTP envelope sender.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withSmtpClientHostname("orders-service.prod.example.com")
+    .buildMailer();
+</code></pre>
+<pre><code class="language-properties small">simplejavamail.smtp.clienthostname=orders-service.prod.example.com
 </code></pre>
 	  </div>
   </section>
