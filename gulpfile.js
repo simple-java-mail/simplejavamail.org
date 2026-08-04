@@ -51,12 +51,12 @@ gulp.task('less', () => {
 });
 
 gulp.task('copy-assets', () => {
-	return gulp.src(`${config.src}/assets/**/*`)
+	return gulp.src(`${config.src}/assets/**/*`, {encoding: false})
 		.pipe(gulp.dest(`${config.dest}/assets`));
 });
 
 gulp.task('copy-lib', () => {
-	return gulp.src(`${config.src}/lib/**/*`)
+	return gulp.src(`${config.src}/lib/**/*`, {encoding: false})
 		.pipe(gulp.dest(`${config.dest}/assets/lib`));
 });
 
