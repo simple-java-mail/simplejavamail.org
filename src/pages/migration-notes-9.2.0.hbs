@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
 
 	{{#*inline "html-head-block"}}
-<meta name="Description" content="Migration notes for stricter TLS certificate trust, embedded-image containment, and safer DKIM configuration in Simple Java Mail 9.2.0">
+<meta name="Description" content="Migration notes for stricter TLS certificate trust, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -14,6 +14,7 @@
 			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
 			<li><a href="#embedded-image-containment">Embedded-image bases now contain resolution</a></li>
 			<li><a href="#dkim-from-header">DKIM signing must keep the From header</a></li>
+			<li><a href="#smime-signature-status">S/MIME signature status reports integrity, not trust</a></li>
 		</ul>
 	</section>
 
@@ -132,6 +133,41 @@ simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 		<p class="wide">
 			See <a href="https://github.com/bbottema/simple-java-mail/issues/679">GitHub issue #679</a> for the implementation record and
 			<a href="security.html#section-sending-dkim">DKIM signing</a> for the full configuration reference.
+		</p>
+	</section>
+
+	<a href="#smime-signature-status" id="smime-signature-status" class="section-link h2">&sect;</a>
+	<h2>S/MIME signature status reports integrity, not trust</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Applications that treated <code class="inline language-java">getSmimeSignatureValid() == true</code> as proof of a trusted
+			sender must add their own certificate and identity validation. Unverified Outlook content can now report <code class="inline language-java">null</code>,
+			and one failed signature now makes a combined result <code class="inline language-java">false</code>.
+		</p>
+		<p class="wide">
+			Version 9.2.0 gives the nullable status a strict contract: <code class="inline language-java">true</code> means every applicable signature represented
+			by the metadata was cryptographically checked with its included signer certificate; <code class="inline language-java">false</code> means at least one
+			check failed or could not be completed; and <code class="inline language-java">null</code> means no check applied or no check was performed.
+		</p>
+		<pre class="full-width-example"><code>OriginalSmimeDetails details = parsedEmail.getOriginalSmimeDetails();
+
+if (!Boolean.TRUE.equals(details.getSmimeSignatureValid())) {
+    // Invalid, unverifiable, or not checked: do not rely on message integrity.
+}
+
+// A true result verifies the cryptographic signature only.
+// It does not authenticate the From address.</code></pre>
+		<p class="wide">
+			Simple Java Mail uses the signer certificate carried in the S/MIME message. It does not perform PKIX path validation, check certificate dates,
+			revocation or key usage, or match the certificate identity to <code class="inline language-text">From</code>.
+			<code class="inline language-java">getSmimeSignedBy()</code> is therefore descriptive certificate metadata, not a trusted identity.
+		</p>
+		<p class="wide">
+			Invalid signed content is still parsed when it can be extracted; this change does not undo the lenient conversion from
+			<a href="https://github.com/bbottema/simple-java-mail/issues/571">issue #571</a>.
+			See <a href="https://github.com/bbottema/simple-java-mail/issues/680">GitHub issue #680</a> for the implementation record and
+			<a href="security.html#section-reading-smime-verification">What the signature status means</a> for the full contract.
 		</p>
 	</section>
 	{{/inline}}

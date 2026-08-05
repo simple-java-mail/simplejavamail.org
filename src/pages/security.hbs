@@ -58,6 +58,7 @@
 				<li><a href="#section-sending-dkim">Signing emails with DKIM</a></li>
 				<li><a href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
 				<li><a href="#section-reading-smime">Reading S/MIME signed / encrypted attachments</a></li>
+				<li><a href="#section-reading-smime-verification" class="indent">What the signature status means</a></li>
 				<li><a href="#section-reading-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
 				<li><a href="#section-reading-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
 			</ul>
@@ -634,24 +635,50 @@ mergedEmail.getAttachments(); // smime.p7m, my-doc.docx
 // all attachments with the encrypted ones replaced:
 mergedEmail.getDecryptedAttachments(); // signed-email.eml, my-doc.docx
 
-// if the message itself was signed (rather than a independently signed attachment):
+// if the message itself was signed (rather than an independently signed attachment):
 OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
 details.getSmimeMode(); // SIGNED
 details.getSmimeMime(); // application/pkcs7-mime or multipart/signed
 details.getSmimeType(); // signed-data, enveloped-data
 details.getSmimeName(); // smime.p7m or smime.p7s
 details.getSmimeMicalg(); // ie. sha-512
-details.getSmimeSignedBy(); // email or name used
-details.getSmimeSignatureValid(); // true, false or null when not applicable
+details.getSmimeSignedBy(); // common name from the first signer certificate
+details.getSmimeSignatureValid(); // true, false, or null when no check was performed
 </code></pre>
 			</div>
 		</section>
 
+		<a href="#section-reading-smime-verification" id="section-reading-smime-verification" class="section-link h3">&sect;</a>
+		<h3>What the signature status means</h3>
+
 		<section>
 			<p class="wide">
-				When S/MIME signature validation fails, Simple Java Mail keeps the parsed signed content available and exposes the invalid status through
-				<code class="inline language-java">getOriginalSmimeDetails().getSmimeSignatureValid()</code>. Unsupported encrypted S/MIME payloads in Outlook
-				messages are treated leniently so the surrounding message can still be converted when possible.
+				<code class="inline language-java">getSmimeSignatureValid()</code> reports cryptographic signature integrity. A value of
+				<code class="inline language-java">true</code> means every signature represented by these details was checked against the signer certificate
+				included with the S/MIME message. A value of <code class="inline language-java">false</code> means at least one signature failed or could not be
+				verified. A <code class="inline language-java">null</code> value means no signature check applied or no check was performed.
+			</p>
+			<div class="wide full-width-example">
+<pre><code class="small">OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
+
+if (!Boolean.TRUE.equals(details.getSmimeSignatureValid())) {
+    // The signature is invalid, could not be checked, or was not checked.
+    // Reject or quarantine the message when integrity is required.
+}
+
+// Passing this check does not authenticate the From address.</code></pre>
+			</div>
+			<p class="wide">
+				The signer certificate is supplied by the message itself. Simple Java Mail does not validate its certificate path, validity period,
+				revocation status or key usage, and it does not compare the certificate identity with the message's <code class="inline language-text">From</code>
+				address. Likewise, <code class="inline language-java">getSmimeSignedBy()</code> is the common name printed on the first signer certificate,
+				not a trusted sender identity. Applications that authenticate senders must validate the original S/MIME certificate and identity under their
+				own trust policy before accepting that identity.
+			</p>
+			<p class="wide">
+				When cryptographic verification fails, Simple Java Mail still keeps parsed signed content available and records
+				<code class="inline language-java">false</code>. This preserves the lenient conversion introduced for relays that alter signed MIME formatting.
+				Unsupported encrypted S/MIME payloads in Outlook messages are also treated leniently so the surrounding message can still be converted when possible.
 			</p>
 		</section>
 

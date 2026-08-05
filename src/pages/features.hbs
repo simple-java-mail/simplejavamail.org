@@ -1470,8 +1470,9 @@ String rawHeaders = outlookData.getRawHeaders();
 </code></pre>
       <p class="small">
         Outlook conversion is lenient about unsupported encrypted S/MIME payloads. For signed S/MIME content, parsed email content is preserved
-        even when signature validation fails; check <code class="inline language-java">email.getOriginalSmimeDetails().getSmimeSignatureValid()</code> when
-        the validation result matters.
+        even when cryptographic signature verification fails. Check <code class="inline language-java">email.getOriginalSmimeDetails().getSmimeSignatureValid()</code>
+        when integrity matters; a <code class="inline language-java">true</code> result does not establish certificate trust or sender identity.
+        See <a href="security.html#section-reading-smime-verification">What the signature status means</a> for the exact contract.
       </p>
     </div>
   </section>
