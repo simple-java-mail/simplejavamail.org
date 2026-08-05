@@ -1549,6 +1549,10 @@ currentEmailBuilder
         to and then the bridge relays the connection to the target proxy performing the authentication outside of Jakarta Mail.
       </p>
       <p class="wide">
+        The bridge listens only on the JVM's loopback address and shuts down after the last active mail operation. It is an implementation detail for
+        Jakarta Mail, not a general-purpose network proxy.
+      </p>
+      <p class="wide">
         This temporary server is referred to as the <strong>Proxy Bridging Server</strong>.
       </p>
     </div>
