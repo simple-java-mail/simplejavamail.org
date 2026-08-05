@@ -969,8 +969,14 @@ currentEmailBuilder.withEmbeddedImage("brand-logo.png", logoDataSource, "brand-l
 	<section>
 		<div class="view">
 			<p>
-				<strong>Auto resolution</strong> can be enabled for files, classpath resources and URL's and you can configure base dirs and optionally
-				enforce that referenced resources should all be resolved successfully. Useful for when you allow end users to freely enter HTML.
+				<strong>Auto resolution is opt-in.</strong> It can read image sources from files, classpath resources and URLs, then embed what it finds.
+				If someone else can edit the HTML, enable only the resolver you need, configure its base, and leave outside-base access disabled.
+				Since 9.2, each configured base is an actual boundary rather than just a lookup hint.
+			</p>
+			<p>
+				Without a base, resolution is unrestricted. Turning on an <code class="inline language-java">allowingEmbeddedImageOutsideBase...</code>
+				option deliberately removes that boundary. Use <code class="inline language-java">embeddedImageAutoResolutionMustBeSuccesful(true)</code>
+				when a missing or blocked image should fail the build instead of remaining in the HTML.
 			</p>
 		</div>
 
@@ -999,15 +1005,15 @@ email.getEmbeddedImages(); // now contains two data sources!
 	.withEmbeddedImageAutoResolutionForClassPathResources(true) // default false
 	.withEmbeddedImageAutoResolutionForURLs(true) // default false
 
-	// support for base dirs
+	// contain resolution to these locations (recommended for editable HTML)
 	.withEmbeddedImageBaseDir(RESOURCES_PATH + "/images")
 	.withEmbeddedImageBaseUrl("https://www.simplejavamail.org/static/")
 	.withEmbeddedImageBaseClassPath("/images")
 
-	// allow resources outside of basedir (careful, potential security attack surface!)
-	.allowingEmbeddedImageOutsideBaseDir(true) // default false
-	.allowingEmbeddedImageOutsideBaseClassPath(true) // default false
-	.allowingEmbeddedImageOutsideBaseUrl(true) // default false
+	// optional escape hatches; do not enable these for editable HTML
+	// .allowingEmbeddedImageOutsideBaseDir(true) // default false
+	// .allowingEmbeddedImageOutsideBaseClassPath(true) // default false
+	// .allowingEmbeddedImageOutsideBaseUrl(true) // default false
 
 	// fail if a resource couldn't be resolved
 	.embeddedImageAutoResolutionMustBeSuccesful(true) // default false (lenient mode)
@@ -1019,11 +1025,17 @@ simplejavamail.embeddedimages.dynamicresolution.enable.classpath=true
 simplejavamail.embeddedimages.dynamicresolution.base.dir=...
 simplejavamail.embeddedimages.dynamicresolution.base.url=https://www.simplejavamail.org/static/
 simplejavamail.embeddedimages.dynamicresolution.base.classpath=/images
-simplejavamail.embeddedimages.dynamicresolution.outside.base.dir=true
-simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath=true
-simplejavamail.embeddedimages.dynamicresolution.outside.base.url=true
+
+# Explicit escape hatches; leave these false for editable HTML:
+simplejavamail.embeddedimages.dynamicresolution.outside.base.dir=false
+simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath=false
+simplejavamail.embeddedimages.dynamicresolution.outside.base.url=false
 simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 </code></pre>
+			<p>
+				Upgrading from an earlier version? Read the
+				<a href="migration-notes-9.2.0.html#embedded-image-containment">9.2 containment notes</a>.
+			</p>
 		</div>
 	</section>
 

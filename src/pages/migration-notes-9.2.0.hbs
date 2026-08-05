@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
 
 	{{#*inline "html-head-block"}}
-<meta name="Description" content="Migration notes for the stricter TLS certificate trust default in Simple Java Mail 9.2.0">
+<meta name="Description" content="Migration notes for stricter TLS certificate trust and embedded-image containment in Simple Java Mail 9.2.0">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -12,6 +12,7 @@
 	<section class="toc">
 		<ul>
 			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
+			<li><a href="#embedded-image-containment">Embedded-image bases now contain resolution</a></li>
 		</ul>
 	</section>
 
@@ -63,6 +64,45 @@ simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 		<p class="wide">
 			See <a href="https://github.com/bbottema/simple-java-mail/issues/677">GitHub issue #677</a> for the implementation record and
 			<a href="security.html#section-whitelist-hosts">Certificate trust</a> for the full security model.
+		</p>
+	</section>
+
+	<a href="#embedded-image-containment" id="embedded-image-containment" class="section-link h2">&sect;</a>
+	<h2>Embedded-image bases now contain resolution</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Applications that use embedded-image auto-resolution with a configured base may stop resolving references that leave that base.
+			If successful resolution is required, building those messages will now fail instead of reading the outside resource.
+		</p>
+		<p class="wide">
+			Before 9.2.0, the base directory, classpath and URL settings helped locate images, but their outside-base checks could be bypassed with paths such as
+			<code class="inline language-text">../private/logo.png</code>, a similarly named sibling path, an alternate URL origin or a redirect. That made the
+			base unsuitable as a boundary for HTML edited outside the application.
+		</p>
+		<p class="wide">
+			Version 9.2.0 normalizes every path before checking it. Files are checked at their real location so symbolic links cannot lead outside the base;
+			classpath checks use complete path segments; and URLs must keep the base scheme, host, effective port and path through every redirect.
+		</p>
+		<pre class="full-width-example"><code>Email email = EmailBuilder.startingBlank()
+    .withEmbeddedImageAutoResolutionForFiles(true)
+    .withEmbeddedImageAutoResolutionForClassPathResources(true)
+    .withEmbeddedImageAutoResolutionForURLs(true)
+    .withEmbeddedImageBaseDir(RESOURCES_PATH + "/images")
+    .withEmbeddedImageBaseClassPath("/images")
+    .withEmbeddedImageBaseUrl("https://static.example.com/mail/")
+    .embeddedImageAutoResolutionMustBeSuccesful(true)
+    .buildEmail();
+
+// Keep the allowingEmbeddedImageOutsideBase... options false.</code></pre>
+		<p class="wide">
+			No base still means unrestricted resolution, and setting the matching
+			<code class="inline language-java">allowingEmbeddedImageOutsideBase...(true)</code> option keeps the old broad behavior. Those modes are deliberate
+			escape hatches, not safe choices for untrusted or freely editable HTML.
+		</p>
+		<p class="wide">
+			See <a href="https://github.com/bbottema/simple-java-mail/issues/678">GitHub issue #678</a> for the implementation record and
+			<a href="features.html#section-embedding">Embedding images</a> for the complete configuration.
 		</p>
 	</section>
 	{{/inline}}

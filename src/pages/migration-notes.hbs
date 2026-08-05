@@ -8,11 +8,11 @@
     <h2 id="version-9-2">Migrating to 9.2</h2>
     <section>
       <div class="view">
-        <p><strong>TLS certificates are no longer trusted automatically.</strong> Version 9.2 uses the JVM trust store and verifies the SMTP server identity by default.</p>
-        <a class="button" href="migration-notes-9.2.0.html#navigation">Check the 9.2 TLS change</a>
+        <p><strong>Version 9.2 tightens two security boundaries.</strong> TLS uses the JVM trust store by default, and configured embedded-image bases now contain file, classpath and URL resolution.</p>
+        <a class="button" href="migration-notes-9.2.0.html#navigation">Check the 9.2 security changes</a>
       </div>
       <div class="side">
-        <p><strong>Check before upgrading:</strong> SMTP servers using self-signed certificates or a private CA that is not in the JVM trust store may stop connecting.</p>
+        <p><strong>Check before upgrading:</strong> private SMTP certificates may need trust-store work, and image references that leave a configured base will no longer resolve unless you explicitly allow them.</p>
       </div>
     </section>
 
