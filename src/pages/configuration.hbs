@@ -222,22 +222,24 @@ currentMailerBuilder.withProperty("mail.smtp.sendpartial", true);
 mailer.getSession().getProperties().setProperty("mail.smtp.sendpartial", true);
 </code></pre>
 <pre><code class="small">
-/* Regarding the following config on trusting hosts,
-    the Javadoc has more detailed info (in the mailer builder api). */
-// trust all hosts for SSL connections
-currentMailerBuilder.trustingAllHosts(true);
-// or white list hosts for SSL connections (identity key validation notwithstanding)
-currentMailerBuilder.trustingSSLHosts("a", "b", "c", ...);
+/* Secure TLS defaults since 9.2.0. These calls are optional. */
+currentMailerBuilder.trustingAllHosts(false);
+currentMailerBuilder.verifyingServerIdentity(true);
 
-// or clearing these options
+// preferred for private PKI: add the issuing CA to the JVM trust store
+// narrow compatibility exception if that is not possible:
+currentMailerBuilder.trustingSSLHosts("smtp.internal.example");
+// broad compatibility escape hatch; avoid in production:
+currentMailerBuilder.trustingAllHosts(true);
+
+// clear or reset trust exceptions
 currentMailerBuilder.clearTrustedSSLHosts();
 currentMailerBuilder.resetTrustingAllHosts();
 </code></pre>
 <pre><code class="small">
-/* Regarding the following config on identifying hosts,
-    the Javadoc has more detailed info (in the mailer builder api). */
-// don't validate keys thus not verifying server hosts
+// compatibility escape hatch; disables hostname verification
 currentMailerBuilder.verifyingServerIdentity(false);
+// restore the secure default
 currentMailerBuilder.resetVerifyingServerIdentity();
 </code></pre>
 <pre><code class="small">// batch-module executor defaults (used when batch-module is loaded)

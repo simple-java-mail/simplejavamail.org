@@ -2,7 +2,18 @@
 
   {{#*inline "body-block"}}
     <section class="introduction">
-      <p class="wide">Major releases sometimes remove deprecated APIs or change how part of the library is used. Choose your target version below, and upgrade one major version at a time if you are coming from an older release.</p>
+      <p class="wide">Some releases need a quick migration check because an API or default changed. Choose your target version below, and follow the older guides in order if your application is several major versions behind.</p>
+    </section>
+
+    <h2 id="version-9-2">Migrating to 9.2</h2>
+    <section>
+      <div class="view">
+        <p><strong>TLS certificates are no longer trusted automatically.</strong> Version 9.2 uses the JVM trust store and verifies the SMTP server identity by default.</p>
+        <a class="button" href="migration-notes-9.2.0.html#navigation">Check the 9.2 TLS change</a>
+      </div>
+      <div class="side">
+        <p><strong>Check before upgrading:</strong> SMTP servers using self-signed certificates or a private CA that is not in the JVM trust store may stop connecting.</p>
+      </div>
     </section>
 
     <h2 id="version-9">Migrating to 9.0</h2>

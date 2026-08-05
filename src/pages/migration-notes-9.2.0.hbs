@@ -1,0 +1,70 @@
+{{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
+
+	{{#*inline "html-head-block"}}
+<meta name="Description" content="Migration notes for the stricter TLS certificate trust default in Simple Java Mail 9.2.0">
+	{{/inline}}
+
+	{{#*inline "header-block"}}
+		{{> includes/header topic="security" }}
+	{{/inline}}
+
+	{{#*inline "body-block"}}
+	<section class="toc">
+		<ul>
+			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
+		</ul>
+	</section>
+
+	<a href="#tls-certificate-trust" id="tls-certificate-trust" class="section-link h2">&sect;</a>
+	<h2>TLS certificate trust is strict by default</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Applications that rely on a self-signed SMTP certificate, or on a private certificate authority that is not in the JVM trust store,
+			may fail to connect after upgrading to 9.2.0.
+		</p>
+		<p class="wide">
+			Before 9.2.0, Simple Java Mail set <code class="inline language-properties">mail.*.ssl.trust=*</code> by default. Hostname verification was enabled,
+			but the certificate issuer was not checked against the JVM trust store. Version 9.2.0 stops setting that wildcard. TLS connections now require both
+			a trusted certificate chain and a certificate that names the SMTP host.
+		</p>
+		<p class="wide">
+			Most public SMTP services already use a certificate trusted by the JVM, so no change is needed. For private infrastructure, the preferred fix is to
+			add the issuing CA to the JVM trust store. This keeps normal certificate-chain and hostname validation intact.
+		</p>
+		<pre class="full-width-example"><code>Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, username, password)
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .buildMailer();
+
+// Since 9.2.0, the defaults are equivalent to:
+// .trustingAllHosts(false)
+// .verifyingServerIdentity(true)</code></pre>
+		<p class="wide">
+			If the CA cannot be added yet, use the narrowest temporary exception you can. A named-host exception still bypasses normal issuer trust for that host,
+			while trusting all hosts bypasses it everywhere. Keep server identity verification enabled in either case.
+		</p>
+		<pre class="full-width-example"><code>Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.internal.example", 587, username, password)
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .trustingSSLHosts("smtp.internal.example")
+    .buildMailer();
+
+// Broad compatibility escape hatch; avoid for production deployments:
+// .trustingAllHosts(true)</code></pre>
+		<p class="wide">
+			The same settings are available through properties. The first two values below are the 9.2.0 defaults and normally do not need to be declared.
+		</p>
+		<pre class="full-width-example"><code class="language-properties">simplejavamail.defaults.trustallhosts=false
+simplejavamail.defaults.verifyserveridentity=true
+
+# Optional named-host exception when the private CA cannot be installed yet:
+simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
+		<p class="wide">
+			See <a href="https://github.com/bbottema/simple-java-mail/issues/677">GitHub issue #677</a> for the implementation record and
+			<a href="security.html#section-whitelist-hosts">Certificate trust</a> for the full security model.
+		</p>
+	</section>
+	{{/inline}}
+
+{{/layouts/base}}

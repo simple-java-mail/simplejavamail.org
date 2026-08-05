@@ -52,7 +52,7 @@
 				<li><a href="#section-transport-strategy-tls" class="indent">TransportStrategy.SMTP_TLS</a></li>
 				<li><a href="#section-transport-strategy-oauth2" class="indent">TransportStrategy.SMTP_OAUTH2</a></li>
 				<li><a href="#section-custom-ssl-factory">Configure your own SSL connection factory</a></li>
-				<li><a href="#section-whitelist-hosts">Whitelisting hosts</a></li>
+				<li><a href="#section-whitelist-hosts">Certificate trust</a></li>
 				<li><a href="#section-verify-server-identity">Verifying server identity</a></li>
 				<li><a href="#section-crlf-scanning">Scanning for suspicious content</a></li>
 				<li><a href="#section-sending-dkim">Signing emails with DKIM</a></li>
@@ -109,22 +109,15 @@
 		<section>
 			<div>
 				<p class="wide">
-					Since 8.6.0, with Angus Mail as the Jakarta Mail implementation, whenever a TLS session is negotiated,
-					server certificates are also validated for SMTP. To revert back to pre-8.6.0 (legacy) behaviour, you can turn this off with
-					<code class="inline language-java">mailerBuilder.verifyingServerIdentity(false)</code>. However, this is only recommended for testing purposes as
-					you leave yourself open to <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack" target="_blank">Man In The Middle</a> (MITM)
-					attacks, even if you think you fully control your (private) network.
+					Whenever TLS is negotiated, Simple Java Mail verifies that the certificate belongs to the SMTP host. From 9.2.0 onward,
+					it also uses the JVM trust store instead of accepting every certificate by default. Both checks can be overridden, but that
+					should be reserved for controlled compatibility or test environments.
 				</p>
 				<p class="wide">
-					Furthermore, this transport strategy only offers protection against passive network eavesdroppers when the mail server
-					indicates support for STARTTLS. Active network attackers can trivially bypass the encryption 1) by tampering with
-					the STARTTLS indicator, 2) by presenting a self-signed certificate (if you set verifyingServerIdentity to
-					<code class="inline language-java">false</code>), 3) by presenting a certificate issued by an
-					untrusted certificate authority; or 4) by presenting a certificate that was issued by a valid certificate
-					authority to a domain other than the mail server's.
-				</p>
-				<p class="wide">
-					For proper mail transport encryption, use <code class="inline language-java">TransportStrategy.SMTPS</code> or <code class="inline language-java">TransportStrategy.SMTP_TLS</code>.
+					This strategy can still fall back to plaintext when the server does not advertise STARTTLS. An active attacker can therefore
+					suppress the STARTTLS offer before certificate validation begins. Use
+					<code class="inline language-java">TransportStrategy.SMTPS</code> or
+					<code class="inline language-java">TransportStrategy.SMTP_TLS</code> when encryption must be mandatory.
 				</p>
 			</div>
 		</section>
@@ -162,10 +155,10 @@ simplejavamail.opportunistic.tls=false
 			<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTPS);</code></pre>
 
 			<p class="wide">
-				Strict validation of server certificates is enabled. Server certificates must be issued
+				Strict certificate validation is the default from 9.2.0 onward. Unless you configure an explicit exception, server certificates must be issued
 			</p>
 			<ol class="indent">
-				<li>by a certificate authority in the system trust store; and</li>
+				<li>by a certificate authority in the JVM trust store; and</li>
 				<li>to a subject matching the identity of the remote SMTP server.</li>
 			</ol>
 		</section>
@@ -181,10 +174,10 @@ simplejavamail.opportunistic.tls=false
 			<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);</code></pre>
 
 			<p class="wide">
-				Strict validation of server certificates is enabled. Server certificates must be issued
+				Strict certificate validation is the default from 9.2.0 onward. Unless you configure an explicit exception, server certificates must be issued
 			</p>
 			<ol class="indent">
-				<li>by a certificate authority in the system trust store; and</li>
+				<li>by a certificate authority in the JVM trust store; and</li>
 				<li>to a subject matching the identity of the remote SMTP server.</li>
 			</ol>
 		</section>
@@ -244,29 +237,44 @@ simplejavamail.opportunistic.tls=false
 
 
 		<a href="#section-whitelist-hosts" id="section-whitelist-hosts" class="section-link h2">&sect;</a>
-		<h2>Whitelisting hosts</h2>
+		<h2>Certificate trust</h2>
 
 		<section>
 			<div class="view">
 				<p>
-					Simple Java Mail by default trusts all hosts for SSL connections, but you can also selectively whitelist hosts.
+					From 9.2.0 onward, Simple Java Mail leaves <code class="inline language-properties">mail.*.ssl.trust</code> unset by default.
+					Angus Mail then validates the certificate chain against the JVM trust store.
 				</p>
 				<p>
-					Note that this is not the same as server identity verification, which is enabled through <code class="inline language-java">verifyingServerIdentity(boolean)</code>.
-					It would be prudent to have at least one of these features turned on, lest you be vulnerable to man-in-the-middle attacks.
+					Certificate trust and server identity are two separate checks. A normal production connection needs both: a certificate from a trusted issuer
+					and a certificate that names the SMTP host you connected to.
+				</p>
+				<p>
+					For a private certificate authority, the best fix is to add that CA to the JVM trust store. If that is not practical,
+					<code class="inline language-java">trustingSSLHosts(...)</code> creates a narrow exception for named hosts.
+					<code class="inline language-java">trustingAllHosts(true)</code> accepts certificates from every host and should be a last-resort compatibility setting.
 				</p>
 			</div>
 			<div class="side">
-<pre><code>MailerBuilder
-	// disable trust all hosts for SSL connections
-	.trustingAllHosts(false);
-	// or white list hosts for SSL connections (identity key validation notwithstanding)
-	.trustingSSLHosts("a", "b", "c", ...);
+				<pre><code>MailerBuilder
+	.withSMTPServer("smtp.example.com", 587)
+	.withTransportStrategy(TransportStrategy.SMTP_TLS)
+	// secure default since 9.2.0; shown explicitly here
+	.trustingAllHosts(false)
+	.verifyingServerIdentity(true);
+
+// narrow exception when the issuing CA cannot be added to the JVM trust store
+MailerBuilder.withSMTPServer("smtp.internal.example", 587)
+	.trustingSSLHosts("smtp.internal.example");
+
+// broad compatibility escape hatch; avoid in production
+MailerBuilder.withSMTPServer("smtp.internal.example", 587)
+	.trustingAllHosts(true);
 </code></pre>
 				Or with property default:
 				<pre><code class="language-properties small">simplejavamail.defaults.trustallhosts=false
-# following property is ignored when trustallhosts is true:
-simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</code></pre>
+# optional narrow exception; ignored when trustallhosts is true:
+simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 			</div>
 		</section>
 
@@ -276,15 +284,19 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 
 		<section>
 			<p class="wide">
-				Simple Java Mail also enables server identity verification for SSL connections by default (also see <a href="https://www.rfc-editor.org/rfc/rfc2595.txt">RFC 2595</a>,
-				2.4. Server Identity Check). This is a security feature that verifies the server identity by checking the server's certificate against
-				the host name used by the client to start the connection.
+				Simple Java Mail enables server identity verification for TLS connections by default (also see <a href="https://www.rfc-editor.org/rfc/rfc2595.txt">RFC 2595</a>,
+				2.4. Server Identity Check). Angus Mail checks that the certificate names the host used to start the connection.
 			</p>
 			<p class="wide">
-				Note that this is not the same as <code class="inline language-java">trustingAllHosts(boolean)</code> or <code class="inline language-java">trustingSSLHosts(String...)</code>.
-				Again, it would be prudent to have at least one of these features turned on, lest you be vulnerable to man-in-the-middle attacks.
+				This does not replace certificate-chain validation. Keep both checks enabled for normal production use, including when a private CA has been added
+				to the JVM trust store. Disabling hostname verification is intended only for controlled compatibility or testing scenarios.
 			</p>
-<pre><code>MailerBuilder
+<pre><code>// enabled by default
+MailerBuilder.withSMTPServer("smtp.example.com", 587)
+	.verifyingServerIdentity(true);
+
+// compatibility escape hatch; avoid in production
+MailerBuilder.withSMTPServer("smtp.internal.example", 587)
 	.verifyingServerIdentity(false);
 </code></pre>
 				Or with property default:

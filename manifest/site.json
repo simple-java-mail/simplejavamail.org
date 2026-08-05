@@ -132,7 +132,16 @@
       "url": "/migration-notes.html",
       "out": "migration-notes.html",
       "chrome": "docs",
-      "description": "Choose migration guidance for Simple Java Mail major releases."
+      "description": "Choose migration guidance for Simple Java Mail releases that change APIs or defaults."
+    },
+    {
+      "title": "Migrating to 9.2",
+      "section": "Maintain",
+      "src": "migration-notes-9.2.0.hbs",
+      "url": "/migration-notes-9.2.0.html",
+      "out": "migration-notes-9.2.0.html",
+      "chrome": "docs",
+      "description": "Migration guidance for the stricter TLS certificate trust default in Simple Java Mail 9.2."
     },
     {
       "title": "Migrating to 9.0",
