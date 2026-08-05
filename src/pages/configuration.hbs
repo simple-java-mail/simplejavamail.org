@@ -411,7 +411,7 @@ simplejavamail.dkim.signing.private_key_file_or_data=my_dkim_key.der
 simplejavamail.dkim.signing.selector=dkim1
 simplejavamail.dkim.signing.signing_domain=your-domain.com
 simplejavamail.dkim.signing.use_length_param=false
-simplejavamail.dkim.signing.excluded_headers_from_default_signing_list=From
+# Omit header exclusions to keep the default signing list, including From.
 simplejavamail.dkim.signing.header_canonicalization=RELAXED
 simplejavamail.dkim.signing.body_canonicalization=RELAXED
 simplejavamail.dkim.signing.algorithm=SHA256_WITH_RSA
@@ -448,7 +448,7 @@ simplejavamail.smime.signing.key-alias=key_alias
 simplejavamail.smime.signing.key-password=key_password
 simplejavamail.dkim.signing.private-key-file-or-data=my_dkim_key.der
 simplejavamail.dkim.signing.signing-domain=your-domain.com
-simplejavamail.dkim.signing.excluded-headers-from-default-signing-list=From
+# Leave header exclusions unset unless a known relay rewrites a header; From must remain signed.
 </code></pre>
 		</div>
 	</section>

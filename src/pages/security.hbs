@@ -363,14 +363,10 @@ MailerBuilder.withSMTPServer("smtp.internal.example", 587)
 			<div class="side">
 <pre><code class="small">currentEmailBuilder.signWithDomainKey(
 	DkimConfig.builder()
-		.dkimPrivateKeyData(byte[] / File / InputStream)
-		.dkimSigningDomain("your_domain.org")
-		.dkimSelector("your_selector")
-		.useLengthParam(true) // default is false
-		.excludedHeadersFromDkimDefaultSigningList("From", "Subject") // default is none
-		.headerCanonicalization(Canonicalization.SIMPLE) // default is RELAXED
-		.bodyCanonicalization(Canonicalization.SIMPLE) // default is RELAXED
-		.signingAlgorithm("SHA256_WITH_ED25519") // default is SHA256_WITH_RSA
+		.dkimPrivateKeyPath("secrets/dkim-private-key.der")
+		.dkimSigningDomain("your-domain.org")
+		.dkimSelector("dkim1")
+		.useLengthParam(false) // default
 		.build()
 );
 </code></pre>
@@ -386,14 +382,41 @@ MailerBuilder.withSMTPServer("smtp.internal.example", 587)
 </code></pre>
 				Or with properties:
 				<pre><code class="language-properties small"># defaults on Mailer level:
-simplejavamail.dkim.signing.private_key_file_or_data=my_dkim_key.der # or key as base64
-simplejavamail.dkim.signing.selector=dkim1
-simplejavamail.dkim.signing.signing_domain=your-domain.com
-simplejavamail.dkim.signing.use_length_param=true
-simplejavamail.dkim.signing.excluded_headers_from_default_signing_list=From
-simplejavamail.dkim.signing.header_canonicalization=SIMPLE
-simplejavamail.dkim.signing.body_canonicalization=SIMPLE
-simplejavamail.dkim.signing.algorithm=SHA256_WITH_ED25519
+				simplejavamail.dkim.signing.private_key_file_or_data=my_dkim_key.der # or key as base64
+				simplejavamail.dkim.signing.selector=dkim1
+				simplejavamail.dkim.signing.signing_domain=your-domain.com
+				simplejavamail.dkim.signing.use_length_param=false # default
+				# Omit header exclusions to sign the default header set, including From.
+				simplejavamail.dkim.signing.header_canonicalization=RELAXED
+				simplejavamail.dkim.signing.body_canonicalization=RELAXED
+				simplejavamail.dkim.signing.algorithm=SHA256_WITH_RSA
+				</code></pre>
+			</div>
+		</section>
+
+		<section>
+			<div class="view">
+				<p><strong>Use the exceptions deliberately</strong></p>
+				<p>
+					The normal configuration leaves the DKIM body-length tag off and signs the default header list. Turn on the
+					<code class="inline language-java">l=</code> body-length tag only when a known downstream service appends a footer:
+					content appended after the signed length is not covered by the signature.
+				</p>
+				<p>
+					Likewise, exclude a header only when that specific relay rewrites it. <code class="inline language-java">From</code>
+					is mandatory in a DKIM signature, so Simple Java Mail rejects it as an exclusion.
+				</p>
+			</div>
+			<div class="side">
+<pre><code class="small">DkimConfig.builder()
+    .dkimPrivateKeyPath("secrets/dkim-private-key.der")
+    .dkimSigningDomain("your-domain.org")
+    .dkimSelector("dkim1")
+    // Only if a known service appends a footer:
+    .useLengthParam(true)
+    // Only for headers that this relay rewrites:
+    .excludedHeadersFromDkimDefaultSigningList("Message-ID", "Date")
+    .build();
 </code></pre>
 			</div>
 		</section>
@@ -412,15 +435,16 @@ simplejavamail.dkim.signing.algorithm=SHA256_WITH_ED25519
 			<div class="view">
 				<p><strong>Excluding headers</strong></p>
 				<p>
-					By default, DKIM signs a fixed list of possible headers. If you need more control of which headers are signed,
-					you can provide a list of headers that should be skipped from this list.
+					Header exclusions are a compatibility setting, not a normal tuning option. Leave the default list alone unless a
+					specific relay is known to rewrite a header. <code class="inline language-java">From</code> must remain signed and
+					cannot be excluded.
 				</p>
 			</div>
 			<div class="side">
-<pre><code class="small">	DkimConfig.builder()
-		(..)
-		.excludedHeadersFromDkimDefaultSigningList("Message-ID", "Date", "Return-Path", "Bounces-To")
-		.build()
+<pre><code class="small">DkimConfig.builder()
+    // ... your signing key, domain and selector
+    .excludedHeadersFromDkimDefaultSigningList("Message-ID", "Date")
+    .build()
 </code></pre>
 			</div>
 		</section>

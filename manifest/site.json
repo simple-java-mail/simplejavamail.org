@@ -141,7 +141,7 @@
       "url": "/migration-notes-9.2.0.html",
       "out": "migration-notes-9.2.0.html",
       "chrome": "docs",
-      "description": "Migration guidance for stricter TLS certificate trust and embedded-image containment in Simple Java Mail 9.2."
+      "description": "Migration guidance for stricter TLS certificate trust, embedded-image containment, and safer DKIM configuration in Simple Java Mail 9.2."
     },
     {
       "title": "Migrating to 9.0",

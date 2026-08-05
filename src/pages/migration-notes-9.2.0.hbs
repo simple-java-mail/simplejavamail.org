@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
 
 	{{#*inline "html-head-block"}}
-<meta name="Description" content="Migration notes for stricter TLS certificate trust and embedded-image containment in Simple Java Mail 9.2.0">
+<meta name="Description" content="Migration notes for stricter TLS certificate trust, embedded-image containment, and safer DKIM configuration in Simple Java Mail 9.2.0">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -13,6 +13,7 @@
 		<ul>
 			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
 			<li><a href="#embedded-image-containment">Embedded-image bases now contain resolution</a></li>
+			<li><a href="#dkim-from-header">DKIM signing must keep the From header</a></li>
 		</ul>
 	</section>
 
@@ -103,6 +104,34 @@ simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 		<p class="wide">
 			See <a href="https://github.com/bbottema/simple-java-mail/issues/678">GitHub issue #678</a> for the implementation record and
 			<a href="features.html#section-embedding">Embedding images</a> for the complete configuration.
+		</p>
+	</section>
+
+	<a href="#dkim-from-header" id="dkim-from-header" class="section-link h2">&sect;</a>
+	<h2>DKIM signing must keep the From header</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> A DKIM configuration that lists <code class="inline language-java">From</code> among its header exclusions
+			now fails when the configuration is created, whether it comes from Java code or properties.
+		</p>
+		<p class="wide">
+			The <code class="inline language-java">From</code> header identifies the signed domain and has always been mandatory in a valid DKIM
+			signature. Version 9.2.0 catches the mistake at configuration time instead of accepting a misleading exclusion.
+		</p>
+		<pre class="full-width-example"><code>DkimConfig.builder()
+    // ... private key, signing domain and selector
+    // .excludedHeadersFromDkimDefaultSigningList("From", "Subject") // no longer accepted
+    .excludedHeadersFromDkimDefaultSigningList("Message-ID", "Date") // only if this relay rewrites them
+    .build();</code></pre>
+		<p class="wide">
+			Keep header exclusions limited to headers that a specific downstream relay demonstrably rewrites. The body-length tag remains
+			disabled by default; enabling <code class="inline language-java">useLengthParam(true)</code> is only appropriate when a known
+			service appends a footer and you have accepted that appended content is outside the signed length.
+		</p>
+		<p class="wide">
+			See <a href="https://github.com/bbottema/simple-java-mail/issues/679">GitHub issue #679</a> for the implementation record and
+			<a href="security.html#section-sending-dkim">DKIM signing</a> for the full configuration reference.
 		</p>
 	</section>
 	{{/inline}}
