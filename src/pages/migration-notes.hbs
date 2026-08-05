@@ -1,29 +1,36 @@
-{{#> layouts/base head-sub-title="Migration Notes" page-title="Migration Notes for major releases" }}
+{{#> layouts/base head-sub-title="Migration notes" page-title="Migration notes" }}
 
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Notes on migrating from Simple Java Mail to newer major releases">
-	{{/inline}}
+  {{#*inline "body-block"}}
+    <section class="introduction">
+      <p class="wide">Major releases sometimes remove deprecated APIs or change how part of the library is used. Choose your target version below, and upgrade one major version at a time if you are coming from an older release.</p>
+    </section>
 
-	{{#*inline "header-block"}}
-		{{> includes/header topic="features" }}
-	{{/inline}}
+    <h2 id="version-9">Migrating to 9.0</h2>
+    <section>
+      <div class="view">
+        <p>Version 9 consolidates the dedicated recipient-builder API and requires the most code changes. Start here when moving from 8.x.</p>
+        <a class="button" href="migration-notes-9.0.0.html#navigation">Open the 9.0 migration guide</a>
+      </div>
+      <div class="side">
+        <p><strong>Main work:</strong> replace removed recipient overloads, review behavior changes, then compile and exercise your message-building tests.</p>
+      </div>
+    </section>
 
-	{{#*inline "body-block"}}
-	<section>
-		<p class="wide">
-			Simple Java Mail has changed quite a lot over the years with each major release. If you come from a version < 5.0.0,
-			it is recommended to update to 5.0.0 first, before moving on to next major versions. Find the changes detailed by
-			clicking on your target Simple Java Mail version.
-		</p>
-	</section>
+    <h2 id="historical-migrations">Historical major migrations</h2>
+    <section>
+      <div class="button-group">
+        <a class="button" href="migration-notes-7.0.0.html#navigation">Migrating to 7.0</a>
+        <a class="button" href="migration-notes-6.0.0.html#navigation">Migrating to 6.0</a>
+        <a class="button" href="migration-notes-5.0.0.html#navigation">Migrating to 5.0</a>
+      </div>
+      <p class="wide">If your application predates version 5, follow each major-version guide in order instead of jumping straight to the newest examples.</p>
+    </section>
 
-  <section>
-    <div class="view">
-      <a class="button" href="migration-notes-5.0.0.html#navigation">Migrating to 5.0.0</a>
-      <a class="button" href="migration-notes-6.0.0.html#navigation">Migrating to 6.0.0</a>
-      <a class="button" href="migration-notes-7.0.0.html#navigation">Migrating to 7.0.0</a>
-      <a class="button" href="migration-notes-9.0.0.html#navigation">Migrating to 9.0.0</a>
-    </div>
-  </section>
-    {{/inline}}
+    <h2 id="release-history">Release history</h2>
+    <section>
+      <p class="wide">Use <a href="https://github.com/bbottema/simple-java-mail/releases">GitHub Releases</a> and the repository's
+        <a href="https://github.com/bbottema/simple-java-mail/blob/master/RELEASE_HISTORY.md">complete release history</a> for changes that do not require dedicated migration guidance.</p>
+    </section>
+  {{/inline}}
+
 {{/layouts/base}}

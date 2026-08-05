@@ -9,11 +9,39 @@
 	{{/inline}}
 
 	{{#*inline "body-block"}}
-		<section>
-			<p class="wide">
-				Simple Java Mail provides an easy API to access all underlying Jakarta Mail security related
-				settings as well as a few extra options, including CRLF injection scanning, DKIM and S/MIME support.
-			</p>
+		<section class="doc-overview" aria-labelledby="security-overview-title">
+			<header>
+				<p class="eyebrow">Security at a glance</p>
+				<h2 id="security-overview-title">Choose your protection.</h2>
+				<p class="wide">These are the security features most applications come here for. The table of contents below covers every transport, certificate, and connection setting.</p>
+			</header>
+			<div class="doc-card-grid">
+				<a href="#section-transport-strategy-tls">
+					<span>Connection</span>
+					<strong>TLS</strong>
+					<p>Encrypt the SMTP connection and verify the identity of the server receiving your mail.</p>
+				</a>
+				<a href="#section-transport-strategy-oauth2">
+					<span>Authentication</span>
+					<strong>OAuth2</strong>
+					<p>Authenticate with a provider-issued access token instead of a mailbox password.</p>
+				</a>
+				<a href="#section-sending-dkim">
+					<span>Domain signing</span>
+					<strong>DKIM</strong>
+					<p>Sign outgoing mail so receiving systems can verify the signing domain and message integrity.</p>
+				</a>
+				<a href="#section-sending-smime">
+					<span>Content protection</span>
+					<strong>S/MIME</strong>
+					<p>Sign message content, encrypt it for recipients, and read protected attachments.</p>
+				</a>
+				<a href="#section-crlf-scanning">
+					<span>Input safety</span>
+					<strong>Header injection</strong>
+					<p>Catch suspicious CR/LF sequences before untrusted input can alter message headers.</p>
+				</a>
+			</div>
 		</section>
 
 		<section class="toc">
@@ -81,7 +109,7 @@
 		<section>
 			<div>
 				<p class="wide">
-					Since 8.6.0, with the switch from the deprecated Jakarta Mail to its successor Angus Mail, whenever a TLS session is negotiated,
+					Since 8.6.0, with Angus Mail as the Jakarta Mail implementation, whenever a TLS session is negotiated,
 					server certificates are also validated for SMTP. To revert back to pre-8.6.0 (legacy) behaviour, you can turn this off with
 					<code class="inline language-java">mailerBuilder.verifyingServerIdentity(false)</code>. However, this is only recommended for testing purposes as
 					you leave yourself open to <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack" target="_blank">Man In The Middle</a> (MITM)
@@ -248,7 +276,7 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 
 		<section>
 			<p class="wide">
-				Simple Java Mail also enables server identity verification for SSL connections by default (also see <a href="https://www.ietf.org/rfc/rfc2595.txt">RFC 2595</a>,
+				Simple Java Mail also enables server identity verification for SSL connections by default (also see <a href="https://www.rfc-editor.org/rfc/rfc2595.txt">RFC 2595</a>,
 				2.4. Server Identity Check). This is a security feature that verifies the server identity by checking the server's certificate against
 				the host name used by the client to start the connection.
 			</p>
@@ -269,7 +297,7 @@ simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y</co
 
 		<section>
 			<p class="wide">
-				Finally, Simple Java Mail by default tests most fields and headers for suspicious content, which could indicate a
+				Simple Java Mail by default tests most fields and headers for suspicious content, which could indicate a
 				<strong>CRLF injection attack</strong>. This is a unique feature of Simple Java Mail.
 			</p>
 
@@ -414,7 +442,7 @@ simplejavamail.dkim.signing.algorithm=SHA256_WITH_ED25519
 					email-level or mailer-level <code class="inline language-java">SmimeEncryptionConfig</code>, if one is configured.
 				</p>
 				<p>
-					For a mailing list, department or other governed group, use <code class="inline language-java">RecipientsBuilder</code> before adding the
+					For a mailing list, department, or any group that should share certificate rules, use <code class="inline language-java">RecipientsBuilder</code> before adding the
 					flat recipient list to the email. <code class="inline language-java">withDefaultSmimeCertificate(...)</code> fills only missing certificates,
 					<code class="inline language-java">withFixedSmimeCertificate(...)</code> replaces every recipient certificate in that group, and
 					<code class="inline language-java">clearingSmimeCertificates()</code> removes certificate state from reused recipients so the email-level
@@ -561,7 +589,7 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 					<strong><a href="modules.html#smime-module">smime-module</a></strong>.
 				</p>
 			</div>
-			<div class="side">
+			<div class="wide full-width-example">
 <pre><code class="small">Email mergedEmail = EmailConverter.outlookMsgToEmail("yourSMIMESignedMessage.msg"); // or
 Email mergedEmail = EmailConverter.emlToEmail("yourSMIMESignedMessage.eml");
 
@@ -606,7 +634,7 @@ details.getSmimeSignatureValid(); // true, false or null when not applicable
 				</p>
 			</div>
 
-			<div class="side">
+			<div class="wide full-width-example">
 <pre><code class="small">Email nonMergedEmail = EmailBuilder
                 .copying(mergedEmail)
                 .clearSMIMESignedAttachmentMergingBehavior()

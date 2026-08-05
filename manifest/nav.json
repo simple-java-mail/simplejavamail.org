@@ -1,0 +1,16 @@
+{
+  "primary": [
+    { "label": "Why Simple Java Mail", "href": "/why-simple-java-mail.html" },
+    { "label": "Capabilities", "href": "/features.html" },
+    { "label": "Docs", "href": "/docs.html" },
+    { "label": "Compare", "href": "/feature-matrix.html" }
+  ],
+  "utility": {
+    "label": "GitHub",
+    "href": "https://github.com/bbottema/simple-java-mail"
+  },
+  "cta": {
+    "label": "Get started",
+    "href": "/download.html"
+  }
+}

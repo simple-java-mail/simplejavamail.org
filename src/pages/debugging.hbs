@@ -17,9 +17,8 @@
 		<li><a href="#section-inspect-mailer-email">Inspect a mailer or an email</a></li>
 		<li><a href="#section-mailexception">Catching exceptions</a></li>
 		<li><a href="#section-logging">Logging output</a></li>
-		<li><a href="#section-log4j12" class="indent">Example with log4j12</a></li>
-		<li><a href="#section-log4j2" class="indent">Example with log4j2</a></li>
-		<li><a href="#section-logback" class="indent">Example with logback</a></li>
+		<li><a href="#section-log4j2" class="indent">Example with Log4j 2</a></li>
+		<li><a href="#section-logback" class="indent">Example with Logback</a></li>
     </ul>
   </section>
 
@@ -59,7 +58,7 @@ mailer.sendMail(email); // <-- this email will be logged but not sent
 	  <div class="view">
 		  <p>
 			  For testing purposes, you can change where the email is sent to, without touching the actual email being sent, by overriding the envelope-level
-			  receivers. It's super easy.
+			  receivers. This keeps test routing outside the message content while preserving the original addresses for inspection.
 		  </p>
 	  </div>
 
@@ -192,63 +191,18 @@ try {
     </div>
   </section>
 
-  <a href="#section-log4j12" id="section-log4j12" class="section-link h3">&sect;</a>
-  <h3>Example with log4j12</h3>
-
-  <section>
-    <div class="view">
-      <p>
-        Here's an example configuration for <a href="https://logging.apache.org/log4j/2.x/index.html">log4j12</a>, make sure you have the
-        slf4j-to-log4j impl included on the classpath as well as log4j12 itself and the log4j.xml with the config.
-      </p>
-    </div>
-
-    <div class="side">
-<pre><code class="language-markup small">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;!DOCTYPE log4j:configuration SYSTEM &quot;log4j.dtd&quot;&gt;
-&lt;log4j:configuration xmlns:log4j=&quot;http://jakarta.apache.org/log4j/&quot; debug=&quot;false&quot;&gt;
-
-    &lt;appender name=&quot;console&quot; class=&quot;org.apache.log4j.ConsoleAppender&quot;&gt;
-        &lt;layout class=&quot;org.apache.log4j.PatternLayout&quot;&gt;
-            &lt;param name=&quot;ConversionPattern&quot; value=&quot;%d [%t] %-5p %c{1} - %m%n&quot;/&gt;
-        &lt;/layout&gt;
-    &lt;/appender&gt;
-    &lt;appender name=&quot;simpleConsole&quot; class=&quot;org.apache.log4j.ConsoleAppender&quot;&gt;
-        &lt;layout class=&quot;org.apache.log4j.PatternLayout&quot;&gt;
-            &lt;param name=&quot;ConversionPattern&quot; value=&quot;%d Simple Java Mail SOCKS5 bridge - %p %m%n&quot;/&gt;
-        &lt;/layout&gt;
-    &lt;/appender&gt;
-
-    &lt;logger name=&quot;org.simplejavamail&quot;&gt;
-        &lt;level value=&quot;trace&quot;/&gt;
-        &lt;appender-ref ref=&quot;console&quot;/&gt;
-    &lt;/logger&gt;
-    &lt;!-- in case you&#39;re using authenticated proxy --&gt;
-    &lt;logger name=&quot;socks5bridge&quot; additivity=&quot;false&quot;&gt;
-        &lt;level value=&quot;info&quot;/&gt;
-        &lt;appender-ref ref=&quot;simpleConsole&quot;/&gt;
-    &lt;/logger&gt;
-    &lt;logger name=&quot;org.simplejavamail.internal.authenticatedsockssupport&quot;&gt;
-        &lt;level value=&quot;warn&quot;/&gt;
-    &lt;/logger&gt;
-
-&lt;/log4j:configuration&gt;
-</code></pre>
-    </div>
-  </section>
-
   <a href="#section-log4j2" id="section-log4j2" class="section-link h3">&sect;</a>
-  <h3>Example with log4j2</h3>
+  <h3>Example with Log4j 2</h3>
 
   <section>
     <div class="view">
       <p>
-        Here's an example configuration for <a href="https://logging.apache.org/log4j/2.x/">log4j2</a>, make sure you have the log4j-slf4j-impl impl
-        included on the classpath as well as log4j2 itself and the log4j2.xml with the config.
+        Add the matching SLF4J binding for <a href="https://logging.apache.org/log4j/2.x/">Log4j 2</a>, then place this configuration in
+        <code class="inline language-text">log4j2.xml</code>.
       </p>
     </div>
 
-    <div class="side">
+    <div class="wide full-width-example">
 <pre><code class="language-markup small">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
 &lt;configuration status=&quot;OFF&quot;&gt;
     &lt;appenders&gt;
@@ -277,17 +231,17 @@ try {
   </section>
 
   <a href="#section-logback" id="section-logback" class="section-link h3">&sect;</a>
-  <h3>Example with logback</h3>
+  <h3>Example with Logback</h3>
 
   <section>
     <div class="view">
       <p>
-        Here's an example configuration for <a href="https://logback.qos.ch/">logback</a>, make sure you have the logback-classic included on the
-        classpath as well as logback-core and the logback.xml with the config.
+        Add <a href="https://logback.qos.ch/">Logback</a> to the classpath, then place this configuration in
+        <code class="inline language-text">logback.xml</code>.
       </p>
     </div>
 
-    <div class="side">
+    <div class="wide full-width-example">
 <pre><code class="language-markup small">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
 &lt;configuration&gt;
     &lt;appender name=&quot;console&quot; class=&quot;ch.qos.logback.core.ConsoleAppender&quot;&gt;

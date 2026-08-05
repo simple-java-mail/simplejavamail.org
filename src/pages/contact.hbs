@@ -1,48 +1,57 @@
-{{#> layouts/base head-sub-title="Contact" page-title="Help Simple Java Mail Grow" }}
+{{#> layouts/base head-sub-title="Help and contribute" page-title="Help and contribute" }}
 
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Simple Java Mail contact options">
-	{{/inline}}
+  {{#*inline "body-block"}}
+    <section class="introduction">
+      <p class="wide">Simple Java Mail is maintained in the open. Use the right public channel so the question—and its answer—can help the next developer too.</p>
+    </section>
 
-	{{#*inline "header-block"}}
-		{{> includes/header topic="contact" }}
-	{{/inline}}
+    <h2 id="usage-questions">Usage questions</h2>
+    <section>
+      <div class="view">
+        <p>Start with the <a href="docs.html">documentation index</a>, search the reference pages, and check the
+          <a href="https://www.javadoc.io/doc/org.simplejavamail/simple-java-mail">current Javadocs</a>.</p>
+        <p>If the docs still leave you stuck, <a href="https://github.com/bbottema/simple-java-mail/issues">open a GitHub issue</a>. Include a minimal example, the Simple Java Mail and Java versions, and any relevant failure output.</p>
+      </div>
+    </section>
 
-	{{#*inline "body-block"}}
-  <h2>Get help, request features, post bugs</h2>
+    <h2 id="bugs-and-features">Bug reports and feature ideas</h2>
+    <section>
+      <div class="view">
+        <p>Use the public <a href="https://github.com/bbottema/simple-java-mail/issues">GitHub issue tracker</a> for bugs you can reproduce and feature ideas you can explain with a real use case.</p>
+        <p>Before posting, remove credentials, private keys, access tokens, message content, and personal recipient data. Include the smallest configuration that still reproduces the behavior.</p>
+      </div>
+      <div class="side">
+        <ul>
+          <li>Simple Java Mail version</li>
+          <li>Java runtime and framework version</li>
+          <li>Transport strategy and relevant module</li>
+          <li>Expected and observed behavior</li>
+          <li>Minimal code or property sample</li>
+          <li>Sanitized exception and debug output</li>
+        </ul>
+      </div>
+    </section>
 
-  <section>
-    <div class="view">
-      <p>Simple Java Mail is a robust library, but there's always room for improvement: get in touch to suggest anything you can think of and help Simple Java Mail grow!</p>
+    <h2 id="documentation-and-code">Documentation and code contributions</h2>
+    <section>
+      <p class="wide">The <a href="https://github.com/bbottema/simple-java-mail">main repository</a> contains the library source, tests, release history, and development guidance. Website corrections belong in the
+        <a href="https://github.com/simple-java-mail/simplejavamail.org">website repository</a>. Focused issues and pull requests are welcome.</p>
+    </section>
 
-      <p>The <a href="https://github.com/bbottema/simple-java-mail/"><strong>Simple Java Mail GitHub repository</strong></a> and the <a
-        href="https://github.com/bbottema/simple-java-mail/issues"><strong>issue tracker</strong></a> are used to discuss feature requests and issues
-        (I get a notification email right away).
-      </p>
+    <h2 id="roadmap">Roadmap</h2>
+    <section>
+      <p class="wide">New requirements and planned improvements live in the public <a href="https://github.com/bbottema/simple-java-mail/issues">issue tracker</a>. If you have a concrete use case, add it there so it can be discussed alongside the rest of the project work.</p>
+    </section>
 
-      <p>You can also refer to the <a href="https://www.javadoc.io/doc/org.simplejavamail/simple-java-mail">API documentation</a>.</p>
+    <h2 id="security">Sensitive reports</h2>
+    <section>
+      <p class="wide">The project does not currently publish a separate security-reporting policy on this site. Never put credentials, private keys, tokens, personal mail, or exploit details in a public issue. Check the repository's Security tab first; if private vulnerability reporting is enabled, use it.</p>
+    </section>
 
-      <p>If you need more general help, you'll usually get an answer by posting a question on <a href="https://stackoverflow.com/questions">StackOverflow</a>.</p>
-
-      <iframe src="https://ghbtns.com/github-btn.html?user=bbottema&amp;repo=simple-java-mail&amp;type=star&amp;count=true&amp;size=large"
-        frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-    </div>
-  </section>
-
-
-  <h2>About myself</h2>
-
-  <section>
-	  <p class="wide">
-		  I'm a freelance full-stack software engineer. I have a bunch of private and open source projects,
-		  but my public babies are Simple Java Mail and my latest project: my wife's webhop
-		  <a title="Remya's Cake Studio" href="https://remyascakestudio.com/" target="_blank">Remya's Cake Studio</a>!
-	  </p>
-	  <p class="wide">
-		  You can find more about me on <a title="Benny Bottema profile page" href="http://www.bennybottema.com">bennybottema.com</a>.
-		  At the bottom of the page you can shoot me an email if you want a quick answer.
-	  </p>
-  </section>
-    {{/inline}}
+    <h2 id="maintainer">Maintainer</h2>
+    <section>
+      <p class="wide">Simple Java Mail is maintained by Benny Bottema with contributions from its users and the surrounding open-source projects. It was first published as VeSiJaMa on Google Code in April 2009.</p>
+    </section>
+  {{/inline}}
 
 {{/layouts/base}}

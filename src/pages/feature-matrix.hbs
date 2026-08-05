@@ -1,306 +1,68 @@
-{{#> layouts/base head-sub-title="Feature Comparison Matrix" page-title="Feature Comparison Matrix" }}
+{{#> marketing}}
+  {{#*inline "body-block"}}
+    <div id="navigation" class="compatibility-anchor" aria-hidden="true"></div>
+    <section class="page-hero compare-hero">
+      <div class="shell narrow-shell">
+        <p class="eyebrow">Compare approaches</p>
+        <h1>Compare what each library handles,<br><em>not how short the demo looks.</em></h1>
+        <p class="hero-lede">Jakarta Mail, Spring Mail, Commons Email, and Simple Java Mail can all send a message. The real difference is what you still have to build, configure, secure, and maintain yourself.</p>
+      </div>
+    </section>
 
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="How does Simple Java Mail compare to toher mailing frameworks?">
-<style>
-	table {
-		border-collapse: collapse;
-	}
-	table, th, td {
-		border: 1px solid black;
-	}
-	th, td {
-		padding: 5px;
-		vertical-align: top;
-		text-align: center;
-	}
+    <section id="profiles" class="profiles ruled-section">
+      <div class="shell">
+        <header class="section-heading split-heading"><div><p class="eyebrow">At a glance</p><h2>Four libraries, four different jobs</h2></div><p>Choose the one that leaves the right amount of work in your code. Direct control is valuable when you need it; a smaller feature set can be exactly enough.</p></header>
+        <div class="profile-list">
+          <article><span>Foundation</span><h3>Jakarta Mail / Angus Mail</h3><p>The standard MIME and mail-protocol API. You control sessions, message structure, transport use, and the conventions around them.</p><a href="https://eclipse-ee4j.github.io/angus-mail/">Official project <span aria-hidden="true">↗</span></a></article>
+          <article><span>Framework integration</span><h3>Spring Mail</h3><p>Spring's sending abstraction and <code>MimeMessageHelper</code>. A natural fit for applications that mainly need Spring configuration and <code>JavaMailSender</code>.</p><a href="https://docs.spring.io/spring-framework/reference/integration/email.html">Official documentation <span aria-hidden="true">↗</span></a></article>
+          <article><span>Convenience layer</span><h3>Apache Commons Email</h3><p>A smaller API for common message types. Your code supplies the validation, security, and sending setup that falls outside that API.</p><a href="https://commons.apache.org/proper/commons-email/">Official project <span aria-hidden="true">↗</span></a></article>
+          <article class="profile-primary"><span>Full sending library</span><h3>Simple Java Mail</h3><p>A higher-level API for the message itself, security, shared configuration, advanced sending, diagnostics, and conversion.</p><a href="/why-simple-java-mail.html">Why Simple Java Mail <span aria-hidden="true">→</span></a></article>
+        </div>
+      </div>
+    </section>
 
-	td:first-child {
-		font-size: small;
-	}
+    <section id="responsibility-matrix" class="matrix-section ruled-section">
+      <div class="shell wide-shell">
+        <header class="section-heading split-heading"><div><p class="eyebrow">Side by side</p><h2>What does each option handle for you?</h2></div><div class="matrix-legend"><span><i class="state built"></i>High-level support</span><span><i class="state helper"></i>Helper / integration</span><span><i class="state owned"></i>Your code handles it</span></div></header>
+        <div class="comparison-table-wrap" tabindex="0" aria-label="Scrollable comparison table">
+          <table class="comparison-table">
+            <thead><tr><th>What needs handling</th><th>Jakarta Mail / Angus</th><th>Spring Mail</th><th>Commons Email</th><th>Simple Java Mail</th></tr></thead>
+            <tbody>
+              <tr><th>Basic and rich composition</th><td data-state="owned">Direct <code>MimeMessage</code> / multipart API</td><td data-state="helper"><code>MimeMessageHelper</code></td><td data-state="helper">Typed convenience classes</td><td data-state="built">Fluent Email builder and automatic MIME structure</td></tr>
+              <tr><th>Attachments, embedded content, calendars</th><td data-state="owned">You compose the body parts</td><td data-state="helper">Helper for common MIME parts</td><td data-state="helper">Common attachments and HTML</td><td data-state="built">Built-in attachments, inline content, pre-encoding, iCalendar</td></tr>
+              <tr><th>Recipient policy and validation</th><td data-state="owned">You build this</td><td data-state="owned">You add it around the sender/helper</td><td data-state="helper">Basic recipient setters</td><td data-state="built">Builders, parsing, validation, defaults, forced overrides</td></tr>
+              <tr><th>DKIM signing</th><td data-state="owned">You add an extension or integration</td><td data-state="owned">You add an integration</td><td data-state="owned">You add an integration</td><td data-state="built">Optional module; per-message or mailer default</td></tr>
+              <tr><th>S/MIME signing and encryption</th><td data-state="owned">You add an extension or integration</td><td data-state="owned">You add an integration</td><td data-state="owned">You add an integration</td><td data-state="built">Optional module; send, read, decrypt, per-recipient certificates</td></tr>
+              <tr><th>Transport policy and OAuth2</th><td data-state="owned">Session properties and authenticators</td><td data-state="helper">Spring configuration plus Jakarta properties</td><td data-state="helper">Common server and TLS settings</td><td data-state="built">Named transport strategies, OAuth2, verification, raw-property escape hatch</td></tr>
+              <tr><th>Async results and connection tests</th><td data-state="owned">You build this</td><td data-state="owned">You or your framework builds this</td><td data-state="owned">You build this</td><td data-state="built">Built-in async result and sync/async connection testing</td></tr>
+              <tr><th>Connection reuse and bounded batches</th><td data-state="owned">You open, reuse, and close the transport</td><td data-state="owned">You build this</td><td data-state="owned">You build this</td><td data-state="built">Simple batch and callback-scoped open connection</td></tr>
+              <tr><th>Pooled and multi-cluster delivery</th><td data-state="owned">You build this infrastructure</td><td data-state="owned">You build this infrastructure</td><td data-state="owned">You build this infrastructure</td><td data-state="built">Optional pooled batch module with keyed clusters</td></tr>
+              <tr><th>Authenticated SOCKS</th><td data-state="owned">You add the network integration</td><td data-state="owned">You add the network integration</td><td data-state="owned">You add the network integration</td><td data-state="built">Optional authenticated SOCKS bridge module</td></tr>
+              <tr><th>EML, MimeMessage, and Outlook conversion</th><td data-state="helper"><code>MimeMessage</code> is the native model</td><td data-state="helper">Direct access to <code>MimeMessage</code></td><td data-state="owned">You add conversion support</td><td data-state="built">Email/MimeMessage/EML plus optional Outlook MSG conversion</td></tr>
+              <tr><th>Java, properties, and Spring configuration</th><td data-state="helper">Session properties / Java</td><td data-state="built">Native Spring configuration</td><td data-state="helper">Java convenience configuration</td><td data-state="built">Builders, property layers, environment, and Spring module</td></tr>
+              <tr><th>Diagnostics and settings inspection</th><td data-state="helper">Protocol debug stream and direct objects</td><td data-state="helper">Framework logging plus Jakarta tools</td><td data-state="helper">Underlying exceptions and debug tools</td><td data-state="built">Connection tests, inspectable config, debug routing, validation, receipts</td></tr>
+              <tr><th>Low-level escape hatch</th><td data-state="built">The API itself</td><td data-state="built">Direct Jakarta objects and properties</td><td data-state="helper">Underlying JavaMail/Jakarta integration</td><td data-state="built">Custom Session, properties, MimeMessage, and send operation</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="matrix-note">“Your code handles it” does not mean the feature is impossible. It means you build it yourself or add another integration. If a cell is inaccurate, <a href="{{site.issues}}">please report it</a>.</p>
+      </div>
+    </section>
 
-	.yes::before { content: '\2713\a0'; } /* &check;&nbsp; */
-	.meh::before { content: '\2014\a0'; } /* &mdash;&nbsp; */
-	.no::before { content: '\2717\a0'; } /* &cross;&nbsp; */
+    <section id="scenarios" class="scenario-section ruled-section">
+      <div class="shell">
+        <header class="section-heading"><p class="eyebrow">Start with your project</p><h2>What do you actually need?</h2></header>
+        <div class="scenario-list">
+          <article><span>01</span><div><h3>I need full low-level control</h3><p>Choose Jakarta Mail / Angus directly when you want to build and manage sessions, transports, and MIME parts yourself.</p></div></article>
+          <article><span>02</span><div><h3>I need Spring's standard sending integration</h3><p><a href="/configuration.html#section-spring-support">Simple Java Mail integrates directly with Spring</a> through its Spring module, property configuration, and an injectable mailer. If your requirements stop at <code>JavaMailSender</code> and <code>MimeMessageHelper</code>, Spring Mail itself may already be sufficient.</p></div></article>
+          <article><span>03</span><div><h3>I need a small convenience layer</h3><p>Commons Email may be enough when you need a shorter API for common messages and are happy to handle validation, security, and delivery setup elsewhere.</p></div></article>
+          <article class="scenario-primary"><span>04</span><div><h3>I need the API to keep up as requirements grow</h3><p>Simple Java Mail keeps the easy send easy, then adds security, shared rules, advanced delivery, diagnostics, and conversion without making you switch libraries or drop down to Jakarta Mail.</p><a href="/download.html">Try the first send <span aria-hidden="true">→</span></a></div></article>
+        </div>
+      </div>
+    </section>
 
-	.yes { color: green; }
-	.meh { color: orange; }
-	.no { color: red; }
-
-	.yes *, .meh *, .no * {
-		color: initial;
-		font-size: xx-small;
-	}
-</style>
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="features" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
-
-	<p class="wide">
-		Due to the fact most libraries are based on JavaMail / Jakarta Mail, in theory all libraries should be able to do the same things
-		if you start tweaking under hood directly on the related low level components (such as manually setting Session properties). However, since
-		we are comparing Simple Java Mail in the context of its mission, being the easiest to use SMTP library in the world, when a library doesn't support a
-		feature as first class API, it will be marked as not-supported in the matrix below.
-	</p>
-
-	<p class="wide">
-		Each feature is linked to the appropriate documentation.
-	</p>
-
-	<p class="wide">
-		<strong>All claims below were made objectively with due diligence and in good faith, but if you find any inaccuracies, please
-		<a href="https://github.com/bbottema/simple-java-mail/issues" rel="nofollow" target="_blank">raise an issue</a>.</strong>
-	</p>
-
-	<p class="wide">
-		<strong>Note 1:</strong>
-		In 2023, it is surprising to find only a few major Java libraries for SMTP, next to Simple Java Mail. There seems to be a scarcity of
-		libraries specifically focused on SMTP mailing, with Apache Commons appearing inactive and Spring Mail not receiving enough development as a primary
-		library. Other libraries out there are rarely still active, or are too small and limited compared to Simple Java Mail to be considered a real alternative.
-	</p>
-
-	<p class="wide">
-		<strong>Note 2:</strong>
-		As this comparison matrix is taking shape, and the source code of other SMTP libraries is being examined more closely, it is becoming apparent how
-		much Apache Commons Email has been a half-hearted attempt at wrapping JavaMail in a useful API, that lost its momentum completely and ultimately failed
-		as a project and seemingly has been abandoned (last release in 2017 and
-		<a href="https://github.com/apache/commons-email/commits/master" rel="nofollow" target="_blank">no meaningful code changes</a> since, last verified Oct
-		2023). Therefore, remarks on feature differences will be mostly limited simply to "there was an attempt". The fact that they still refer to their Subversion
-		repository on their homepage instead of their GitHub repository is a clear indication of their lack of comittment, let alone some vision for the future.
-		Also, the fact that their home page still refers to JavaMail, which was succeeded by Jakarta Mail in 2019 (and by Angus in 2024), confirms this.
-	</p>
-
-	<section>
-		<table style="margin-top: 1em">
-			<thead>
-				<tr>
-					<th>&nbsp;</th>
-					<th>Simple Java Mail</th>
-					<th>Apache Commons Email</th>
-					<th>Spring Mail</th>
-				</tr>
-			</thead>
-			<tr>
-				<td><a href="features.html#section-basic-usage">API simplicity</a></td>
-				<td class="yes"><p>Clean, functional, fluent API</p></td>
-				<td class="meh"><p>there was an attempt</p></td>
-				<td class="no"><p>Exposes low level api<br>focus on ease of integration,<br>not on ease of use</p></td>
-			</tr>
-			<tr>
-				<td><a href="https://github.com/bbottema/simple-java-mail">Actively maintained?</a></td>
-				<td class="yes"><p>16 years and still going strong</p></td>
-				<td class="no"><p>last released 2017</p></td>
-				<td class="meh"><p>Mostly just as part of<br>general Spring maintenance</p></td>
-			</tr>
-			<tr>
-				<td><a href="https://www.simplejavamail.org/">Quality documentation</a></td>
-				<td class="yes"><p>Excellent (searchable) with lots of examples</p></td>
-				<td class="no"><p>relies on your knowledge of<br>underlying JavaMail / Jakarta Mail</p></td>
-				<td class="no"><p>relies on your knowledge of<br>underlying JavaMail / Jakarta Mail</p></td>
-			</tr>
-			<tr>
-				<td>Lightweight?</td>
-				<td class="yes"><p>298kb (core)</p></td>
-				<td class="yes"><p>54kb</p></td>
-				<td class="no"><p>4.47Mb spring-context-support + deps<br>(165kb if you already have Spring)</p></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-reply-forward">Support for replying to / forwarding<br>emails?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="cli.html#navigation">CLI support for sending emails?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-converting">Can read Outlook .msg files?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="configuration.html#section-config-properties">Supports properties / property files?</a></td>
-				<td class="yes"><p>for everything</p></td>
-				<td class="no"></td>
-				<td class="meh"><p>limited to the most<br>basic server config</p></td>
-			</tr>
-			<tr>
-				<td><a href="configuration.html#section-spring-support">Native / built-in Spring support?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="yes"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#authentication">First class authentication?</a></td>
-				<td class="yes"></td>
-				<td class="meh"><p>no OAUTH2</p></td>
-				<td class="meh"><p>no OAUTH2</p></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-proxy">Support for (authenticated) proxy?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="security.html#navigation">Robust security?</a></td>
-				<td class="yes"></td>
-				<td class="meh"><p>there was an attempt</p></td>
-				<td class="no"><p>limited, moreover it relies<br>on you for Jakarta Mail properties</p></td>
-			</tr>
-			<tr>
-				<td><a href="security.html#section-crlf-scanning">Safe-guards against CRLF injection attacks?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="configuration.html#section-batch-and-clustering">Advanced performance tuning?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="debugging.html#section-inspect-mailer-email">All configuration can be inspected easily?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-handling-async-result">Ready for the async world?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="meh"><p>only with Spring's @Async<br>(messy exception handling)</p></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-add-recipients">Has robust recipient parsing?</a></td>
-				<td class="yes"></td>
-				<td class="meh"><p>there was an attempt</p></td>
-				<td class="yes"><p>(but no name defaults/overrides<br>or support for delimited strings)</p></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-custom-session">Allows custom Session instance?</a></td>
-				<td class="yes"></td>
-				<td class="yes"></td>
-				<td class="yes"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-content-transfer-encoding">Custom content (and attachments)<br>transfer encoding?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"><p>2011 <a href="https://github.com/spring-projects/spring-framework/issues/13569" rel="nofollow" target="_blank">ticket</a> (basic support)<br>finally declined in 2023</p></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-custom-id">Supports custom messageId?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="yes"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-custom-sentdate">Supports custom sent date?</a></td>
-				<td class="yes"></td>
-				<td class="yes"></td>
-				<td class="yes"></td>
-			</tr>
-			<tr>
-				<td>Basic feature set support
-					<ul>
-						<li>- <a href="features.html#section-basic-usage">html alternative content</a></li>
-						<li>- <a href="features.html#section-attachments">attachments</a></li>
-						<li>- <a href="features.html#section-embedding">embedded images</a></li>
-					</ul>
-				</td>
-				<td class="yes"></td>
-				<td class="yes"></td>
-				<td class="yes"></td>
-			</tr>
-			<tr>
-				<td><a href="rfc-compliant.html#section-explore-multipart">Auto-determines best<br>MimeMessage composition?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="yes"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-icalendar-vevent">Supports iCalendar vEvent?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="security.html#section-sending-dkim">Supports DKIM signing?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="security.html#section-sending-smime">Supports S/MIME<br>signing / encryption?<br>(sending / reading, +attachments)</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td>
-					<a href="features.html#section-return-receipt">Delivery / read receipt support?<br>
-					(dispositionNotificationTo / returnReceiptTo)</a>
-				</td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-bouncing-emails">Supports bounce address</a></td>
-				<td class="yes"></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-email-validation">Quality of Email address validation</a></td>
-				<td class="yes"><p>delegates to <a href="https://www.rohannagar.com/jmail/" target="_blank">JMail's</a><br>excellent (and fast) validation</p></td>
-				<td class="meh"><p>delegates to JavaMail's / Jakarta Mail's<br><a href="https://www.rohannagar.com/jmail/" target="_blank">fallible</a> implementation</p></td>
-				<td class="meh"><p>delegates to JavaMail's / Jakarta Mail's<br><a href="https://www.rohannagar.com/jmail/" target="_blank">fallible</a> implementation</p></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-connection-test">Can be used just to test a server connection?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-serializing-emails">Emails can be serialized?</a></td>
-				<td class="meh"><p>(partial support)</p></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-custom-mailer">Library allows for custom sending logic?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="features.html#section-maximum-emailsize">Can set maximum allowed email size?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-			<tr>
-				<td><a href="configuration.html#section-config-mailer">Support sender-level email defaults / overrides?</a></td>
-				<td class="yes"></td>
-				<td class="no"></td>
-				<td class="no"></td>
-			</tr>
-		</table>
-
-	</section>
-
-	{{/inline}}
-
-{{/layouts/base}}
+    <section id="scope" class="scope-band">
+      <div class="shell scope-grid"><p class="eyebrow">Scope matters</p><h2>Simple Java Mail focuses on outbound application email.</h2><p>Jakarta Mail also covers protocols such as IMAP and POP3 and remains the right choice for mailbox access. Simple Java Mail builds on it to compose, secure, and send messages.</p></div>
+    </section>
+  {{/inline}}
+{{/marketing}}

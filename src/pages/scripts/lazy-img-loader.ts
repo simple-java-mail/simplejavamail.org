@@ -13,10 +13,14 @@ async function supportsWebp():Promise<boolean> {
 		supportsWebpKnownPromise.then(supportsWebpKnown => {
 			// console.debug('document loaded, webp supported: ' + supportsWebpKnown);
 			document.querySelectorAll('img[data-src]')
-				.forEach(img => img.setAttribute('src',
-					img.hasAttribute('data-src-webp') && supportsWebpKnown
+				.forEach(img => {
+					const source = img.hasAttribute('data-src-webp') && supportsWebpKnown
 						? img.getAttribute('data-src-webp')
-						: img.getAttribute('data-src')));
+						: img.getAttribute('data-src');
+					if (source) {
+						img.setAttribute('src', source);
+					}
+				});
 		});
 	}, false);
 })();

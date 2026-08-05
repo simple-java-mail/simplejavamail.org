@@ -1,0 +1,59 @@
+{{#> layouts/docs-landing}}
+  {{#*inline "body-block"}}
+    <section class="page-hero docs-index-hero">
+      <div class="shell docs-hero-grid">
+        <div>
+          <h1 class="visually-hidden">Documentation</h1>
+          <p class="eyebrow">Documentation</p>
+          <p class="hero-lede">Build a message, configure a mailer, secure it, send it, or work out what went wrong.</p>
+        </div>
+        <div class="docs-index-search">
+          <label for="docs-search-label">Search the documentation</label>
+          <span id="docs-search-label" class="visually-hidden">Search the Simple Java Mail documentation</span>
+          <pagefind-searchbox placeholder="Try ‘DKIM’, ‘proxy’, or ‘cluster’" show-sub-results></pagefind-searchbox>
+          <p>Search runs locally over the published static documentation.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="quick-start ruled-section">
+      <div class="shell quick-start-grid">
+        <a href="/download.html#first-email"><span>Start here</span><strong>Send your first email</strong><small>Dependency, message, mailer, verification</small></a>
+        <a href="/why-simple-java-mail.html"><span>See why it exists</span><strong>Why Simple Java Mail</strong><small>What it handles and when Jakarta Mail is still useful</small></a>
+        <a href="/migration-notes-9.0.0.html"><span>Upgrading</span><strong>Move to version 9</strong><small>Recipient builders and breaking changes</small></a>
+      </div>
+    </section>
+
+    <section class="docs-lifecycle ruled-section">
+      <div class="shell">
+        <header class="section-heading split-heading"><div><p class="eyebrow">Browse by task</p><h2>What are you trying to do?</h2></div><p>Each link goes straight to the relevant API and configuration examples.</p></header>
+        <div class="docs-route-list">
+          <a href="/features.html#section-basic-usage"><span>01</span><div><strong>Compose</strong><small>Messages, recipients, attachments, calendars, replies, conversion</small></div><b aria-hidden="true">→</b></a>
+          <a href="/configuration.html#section-programmatic-api-common"><span>02</span><div><strong>Configure</strong><small>Mailer builders, properties, Spring, defaults, overrides, pools</small></div><b aria-hidden="true">→</b></a>
+          <a href="/security.html#navigation"><span>03</span><div><strong>Protect</strong><small>TLS, OAuth2, server verification, DKIM, S/MIME, CRLF</small></div><b aria-hidden="true">→</b></a>
+          <a href="/configuration.html#section-batch-and-clustering"><span>04</span><div><strong>Deliver</strong><small>Sync, async, connection reuse, batch, pools, clusters, proxy</small></div><b aria-hidden="true">→</b></a>
+          <a href="/debugging.html#navigation"><span>05</span><div><strong>Diagnose</strong><small>Validation, connection tests, inspection, logs, receipts, failures</small></div><b aria-hidden="true">→</b></a>
+          <a href="/modules.html#navigation"><span>06</span><div><strong>Extend</strong><small>Modules, CLI, MIME explorer, custom Session, custom sending</small></div><b aria-hidden="true">→</b></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="reference-register ruled-section">
+      <div class="shell">
+        <header class="section-heading"><p class="eyebrow">Reference pages</p><h2>Jump straight to the details.</h2></header>
+        <div class="reference-table" role="list">
+          <a role="listitem" href="/features.html"><span>Build</span><strong>Capabilities</strong><small>Complete feature reference and examples</small></a>
+          <a role="listitem" href="/configuration.html"><span>Build</span><strong>Configuration</strong><small>Java, properties, environments, Spring, pools</small></a>
+          <a role="listitem" href="/modules.html"><span>Build</span><strong>Modules</strong><small>What each optional module adds</small></a>
+          <a role="listitem" href="/security.html"><span>Operate</span><strong>Security</strong><small>Transport, signing, encryption, input safety</small></a>
+          <a role="listitem" href="/debugging.html"><span>Operate</span><strong>Diagnostics</strong><small>Tests, inspection, debug output, failure handling</small></a>
+          <a role="listitem" href="/cli.html"><span>Integrate</span><strong>Command-line interface</strong><small>Send, connect, validate, properties, logging</small></a>
+          <a role="listitem" href="/rfc-compliant.html"><span>Understand</span><strong>MIME and interoperability</strong><small>Multipart structures, encodings, conversions</small></a>
+          <a role="listitem" href="/feature-matrix.html"><span>Understand</span><strong>Compare approaches</strong><small>See how much each API handles for you</small></a>
+          <a role="listitem" href="/migration-notes.html"><span>Maintain</span><strong>Migration notes</strong><small>Version-specific breaking changes</small></a>
+          <a role="listitem" href="/contact.html"><span>Maintain</span><strong>Help and contribute</strong><small>Questions, issues, documentation, source</small></a>
+        </div>
+      </div>
+    </section>
+  {{/inline}}
+{{/layouts/docs-landing}}

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" class="language-java">
+  <head>
+    {{> head}}
+    {{#> html-head-block}}{{/html-head-block}}
+  </head>
+  <body class="marketing-page">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    {{> site-header}}
+    <main id="main-content" data-pagefind-body>
+      {{#> body-block}}{{/body-block}}
+    </main>
+    {{> footer}}
+    <script src="/assets/lib/prism.js"></script>
+    <script>window.Prism && window.Prism.highlightAll();</script>
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/pagefind/pagefind-component-ui.js"></script>
+    {{#> scripts-block}}{{/scripts-block}}
+  </body>
+</html>

@@ -1,0 +1,23 @@
+<aside class="docs-sidebar" data-docs-sidebar data-pagefind-ignore>
+  <button class="sidebar-toggle" type="button" aria-expanded="false" aria-controls="docs-navigation-body">
+    <span>Documentation navigation</span>
+    <span aria-hidden="true">⌄</span>
+  </button>
+  <div id="docs-navigation-body" class="docs-navigation-body">
+    <div class="docs-search">
+      <pagefind-searchbox placeholder="Search docs" show-sub-results></pagefind-searchbox>
+    </div>
+    <nav class="docs-nav" aria-label="Documentation">
+      {{#each docsGroups}}
+        <section class="docs-nav-group">
+          <h2>{{label}}</h2>
+          <ul>
+            {{#each pages}}
+              <li><a href="{{url}}" class="{{docsActiveClass url @root.currentUrl}}">{{title}}</a></li>
+            {{/each}}
+          </ul>
+        </section>
+      {{/each}}
+    </nav>
+  </div>
+</aside>

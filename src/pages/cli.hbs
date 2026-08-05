@@ -11,20 +11,18 @@
 	{{#*inline "body-block"}}
   <section class="introduction">
     <p class="wide">
-      Simple Java Mail exposes the complete builder API as CLI commands, which is to say everything you can do with
-      Simple Java Mail in Java, you can also do that in a terminal.
+      The CLI exposes the Simple Java Mail builders as terminal commands. You can build a message, configure a mailer, validate it, test the connection,
+      and send without writing a Java entry point.
     </p>
 
     <h2>From builder API to CLI commands</h2>
 
     <p class="wide">
-      To support CLI, the commands and options are generated using <a href="https://picocli.info/">Picocli's Java API</a>
-      and <a href="https://github.com/dnault/therapi-runtime-javadoc">Therapi's Javadoc bundler</a>. Together and with a
-      lot of custom glue Simple Java Mail's builder API is traversed and converted into CLI commands.
+      The commands and options are generated from the builder API and its Javadocs using <a href="https://picocli.info/">Picocli</a>,
+      <a href="https://github.com/dnault/therapi-runtime-javadoc">Therapi</a>, and a small adapter in Simple Java Mail.
     </p>
     <p class="wide">
-      The great benefit from this is that new builder API is supported by CLI automagically and the documentation is
-      still centralized in the builder API, providing a consistent experience.
+      Because the CLI is generated from the builder API, new builder options can become CLI flags without duplicating their documentation.
     </p>
   </section>
 
@@ -53,7 +51,7 @@
       Maven plugins).
     </p>
     <p class="wide">
-      The flags are a bit verbose, but then it supports the complete builder API!
+      The flags are deliberately explicit because they map directly to builder methods.
     </p>
     <pre><code class="language-text small">
       sjm

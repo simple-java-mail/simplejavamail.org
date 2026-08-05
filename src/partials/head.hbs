@@ -1,0 +1,35 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+{{#if (eq page.url "/")}}
+  <title>Simple Java Mail — Send email from Java without the plumbing</title>
+{{else}}
+  <title>{{page.title}} | Simple Java Mail</title>
+{{/if}}
+<meta name="description" content="{{page.description}}">
+<link rel="canonical" href="{{site.url}}{{page.url}}">
+<meta property="og:site_name" content="Simple Java Mail">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{#if (eq page.url "/")}}Simple Java Mail — Send email from Java without the plumbing{{else}}{{page.title}} | Simple Java Mail{{/if}}">
+<meta property="og:description" content="{{page.description}}">
+<meta property="og:url" content="{{site.url}}{{page.url}}">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/assets/sjm-favicon.png" type="image/png">
+<link rel="icon" href="/assets/sjm-favicon-dark.png" type="image/png" sizes="256x256" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+{{#each styleHrefs}}<link rel="stylesheet" href="{{this}}">{{/each}}
+<link rel="stylesheet" href="/pagefind/pagefind-component-ui.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Simple Java Mail",
+  "description": "A Java library that handles Jakarta Mail plumbing while keeping advanced sending features easy to use",
+  "codeRepository": "{{site.repository}}",
+  "programmingLanguage": "Java",
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "version": "{{site.version}}"
+}
+</script>

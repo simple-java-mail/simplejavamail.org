@@ -10,12 +10,12 @@ import {MessageStrategySimple} from "./MessageStrategySimple.js";
 import {Email} from "./Email.js";
 
 export class RfcDemo {
-    usePlainText: boolean;
-    useHTMLText: boolean;
-    useEmbeddedContent: boolean;
-    useCalendarEvent: boolean;
-    useAttachments: boolean;
-    useEmailForward: boolean;
+    usePlainText = false;
+    useHTMLText = false;
+    useEmbeddedContent = false;
+    useCalendarEvent = false;
+    useAttachments = false;
+    useEmailForward = false;
 
     private static readonly STRATEGIES: Array<MessageStrategy> = [
         new MessageStrategySimple(),

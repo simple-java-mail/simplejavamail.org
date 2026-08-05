@@ -30,7 +30,7 @@
 		</p>
 		<p class="wide">
 			Simple Java Mail is <em>growing</em>. In 5.0.0 the builder api was introduced to deal with ambiguous
-			<a href="https://codethataint.com/blog/builder-pattern/">telescoping constructors</a>, scattered documentation and
+			telescoping constructors, scattered documentation and
 			immutability.
 		</p>
 		<p class="wide">
@@ -107,12 +107,12 @@
 			structure is not always the same anymore
 		</p>
 		<p class="wide">
-			Until now, Simple Java Mail operated under the assumption that as long as the generated email was properly structure conform the
-			<a href="rfc-compliant.html#navigation">RFC</a>, the most accommodating variant would always work in every email client. This was mostly true.
+			Earlier versions assumed that one broadly compatible <a href="rfc-compliant.html#navigation">standards-compliant MIME structure</a> would work in
+			every mail client. That was mostly true.
 		</p>
 		<p class="wide">
-			Until <a href="https://github.com/bbottema/simple-java-mail/issues/144" target="_blank">it wasn't</a>. With 6.0.0 Simple Java Mail takes the
-			perfect-fit approach and uses the exact mime message structural fit that matches the use case. Play around with the various possibilities below:
+			Then <a href="https://github.com/bbottema/simple-java-mail/issues/144" target="_blank">a real client proved otherwise</a>. Version 6 chooses the MIME
+			structure that matches the content in the message. Use the controls below to compare the variants:
 		</p>
 	</section>
 

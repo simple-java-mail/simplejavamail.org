@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="RFC Compliant" page-title="Simple Java Mail is RFC compliant" }}
 
 	{{#*inline "html-head-block"}}
-<meta name="Description" content="Simple Java Mail is fully RFC compliant and why RFC compliancy matters">
+		<meta name="Description" content="How Simple Java Mail builds standards-oriented MIME structures and why interoperability matters">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -18,18 +18,15 @@
   </section>
 
   <a href="#section-why" id="section-why" class="section-link h2">&sect;</a>
-  <h2>Why RFC compliancy matters</h2>
+  <h2>Why MIME structure and interoperability matter</h2>
 
   <section>
     <div class="view">
       <p>
-        One thing that plagues other libraries is the lack of true RFC compliance. Though fine for simple mails,
-        this becomes a testing nightmare if for example you need to send an HTML mail (with text fall-back?) using both
-        attachment and embedded images.
+        A plain-text message is simple. Add an HTML alternative, attachments, embedded images, and calendar content, and the exact MIME structure starts to matter.
       </p>
       <p>
-        The problem becomes evident when testing the mail in various e-mail clients (desktop, web based, mobile) by the
-        fact that the e-mails will be displayed completely inconsistent and sporadic. Symptoms include:
+        Test the same message in desktop, web, and mobile clients and malformed MIME often shows up in different ways. Symptoms include:
       </p>
       <ul class="indent paragraph">
         <li>not seeing embedded images, or</li>
@@ -45,29 +42,25 @@
         </li>
       </ul>
 
-      <p>The research has been done and Simple Java Mail is RFC compliant for simple to complex mails. Furthermore, it
-        has been tested in a range of known clients such as Outlook, Thunderbird, Gmail, Hotmail, Android, iPhone
-        etc.</p>
+      <p>Simple Java Mail generates standards-oriented MIME structures for the content you declare and covers the common multipart combinations in its tests.
+        Rendering and policy still vary by receiving client and server, so no library can promise identical presentation everywhere.</p>
     </div>
   </section>
 
 
   <a href="#section-how" id="section-how" class="section-link h2">&sect;</a>
-  <h2>How is Simple Java Mail RFC compliant?</h2>
+  <h2>How Simple Java Mail builds interoperable messages</h2>
 
   <section>
     <div class="view">
-      <p>Simple Java Mail is in two ways <a href="https://en.wikipedia.org/wiki/MIME">RFC (MIME) compliant</a>:</p>
+      <p>Simple Java Mail improves <a href="https://en.wikipedia.org/wiki/MIME">MIME interoperability</a> in two ways:</p>
       <ol class="indent paragraph">
-        <li>It is built on top of <a href="https://jakartaee.github.io/mail-api/">Jakarta Mail</a>, which is java's
-          standard email library used by all other mail libraries. Jakarta Mail itself implements various RFC's (including
-          those for SMTP, POP3, IMAP etc).
+        <li>It is built on <a href="https://jakartaee.github.io/mail-api/">Jakarta Mail</a>, Java's standard mail API. Jakarta Mail implements the
+          protocols and message formats defined by the relevant RFCs, including SMTP, POP3, and IMAP. Simple Java Mail focuses on outbound SMTP and
+          message composition.
         </li>
-        <li>What makes Simple Java Mail unique is that it combines all the RFC's implemented by Jakarta Mail in the correct
-          way that works in all email clients. Where all other popular mailing libraries let you figure out the low
-          level details of this through MimeMessage, BodyPart, MimeMultipart etc. as described in the individual RFC's,
-          Simple Java Mail takes care of this for you and hides all this behind a super clean API. Now you can focus on
-          the content of the email, rather than email's technical low level structure.
+        <li>Simple Java Mail maps the content you declare to an appropriate multipart structure. It builds the usual
+          <code>MimeMessage</code>, <code>BodyPart</code> and <code>MimeMultipart</code> objects so your code can focus on the message itself.
         </li>
       </ol>
     </div>
@@ -80,8 +73,8 @@
   <section>
 	  <div class="view">
 		  <p>
-			  Simple Java Mail takes the perfect-fit approach and uses the exact mime message structural fit that matches the use case.
-			  Play around with the various possibilities below:
+			  Simple Java Mail chooses the MIME structure that matches the content you add. Use the controls below to see how plain text, HTML, embedded
+			  resources, and attachments change that structure:
 		  </p>
 	  </div>
   </section>

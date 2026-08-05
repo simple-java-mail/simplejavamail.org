@@ -1,90 +1,111 @@
-{{#> layouts/base head-sub-title="Download" page-title="Download Simple Java Mail" }}
+{{#> layouts/base}}
+  {{#*inline "body-block"}}
+    <div class="start-fact-row" aria-label="Release details">
+      <span>{{site.javaBaseline}}</span>
+      <span>{{site.license}}</span>
+      <span>Maven Central</span>
+    </div>
 
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Simple Java Mail can be downloaded from Maven central or from the published artifacts on GitHub">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="download" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
-  <section>
-    <div class="view">
-      <p>Simple Java Mail is open source, and you can use it <strong>for free</strong> in any personal or commercial product under the <strong>Apache
-        v2 license</strong>.</p>
-
-      <a class="button" href="https://repo1.maven.org/maven2/org/simplejavamail/cli-module/" target="_blank">Download standalone package for CLI</a>
-
-      <p>
-          Simple Java Mail is available in Maven central as dependency and you can also download the jar distribution directly from there.
-      </p>
-      <p>
-		  <strong>Don't forget to add any <a href="modules.html#navigation">modules</a> you need as well.</strong>
-      </p>
-
-      <pre><code id="mavenDependency" class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;%s&lt;/groupId&gt;
-    &lt;artifactId&gt;%s&lt;/artifactId&gt;
-    &lt;version&gt;%s&lt;/version&gt;
+    <section id="dependency" class="start-step">
+      <p class="start-step-label"><span>01</span> Add the dependency</p>
+      <h2>Install Simple Java Mail.</h2>
+      <p>Start with <code>simple-java-mail</code>. It gives you the public API and everything needed for the usual send.</p>
+      <div class="code-window start-code-window">
+        <div class="code-window-bar"><span>pom.xml</span><span>Maven</span></div>
+        <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;simple-java-mail&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
+      </div>
+      <details class="start-alternate-install">
+        <summary>Using Gradle?</summary>
+        <pre><code class="language-groovy">implementation("org.simplejavamail:simple-java-mail:{{site.version}}")</code></pre>
+      </details>
+      <p class="start-note">Published on <a href="{{site.mavenCentral}}">Maven Central</a>. Keep the <a href="{{site.javadocs}}">current Javadocs</a> alongside the guide when adapting the examples.</p>
+    </section>
 
-      <p>
-          If you don't use
-          Maven, make sure you include external dependencies yourself (including core and all enabled modules). See NOTICE.txt in each project to see which
-          3rd party projects are used. The projects are all in the same repo, nested as Maven projects.
-      </p>
+    <section id="first-email" class="start-step">
+      <p class="start-step-label"><span>02</span> Build a message</p>
+      <h2>Describe the content and recipients.</h2>
+      <p>Simple Java Mail chooses and builds the corresponding MIME structure.</p>
+      <div class="code-window start-code-window">
+        <div class="code-window-bar"><span>FirstSend.java</span><span>Message</span></div>
+        <pre><code class="language-java">Email email = EmailBuilder.startingBlank()
+    .from("Sender", "sender@example.org")
+    .withRecipients(new RecipientBuilder()
+        .withName("Recipient")
+        .withAddress("recipient@example.net")
+        .withType(TO)
+        .build())
+    .withSubject("It works")
+    .withPlainText("Your first Simple Java Mail message.")
+    .buildEmail();</code></pre>
+      </div>
+    </section>
 
-      <a class="button" href="https://central.sonatype.com/search?q=namespace:org.simplejavamail" target="_blank">
-        Download sources, javadoc, distribution directly from Maven Central</a>
-      <a class="button" href="https://central.sonatype.com/repository/maven-snapshots/" target="_blank">
-        Snapshots from Central Portal</a>
-    </div>
-  </section>
+    <section id="mailer" class="start-step">
+      <p class="start-step-label"><span>03</span> Configure and send</p>
+      <h2>Build one reusable mailer.</h2>
+      <p>Keep credentials outside the source, and choose the transport strategy that matches your SMTP service.</p>
+      <div class="code-window start-code-window">
+        <div class="code-window-bar"><span>FirstSend.java</span><span>Delivery</span></div>
+        <pre><code class="language-java">Mailer mailer = MailerBuilder
+    .withSMTPServer(
+        System.getenv("SMTP_HOST"),
+        587,
+        System.getenv("SMTP_USER"),
+        System.getenv("SMTP_PASSWORD"))
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .buildMailer();
 
-  <section>
-    <a href="contact.html#navigation">Help and contact</a><br/>
-    <a href="https://github.com/bbottema/simple-java-mail/blob/master/RELEASE.txt">Complete changelist</a>
-  </section>
+mailer.sendMail(email);</code></pre>
+      </div>
+      <p class="start-note">Port and transport strategy must match the server. See the <a href="/security.html#section-authentication-methods">transport strategy guide</a> before adapting this example.</p>
+    </section>
 
+    <section id="verify" class="start-step start-wide-section">
+      <p class="start-step-label"><span>04</span> Verify the setup</p>
+      <h2>Test each part separately.</h2>
+      <div class="start-verify-grid">
+        <article>
+          <h3>Test the connection</h3>
+          <p>Check the server and credentials separately from a message send.</p>
+          <pre><code class="language-java">mailer.testConnection();</code></pre>
+        </article>
+        <article>
+          <h3>Validate the message</h3>
+          <p>Apply configured message and address rules without submitting it.</p>
+          <pre><code class="language-java">mailer.validate(email);</code></pre>
+        </article>
+      </div>
+      <p class="start-note">An SMTP server accepting a submission does not guarantee final delivery or inbox placement. The <a href="/debugging.html#navigation">diagnostics guide</a> separates each stage.</p>
+    </section>
 
-  <h2>License</h2>
+    <section id="optional-modules" class="start-step start-wide-section">
+      <p class="eyebrow">Add only what you need</p>
+      <h2>Optional modules</h2>
+      <p class="start-section-intro">The main dependency covers everyday sending. Add a module only when the application needs the feature.</p>
+      <div class="start-module-list" role="list">
+        <a role="listitem" href="/configuration.html#section-batch-and-clustering"><code>batch-module</code><strong>Pooled and clustered sending</strong><span>Configure →</span></a>
+        <a role="listitem" href="/features.html#section-proxy"><code>authenticated-socks-module</code><strong>SOCKS proxy credentials</strong><span>Configure →</span></a>
+        <a role="listitem" href="/security.html#section-sending-dkim"><code>dkim-module</code><strong>Domain-key signing</strong><span>Configure →</span></a>
+        <a role="listitem" href="/security.html#section-sending-smime"><code>smime-module</code><strong>S/MIME signing and encryption</strong><span>Configure →</span></a>
+        <a role="listitem" href="/features.html#section-converting"><code>outlook-module</code><strong>Outlook MSG conversion</strong><span>Convert →</span></a>
+        <a role="listitem" href="/cli.html#navigation"><code>cli-module</code><strong>Standalone command-line use</strong><span>Use the CLI →</span></a>
+        <a role="listitem" href="/configuration.html#section-spring-support"><code>spring-module</code><strong>Spring configuration</strong><span>Integrate →</span></a>
+        <a role="listitem" href="/modules.html#navigation"><code>karaf-module</code><strong>OSGi / Karaf deployment</strong><span>See modules →</span></a>
+      </div>
+    </section>
 
-  <section>
-    <div class="view">
-      <p>
-        Simple Java Mail is released under <a href="https://github.com/bbottema/simple-java-mail/blob/master/LICENSE">Apache v2 license</a>
-      </p>
-      <p>In short <a href="https://www.tldrlegal.com/license/apache-license-2-0-apache-2-0">this means</a> you can do whatever you want as long as you
-        include the same license, the original (possibly amended) notice, copyright and that you state your changes.</p>
-    </div>
-  </section>
-
-
-  <h2>Repository</h2>
-
-  <section>
-    <div class="view">
-      <p>You can visit the repository <a href="https://github.com/bbottema/simple-java-mail/">Simple Java Mail on gitHub</a>.</p>
-    </div>
-  </section>
-    {{/inline}}
-
-    {{#*inline "scripts-block"}}
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/sprintf/1.1.2/sprintf.min.js"></script>
-        <script>
-            loadMavenDetails("org.simplejavamail", "simple-java-mail", "mavenDependency", document.getElementById("mavenDependency").innerHTML);
-
-            function loadMavenDetails(groupId, artifactId, displayElementId, displayTemplate) {
-                let displayElement = document.getElementById(displayElementId);
-                displayElement.innerHTML = sprintf(displayTemplate, groupId, artifactId, "%s");
-
-                fetch(sprintf('https://img.shields.io/maven-central/v/%s/%s.json', groupId, artifactId), { method: 'get' })
-                    .then(response => response.json())
-                    .then(response => response.value.replace('v', ''))
-                    .then((latestVersion) => displayElement.innerHTML = sprintf(displayElement.innerHTML, latestVersion));
-            }
-        </script>
-	{{/inline}}
-
+    <section id="configuration-routes" class="start-step start-wide-section">
+      <p class="eyebrow">Where to go next</p>
+      <h2>Build, configure, or secure the mailer.</h2>
+      <div class="start-next-grid">
+        <a href="/features.html#section-basic-usage"><span>Build</span><strong>Add rich content</strong><small>HTML, attachments, images, calendars</small></a>
+        <a href="/configuration.html#navigation"><span>Configure</span><strong>Set shared defaults once</strong><small>Properties, Spring, defaults, overrides</small></a>
+        <a href="/security.html#navigation"><span>Protect</span><strong>Secure transport and content</strong><small>TLS, OAuth2, DKIM, S/MIME</small></a>
+      </div>
+    </section>
+  {{/inline}}
 {{/layouts/base}}

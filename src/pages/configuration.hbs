@@ -9,24 +9,61 @@
 	{{/inline}}
 
 	{{#*inline "body-block"}}
+    <section class="doc-overview" aria-labelledby="configuration-overview-title">
+      <header>
+        <p class="eyebrow">Configuration at a glance</p>
+        <h2 id="configuration-overview-title">Choose where your mailer gets its settings.</h2>
+        <p class="wide">Start with the route that matches your application. The same settings can be layered when you need more than one.</p>
+      </header>
+      <div class="doc-card-grid">
+        <a href="#section-programmatic-api-common">
+          <span>Java API</span>
+          <strong>SMTP connection</strong>
+          <p>Configure the server, credentials, transport, timeouts, proxy, and reusable mailer in Java.</p>
+        </a>
+        <a href="#section-config-properties">
+          <span>Files &amp; environment</span>
+          <strong>Properties</strong>
+          <p>Load settings from property files, system properties, or environment variables.</p>
+        </a>
+        <a href="#section-spring-support">
+          <span>Framework integration</span>
+          <strong>Spring</strong>
+          <p>Build and inject a Simple Java Mail mailer from Spring's environment and profiles.</p>
+        </a>
+        <a href="#section-config-mailer">
+          <span>Message policy</span>
+          <strong>Defaults &amp; overrides</strong>
+          <p>Fill in missing message values or enforce shared recipients, headers, validation, and signing.</p>
+        </a>
+        <a href="#section-batch-and-clustering">
+          <span>Throughput</span>
+          <strong>Pools &amp; clusters</strong>
+          <p>Reuse SMTP connections and give different workloads their own pools and server sets.</p>
+        </a>
+      </div>
+    </section>
+
     <section>
       <p class="wide">
-        Simple Java Mail provides full configuration through <strong>programmatic API</strong> as well as <strong>system variables</strong>, <strong>environment variables</strong> and <strong>properties files</strong> (including Spring).
+        Configure Simple Java Mail through its <strong>Java API</strong>, <strong>system properties</strong>, <strong>environment variables</strong>, or
+        <strong>property files</strong>. The Spring module reads the same settings from Spring's environment.
       </p>
     </section>
     <section class="introduction">
     <div class="view">
       <p>
-        The Java API and config files complement each other. If you provide the overlapping configuration, the programmatic API takes priority, overriding system and environment values, overriding property values.
+        The Java API and configuration files work together. When the same setting appears in more than one place, Java values win, followed by system
+        properties, environment variables, and property files.
       </p>
     </div>
     <div class="side">
       <p>
-        Central to configuring Simple Java Mail is the <strong>MailerBuilder</strong>. As the library grew maintaining all the constructors and setters proved unwieldy and so it moved to a completely <a href="https://martinfowler.com/bliki/FluentInterface.html">builder based fluent API</a> which produces a largely immutable
-          <code class="inline language-java">Mailer</code> instance.
+        <strong>MailerBuilder</strong> is the main configuration API. Its <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builder</a>
+        produces a largely immutable <code class="inline language-java">Mailer</code> instance.
       </p>
       <p>
-        Second, there is the <strong>ConfigLoader</strong>, which contains all the preconfigured defaults read initially from <em>.properties</em> files. It contains programmatic API to clear, add or replace default values.
+        <strong>ConfigLoader</strong> holds the defaults read from <em>.properties</em> files and provides methods to add, replace, or clear them.
       </p>
     </div>
     </section>
@@ -136,11 +173,11 @@ MailerBuilder
   <section>
     <div class="view">
       <p>
-        Aside from transport strategy, SMTP and Proxy server details, there are a few other more generic settings.
+        The mailer builder also covers validation, diagnostics, timeouts, local binding, shared signing defaults, and extension points.
       </p>
     </div>
 
-    <div class="side">
+    <div class="wide full-width-example">
       <pre><code class="small">// ignore invalid email addresses (if email validator was provided)
 // and ignore CRLF injection suspicions
 // useful in case you want to delegate all responsibility to the server
@@ -242,7 +279,7 @@ currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, 
   <section>
     <div class="view">
       <p>
-        With properties files you can define defaults and overrides. You can also provide overriding value by defining system variables.
+        Property files can define defaults and overrides. System properties and environment variables can replace those values at deployment time.
       </p>
       <p>
         Simple Java Mail will automatically load properties from <code class="inline language-properties">simplejavamail.properties</code>, if available on the classpath.
@@ -277,7 +314,7 @@ ConfigLoader.loadProperties(usingMyOwnPropertiesObject, addProperties);
   <section>
     <div class="view">
       <p>
-        Almost everything can be set as a default property. This way you can easily configure environments without changing the code.
+        Most mailer settings have a property equivalent, so each environment can use different values without changing application code.
       </p>
     </div>
 
@@ -595,20 +632,21 @@ Mailer mailer = MailerBuilder
   <section>
     <div class="view">
       <p>
-      	Everything can be configured through Spring properties, allowing for robust profile-based configuration.
+		Spring can supply the same Simple Java Mail settings, so each profile can use its own SMTP server, credentials, transport strategy, and defaults.
       </p>
       <p>
       	<strong>To enable this, include the <a href="modules.html#spring-module">spring-module</a> on your classpath.</strong>
       </p>
       <p>
-        By importing the Spring support bean from Simple Java Mail, whatever properties are provided through Spring are then transferred to Simple Java Mail
-        using the ConfigLoader. It will add or overwrite whatever properties have been loaded before that (including the regular simplejavamail.properties).
+        Import <code class="inline language-java">SimpleJavaMailSpringSupport</code> and the module passes Spring's
+        <code class="inline language-text">simplejavamail.*</code> values to <code class="inline language-java">ConfigLoader</code>. Those values replace matching
+        settings loaded earlier, including values from <code class="inline language-text">simplejavamail.properties</code>.
       </p>
-      <p>Here's a sample configuration using Java style configuration.</p>
+      <p>Here is the Java configuration:</p>
     </div>
 
-    <div class="side">
-      Loading Spring support and obtaining default Mailer instance:
+    <div class="wide full-width-example">
+      Load Spring support and inject the default mailer:
       <pre><code class="small">@Component
 @Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {
@@ -618,7 +656,7 @@ public class YourEmailService {
 
 }
 </code></pre>
-      Or obtaining the intermediate builder and customize:
+      Or inject the builder and customize the mailer:
       <pre><code class="small">@Configuration
 @Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {
@@ -641,8 +679,8 @@ public class YourEmailService {
   </section>
   <section>
 
-    <div class="width">
-      Then when you have profile based configuration (for example <code>default</code> and <code>production</code>):
+    <div class="wide">
+      Spring profiles can then provide different values—for example, <code>default</code> and <code>production</code>:
       <pre><code class="language-properties small">#application.properties
 simplejavamail.javaxmail.debug=true
 simplejavamail.smtp.host=smtp.host
@@ -733,7 +771,7 @@ mailer.sendMail(email, /*async = */ true);
 		</p>
 	</div>
 
-	<div class="side">
+	<div class="wide full-width-example">
 <pre><code class="language-java small">mailer.sendMailsInSimpleBatch(emails);        // uses the mailer's async default
 mailer.sendMailsInSimpleBatch(emails, false); // blocks until the batch is done
 mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch asynchronously
@@ -753,7 +791,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 		</p>
 	</div>
 
-	<div class="side">
+	<div class="wide full-width-example">
 <pre><code class="language-java small">mailer.withOpenConnection(sender -> {
     while (database.hasPendingMail()) {
         Email next = database.nextPendingMail();

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" class="language-java">
+  <head>
+    {{> head}}
+    {{#> html-head-block}}{{/html-head-block}}
+  </head>
+  <body class="docs-page docs-landing-page">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    {{> site-header}}
+    <div id="navigation" class="compatibility-anchor" aria-hidden="true"></div>
+
+    <div class="docs-shell docs-landing-shell">
+      {{> docs-sidebar}}
+
+      <main id="main-content" class="docs-content docs-landing-content" data-pagefind-body>
+        {{#> body-block}}{{/body-block}}
+      </main>
+    </div>
+
+    {{> footer}}
+    <script src="/assets/lib/prism.js"></script>
+    <script>window.Prism && window.Prism.highlightAll();</script>
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/pagefind/pagefind-component-ui.js"></script>
+    {{#> scripts-block}}{{/scripts-block}}
+  </body>
+</html>

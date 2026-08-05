@@ -11,34 +11,29 @@
   {{#*inline "body-block"}}
   <section>
     <p class="wide">
-      Simple Java Mail core features can be used without any external libraries, but you can add some features by
-      depending on additional modules, which bring in some additional dependencies of their own.
+      Start with <code>simple-java-mail</code>. Add an optional module only when you need pooled batch delivery, authenticated SOCKS, DKIM, S/MIME,
+      Outlook conversion, command-line use, Spring integration, or Karaf support.
     </p>
   </section>
   <section>
     <div class="view">
       <p>
-        The Core Module is included by default when you add Simple Java Mail. The other modules from the implementation layer can be
-        added to complement Simple Java Mail.
+        The main <code class="inline language-text">simple-java-mail</code> dependency already includes the core module. Add any optional feature modules
+        alongside it as you need them.
       </p>
       <p>
-        On the other hand, if you depend on one of the integration modules, you get Simple Java Mail automatically as well. Again you
-      can add the other modules from the implementation layer to complement Simple Java Mail.
+        Integration modules such as Spring already depend on the main library, so you do not need to declare it twice. Feature modules can be combined.
       </p>
-      <p style="margin-top: 1em">
-        The core dependencies are:
-      </p>
+      <p style="margin-top: 1em">The main core dependencies are:</p>
       <ul class="indent">
-        <li>org.slf4j:slf4j-api</li>
-        <li>com.sun.mail:jakarta.mail</li>
-        <li>com.sun.activation:jakarta.activation</li>
-        <li>jakarta.xml.bind:jakarta.xml.bind-api</li>
-        <li>jakarta.annotation:jakarta.annotation-api</li>
-        <li>com.sanctionco.jmail:jmail (address validation)</li>
-		<li>com.pivovarit:throwing-function (improved Streams api)</li>
+        <li><code>jakarta.mail:jakarta.mail-api</code> — the standard mail API</li>
+        <li><code>org.eclipse.angus:angus-mail</code> — the Jakarta Mail implementation</li>
+        <li><code>com.sanctionco.jmail:jmail</code> — address validation</li>
       </ul>
+      <p>Use the published POM on Maven Central as the authoritative list of transitive dependencies for the current release.</p>
       <p style="margin-top: 1em">
-        As of 9.0.0, the facade and core jars include Java module descriptors. Modular applications can require
+        As of 9.0.0, the <code class="inline language-text">simple-java-mail</code> and <code class="inline language-text">core-module</code> jars include
+        Java module descriptors. Modular applications can require
         <code class="inline language-java">org.simplejavamail</code> directly.
       </p>
     </div>
@@ -49,7 +44,7 @@
     </div>
   </section>
 
-  <h2 id="batch-module" class="with-back-to-top">Batch and Clustering support</h2>
+  <h2 id="batch-module" class="with-back-to-top">Batch and clustering support</h2>
 
   <section>
     <p>
@@ -67,13 +62,12 @@
       <li><a class="indent" href="https://github.com/simple-java-mail/smtp-connection-pool">simple-java-mail:smtp-connection-pool</a></li>
     </ul>
 	  <p class="wide">
-      This allows you to send emails asynchronous with configuration options for thread management and SMTP connection
-      pooling. See <a href="configuration.html#section-batch-and-clustering">configuration</a> for more details.
+      The module sends work asynchronously and adds configurable worker threads and SMTP connection pools. See
+      <a href="configuration.html#section-batch-and-clustering">configuration</a> for details.
     </p>
 	  <p class="wide">
-		  Note that with the batch-module enabled, the JVM won't shut down by itself anymore, as the connection pool stays alive until
-		  shutdown manually. To do this, just call <code>mailer.shutdownConnectionPool()</code> (repeat with each mailer you might have
-		  in a cluster).
+		  A live connection pool keeps the JVM running. Call <code>mailer.shutdownConnectionPool()</code> during application shutdown for every mailer that
+		  owns a pool, including each mailer in a cluster.
 	  </p>
   </section>
 

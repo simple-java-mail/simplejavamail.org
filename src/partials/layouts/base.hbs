@@ -1,70 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="language-java">
-	<head>
-		<meta charset="UTF-8">
-		<title>Simple Java Mail{{#if head-sub-title}} - {{head-sub-title}}{{/if}}</title>
-		<link rel="icon" href="data:;base64,=">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    {{> head}}
+  </head>
+  <body class="docs-page">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    {{> site-header}}
+    <div id="navigation" class="compatibility-anchor" aria-hidden="true"></div>
 
-        <link rel="stylesheet" href="assets/lib/fonts.googleapis.com.Open%2BSans%2B300.400.600.700.css">
-        <link rel="stylesheet" href="assets/lib/prism.css">
-        <link rel="stylesheet" href="pages/styles/main.css">
+    <div class="docs-shell">
+      {{> docs-sidebar}}
 
-		{{#> html-head-block}}{{/html-head-block}}
+      <main id="main-content" class="docs-content" data-pagefind-body>
+        {{> breadcrumbs}}
+        <header class="doc-hero">
+          {{#if page.section}}<p class="eyebrow">{{page.section}}</p>{{/if}}
+          <h1>{{page.title}}</h1>
+          <p class="doc-lede">{{page.description}}</p>
+        </header>
 
-        <!-- prefetch HTML5 support all browsers, prerender Chrome/Edge improved support -->
-		<link rel="prerender prefetch" href="index.html">
-		<link rel="prerender prefetch" href="modules.html">
-		<link rel="prerender prefetch" href="features.html">
-		<link rel="prerender prefetch" href="cli.html">
-		<link rel="prerender prefetch" href="configuration.html">
-		<link rel="prerender prefetch" href="debugging.html">
-		<link rel="prerender prefetch" href="rfc-compliant.html">
-		<link rel="prerender prefetch" href="download.html">
-		<link rel="prerender prefetch" href="contact.html">
+        <article class="legacy-doc-content">
+          {{#> body-block}}{{/body-block}}
+        </article>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3" />
-		<link rel="preconnect" href="https://5SC0G3JQXD-dsn.algolia.net" crossorigin />
-	</head>
-	<body>
-		{{#> header-block}}
-			{{> includes/header }}
-		{{/header-block}}
+        <nav class="doc-next" aria-label="Documentation next steps">
+          <a href="/docs.html">
+            <span>Find another task</span>
+            <strong>Documentation index <span aria-hidden="true">→</span></strong>
+          </a>
+          <a href="/contact.html">
+            <span>Something unclear?</span>
+            <strong>Help and contribute <span aria-hidden="true">→</span></strong>
+          </a>
+        </nav>
+      </main>
+    </div>
 
-		<main>
-			<div class="content">
-				<style>
-					@media only screen and (min-width: 600px) {  #docsearch { float: right; }  }
-				</style>
-
-				<div id="docsearch" style="position: sticky; top: 0;"></div>
-
-				<h1>{{page-title}}</h1>
-
-				{{#> body-block}}{{/body-block}}
-			</div>
-		</main>
-
-		<footer>
-			&copy; 2008 by <a class="copyright" href="http://www.bennybottema.com" target="_blank">bennybottema.com</a>
-		</footer>
-
-		<script type="text/javascript" src="pages/scripts/lazy-img-loader.js"></script>
-		<script type="text/javascript" src="assets/lib/prism.js"></script>
-		<script>Prism.highlightAll();</script>
-		<script type="text/javascript" src="pages/scripts/back-to-top.js"></script>
-
-		<script src="https://cdn.jsdelivr.net/npm/@docsearch/js@3"></script>
-		<script>
-			docsearch({
-				appId: '5SC0G3JQXD',
-				apiKey: '9355c6505b2c99b09af272dfcf122f96',
-				indexName: 'simplejavamail',
-				container: '#docsearch',
-				debug: false,
-			});
-		</script>
-
-		{{#> scripts-block}}{{/scripts-block}}
-	</body>
+    {{> footer}}
+    <script src="/assets/lib/prism.js"></script>
+    <script>window.Prism && window.Prism.highlightAll();</script>
+    <script src="/pages/scripts/lazy-img-loader.js"></script>
+    <script type="module" src="/scripts/site.js"></script>
+    <script type="module" src="/pagefind/pagefind-component-ui.js"></script>
+    {{#> scripts-block}}{{/scripts-block}}
+  </body>
 </html>

@@ -35,7 +35,7 @@
 	<section>
 		<p class="wide" style="font-size:smaller">
 			<strong>Impact:</strong> The old repeated <code class="inline">to(...)</code>, <code class="inline">cc(...)</code> and
-			<code class="inline">bcc(...)</code> recipient method matrix has been replaced by dedicated recipient builders plus the canonical
+			<code class="inline">bcc(...)</code> recipient method matrix has been replaced by dedicated recipient builders plus the
 			<code class="inline">withRecipients(...)</code> methods on the email builder.
 		</p>
 		<p class="wide">
@@ -45,7 +45,7 @@
 			<code class="inline">withRecipients(name, fixedName, type, addresses...)</code> method remains for CLI and property-driven integration code.
 		</p>
 		<p class="wide">
-			For grouped recipients, <code class="inline">RecipientsBuilder</code> is also the place to express local governance. Default names and certificates
+			For grouped recipients, <code class="inline">RecipientsBuilder</code> is also where you apply shared rules. Default names and certificates
 			fill missing values, fixed names and certificates intentionally replace source values for that group, and
 			<code class="inline">clearingSmimeCertificates()</code> strips reused recipient certificate state before the flat recipient list is added to the
 			email. After that, recipient certificates take precedence over email-level and mailer-level S/MIME encryption fallbacks.
@@ -70,8 +70,8 @@ Email email = EmailBuilder.startingBlank()
 			<strong>Impact:</strong> Existing email-level and mailer-level S/MIME defaults still work. Use recipient certificates when recipients need different certificates.
 		</p>
 		<p class="wide">
-			Recipients can now carry their own S/MIME encryption certificate. Recipient-level certificates, including certificates materialized by
-			<code class="inline">RecipientsBuilder</code> group defaults or fixed group values, take precedence over governance-resolved email and mailer
+			Recipients can now carry their own S/MIME encryption certificate. Recipient-level certificates, including certificates supplied through
+			<code class="inline">RecipientsBuilder</code> defaults or fixed values, take precedence over email-level and mailer-level
 			encryption defaults. This makes multi-recipient encrypted email practical without one shared certificate source.
 		</p>
 		<p class="wide">
@@ -408,7 +408,8 @@ Content-Disposition: attachment; filename=report.pdf</code></pre>
 			<strong>Impact:</strong> New metadata only. Classpath users do not need to change anything.
 		</p>
 		<p class="wide">
-			The facade and core jars now include Java module descriptors, completing the multi-release jar support for modular applications. Applications using
+			The <code class="inline language-text">simple-java-mail</code> and <code class="inline language-text">core-module</code> jars now include Java module
+			descriptors. Applications using
 			the Java Platform Module System can require <code class="inline language-java">org.simplejavamail</code> directly.
 		</p>
 		<pre><code>module com.example.mailer {

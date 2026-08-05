@@ -9,16 +9,51 @@
     {{/inline}}
 
     {{#*inline "body-block"}}
-  <section class="introduction">
-    <p class="wide" style="font-size:smaller">
-      (also check <a href="configuration.html#navigation">configuration</a> and <a href="security.html#navigation">security</a>
-		if you're missing a feature)
-    </p>
+  <section class="doc-overview" aria-labelledby="capabilities-overview-title">
+    <header>
+      <p class="eyebrow">Capabilities at a glance</p>
+      <h2 id="capabilities-overview-title">Email essentials.</h2>
+      <p class="wide">Pick a common task below, or use the full table of contents for the complete API reference.</p>
+    </header>
+    <div class="doc-card-grid">
+      <a href="#section-basic-usage">
+        <span>Everyday sending</span>
+        <strong>Compose an email</strong>
+        <p>Build text, HTML, recipients, headers, and calendar content through one fluent API.</p>
+      </a>
+      <a href="#section-attachments">
+        <span>Rich content</span>
+        <strong>Attachments &amp; images</strong>
+        <p>Attach files or data and embed images without constructing MIME parts yourself.</p>
+      </a>
+      <a href="#section-reply-forward">
+        <span>Conversations</span>
+        <strong>Reply &amp; forward</strong>
+        <p>Reply to or forward existing messages while keeping their content and attachments intact.</p>
+      </a>
+      <a href="#section-email-validation">
+        <span>Recipient safety</span>
+        <strong>Address validation</strong>
+        <p>Check addresses, handle invalid recipients, and apply reusable recipient rules.</p>
+      </a>
+      <a href="#section-sending-asynchronously">
+        <span>Delivery</span>
+        <strong>Async &amp; batch sending</strong>
+        <p>Send once, work asynchronously, reuse a connection, or grow into pooled delivery.</p>
+      </a>
+    </div>
+  </section>
 
+  <section class="introduction">
     <p class="wide">
-      Creating and sending emails is very simple with Simple Java Mail; you don't need to know about the mailing RFC, MimeMessage or any other low
-      level <code class="inline language-text">Jakarta Mail</code> API. No anonymous inner classes needed and no <a
-      href="https://docs.spring.io/spring-framework/reference/integration/email.html">large frameworks</a> needed nor XML.
+      Simple Java Mail keeps everyday sending straightforward, but it does much more than build a <code class="inline language-text">MimeMessage</code>.
+      It covers reusable mailer configuration, TLS and OAuth2, recipient defaults and overrides, diagnostics, message conversion, batching and clustered
+      delivery—without asking you to manage Jakarta Mail transports yourself.
+    </p>
+    <p class="wide">
+      This page is the complete feature reference. If you have a specific job in mind, start with the
+      <a href="docs.html">documentation index</a>. To understand why the library sits above Jakarta Mail and where you can still drop down to it, read
+      <a href="why-simple-java-mail.html">Why Simple Java Mail</a>.
     </p>
 
     <h3>Entry classes</h3>
@@ -43,32 +78,29 @@
       <a href="https://datatracker.ietf.org/doc/html/rfc2822" target="_blank">RFC-2822</a> and others using
       <a href="https://github.com/RohanNagar/jmail" target="_blank">JMail</a>.
       Simple Java Mail also takes care of all the
-      <a href="https://javadoc.io/doc/com.sun.mail/jakarta.mail/2.0.1/jakarta.mail/com/sun/mail/smtp/package-summary.html" target="_blank">connection and security properties</a> for you.
+      <a href="https://eclipse-ee4j.github.io/angus-mail/docs/api/org.eclipse.angus.mail/org/eclipse/angus/mail/smtp/package-summary.html" target="_blank">connection and security properties</a> for you.
     </p>
 
     <h3>Builders all the way down</h3>
     <p class="wide">
-      With all the possible ways to configure Email and Mailer instances, the library had only one option left to streamline API, avoid the
-      <a href="https://codethataint.com/blog/builder-pattern/" target="_blank">Telescoping Constructor</a> anti-pattern and keep things
-      manageable: <a href="https://martinfowler.com/bliki/FluentInterface.html" target="_blank">fluent builders</a>.
+      <code class="inline language-java">Email</code> and <code class="inline language-java">Mailer</code> have many optional settings, so Simple Java Mail
+      uses <a href="https://martinfowler.com/bliki/FluentInterface.html" target="_blank">fluent builders</a> instead of long constructors and chains of setters.
     </p>
     <ol class="indent" style="margin-bottom: 1em">
-      <li>With fluent builders, we can tightly control <strong>valid combinations</strong>, logical <strong>decision paths</strong> and easily <strong>provide
-        alternative methods</strong>.
-      </li>
-      <li>At the same time we can concentrate all mutation logic in the builders and produce mostly <strong>immutable objects</strong>.</li>
-      <li>Finally, we're able to <strong>centralize our documentation</strong> around the builders and refer to it from wherever this library is used.</li>
+      <li>The builder API can offer <strong>useful combinations</strong> while keeping invalid ones out.</li>
+      <li>Changes happen in the builders, so the objects they produce can remain mostly <strong>immutable</strong>.</li>
+      <li>The builder methods also give the Javadocs one clear place to explain every option.</li>
     </ol>
 
-    <h3>How does Simple Java Mail compare to other mailing libraries?</h3>
+    <h3>How does Simple Java Mail compare to other mail APIs?</h3>
     <p class="wide">
-		Checkout the <strong><a href="feature-matrix.html#navigation">feature comparison matrix</a></strong> to see how Simple Java Mail fares against other
-		libraries, like Apache Commons Email and Spring Mail.
+        Use the <strong><a href="feature-matrix.html#navigation">comparison page</a></strong> to see how much Jakarta Mail, Spring Mail,
+        Apache Commons Email and Simple Java Mail handle for you.
     </p>
 
 	<h3>Migrating from an older version?</h3>
 	<p class="wide">
-		Checkout the <a href="migration-notes.html#navigation">migration notes</a> to see exactly what changed.
+		Check the <a href="migration-notes.html#navigation">migration notes</a> to see exactly what changed.
 	</p>
   </section>
 
@@ -113,13 +145,6 @@
     </ul>
   </section>
 
-  <section class="roadmap">
-    <h2>Roadmap</h2>
-    <p>Currently everything we can think of is included or on the issue tracker!</p>
-    <p>Got a suggestion? Please post it in the <a
-      href="https://github.com/bbottema/simple-java-mail/issues"><strong>issue tracker</strong></a>.</p>
-  </section>
-
   <a href="#section-basic-usage" id="section-basic-usage" class="section-link h2">&sect;</a>
   <h2>Basic usage</h2>
 
@@ -133,7 +158,7 @@
 			  A Mailer instance is reusable.
 		  </p>
 		  <p>
-			  Multiple Mailer instances can form a <a href="configuration.html#section-clustering">powerful cluster</a>.
+			  Multiple Mailer instances can also be combined into a <a href="configuration.html#section-clustering">cluster</a>.
 		  </p>
 	  </div>
 
@@ -198,7 +223,7 @@ MailerBuilder
       </p>
     </div>
 
-    <div class="side">
+    <div class="wide full-width-example">
 <pre><code>Mailer inhouseMailer = MailerBuilder
     .withSMTPServer("server", 25, "username", "password")
     .buildMailer();
@@ -230,19 +255,19 @@ public Mailer inhouseMailer() {
   <section>
     <div>
       <p class="wide">
-        Simple Java Mail has alternative ways to do things for almost everything...
+        Most values can be supplied in more than one useful form.
       </p>
       <p class="wide">
         For example, when building an email, add
         <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/src/main/java/org/simplejavamail/api/email/Recipient.java" target="_blank">Recipient</a>
         objects directly, or use <code class="inline">RecipientsBuilder</code> when a list needs RFC822 parsing, default names, fixed names, mixed recipient types
         or a group-level S/MIME certificate.
-        The email builder itself keeps only the canonical <code class="inline">withRecipients(...)</code> entry points.
+        The email builder itself keeps a small set of <code class="inline">withRecipients(...)</code> entry points.
       </p>
       <p class="wide">
-        Think of <code class="inline">RecipientsBuilder</code> as recipient-group governance. Default values fill gaps, fixed values intentionally override
-        source data, and S/MIME certificate policies can preserve source recipients, fill missing certificates, replace all certificates or clear them so the
-        email/mailer S/MIME fallback can apply.
+        Use <code class="inline">RecipientsBuilder</code> when a group of recipients should share the same rules. Defaults fill missing values; fixed values
+        replace the source data. For S/MIME, you can keep existing certificates, fill only the missing ones, replace them all, or clear them so the email or
+        mailer fallback certificate is used.
       </p>
     </div>
 
@@ -289,7 +314,7 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 
     <div>
       <div class="view">
-        <p>The email builder recipient surface is intentionally compact:</p>
+        <p>The email builder only needs a small set of recipient methods:</p>
       </div>
       <div class="side">
       <pre><code class="small">// EmailPopulatingBuilder
@@ -320,8 +345,8 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
     <div class="view">
       <p>
         If a recipient needs to be assembled outside an email builder call, use the dedicated recipient builders. This keeps address parsing,
-        recipient type and optional recipient metadata in one small object before it is added to an email. When several recipients belong to one
-        operational group, <code class="inline">RecipientsBuilder</code> can govern that group before it enters the email.
+        recipient type and optional recipient metadata in one small object before it is added to an email. When several recipients belong together,
+        <code class="inline">RecipientsBuilder</code> lets you apply their shared names and certificates before adding the group to an email.
       </p>
       <p>
         Default names and default certificates only fill missing values. Fixed names and fixed certificates override source data for the whole group.
@@ -545,7 +570,10 @@ Content-Transfer-Encoding: quoted-printable
 
 We should meet up!
 </code></pre>
-		  <strong>base64</strong> on the other hand, produces the following:
+	  </div>
+
+	  <div class="wide full-width-example">
+		  <p><strong>Base64</strong>, on the other hand, produces the following:</p>
 		  <pre><code class="small">currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64)
 </code></pre>
 		  <pre><code class="language-text small">------=_Part_2_1226020905.1657715871203
@@ -685,7 +713,7 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
   <section>
     <div class="view">
       <p>
-        When an audit log, trace id or operational workflow needs the SMTP server response for a submitted message, use
+        When a log, trace, or background job needs the SMTP server's response for a submitted message, use
         <code class="inline language-java">sendMailAndGetReceipt(...)</code>. It follows the same send path as
         <code class="inline language-java">sendMail(...)</code>, but returns a <code class="inline language-java">MailSubmissionReceipt</code>.
       </p>
@@ -810,7 +838,7 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 		  </p>
 	  </div>
 
-	  <div class="side">
+	  <div class="wide full-width-example">
 <pre><code class="small">currentEmailBuilder
     .withAttachment("dresscode.txt", new ByteArrayDataSource("Black Tie Optional", "text/plain"))
     .withAttachment("location.txt", "On the moon!".getBytes(Charset.defaultCharset()), "text/plain")
@@ -829,7 +857,7 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 		  </p>
 	  </div>
 
-	  <div class="side">
+	  <div class="wide full-width-example">
 <pre><code class="language-java small">currentEmailBuilder.withAttachment(
 	        "dresscode.txt",
 	        new ByteArrayDataSource("Black Tie Optional", "text/plain"),
@@ -959,6 +987,9 @@ currentEmailBuilder.withEmbeddedImage("brand-logo.png", logoDataSource, "brand-l
 
 email.getEmbeddedImages(); // now contains two data sources!
 </code></pre>
+		</div>
+
+		<div class="wide full-width-example">
 			<p>
 				To enable this:
 			</p>
@@ -1280,8 +1311,8 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
   <section>
 	  <div class="view">
 		  <p>
-			  Simple Java Mail can validate your email addresses. It's not just a simple regex check, but a complete and robust full validation against <a
-				  href="https://datatracker.ietf.org/doc/html/rfc2822">RFC-2822</a> and others. It does this by including <a href="https://github.com/RohanNagar/jmail">JMail</a> in the library.
+			  Simple Java Mail validates email addresses with <a href="https://github.com/RohanNagar/jmail">JMail</a>, which performs standards-aware checks
+			  rather than relying on a single regular expression. See <a href="https://datatracker.ietf.org/doc/html/rfc2822">RFC 2822</a> for one of the relevant specifications.
 		  </p>
 		  <p>
 			  Address validation is performed automatically when sending emails, but you can also directly perform validations.
@@ -1291,7 +1322,7 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
 		  </p>
 	  </div>
 
-	  <div class="side">
+	  <div class="wide full-width-example">
 <pre><code>currentMailerBuilder
     .withEmailValidator(
 		JMail.strictValidator()
@@ -1323,7 +1354,7 @@ JMail.strictValidator()
 		  </p>
 	  </div>
 
-	  <div class="side">
+	  <div class="wide full-width-example">
 <pre><code>currentMailerBuilder
     .disablingAllClientValidation(true)
     // or
@@ -1508,8 +1539,8 @@ currentEmailBuilder
   <section>
     <div>
       <p class="wide">
-        Simple Java Mail supports sending emails through a proxy. It is also the only java mailing framework in the world that supports sending emails
-        through <strong>authenticated</strong> proxies. The reason for this is that the underlying native
+        Simple Java Mail supports sending email through a SOCKS proxy. Its optional authenticated-SOCKS module also handles proxy username/password
+        negotiation, an uncommon built-in capability in Java mail libraries. The underlying
         <a href="https://jakartaee.github.io/mail-api/" target="_blank">Jakarta Mail framework</a> supports anonymous SOCKS5 proxies, but
         <a href="https://jakartaee.github.io/mail-api/FAQ.html#proxy" target="_blank">not authenticated proxies</a>.
       </p>
@@ -1589,9 +1620,8 @@ mailer.testConnection(true);  // explicitly asynchronous
 
 	<section>
 		<p class="wide">
-			You want to benefit from Simple Java Mail's powerful features, but want to replace the actual
-			server testing and email sending with your own? <br/>Simple Java Mail's got your back. Just
-			Define your own <em>CustomMailer</em> and plug it in.
+			You can keep Simple Java Mail's message building, validation, security, and async support while replacing the code that tests a server and sends
+			the message. Define a <em>CustomMailer</em> and plug it in.
 		</p>
 
 		<hr/>

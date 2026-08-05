@@ -1,0 +1,42 @@
+<header class="site-header" data-site-header>
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="Simple Java Mail home">
+      <img class="brand-logo" src="/assets/sjm-logo.png" width="936" height="183" alt="">
+    </a>
+
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">
+      <span>Menu</span>
+      <span class="nav-toggle-lines" aria-hidden="true"></span>
+    </button>
+
+    <nav id="primary-navigation" class="primary-nav" aria-label="Primary">
+      <ul>
+        {{#each nav.primary}}
+          <li class="{{#if (eq href "/docs.html")}}nav-has-submenu{{/if}}">
+            <a href="{{href}}" class="{{activeClass href @root.currentUrl}}"{{#if (eq href "/docs.html")}} aria-haspopup="true"{{/if}}>
+              {{label}}{{#if (eq href "/docs.html")}}<span class="nav-submenu-caret" aria-hidden="true"></span>{{/if}}
+            </a>
+            {{#if (eq href "/docs.html")}}
+              <ul class="primary-submenu" aria-label="Documentation sections">
+                {{#each @root.docsGroups}}
+                  {{#unless (eq label "Maintain")}}
+                    {{#each pages}}
+                      {{#if @first}}
+                        <li><a href="{{url}}" class="{{activeClass url @root.currentUrl}}">{{../label}}</a></li>
+                      {{/if}}
+                    {{/each}}
+                  {{/unless}}
+                {{/each}}
+              </ul>
+            {{/if}}
+          </li>
+        {{/each}}
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <a class="header-utility" href="{{nav.utility.href}}">{{nav.utility.label}}</a>
+      <a class="header-cta {{activeClass nav.cta.href currentUrl}}" href="{{nav.cta.href}}">{{nav.cta.label}}<span class="cta-arrow" aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</header>
