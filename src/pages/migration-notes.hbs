@@ -9,7 +9,7 @@
     <section>
       <div class="view">
 		<p><strong>Version 9.2 tightens four security boundaries.</strong> TLS uses the JVM trust store by default, configured embedded-image bases contain file, classpath and URL resolution, DKIM refuses to exclude the mandatory <code class="inline language-java">From</code> header, and S/MIME signature status reports only verification that actually happened.</p>
-        <a class="button" href="migration-notes-9.2.0.html#navigation">Check the 9.2 security changes</a>
+		<a class="button" href="migration-notes-9.2.0.html#navigation">Review the 9.2 changes</a>
       </div>
       <div class="side">
 		<p><strong>Check before upgrading:</strong> private SMTP certificates may need trust-store work, image references that leave a configured base will no longer resolve unless explicitly allowed, DKIM exclusions must not list <code class="inline language-java">From</code>, and S/MIME consumers must keep signature integrity separate from certificate trust.</p>

@@ -201,11 +201,24 @@ MailerBuilder
         MailerBuilder</a>.
     </p>
     <p class="wide">
-      For <strong>EmailBuilder</strong>, the first method initializes the builder in different ways, leaving it with defaults
-		(<code class="inline language-java">EmailBuilder.startingBlank()</code>), preconfiguring it
-      (<code class="inline language-java">EmailBuilder.copying()</code>, <code class="inline language-java">EmailBuilder.replyingTo()</code>),
-      or by setting values otherwise not possible (<code class="inline language-java">EmailBuilder.forwarding()</code>).
+		For <strong>EmailBuilder</strong>, first say what you are creating. <code class="inline language-java">startingBlank()</code> gives you an empty builder;
+		<code class="inline language-java">copying()</code> and the reply methods begin with another email; and <code class="inline language-java">forwarding()</code>
+		keeps the original message for forwarding. Every starter returns the same populating builder, so content and governance options come afterward.
     </p>
+	<div class="wide full-width-example">
+<pre><code class="language-java">Email email = EmailBuilder.copying(original)
+    .ignoringDefaults()
+    .ignoringOverrides()
+    .withSubject("A separate copy")
+    .buildEmail();
+</code></pre>
+	</div>
+	<p class="wide">
+		<code class="inline language-java">buildEmail()</code> contains the values set through that builder. Defaults and overrides are applied later when a
+		<code class="inline language-java">Mailer</code> prepares it for sending. If you need that completed form without sending, use
+		<code class="inline language-java">buildEmailCompletedWithDefaultsAndOverrides()</code>, or its overload that accepts an
+		<code class="inline language-java">EmailGovernance</code> instance.
+	</p>
     <p class="wide">
       For <strong>MailerBuilder</strong>, the first method determines if you get a full builder API or a reduced API because you provided
       your own custom Session instance.<br/>

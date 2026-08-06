@@ -542,13 +542,16 @@ Email yourServerLevelOverrides = EmailBuilder.startingBlank()
 	<section>
 		<div class="view">
 			<p>
-				You can exclude specific emails completely from having defaults or overrides applied by using <code>ignoreDefaults</code> or <code>ignoreOverrides</code>.
+				To keep defaults or overrides away from one email, configure that after whichever builder starter you used.
 			</p>
 		</div>
 
 		<div class="side">
-<pre><code class="language-java">emailBuilder.ignoringDefaults(true)
-emailBuilder.ignoringOverrides(true)
+<pre><code class="language-java">Email email = EmailBuilder.startingBlank()
+    .ignoringDefaults()
+    .ignoringOverrides()
+    // add the email content
+    .buildEmail();
 </code></pre>
 		</div>
 	</section>

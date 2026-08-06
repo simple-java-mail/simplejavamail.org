@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
 
 	{{#*inline "html-head-block"}}
-<meta name="Description" content="Migration notes for stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
+		<meta name="Description" content="Migration notes for the email builder governance API, stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -11,6 +11,7 @@
 	{{#*inline "body-block"}}
 	<section class="toc">
 		<ul>
+			<li><a href="#email-governance-builder">Governance options now follow the email starter</a></li>
 			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
 			<li><a href="#extra-property-precedence">Extra properties follow normal configuration precedence</a></li>
 			<li><a href="#embedded-image-containment">Embedded-image bases now contain resolution</a></li>
@@ -18,6 +19,45 @@
 			<li><a href="#dkim-key-property-formats">DKIM key properties can declare their format</a></li>
 			<li><a href="#smime-signature-status">S/MIME signature status reports integrity, not trust</a></li>
 		</ul>
+	</section>
+
+	<a href="#email-governance-builder" id="email-governance-builder" class="section-link h2">&sect;</a>
+	<h2>Governance options now follow the email starter</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Code that starts with <code class="inline language-java">EmailBuilder.ignoringDefaults()</code>, or calls the ignore methods
+			on <code class="inline language-java">EmailStartingBuilder</code>, must put those options after an email starter when upgrading to 9.2.0.
+		</p>
+		<p class="wide">
+			Before the 8.0 governance overhaul, the email builder itself loaded property defaults. The pre-start ignore method was how you asked for a genuinely
+			blank builder. Defaults and overrides now belong to the Mailer and are applied later, so the old call order no longer matches what the option controls.
+		</p>
+		<p class="wide">
+			The old forwarding logic was also broken: blank emails lost the override opt-out, while copied emails lost the defaults opt-out because the implementation
+			called the override method twice. Moving both options after the starter removes that fragile hand-off.
+		</p>
+		<pre class="full-width-example"><code class="language-java">// Before 9.2.0:
+Email email = EmailBuilder.ignoringDefaults()
+    .ignoringOverrides()
+    .copying(original)
+    .buildEmail();
+
+// Since 9.2.0, start with the operation and then configure the email:
+Email email = EmailBuilder.copying(original)
+    .ignoringDefaults()
+    .ignoringOverrides()
+    .buildEmail();</code></pre>
+		<p class="wide">
+			The same follow-up methods work after <code class="inline language-java">startingBlank()</code>, <code class="inline language-java">forwarding(...)</code>,
+			<code class="inline language-java">replyingTo(...)</code>, and <code class="inline language-java">replyingToAll(...)</code>. The boolean overloads remain
+			available for conditional configuration and for the CLI.
+		</p>
+		<p class="wide">
+			This does not make <code class="inline language-java">startingBlank()</code> ignore governance. It starts with no email content; unless you add an ignore
+			option afterward, defaults and overrides remain eligible for application when the Mailer prepares the email.
+			See <a href="https://github.com/bbottema/simple-java-mail/issues/689">GitHub issue #689</a> for the API history and implementation record.
+		</p>
 	</section>
 
 	<a href="#tls-certificate-trust" id="tls-certificate-trust" class="section-link h2">&sect;</a>
