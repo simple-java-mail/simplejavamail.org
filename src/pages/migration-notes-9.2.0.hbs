@@ -14,6 +14,7 @@
 			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
 			<li><a href="#embedded-image-containment">Embedded-image bases now contain resolution</a></li>
 			<li><a href="#dkim-from-header">DKIM signing must keep the From header</a></li>
+			<li><a href="#dkim-key-property-formats">DKIM key properties can declare their format</a></li>
 			<li><a href="#smime-signature-status">S/MIME signature status reports integrity, not trust</a></li>
 		</ul>
 	</section>
@@ -133,6 +134,32 @@ simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 		<p class="wide">
 			See <a href="https://github.com/bbottema/simple-java-mail/issues/679">GitHub issue #679</a> for the implementation record and
 			<a href="security.html#section-sending-dkim">DKIM signing</a> for the full configuration reference.
+		</p>
+	</section>
+
+	<a href="#dkim-key-property-formats" id="dkim-key-property-formats" class="section-link h2">&sect;</a>
+	<h2>DKIM key properties can declare their format</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Existing DKIM property values keep working. New configuration can state explicitly whether the value is a file or Base64 data.
+		</p>
+		<p class="wide">
+			Before 9.2.0, the documentation said an inline Base64 private key was accepted, but a non-file value was actually passed through as UTF-8 text.
+			Version 9.2.0 adds explicit prefixes so the intended format is no longer inferred from whether a file happens to exist.
+		</p>
+		<pre class="full-width-example"><code class="language-properties"># Read the key bytes from this file:
+simplejavamail.dkim.signing.private_key_file_or_data=file:secrets/dkim-private-key.der
+
+# Or decode inline Base64 key bytes:
+simplejavamail.dkim.signing.private_key_file_or_data=base64:MIIC...</code></pre>
+		<p class="wide">
+			An explicit missing file and malformed Base64 both fail during configuration with an error that does not repeat the key data.
+			For compatibility, an unprefixed value still uses the earlier behavior: an existing path is read as a file, otherwise the value itself becomes UTF-8 key data.
+		</p>
+		<p class="wide">
+			See <a href="security.html#section-sending-dkim">DKIM signing</a> and
+			<a href="configuration.html#section-available-properties">Available properties</a> for the current configuration reference.
 		</p>
 	</section>
 

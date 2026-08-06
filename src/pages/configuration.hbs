@@ -330,6 +330,11 @@ ConfigLoader.loadProperties(usingMyOwnPropertiesObject, addProperties);
       <p>
         Most mailer settings have a property equivalent, so each environment can use different values without changing application code.
       </p>
+	  <p>
+		For <code class="inline language-properties">simplejavamail.dkim.signing.private_key_file_or_data</code>, prefix a path with
+		<code class="inline language-properties">file:</code> or inline Base64-encoded key bytes with
+		<code class="inline language-properties">base64:</code>. Unprefixed values retain their legacy path-or-UTF-8-data behavior.
+	  </p>
     </div>
 
     <div class="side">
@@ -419,7 +424,7 @@ simplejavamail.smime.encryption.key_encapsulation_algorithm=RSA_OAEP_SHA384
 simplejavamail.smime.encryption.cipher=DES_EDE3_WRAP
 
 # DKIM defaults
-simplejavamail.dkim.signing.private_key_file_or_data=my_dkim_key.der
+simplejavamail.dkim.signing.private_key_file_or_data=file:my_dkim_key.der
 simplejavamail.dkim.signing.selector=dkim1
 simplejavamail.dkim.signing.signing_domain=your-domain.com
 simplejavamail.dkim.signing.use_length_param=false
@@ -458,7 +463,7 @@ simplejavamail.defaults.poolsize-more.keepalivetime=2000
 simplejavamail.smime.signing.keystore-password=keystore_password
 simplejavamail.smime.signing.key-alias=key_alias
 simplejavamail.smime.signing.key-password=key_password
-simplejavamail.dkim.signing.private-key-file-or-data=my_dkim_key.der
+simplejavamail.dkim.signing.private-key-file-or-data=file:my_dkim_key.der
 simplejavamail.dkim.signing.signing-domain=your-domain.com
 # Leave header exclusions unset unless a known relay rewrites a header; From must remain signed.
 </code></pre>
