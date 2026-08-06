@@ -273,7 +273,7 @@ public Mailer inhouseMailer() {
 
     <div>
       <pre><code>// Add your own Recipient instances
-currentEmailBuilder.withRecipients(yourRecipient1, yourRecipient2...);</code></pre>
+currentEmailBuilder.withRecipients(yourRecipient1, yourRecipient2);</code></pre>
 
       <pre><code>// Or build comma / semicolon separated recipient lists first
 String list = "twister@sweets.com,blue.tongue@sweets.com;honey@sweets.com";
@@ -572,7 +572,7 @@ We should meet up!
 
 	  <div class="wide full-width-example">
 		  <p><strong>Base64</strong>, on the other hand, produces the following:</p>
-		  <pre><code class="small">currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+		  <pre><code class="small">currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64);
 </code></pre>
 		  <pre><code class="language-text small">------=_Part_2_1226020905.1657715871203
 Content-Type: text/plain; charset=UTF-8
@@ -609,20 +609,28 @@ new AttachmentResource(..., ContentTransferEncoding.BINARY)
 	  </p>
 
 	  <div class="wide">
-<pre><code>currentEmailBuilder
-    .withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
-    .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
-    .withContentTransferEncoding(ContentTransferEncoding.BINARY)
-    .withContentTransferEncoding(ContentTransferEncoding.B)
-    .withContentTransferEncoding(ContentTransferEncoding.Q)
-    .withContentTransferEncoding(ContentTransferEncoding.BIT7)
-    .withContentTransferEncoding(ContentTransferEncoding.BIT8)
-    .withContentTransferEncoding(ContentTransferEncoding.UU)
-    .withContentTransferEncoding(ContentTransferEncoding.X_UU)
-    .withContentTransferEncoding(ContentTransferEncoding.X_UUE)
+<pre><code>currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BINARY);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.B);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.Q);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BIT7);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BIT8);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.UU);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.X_UU);
+// or:
+currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.X_UUE);
 
-	// or default back to quoted-printable
-    .clearContentTransferEncoding()
+// Or restore the quoted-printable default:
+currentEmailBuilder.clearContentTransferEncoding();
 </code></pre>
 	  </div>
 	  </section>
@@ -643,7 +651,7 @@ new AttachmentResource(..., ContentTransferEncoding.BINARY)
     .withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
     .withPlainTextContentTransferEncoding(ContentTransferEncoding.BIT7)
     .withHTMLTextContentTransferEncoding(ContentTransferEncoding.BASE_64)
-    .withCalendarTextContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+    .withCalendarTextContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE);
 </code></pre>
 <pre><code class="language-properties small">simplejavamail.defaults.content.transfer.encoding=QUOTED_PRINTABLE
 simplejavamail.defaults.body.text.content.transfer.encoding=BIT7
@@ -759,9 +767,12 @@ receipt.getSmtpResponse().ifPresent(response ->
     <div class="side">
 <pre><code class="small">Email email = ...;
 
-MailerBuilder.withTransportStrategy(TransportStrategy.SMTP); // default if omitted
+MailerBuilder.withTransportStrategy(TransportStrategy.SMTP); // default
+// or:
 MailerBuilder.withTransportStrategy(TransportStrategy.SMTPS);
+// or:
 MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
+// or:
 MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 </code></pre>
 
@@ -813,11 +824,13 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
     <div class="side">
 <pre><code>MailerBuilder
   .withSMTPServer("smtp.gmail.com", 25, "your user", "your password")
-  .withTransportStrategy(TransportStrategy.SMTP_TLS)
-  // or
+  .withTransportStrategy(TransportStrategy.SMTP_TLS);
+// or:
+MailerBuilder
   .withSMTPServer("smtp.gmail.com", 587, "your user", "your password")
-  .withTransportStrategy(TransportStrategy.SMTP_TLS)
-  // or
+  .withTransportStrategy(TransportStrategy.SMTP_TLS);
+// or:
+MailerBuilder
   .withSMTPServer("smtp.gmail.com", 465, "your user", "your password")
   .withTransportStrategy(TransportStrategy.SMTPS);
 </code></pre>
@@ -840,10 +853,10 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 <pre><code class="small">currentEmailBuilder
     .withAttachment("dresscode.txt", new ByteArrayDataSource("Black Tie Optional", "text/plain"))
     .withAttachment("location.txt", "On the moon!".getBytes(Charset.defaultCharset()), "text/plain")
-    // ofcourse it can be anything: a pdf, doc, image, csv or anything else
+    // of course it can be anything: a pdf, doc, image, csv or anything else
     .withAttachment("invitation.pdf", new FileDataSource("invitation_v8.3.pdf"))
 	// you can provide your own list of attachments as well
-    .withAttachments(yourAttachmentResourceCollection))
+    .withAttachments(yourAttachmentResourceCollection);
 </code></pre>
 	  </div>
   </section>
@@ -1216,11 +1229,11 @@ icsCalendar.getProperties().add(Version.VERSION_2_0);
 // Produce calendar string
 ByteArrayOutputStream bOutStream = new ByteArrayOutputStream();
 new CalendarOutputter().output(icsCalendar, bOutStream);
-String yourICalEventString = bOutStream.toString("UTF-8")
+String yourICalEventString = bOutStream.toString("UTF-8");
 
 // Let Simple Java Mail handle the rest
 currentEmailBuilder
-    .withCalendarText(CalendarMethod.REQUEST, yourICalEventString)
+    .withCalendarText(CalendarMethod.REQUEST, yourICalEventString);
 </code></pre>
     </div>
   </section>
@@ -1705,11 +1718,11 @@ mailer.testConnection(true);  // explicitly asynchronous
       .buildMailer();
 
 try {
-	mailer.sendMail(emailBiggerThan4Bytes)
+	mailer.sendMail(emailBiggerThan4Bytes);
 } catch(Exception e) {
 	// cause: EmailTooBigException
 	// msg: "Email size of 277 bytes exceeds maximum allowed size of 4 bytes"
-	e.getCause().printStrackTrace();
+	e.getCause().printStackTrace();
 }
 </code></pre>
       </div>

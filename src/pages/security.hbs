@@ -77,12 +77,12 @@
 				<p class="wide">
 					There are four strategies:
 				</p>
-				<pre><code>MailerBuilder
+				<pre><code>TransportStrategy strategy = TransportStrategy.SMTP;
+// or: TransportStrategy.SMTPS, TransportStrategy.SMTP_TLS, TransportStrategy.SMTP_OAUTH2
+
+MailerBuilder
   .withSMTPServer("host", port, "username", passwordOrOAUTH2Token)
-  .withTransportStrategy(TransportStrategy.SMTP)
-  .withTransportStrategy(TransportStrategy.SMTPS)
-  .withTransportStrategy(TransportStrategy.SMTP_TLS)
-  .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+  .withTransportStrategy(strategy);
 </code></pre>
 				<p class="wide">
 					Or with property default:
@@ -131,15 +131,16 @@
 				</p>
 			</div>
 			<div class="side">
-      <pre><code>
+      <pre><code class="language-java">
 TransportStrategy.SMTP.setOpportunisticTLS(false);
 
 MailerBuilder
 	  .verifyingServerIdentity(false)
-	  .withTransportStrategy(TransportStrategy.SMTP)
+	  .withTransportStrategy(TransportStrategy.SMTP);
+</code></pre>
 
-// or as property:
-simplejavamail.defaults.verifyserveridentity=false
+Or with properties:
+<pre><code class="language-properties small">simplejavamail.defaults.verifyserveridentity=false
 simplejavamail.opportunistic.tls=false
 </code></pre>
 			</div>
