@@ -872,7 +872,7 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 				</p>
 				<p>
 					For each send, the batch module selects one registered pool using the cluster's round-robin or random-access strategy.
-					Clustering spreads work; it is not transparent SMTP failover.
+					This spreads work across the SMTP servers registered for that cluster.
 				</p>
 			</div>
 
@@ -921,12 +921,12 @@ try {
 		</div>
 
 		<p class="wide">
-			<strong>Failures stay visible:</strong> Simple Java Mail invalidates the failed transport and reports the failed send to your application.
-			It does not retry the email, remove that server's pool, or stop a later send from selecting the same server again. With synchronous sending,
-			the call throws <code class="inline language-java">MailException</code>; with asynchronous sending, the returned
+			<strong>Handling a failed send:</strong> Simple Java Mail invalidates the failed transport and reports the failure to your application.
+			The server pool remains registered and participates in normal selection for later sends. With synchronous sending, the call throws
+			<code class="inline language-java">MailException</code>; with asynchronous sending, the returned
 			<a href="features.html#section-handling-async-result"><em>CompletableFuture</em> completes exceptionally</a>.
-			Retry, health checks, circuit breaking, and provider routing remain application policy. That decision should account for ambiguous SMTP failures,
-			where retrying blindly can submit a duplicate message.
+			Use that failure signal with your application's retry, health-check, circuit-breaking, or provider-routing policy, including its safeguards for
+			ambiguous SMTP outcomes.
 		</p>
 
 	  <p class="wide">
