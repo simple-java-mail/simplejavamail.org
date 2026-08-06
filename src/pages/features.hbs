@@ -1342,8 +1342,8 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
     		.withRule(email -> email.localPart().startsWith("allowed"))
 	)
     // or
-    .clearEmailValidator() // turn off validation
-    .resetEmailValidator() // reset to default (strict)
+    .clearEmailValidator() // retain completeness, encoded-word and CRLF checks
+    .resetEmailValidator() // restore the default strict JMail address validator
 </code></pre>
 		  <pre><code>// you can also directly perform validations:
 mailer.validate(email); // does all checks including address validation
@@ -1361,16 +1361,20 @@ JMail.strictValidator()
   <section>
 	  <div class="view">
 		  <p>
-			  <strong>Note</strong>: any email address validation behaviour you have defined will be overridden
-			  if you disable client-side validations completely (which also disables CRLF injection scanning).
+			  <code class="inline language-java">clearEmailValidator()</code> clears only the configurable JMail address policy. Required sender and
+			  recipient checks, encoded-word protection and CRLF injection scanning remain active.
+		  </p>
+		  <p>
+			  <code class="inline language-java">disablingAllClientValidation(true)</code> changes client-side validation findings into warnings so
+			  SMTP handling can continue. Use this mode when the application deliberately assigns the acceptance decision to the SMTP server.
 		  </p>
 	  </div>
 
 	  <div class="wide full-width-example">
 <pre><code>currentMailerBuilder
-    .disablingAllClientValidation(true)
+    .disablingAllClientValidation(true) // report validation findings as warnings
     // or
-    .resetDisableAllClientValidations() // reset to default (false)
+    .resetDisableAllClientValidations() // restore blocking validation
 </code></pre>
 	  </div>
   </section>

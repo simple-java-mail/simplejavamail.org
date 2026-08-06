@@ -178,9 +178,8 @@ MailerBuilder
     </div>
 
     <div class="wide full-width-example">
-      <pre><code class="small">// ignore invalid email addresses (if email validator was provided)
-// and ignore CRLF injection suspicions
-// useful in case you want to delegate all responsibility to the server
+      <pre><code class="small">// report missing fields, invalid addresses and CRLF suspicions as warnings,
+// then continue with SMTP handling
 currentMailerBuilder.disablingAllClientValidation(true);
 </code></pre>
 		<pre><code class="small">// make the underlying Jakarta Mail Session produce debug output
@@ -203,10 +202,10 @@ currentMailerBuilder.withEmailValidator(
 		.withRule(email -> email.localPart().startsWith("allowed"))
 )
 
-// reset to default RFC compliant checks:
-currentMailerBuilder.clearEmailValidator();
-// deactivate email validation completely:
+// restore the default strict JMail address validator:
 currentMailerBuilder.resetEmailValidator();
+// clear the JMail address policy; keep completeness, encoded-word and CRLF checks:
+currentMailerBuilder.clearEmailValidator();
 </code></pre>
 <pre><code class="small">
 // change SOCKS5 bridge port in case of authenticated proxy
