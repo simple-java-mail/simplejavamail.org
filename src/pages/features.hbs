@@ -1256,27 +1256,29 @@ Session session = mailer.getSession();
   <section>
     <div class="view">
       <p>
-        For servers and clients that support it (mostly Outlook at offices), Simple Java Mail has built in support for
-        <a href="https://www.chilkatsoft.com/p/p_313.asp">'delivery receipt' and 'read receipt'</a>, which is configured
-        through the headers <code>Return-Receipt-To</code> and <code>Disposition-Notification-To</code> respectively.
+        Simple Java Mail can add two receipt-request headers. <code>Disposition-Notification-To</code> asks supporting mail clients for a read receipt.
+        <code>Return-Receipt-To</code> asks supporting servers or clients for a delivery or read notification, depending on their implementation.
       </p>
       <p>
-        You can explicitly define the email address to return the receipts to or else Simple Java Mail will default
-        to the <em>replyTo</em> address if available or else the <em>fromAddress</em>.
+        Simple Java Mail writes the requested headers; the receiving server, mail client or user controls whether a receipt is returned.
+        Delivery Status Notification, covered in the next section, is the separate SMTP-level mechanism for delivery status.
       </p>
       <p>
-        If you simply enabled <code>Return-Receipt-To</code> or <code>Disposition-Notification-To</code> without providing
-		an address, it will default to the first Reply-To recipient if provided or From recipient otherwise.
+        You can provide the receipt address explicitly. The no-argument methods use the first Reply-To recipient when present, or the From recipient otherwise.
       </p>
     </div>
 
     <div class="side">
-<pre><code class="small">currentEmailBuilder.
-    .withDispositionNotificationTo();
-    .withReturnReceiptTo();
-    // or:
-    .withDispositionNotificationTo(new Recipient("name", "address@domain.com"));
-    .withReturnReceiptTo(new Recipient("name", "address@domain.com"));
+<pre><code class="language-java small">Email email = EmailBuilder.startingBlank()
+    .from("sender@example.com")
+    .withRecipients(new RecipientBuilder()
+        .withAddress("recipient@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withPlainText("Hello")
+    .withDispositionNotificationTo("Mail receipts", "receipts@example.com")
+    .withReturnReceiptTo("Mail receipts", "receipts@example.com")
+    .buildEmail();
 </code></pre>
     </div>
   </section>
