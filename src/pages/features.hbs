@@ -1400,6 +1400,10 @@ JMail.strictValidator()
       <p>
         You can even build a mass Outlook .msg to <a href="https://en.wikipedia.org/wiki/Email#Filename_extensions">EML</a> converter if you like!
       </p>
+      <p>
+        For Outlook <code class="inline language-text">.msg</code> input, the <code class="inline language-java">String</code> overload takes a file path.
+        Use the <code class="inline language-java">File</code> or <code class="inline language-java">InputStream</code> overload for those source types.
+      </p>
       <br/>
       <p>
         To enable Outlook message parsing support, include the
@@ -1410,7 +1414,7 @@ JMail.strictValidator()
     </div>
 
     <div class="side">
-<pre><code class="small">/*
+<pre><code class="language-java small">/*
  * Most conversion methods support an optional Pkcs12Config config for handling S/MIME
  */
 
@@ -1428,16 +1432,27 @@ Email email =             EmailConverter.emlToEmail(emlDataString);
 MimeMessage mimeMessage = EmailConverter.emlToMimeMessage(emlDataString);
 MimeMessage mimeMessage = EmailConverter.emlToMimeMessage(emlDataString, yourSession);
 
-// from Outlook .msg
-Email email =             EmailConverter.outlookMsgToEmail(readToString("yourMessage.msg"));
-Email email =             EmailConverter.outlookMsgToEmail(new File("yourMessage.msg"));
-Email email =             EmailConverter.outlookMsgToEmail(getInputStream("yourMessage.msg"));
-String eml =              EmailConverter.outlookMsgToEML(readToString("yourMessage.msg"));
-String eml =              EmailConverter.outlookMsgToEML(new File("yourMessage.msg"));
-String eml =              EmailConverter.outlookMsgToEML(getInputStream("yourMessage.msg"));
-MimeMessage mimeMessage = EmailConverter.outlookMsgToMimeMessage(readToString("yourMessage.msg"));
-MimeMessage mimeMessage = EmailConverter.outlookMsgToMimeMessage(new File("yourMessage.msg"));
-MimeMessage mimeMessage = EmailConverter.outlookMsgToMimeMessage(getInputStream("yourMessage.msg"));
+// from Outlook .msg: path String
+Email emailFromPath =             EmailConverter.outlookMsgToEmail("yourMessage.msg");
+String emlFromPath =              EmailConverter.outlookMsgToEML("yourMessage.msg");
+MimeMessage mimeMessageFromPath = EmailConverter.outlookMsgToMimeMessage("yourMessage.msg");
+
+// from Outlook .msg: File
+File msgFile = new File("yourMessage.msg");
+Email emailFromFile =             EmailConverter.outlookMsgToEmail(msgFile);
+String emlFromFile =              EmailConverter.outlookMsgToEML(msgFile);
+MimeMessage mimeMessageFromFile = EmailConverter.outlookMsgToMimeMessage(msgFile);
+
+// from Outlook .msg: fresh binary InputStream for each conversion
+try (InputStream msgInput = Files.newInputStream(Path.of("yourMessage.msg"))) {
+    Email emailFromStream = EmailConverter.outlookMsgToEmail(msgInput);
+}
+try (InputStream msgInput = Files.newInputStream(Path.of("yourMessage.msg"))) {
+    String emlFromStream = EmailConverter.outlookMsgToEML(msgInput);
+}
+try (InputStream msgInput = Files.newInputStream(Path.of("yourMessage.msg"))) {
+    MimeMessage mimeMessageFromStream = EmailConverter.outlookMsgToMimeMessage(msgInput);
+}
 
 Pkcs12Config myKeyInfo = Pkcs12Config.builder()
     .pkcs12Store("my_smime_keystore.pkcs12")
