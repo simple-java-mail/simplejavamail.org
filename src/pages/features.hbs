@@ -1516,36 +1516,32 @@ currentEmailBuilder
   <section>
     <div class="view">
       <p>
-        If you have an email you want to reply to or wish to forward, the <code class="inline language-java">EmailBuilder</code>
-        has you covered.
+        <code class="inline language-java">EmailBuilder</code> can start a reply or forward from an existing
+        <code class="inline language-java">Email</code> or <code class="inline language-java">MimeMessage</code>.
       </p>
-      <br />
-      <div>
-        <p>
-          <strong>Note:</strong> due to the nature of the underlying Jakarta Mail framework (also see
-          <a href="https://jakartaee.github.io/mail-api/FAQ#reply" target="_blank">reply</a> /
-          <a href="https://jakartaee.github.io/mail-api/FAQ#forward" target="_blank">forward</a>):
-        </p>
-        <ul class="indent">
-          <li>In case of replying, the original email is quoted in the body of the reply itself.</li>
-          <li>In case of forwarding, the original email is included as a separate body inside the forward.</li>
-        </ul>
-      </div>
+      <p>
+        <code class="inline language-java">replyingTo(...)</code> quotes the original message in both the plain-text and HTML alternatives.
+        Mail clients render one of those alternatives, so add the new reply to both as well.
+      </p>
+      <p>
+        <code class="inline language-java">forwarding(...)</code> includes the original message as a separate body inside the forward.
+      </p>
     </div>
 
     <div class="side">
       <p>Replying to an email:</p>
-      <pre><code>EmailBuilder
+      <pre><code class="language-java">Email reply = EmailBuilder
     .replyingTo(receivedEmail) // Email or MimeMessage
-    .from("dummy@domain.com")
-    .prependText("Reply body. Original email included below")
+    .from("sender@example.com")
+    .prependText("Thanks, I'll take care of it.\n\n")
+    .prependTextHTML("&lt;p&gt;Thanks, I'll take care of it.&lt;/p&gt;")
     .buildEmail();
 </code></pre>
       <p>Forwarding an email:</p>
-      <pre><code>EmailBuilder
+      <pre><code class="language-java">Email forward = EmailBuilder
     .forwarding(receivedEmail) // Email or MimeMessage
-    .from("dummy@domain.com")
-    .withPlainText("Hello? This is Forward. See below email:")
+    .from("sender@example.com")
+    .withPlainText("For your reference, the original message is included below.")
     .buildEmail();
 </code></pre>
     </div>
