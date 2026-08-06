@@ -1421,7 +1421,14 @@ JMail.strictValidator()
         For example, if you need a MimeMessage, you can convert <code class="inline language-java">Email</code> objects, EML data and even Outlook .msg files.
       </p>
       <p>
-        If you already have a MimeMessage, you can convert it into an Email instance, complete with embedded images and attachments (or just the metadata), headers intact.
+        If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
+        and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
+      </p>
+      <p>
+        Conversion does not copy the original header block verbatim. Addressing, date, subject, reply, message ID, and MIME content headers are
+        represented by Email fields or rebuilt when another MimeMessage is produced. Transport-history headers such as <code class="inline language-text">Received</code>
+        and <code class="inline language-text">Resent-*</code>, along with obsolete structural metadata, are omitted.
+        See the <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/core-module/src/main/java/org/simplejavamail/api/internal/general/HeadersToIgnoreWhenParsingExternalEmails.java">complete filtered-header list</a>.
       </p>
       <p>
         You can even build a mass Outlook .msg to <a href="https://en.wikipedia.org/wiki/Email#Filename_extensions">EML</a> converter if you like!
