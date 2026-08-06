@@ -611,7 +611,8 @@ simplejavamail.smime.signing.algorithm=SHA256withRSA
 # Recipient-level certificates configured in Java still take precedence.
 simplejavamail.smime.encryption.certificate=shared-recipient-certificate.pem
 simplejavamail.smime.encryption.key_encapsulation_algorithm=RSA
-simplejavamail.smime.encryption.cipher=DES_EDE3_CBC
+# AES is recommended; DES_EDE3_CBC remains available for legacy recipient compatibility.
+simplejavamail.smime.encryption.cipher=AES256_CBC
 
 # Optional when the application is fully property-driven.
 simplejavamail.defaults.to.name=Finance
