@@ -861,19 +861,18 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 
 
 	<a href="#section-clustering" id="section-clustering" class="section-link h3">&sect;</a>
-	<h3>Advanced performance tuning: Clustering with multiple connection pools</h3>
+	<h3>Clustered SMTP load balancing</h3>
 
 	<section>
 		<div>
 			<div class="view">
 				<p>
-					To enable high-availability / fail-over or to handle truly enormous
-					email batch loads, Simple Java Mail enables you to easily configure cluster(s) of SMTP servers.
+					Use a cluster when several SMTP servers handle the same workload, or when different workloads need their own connection pools.
+					Mailers that share a cluster key each register a pool for their configured SMTP server.
 				</p>
 				<p>
-					For example, for a simple fail-over setup with
-					three SMTP servers, You can define a cluster with low/default connection pool settings and have three Mailer instances use the same cluster
-					key. Then sending an email with any of these Mailer instances will result in a send-action resolved using the cluster.
+					For each send, the batch module selects one registered pool using the cluster's round-robin or random-access strategy.
+					Clustering spreads work; it is not transparent SMTP failover.
 				</p>
 			</div>
 
@@ -896,32 +895,38 @@ simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
 # valid values: ROUND_ROBIN, RANDOM_ACCESS</code></pre>
 			</div>
 
-			<p class="wide">
-			<p><strong>Mailer behavior in a cluster setup:</strong></p>
-			<pre><code class="language-java small">Mailer mailer1InFailoverCluster = mailerBuilderServer1.(..).withClusterKey(myClusterKey).buildMailer();
-Mailer mailer2InFailoverCluster = mailerBuilderServer2.(..).withClusterKey(myClusterKey).buildMailer();
-Mailer mailer3InFailoverCluster = mailerBuilderServer3.(..).withClusterKey(myClusterKey).buildMailer();
+			<div class="wide full-width-example">
+				<p><strong>Failure behavior in a cluster:</strong></p>
+				<pre><code class="language-java small">Mailer primary = MailerBuilder
+    .withSMTPServer("smtp-primary.example.com", 587, "user", "password")
+    .withClusterKey(myClusterKey)
+    .buildMailer();
+Mailer secondary = MailerBuilder
+    .withSMTPServer("smtp-secondary.example.com", 587, "user", "password")
+    .withClusterKey(myClusterKey)
+    .buildMailer();
+Mailer tertiary = MailerBuilder
+    .withSMTPServer("smtp-tertiary.example.com", 587, "user", "password")
+    .withClusterKey(myClusterKey)
+    .buildMailer();
 
-// or default cluster using property:
-// simplejavamail.defaults.connectionpool.clusterkey.uuid=38400000-8cf0-11bd-b23e-10b96e4ef00d
-
-mailer1InFailoverCluster.sendMail(email); // 1 of 3 servers is selected
-mailer2InFailoverCluster.sendMail(email); // 1 of 3 servers is selected
-mailer3InFailoverCluster.sendMail(email); // 1 of 3 servers is selected
-
-// now server 2 breaks down and becomes unreachable or produces errors
-// server 2 is removed from the cluster, but all mailers still work:
-mailer1InFailoverCluster.sendMail(email); // 1 of 2 servers is selected
-mailer2InFailoverCluster.sendMail(email); // 1 of 2 servers is selected
-mailer3InFailoverCluster.sendMail(email); // 1 of 2 servers is selected
-</code></pre>
+try {
+    primary.sendMail(email, false); // one registered pool is selected for this send
+} catch (MailException failure) {
+    // The selected SMTP submission failed.
+    // Its connection is discarded, but its server pool stays in the cluster.
+    // Apply your retry, provider-routing, or circuit-breaking policy here.
+}</code></pre>
+			</div>
 		</div>
 
 		<p class="wide">
-			<strong>Note 1:</strong> The send-actions don't automatically recover from errors and are not retried automatically. This is because Simple Java
-			Mail cannot determine how a send-action was botched and what the next course of action should be. You can monitor individual emails using
-			<a href="features.html#section-handling-async-result">the <em>CompletableFuture</em> async return value</a> obtained from
-			<code class="inline language-java">mailer.sendMail()</code> and determine followup-actions for errored-out results.
+			<strong>Failures stay visible:</strong> Simple Java Mail invalidates the failed transport and reports the failed send to your application.
+			It does not retry the email, remove that server's pool, or stop a later send from selecting the same server again. With synchronous sending,
+			the call throws <code class="inline language-java">MailException</code>; with asynchronous sending, the returned
+			<a href="features.html#section-handling-async-result"><em>CompletableFuture</em> completes exceptionally</a>.
+			Retry, health checks, circuit breaking, and provider routing remain application policy. That decision should account for ambiguous SMTP failures,
+			where retrying blindly can submit a duplicate message.
 		</p>
 
 	  <p class="wide">
