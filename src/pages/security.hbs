@@ -360,6 +360,14 @@ MailerBuilder.withSMTPServer("smtp.internal.example", 587)
 					domain keys. DKIM is an optional feature and if you want to use it, you need to include the
 					<strong><a href="modules.html#dkim-module">dkim-module</a></strong>.
 				</p>
+				<p>
+					Use <code class="inline language-java">dkimPrivateKeyPath(String)</code> or
+					<code class="inline language-java">dkimPrivateKeyPath(File)</code> for a key file; it is read immediately.
+					For key material already in memory, <code class="inline language-java">dkimPrivateKeyData(byte[])</code>
+					copies the bytes. The <code class="inline language-java">String</code> overload converts the supplied key data to
+					UTF-8 bytes without Base64-decoding it. The <code class="inline language-java">InputStream</code> overload consumes
+					the stream immediately but leaves closing it to the caller.
+				</p>
 			</div>
 			<div class="side">
 <pre><code class="small">currentEmailBuilder.signWithDomainKey(
@@ -375,7 +383,7 @@ MailerBuilder.withSMTPServer("smtp.internal.example", 587)
 				<pre><code class="small">currentMailerBuilder
     .withDefaultDkimSigning(
         DkimConfig.builder()
-            .dkimPrivateKeyData(byte[] / File / InputStream)
+            .dkimPrivateKeyData(privateKeyBytes)
             .dkimSigningDomain("your_domain.org")
             .dkimSelector("your_selector")
             .build())
