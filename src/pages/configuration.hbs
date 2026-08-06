@@ -484,6 +484,10 @@ simplejavamail.dkim.signing.signing-domain=your-domain.com
 				Then there are extra properties which will directly go on the internal Session object when
 				building a Mailer instance.
 			</p>
+			<p>
+				They use the same precedence as the other settings: system properties win over environment variables, and environment variables win over
+				property-file values.
+			</p>
 		</div>
 
 		<div class="side">

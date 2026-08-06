@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
 
 	{{#*inline "html-head-block"}}
-<meta name="Description" content="Migration notes for stricter TLS certificate trust, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
+<meta name="Description" content="Migration notes for stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -12,6 +12,7 @@
 	<section class="toc">
 		<ul>
 			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
+			<li><a href="#extra-property-precedence">Extra properties follow normal configuration precedence</a></li>
 			<li><a href="#embedded-image-containment">Embedded-image bases now contain resolution</a></li>
 			<li><a href="#dkim-from-header">DKIM signing must keep the From header</a></li>
 			<li><a href="#dkim-key-property-formats">DKIM key properties can declare their format</a></li>
@@ -67,6 +68,34 @@ simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 		<p class="wide">
 			See <a href="https://github.com/bbottema/simple-java-mail/issues/677">GitHub issue #677</a> for the implementation record and
 			<a href="security.html#section-whitelist-hosts">Certificate trust</a> for the full security model.
+		</p>
+	</section>
+
+	<a href="#extra-property-precedence" id="extra-property-precedence" class="section-link h2">&sect;</a>
+	<h2>Extra properties follow normal configuration precedence</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Applications that set the same <code class="inline language-properties">simplejavamail.extraproperties.*</code> key in
+			more than one configuration source may resolve a different value after upgrading to 9.2.0.
+		</p>
+		<p class="wide">
+			Before 9.2.0, a property-file value in the extra-property namespace accidentally overrode the matching environment variable and system property.
+			Version 9.2.0 brings these passthrough Jakarta Mail settings in line with the rest of Simple Java Mail: system properties take priority over
+			environment variables, which take priority over property-file values.
+		</p>
+		<pre class="full-width-example"><code class="language-properties"># simplejavamail.properties
+simplejavamail.extraproperties.mail.smtp.timeout=30000
+
+# A JVM argument now overrides the file value:
+# -Dsimplejavamail.extraproperties.mail.smtp.timeout=10000</code></pre>
+		<p class="wide">
+			Nothing changes when a key appears in only one source. If a key is duplicated, keep the intended deployment override in the higher-priority source
+			or remove the duplicate.
+		</p>
+		<p class="wide">
+			See <a href="https://github.com/bbottema/simple-java-mail/issues/685">GitHub issue #685</a> for the implementation record and
+			<a href="configuration.html#section-available-properties">Available properties</a> for the complete configuration reference.
 		</p>
 	</section>
 
