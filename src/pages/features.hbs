@@ -1583,7 +1583,8 @@ currentEmailBuilder
         Simple Java Mail supports sending email through a SOCKS proxy. Its optional authenticated-SOCKS module also handles proxy username/password
         negotiation, an uncommon built-in capability in Java mail libraries. The underlying
         <a href="https://jakartaee.github.io/mail-api/" target="_blank">Jakarta Mail framework</a> supports anonymous SOCKS5 proxies, but
-        <a href="https://jakartaee.github.io/mail-api/FAQ.html#proxy" target="_blank">not authenticated proxies</a>.
+        <a href="https://jakartaee.github.io/mail-api/FAQ.html#proxy" target="_blank">not authenticated proxies</a>. Proxying works with SMTP,
+        STARTTLS and implicit-TLS SMTPS connections.
       </p>
       <p class="wide">
         To make this work with authentication, Simple Java Mail uses a trick: it sets up a temporary anonymous proxy server for Jakarta Mail to connect
