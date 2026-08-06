@@ -115,17 +115,19 @@
   <section>
     <p class="wide">
       If you run into a character limit in your console, you can also use "argument files" or "@-files", which is
-      supported in <a href="https://picocli.info/#AtFiles">Picocli</a>, the library used under the hood:
+      supported in <a href="https://picocli.info/#AtFiles">Picocli</a>, the library used under the hood. The file can
+      contain everything that follows <code class="language-text inline">sjm</code>, including the required subcommand:
     </p>
     <pre><code class="language-text">
       # file /home/foo/args
+      send
       --email:withSubject "My Subject"
       --mailer:withSMTPServer host=...
       --other arguments
     </code></pre>
     <p class="wide">The command <code class="language-text inline">sjm @/home/foo/args</code> then is expanded to:</p>
     <pre><code class="language-text">
-      sjm --email:withSubject "My Subject" --mailer:withSMTPServer host=... --other arguments
+      sjm send --email:withSubject "My Subject" --mailer:withSMTPServer host=... --other arguments
     </code></pre>
     <p class="wide">
       Quoting the Picocli documentation:
