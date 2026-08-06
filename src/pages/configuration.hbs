@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Configuration" page-title="Configuring Simple Java Mail" }}
 
 	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Simple Java Mail can be configured through java, properties or system variables, with defaults and overrides, Spring profiles, server clustering.">
+		<meta name="Description" content="Simple Java Mail can be configured through Java, properties or system properties, with defaults and overrides, Spring profiles, and server clustering.">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -63,7 +63,8 @@
         produces a largely immutable <code class="inline language-java">Mailer</code> instance.
       </p>
       <p>
-        <strong>ConfigLoader</strong> holds the defaults read from <em>.properties</em> files and provides methods to add, replace, or clear them.
+        <strong>ConfigLoader</strong> keeps these defaults. Load another property source to either add its values to the current set or start again with
+        that source. Each load checks system properties and environment variables again.
       </p>
     </div>
     </section>
@@ -293,10 +294,15 @@ currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, 
       </p>
       <ol class="indent">
         <li>Programmatic values</li>
-        <li>System variables</li>
+        <li>System properties</li>
         <li>Environment variables</li>
         <li>Properties from config files</li>
       </ol>
+      <p>
+        Use <code class="inline language-java">addProperties=true</code> to add the new source to what is already loaded. Any setting the new source does
+        not contain stays in place. Use <code class="inline language-java">addProperties=false</code> to throw away the loaded defaults before reading the
+        new source. Either way, current system properties and environment variables are read again and take priority over the supplied source.
+      </p>
     </div>
 
     <div class="side">
@@ -316,9 +322,10 @@ currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, 
 <pre><code class="small">ConfigLoader.loadProperties(usingMyOwnInputStream, addProperties);
 ConfigLoader.loadProperties(usingMyOwnPropertiesObject, addProperties);
 </code></pre>
-      This clears everything:
+      Discard the loaded defaults without loading another property source:
       <pre><code class="small">ConfigLoader.loadProperties(new Properties(), /* addProperties = */ false);
 </code></pre>
+      Current system properties and environment variables still apply.
     </div>
   </section>
 
@@ -493,7 +500,7 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 
 	<section>
 		<p class="wide">
-			With property files and system variables you can define global defaults. But sometimes that is not enough.
+			With property files and system properties you can define global defaults. But sometimes that is not enough.
 		</p>
 		<p class="wide">
 			With Simple Java Mail, you can set both defaults and overrides on the Mailer level using Java code. This will override
@@ -610,7 +617,8 @@ emailBuilder.ignoringOverrides(true)
     <div>
 <pre><code>// simplejavamail.properties is automatically loaded
 
-// replace it with the property file provided by this environment
+// replace previously loaded defaults with this environment's property file;
+// system properties and environment variables still take priority
 Path environmentConfig = Path.of("config", "candystore", "simplejavamail.properties");
 ConfigLoader.loadProperties(Files.newInputStream(environmentConfig), false);
 </code></pre>
