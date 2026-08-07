@@ -78,6 +78,7 @@
       <li><a href="#section-config-mailer">Mailer level email defaults and overrides</a></li>
       <li><a href="#section-combine-config">Combining everything for multiple environments</a></li>
       <li><a href="#section-spring-support">Spring support</a></li>
+      <li><a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
       <li><a href="#section-batch-and-clustering">Batch and clustering support</a></li>
       <li><a href="#section-not-reusing-connections" class="indent">How connections work without batch-module</a></li>
       <li><a href="#section-reusing-connections" class="indent">Reusing connections with batch-module's connection pool</a></li>
@@ -746,6 +747,99 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
   </section>
 
 
+  <a href="#section-mailer-lifecycle" id="section-mailer-lifecycle" class="section-link h2">&sect;</a>
+  <h2>Mailer lifecycle and resource ownership</h2>
+
+  <section>
+    <div>
+      <p class="wide">
+        A <code class="inline language-java">Mailer</code> is designed to be built once and reused. When your application is finished with it, call
+        <code class="inline language-java">mailer.close()</code> directly or let a try-with-resources block call it. Which resources need attention depends
+        on how the Mailer is used and whether its executor came from Simple Java Mail or from your application.
+      </p>
+
+      <table>
+        <thead>
+        <tr>
+          <th>How the Mailer is used</th>
+          <th>What it owns</th>
+          <th>What to do at shutdown</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>Synchronous sending without batch-module</td>
+          <td>Each SMTP connection is closed after the operation. The internal executor starts no worker thread unless an asynchronous operation is scheduled.</td>
+          <td>Call <code class="inline language-java">mailer.close()</code> when its application lifetime ends. There are no send futures to await if it was only used synchronously.</td>
+        </tr>
+        <tr>
+          <td>Asynchronous sending with the default executor</td>
+          <td>The Mailer owns its executor. Without batch-module this is a single-thread executor.</td>
+          <td>Wait for every returned future, then call <code class="inline language-java">mailer.close()</code>.</td>
+        </tr>
+        <tr>
+          <td>Sending with a custom <code class="inline language-java">ExecutorService</code></td>
+          <td>The Mailer owns its SMTP resources; your application owns the executor it supplied.</td>
+          <td>Wait for the futures and call <code class="inline language-java">mailer.close()</code>. Shut down the executor separately when its owner is finished with it.</td>
+        </tr>
+        <tr>
+          <td>Sending with batch-module</td>
+          <td>The Mailer registers its SMTP connection pool and owns its default worker executor.</td>
+          <td>Wait for the futures, then call <code class="inline language-java">close()</code> on every Mailer. In a cluster, each Mailer has its own pool registration.</td>
+        </tr>
+        <tr>
+          <td>The Mailer supplied by spring-module</td>
+          <td>The same resources as its underlying configuration.</td>
+          <td>Spring calls <code class="inline language-java">close()</code> on the managed Mailer when the application context stops. A Mailer created outside Spring bean management remains your responsibility.</td>
+        </tr>
+        </tbody>
+      </table>
+
+      <p class="wide">
+        Use <code class="inline language-java">close()</code> for normal application shutdown. It shuts down an executor created by Simple Java Mail and,
+        with batch-module present, closes the connection pool registered for that Mailer. It never shuts down an executor supplied through
+        <code class="inline language-java">withExecutorService(...)</code>.
+      </p>
+      <p class="wide">
+        The older <code class="inline language-java">shutdownConnectionPool()</code> method starts the same cleanup and returns the connection-pool shutdown
+        future. Despite its name, it also initiates shutdown of a Mailer-created executor when no connection pool is present. Neither method waits for your
+        asynchronous send futures, so finish those first.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="view">
+      <h4>Synchronous work</h4>
+      <p>
+        A try-with-resources block can close the Mailer as soon as the final synchronous call returns.
+      </p>
+<pre><code class="language-java small">try (Mailer mailer = mailerBuilder
+        .buildMailer()) {
+    mailer.sendMail(email);
+}</code></pre>
+    </div>
+
+    <div class="side">
+      <h4>Asynchronous work</h4>
+      <p>
+        Keep the Mailer open until all returned futures have completed. Try-with-resources is safe when the wait happens inside its scope.
+      </p>
+<pre><code class="language-java small">try (Mailer mailer = mailerBuilder
+        .async()
+        .buildMailer()) {
+    CompletableFuture&lt;Void&gt; first =
+            mailer.sendMail(firstEmail);
+    CompletableFuture&lt;Void&gt; second =
+            mailer.sendMail(secondEmail);
+
+    CompletableFuture.allOf(first, second)
+            .join();
+}</code></pre>
+    </div>
+  </section>
+
+
   <a href="#section-batch-and-clustering" id="section-batch-and-clustering" class="section-link h2">&sect;</a>
   <h2>Batch and clustering support</h2>
 
@@ -792,6 +886,9 @@ mailer.sendMail(email, /*async = */ true);
 		<div>
 			<pre><code class="language-java small">currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
 		</div>
+		<p class="wide">
+			See <a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for who shuts down the default and custom executors.
+		</p>
 	</div>
   </section>
 
@@ -882,9 +979,8 @@ simplejavamail.defaults.connectionpool.claimtimeout.millis=60000
 simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 	</code></pre>
 		  <p class="wide">
-			  <strong>Note that with the batch-module enabled, the JVM will not shut down by itself anymore</strong>, as the connection pool stays alive until
-          shutdown manually. To do this, just call <code>mailer.shutdownConnectionPool()</code> (repeat with each mailer you might have
-          in a cluster).
+			  A live connection pool keeps the JVM running. See <a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly
+          application shutdown, including clustered Mailers.
 		  </p>
 			</div>
 		</div>

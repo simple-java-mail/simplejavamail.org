@@ -66,8 +66,8 @@
       <a href="configuration.html#section-batch-and-clustering">configuration</a> for details.
     </p>
 	  <p class="wide">
-		  A live connection pool keeps the JVM running. Call <code>mailer.shutdownConnectionPool()</code> during application shutdown for every mailer that
-		  owns a pool, including each mailer in a cluster.
+		  A live connection pool keeps the JVM running. See <a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a>
+		  for orderly shutdown, including clustered Mailers.
 	  </p>
   </section>
 

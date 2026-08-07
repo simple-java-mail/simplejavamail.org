@@ -460,7 +460,8 @@ Mailer mailer = mailerBuilder
 mailer.sendMail(email);
 </code></pre>
 		<p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
-			on how to set batch-module thread pool defaults or configure the executor service (thread pool manager).</p>
+			on how to set batch-module thread pool defaults or configure the executor service (thread pool manager), and to
+      <a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly shutdown.</p>
     </div>
   </section>
 
@@ -495,6 +496,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
       </p>
       <p class="wide">
         Refer to the <a href="configuration.html#section-batch-and-clustering">configuration section</a> for details.
+        Its <a href="configuration.html#section-mailer-lifecycle">lifecycle section</a> explains how to finish queued work and close each Mailer.
       </p>
     </div>
   </section>
