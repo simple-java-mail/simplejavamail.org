@@ -320,7 +320,8 @@ simplejavamail.smtp.localport=25252</code></pre>
 mailer.sendMailsInSimpleBatch(emails, false); // blocks until the sequential batch is done
 mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole sequential batch asynchronously</code></pre>
 		<p class="wide">
-			This API is not concurrent, pooled, retry-oriented or clustered. For those use cases, keep using the batch-module.
+			This API is not concurrent, pooled or clustered. For those use cases, keep using the batch-module. A failed send is reported to your application,
+			which remains responsible for any retry policy.
 			See <a href="configuration.html#section-batch-and-clustering">batch and clustering support</a> for the full distinction.
 		</p>
 		<p class="wide">

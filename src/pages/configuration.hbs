@@ -799,7 +799,7 @@ mailer.sendMail(email, /*async = */ true);
 	<div class="view">
 		<p>
 			When reconnecting for every message is the only problem you need to solve, use simple sequential batch sending. It sends all provided emails
-			over one SMTP connection and does not require the batch-module. It is not pooled, concurrent, retried or clustered.
+			over one SMTP connection and does not require the batch-module. It sends one at a time, stops at the first failure and reuses only that connection.
 		</p>
 	</div>
 
@@ -833,7 +833,8 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 });
 </code></pre>
 		<p>
-			The scoped sender is sequential, not asynchronous, not pooled and not clustered. For throughput, retries, queueing or clustered sending, use the
+			The scoped sender is sequential, not asynchronous, not pooled and not clustered. For asynchronous queueing, higher throughput, pooled connections
+			or clustered load balancing, use the
 			<a href="#section-reusing-connections">batch-module connection pool</a>.
 		</p>
 		<p>
