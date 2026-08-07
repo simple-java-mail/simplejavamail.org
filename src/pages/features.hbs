@@ -189,6 +189,29 @@ MailerBuilder
   </section>
 
 
+  <a href="#section-rendered-templates" id="section-rendered-templates" class="section-link h3">&sect;</a>
+  <h3>Use content rendered by your template system</h3>
+
+  <section>
+    <p class="wide">
+      Render the body with the template system your application already uses, then pass the resulting plain-text and HTML strings to the email builder.
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">String plainText = templateEngine.render("order-confirmation.txt", model);
+String html = templateEngine.render("order-confirmation.html", model);
+
+Email email = currentEmailBuilder
+    .withPlainText(plainText)
+    .withHTMLText(html)
+    .buildEmail();</code></pre>
+    </div>
+    <p class="wide">
+      The <code class="inline language-text">%s</code> template accepted by reply starters only controls how the original HTML is quoted. See
+      <a href="#section-reply-forward">replying to and forwarding emails</a>.
+    </p>
+  </section>
+
+
   <a href="#section-builder-api" id="section-builder-api" class="section-link h3">&sect;</a>
   <h3>About the fluent API with the Builder pattern</h3>
 
