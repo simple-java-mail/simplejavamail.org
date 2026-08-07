@@ -73,6 +73,7 @@
     <ul>
       <li><a href="#section-programmatic-api-common">Programmatic API - common settings</a></li>
       <li><a href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
+	  <li><a href="#section-proxy-bridge-ports" class="indent">Authenticated proxy bridge ports</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
 	  <li><a href="#section-config-snapshot" class="indent">When changes take effect</a></li>
 	  <li><a href="#section-environment-variables" class="indent">Environment variable names</a></li>
@@ -212,10 +213,6 @@ currentMailerBuilder.resetEmailValidator();
 currentMailerBuilder.clearEmailValidator();
 </code></pre>
 <pre><code class="small">
-// change SOCKS5 bridge port in case of authenticated proxy
-currentMailerBuilder.withProxyBridgePort(1081); // loopback-only bridge
-</code></pre>
-<pre><code class="small">
 // set custom properties
 currentMailerBuilder.withProperties(new Properties());
 currentMailerBuilder.withProperties(new HashMap());
@@ -273,6 +270,46 @@ currentMailerBuilder.withDefaultDkimSigning(defaultDkimConfig);
 </code></pre>
 		  <pre><code class="small">// change the default sending logic to your own approach
 currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test connections
+</code></pre>
+    </div>
+  </section>
+
+
+  <a href="#section-proxy-bridge-ports" id="section-proxy-bridge-ports" class="section-link h3">&sect;</a>
+  <h3>Authenticated proxy bridge ports</h3>
+
+  <section>
+    <div class="view">
+      <p>
+        Jakarta Mail cannot authenticate to a SOCKS proxy by itself. For authenticated proxies, Simple Java Mail starts a small local bridge that
+        handles the proxy login and relays the connection. The bridge listens only on the JVM's loopback address and stops when its Mailer has no
+        active proxy operations.
+      </p>
+      <p>
+        Concurrent work through one Mailer shares that Mailer's bridge. Separate Mailers each own a bridge, so two authenticated-proxy Mailers that
+        can be active at the same time must use different bridge ports. Otherwise they both try to claim the default port, 1081. Anonymous SOCKS
+        proxies do not use the bridge.
+      </p>
+      <p>
+        The property <code class="inline language-properties">simplejavamail.proxy.socks5bridge.port</code> sets the shared default. When an application
+        creates more than one authenticated-proxy Mailer, set a distinct port on each builder instead.
+      </p>
+    </div>
+
+    <div class="wide full-width-example">
+<pre><code class="language-java small">Mailer transactionalMailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
+    .withProxyBridgePort(1081)
+    .buildMailer();
+
+Mailer batchMailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
+    .withProxyBridgePort(1082)
+    .buildMailer();
 </code></pre>
     </div>
   </section>
