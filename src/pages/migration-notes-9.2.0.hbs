@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
 
 	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Migration notes for email serialization, the builder governance API, stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
+		<meta name="Description" content="Migration notes for asynchronous failure handling, email serialization, the builder governance API, stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -12,6 +12,7 @@
 	<section class="toc">
 		<ul>
 			<li><a href="#email-governance-builder">Governance options now follow the email starter</a></li>
+			<li><a href="#async-failure-reporting">Asynchronous failures stay with the returned future</a></li>
 			<li><a href="#email-serialization-snapshots">Serialized emails keep their send-ready content</a></li>
 			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
 			<li><a href="#extra-property-precedence">Extra properties follow normal configuration precedence</a></li>
@@ -58,6 +59,37 @@ Email email = EmailBuilder.copying(original)
 			This does not make <code class="inline language-java">startingBlank()</code> ignore governance. It starts with no email content; unless you add an ignore
 			option afterward, defaults and overrides remain eligible for application when the Mailer prepares the email.
 			See <a href="https://github.com/bbottema/simple-java-mail/issues/689">GitHub issue #689</a> for the API history and implementation record.
+		</p>
+	</section>
+
+	<a href="#async-failure-reporting" id="async-failure-reporting" class="section-link h2">&sect;</a>
+	<h2>Asynchronous failures stay with the returned future</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Code that catches validation or preparation errors around <code class="inline language-java">sendMail(email, true)</code>
+			must now handle them through the returned future.
+		</p>
+		<p class="wide">
+			Before 9.2.0, an asynchronous send had two ways to report a problem. Applying defaults and overrides or validating the email could throw directly,
+			while later failures completed the <code class="inline language-java">CompletableFuture</code> exceptionally. Callers needed both a
+			<code class="inline language-java">try/catch</code> around the call and an error handler on the future.
+		</p>
+		<p class="wide">
+			From 9.2.0 onward, the future covers the complete asynchronous operation: email governance, validation, scheduling, conversion, connection and
+			transport. Preparation still takes place on the calling thread; only its error-reporting path changes. Clear API mistakes, such as passing a null
+			email, can still throw immediately.
+		</p>
+		<pre class="full-width-example"><code class="language-java">mailer.sendMail(email, true)
+    .whenComplete((unused, failure) -&gt; {
+        if (failure != null) {
+            log.error("Unable to send email", failure);
+        }
+    });</code></pre>
+		<p class="wide">
+			Synchronous calls are unchanged: <code class="inline language-java">sendMail(email, false)</code> throws on the calling thread and returns an
+			already-completed future after success. See <a href="https://github.com/bbottema/simple-java-mail/issues/691">GitHub issue #691</a> for the
+			implementation record and <a href="features.html#section-handling-async-result">Handling asynchronous results</a> for the ongoing reference.
 		</p>
 	</section>
 

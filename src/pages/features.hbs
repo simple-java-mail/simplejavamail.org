@@ -506,13 +506,14 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
     <div class="view">
       <p>
         Passing <code class="inline language-java">true</code> to <code class="inline language-java">sendMail(...)</code> or
-        <code class="inline language-java">testConnection(...)</code> runs the operation asynchronously. Both return a
-		  <em><a href="https://www.baeldung.com/java-completablefuture" target="_blank">CompletableFuture</a></em> that completes
-        exceptionally if the operation fails.
+        <code class="inline language-java">testConnection(...)</code> runs the operation asynchronously. The returned
+		  <em><a href="https://www.baeldung.com/java-completablefuture" target="_blank">CompletableFuture</a></em> covers the whole operation:
+        applying defaults and overrides, validation, scheduling, conversion, connection and transport. A failure at any of those stages completes
+        the future exceptionally.
       </p>
       <p>
-		  Also read this excellent primer on
-		  <a href="https://mincong.io/2020/05/30/exception-handling-in-completable-future/" target="_blank">how to process exceptions with CompletableFuture</a>.
+		  Preparation and validation still happen on the calling thread before the transport work is scheduled. In asynchronous mode, their failures are
+        placed on the future instead of escaping from the method call. Clear call errors, such as a null email argument, can still be thrown immediately.
       </p>
       <p>
 		  With <code class="inline language-java">false</code>, the work runs on the calling thread. A successful call returns an
@@ -521,15 +522,13 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
     </div>
 
     <div class="side">
-      <pre><code class="small">CompletableFuture&lt;Void&gt; future = mailer.testConnection(true);
+      <pre><code class="small">CompletableFuture&lt;Void&gt; future = mailer.sendMail(email, true);
 
-future.whenComplete((result, ex) -> {
-		if (ex != null) {
-			System.err.printf("Execution failed %s", ex);
-		} else {
-			System.err.printf("Execution completed: %s", result);
-		}
-	});
+future.whenComplete((unused, failure) -> {
+    if (failure != null) {
+        log.error("Unable to send email", failure);
+    }
+});
 </code></pre>
     </div>
   </section>

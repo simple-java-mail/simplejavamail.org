@@ -136,15 +136,20 @@ mailer.getEmailGovernance();
   <section>
     <div class="view">
       <p>
-        Simple Java Mail throws a <code class="inline language-java">MailException</code> if something goes wrong and logs these by default using SLF4J. This
-        includes checked exceptions thrown by underlying frameworks.
+        During a synchronous send, Simple Java Mail throws a <code class="inline language-java">MailException</code> if preparation, validation or sending
+        fails. This includes checked exceptions translated from the underlying frameworks.
+      </p>
+      <p>
+        An asynchronous send reports those failures through its <code class="inline language-java">CompletableFuture</code>. See
+        <a href="features.html#section-handling-async-result">Handling asynchronous results</a> for an example. The no-argument
+        <code class="inline language-java">sendMail(email)</code> follows the mailer's configured async default.
       </p>
     </div>
 
     <div class="side">
 <pre><code>
 try {
-   mailer.sendMail(email);
+   mailer.sendMail(email, false);
 } catch (MailException e) {
    // handle the exception
 }
