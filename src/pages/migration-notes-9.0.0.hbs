@@ -212,12 +212,16 @@ simplejavamail.defaults.body.calendar.content.transfer.encoding=quoted-printable
 
 	<section>
 		<p class="wide" style="font-size:smaller">
-			<strong>Impact:</strong> New API only. Generated fallback Content-ID values are now opaque and safe, while caller-supplied values are preserved.
+			<strong>Impact:</strong> New API only. Generated fallback attachment Content-ID values are now opaque and safe, while caller-supplied values are preserved.
 		</p>
 		<p class="wide">
 			Attachment and embedded-image APIs now support separating the display filename/resource name from the MIME
 			<code class="inline">Content-ID</code>. This matters for round-tripping and for HTML that references a stable
 			<code class="inline">cid:...</code> value.
+		</p>
+		<p class="wide">
+			Without an explicit value, a normal attachment receives a generated <code class="inline">sjm-...@simplejavamail.generated</code> ID.
+			An embedded image continues to use its resource name as the fallback so HTML can refer to it using <code class="inline">cid:...</code>.
 		</p>
 		<pre><code>Email email = EmailBuilder.startingBlank()
     .from("sender@example.com")

@@ -887,14 +887,18 @@ MailerBuilder
 	        new ByteArrayDataSource("Black Tie Optional", "text/plain"),
 	        "The dresscode for the party")
 </code></pre>
-		  Which results in something like this:
+		  Which results in something like this; the UUID is only an example:
 		  <pre><code class="language-text">Content-Type: text/plain; name="dresscode.txt"
 Content-Disposition: attachment; filename="dresscode.txt"
-Content-ID: &lt;dresscode.txt&gt;
+Content-ID: &lt;sjm-550e8400-e29b-41d4-a716-446655440000@simplejavamail.generated&gt;
 Content-Description: The dresscode for the party
 
 Black Tie Optional
 </code></pre>
+		  <p>
+			  Because no <code class="inline language-text">Content-ID</code> was supplied, Simple Java Mail generates a fresh opaque value when it produces the
+			  <code class="inline language-java">MimeMessage</code>. Use the explicit Content-ID overload shown below when another system needs a stable value.
+		  </p>
 	  </div>
   </section>
 
