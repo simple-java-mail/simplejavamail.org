@@ -757,6 +757,10 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
         <code class="inline language-java">mailer.close()</code> directly or let a try-with-resources block call it. Which resources need attention depends
         on how the Mailer is used and whether its executor came from Simple Java Mail or from your application.
       </p>
+      <p class="wide">
+        Closing a Mailer releases the resources it owns: it stops an executor created by Simple Java Mail and, when batch-module is present, closes that
+        Mailer's connection-pool registration. It does not wait for outstanding send futures or stop an executor supplied by your application.
+      </p>
 
       <table>
         <thead>
