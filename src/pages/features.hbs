@@ -1537,27 +1537,26 @@ String rawHeaders = outlookData.getRawHeaders();
 
 
   <a href="#section-bouncing-emails" id="section-bouncing-emails" class="section-link h2">&sect;</a>
-  <h2>Setting custom recipient for bouncing emails</h2>
+  <h2>Setting a bounce address</h2>
 
   <section>
     <div class="view">
       <p>
-        For bouncing emails, you can provide a hint to the SMTP server to which bouncing emails should be returned.
-        This is also known as the Return-Path or Envelope FROM and is set on the Session instance with the property
-        <code class="inline language-properties">mail.smtp.from</code>.
+        <code class="inline language-java">withBounceTo(...)</code> sets the SMTP envelope sender (<code class="inline language-text">MAIL FROM</code>)
+        for that email. Delivery failures are normally returned to this address. The setting is applied per message, so emails sent through the same
+        <code class="inline language-java">Mailer</code> can use different bounce addresses without changing its shared
+        <code class="inline language-java">Session</code>.
       </p>
       <p>
-        Simple Java Mail offers a convenience method to set this property.
+        This is different from <code class="inline language-text">Reply-To</code>, which is a message header used by mail clients when a recipient replies.
+        The bounce address is used by mail servers during delivery and is not written into the outgoing message headers. A receiving mail system may
+        record it in a <code class="inline language-text">Return-Path</code> header. Only the address is used; a display name has no role in the SMTP envelope.
       </p>
     </div>
 
     <div class="side">
-<pre><code>// in similar fashion to setting replyTo address:
-currentEmailBuilder
-    .withBounceTo(aRecipientInstance) // or
-    .withBounceTo("Bob", "bob.techdesk@candyshop.com")
-    // or using one of the many alternative methods...
-</code></pre>
+<pre><code class="language-java">currentEmailBuilder
+    .withBounceTo("bounces@candyshop.com");</code></pre>
     </div>
   </section>
 
