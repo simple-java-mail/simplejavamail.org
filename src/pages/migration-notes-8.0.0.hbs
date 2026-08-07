@@ -1,0 +1,284 @@
+{{#> layouts/base head-sub-title="Migrating to 8.0.0" page-title="Migrating to Simple Java Mail 8.0.0" }}
+
+	{{#*inline "html-head-block"}}
+<meta name="Description" content="Migration notes for the email-governance, validation, conversion, DKIM, S/MIME, and parser changes introduced in Simple Java Mail 8.0.0">
+	{{/inline}}
+
+	{{#*inline "header-block"}}
+		{{> includes/header topic="features" }}
+	{{/inline}}
+
+	{{#*inline "body-block"}}
+	<section class="toc">
+		<ul>
+			<li><a href="#governance-at-send-time">Defaults and overrides move to send time</a></li>
+			<li><a href="#inspect-governed-email">Inspect or validate the governed email</a></li>
+			<li><a href="#per-email-governance">Per-email governance controls</a></li>
+			<li><a href="#default-smime-signing">Default S/MIME signing uses email defaults</a></li>
+			<li><a href="#governance-api">Governance and conversion APIs</a></li>
+			<li><a href="#lenient-validation">Lenient validation includes completeness</a></li>
+			<li><a href="#governed-send-paths">Receipt fallbacks and custom mailers</a></li>
+			<li><a href="#dkim-configuration">DKIM configuration</a></li>
+			<li><a href="#copying-and-outlook">Copying and Outlook parsing</a></li>
+			<li><a href="#low-level-api">Low-level API removals</a></li>
+		</ul>
+	</section>
+
+	<a href="#governance-at-send-time" id="governance-at-send-time" class="section-link h2">&sect;</a>
+	<h2>Defaults and overrides move to send time</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Code that inspects an Email immediately after building it may no longer see configured defaults.
+		</p>
+		<p class="wide">
+			In 7.x, the email builder copied global defaults into every new Email. Since 8.0, <code class="inline language-java">buildEmail()</code> keeps only
+			the values supplied by the caller. The Mailer completes the draft with its effective defaults and overrides before validation and MIME conversion.
+		</p>
+		<pre class="full-width-example"><code class="language-java">// 7.x, with a default From address configured:
+Email email = EmailBuilder.startingBlank().buildEmail();
+email.getFromRecipient(); // the configured default was already present
+
+// Current API: the draft contains only the values supplied here.
+Email draft = EmailBuilder.startingBlank()
+	.withRecipients(new RecipientBuilder()
+		.withAddress("ops@example.com")
+		.withType(TO)
+		.build())
+    .withSubject("Status")
+	.withPlainText("All systems operational.")
+    .buildEmail();
+mailer.sendMail(draft); // the configured From is applied during sending
+
+// Complete it explicitly only when you need to inspect the final values:
+Email completed = EmailBuilder.copying(draft)
+    .buildEmailCompletedWithDefaultsAndOverrides(mailer.getEmailGovernance());</code></pre>
+		<p class="wide">
+			The same draft can use different defaults when sent through different Mailers, and sending does not change the original draft. A raw
+			<code class="inline language-java">ContentTransferEncoding</code> may remain <code class="inline language-java">null</code>; MIME generation then falls back
+			to quoted-printable.
+		</p>
+	</section>
+
+	<a href="#inspect-governed-email" id="inspect-governed-email" class="section-link h2">&sect;</a>
+	<h2>Inspect or validate the governed email</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> <code class="inline language-java">mailer.validate(email)</code> validates the supplied draft, not the form completed for sending.
+		</p>
+		<pre class="full-width-example"><code class="language-java">Email ready = mailer.getEmailGovernance()
+    .produceEmailApplyingDefaultsAndOverrides(draft);
+
+mailer.validate(ready);</code></pre>
+		<p class="wide">
+			The no-argument <code class="inline language-java">buildEmailCompletedWithDefaultsAndOverrides()</code> applies property defaults. Pass
+			<code class="inline language-java">mailer.getEmailGovernance()</code> when you need that Mailer's programmatic defaults and overrides as well.
+		</p>
+	</section>
+
+	<a href="#per-email-governance" id="per-email-governance" class="section-link h2">&sect;</a>
+	<h2>Per-email governance controls</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Version 8 added override opt-outs and field-level controls. On the current API, configure them after choosing how the email starts.
+		</p>
+		<pre class="full-width-example"><code class="language-java">// 7.x: only the pre-start defaults opt-out existed.
+Email email = EmailBuilder.ignoringDefaults()
+    .startingBlank()
+    .buildEmail();
+
+// Current API: start first, then configure governance for this email.
+Email email = EmailBuilder.startingBlank()
+    .ignoringDefaults()
+    .ignoringOverrides()
+    .buildEmail();
+
+// Or keep governance but exclude selected fields.
+Email keepOwnSubject = EmailBuilder.startingBlank()
+    .withSubject("Do not replace this")
+    .dontApplyDefaultValueFor(EmailProperty.REPLYTO_RECIPIENT)
+    .dontApplyOverrideValueFor(EmailProperty.SUBJECT)
+    .buildEmail();</code></pre>
+		<p class="wide">
+			These choices stay with the Email until a Mailer applies governance. See
+			<a href="configuration.html#section-config-mailer">Mailer-level defaults and overrides</a> for the complete merge rules.
+		</p>
+	</section>
+
+	<a href="#default-smime-signing" id="default-smime-signing" class="section-link h2">&sect;</a>
+	<h2>Default S/MIME signing uses email defaults</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> The dedicated <code class="inline language-java">signByDefaultWithSmime(...)</code> Mailer methods were removed.
+		</p>
+		<p class="wide">
+			Default signing now uses the same defaults Email as every other governed field. This keeps signing policy in one place and lets the Mailer reuse
+			the prepared signing configuration.
+		</p>
+		<pre class="full-width-example"><code class="language-java">// 7.x:
+Mailer oldMailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, username, password)
+    .signByDefaultWithSmime(pkcs12Config)
+    .buildMailer();
+
+// Current API:
+SmimeSigningConfig signing = SmimeSigningConfig.builder()
+    .pkcs12Config(pkcs12Config)
+    .build();
+
+Email signingDefaults = EmailBuilder.startingBlank()
+    .signWithSmime(signing)
+    .buildEmailCompletedWithDefaultsAndOverrides(); // retain property defaults too
+
+Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, username, password)
+    .withEmailDefaults(signingDefaults)
+    .buildMailer();</code></pre>
+		<p class="wide">
+			<code class="inline language-java">withEmailDefaults(...)</code> replaces the property-derived defaults Email; it does not layer another Email on top.
+			Put every default you want to retain on the supplied instance.
+		</p>
+	</section>
+
+	<a href="#governance-api" id="governance-api" class="section-link h2">&sect;</a>
+	<h2>Governance and conversion APIs</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> This affects code that constructed <code class="inline language-java">EmailGovernance</code> directly or passed a PKCS12 config to
+			<code class="inline language-java">EmailConverter.emailToMimeMessage(...)</code>.
+		</p>
+		<p class="wide">
+			<code class="inline language-java">EmailGovernance</code> became an interface. Configure the Mailer, then reuse its effective governance when a
+			standalone conversion must follow the same defaults, overrides, and signing data.
+		</p>
+		<pre class="full-width-example"><code class="language-java">// 7.x:
+EmailGovernance governance = new EmailGovernance(
+    validator, pkcs12Config, defaults, overrides, maxSize);
+MimeMessage message = EmailConverter.emailToMimeMessage(
+    email, session, pkcs12Config);
+
+// Current API:
+Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, username, password)
+    .withEmailValidator(validator)
+    .withEmailDefaults(defaults)
+    .withEmailOverrides(overrides)
+    .withMaximumEmailSize(maxSize)
+    .buildMailer();
+
+MimeMessage message = EmailConverter.emailToMimeMessage(
+    email, session, mailer.getEmailGovernance());</code></pre>
+		<p class="wide">
+			The plain converter overloads now apply property defaults. The governance overload applies that Mailer's defaults and overrides, but it does not
+			validate the Email or enforce its maximum size.
+		</p>
+	</section>
+
+	<a href="#lenient-validation" id="lenient-validation" class="section-link h2">&sect;</a>
+	<h2>Lenient validation includes completeness</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Code using <code class="inline language-java">disablingAllClientValidation(true)</code> may proceed where 7.x threw for a missing
+			sender or recipient.
+		</p>
+		<p class="wide">
+			Completeness, address, and CRLF-injection checks still run, but their findings are logged as warnings instead of blocking the send. The setting does
+			not add missing fields; use it only when a custom or nonstandard send path can handle the resulting message.
+		</p>
+	</section>
+
+	<a href="#governed-send-paths" id="governed-send-paths" class="section-link h2">&sect;</a>
+	<h2>Receipt fallbacks and custom mailers</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Receipt addresses and the Email passed to a <code class="inline language-java">CustomMailer</code> now include governance results.
+		</p>
+		<p class="wide">
+			A receipt request without an explicit address is resolved after defaults and overrides: first to Reply-To, then to From. A CustomMailer receives the
+			same completed Email used for validation and MIME generation, so remove any workaround that reapplies Mailer defaults itself.
+		</p>
+		<pre class="full-width-example"><code class="language-java">Email email = EmailBuilder.startingBlank()
+	.withRecipients(new RecipientBuilder()
+		.withAddress("ops@example.com")
+		.withType(TO)
+		.build())
+	.withPlainText("All systems operational.")
+    .withReturnReceiptTo()
+    .withDispositionNotificationTo()
+    .buildEmail();
+
+// Mailer defaults or overrides may provide Reply-To or From before sending.
+mailer.sendMail(email);</code></pre>
+	</section>
+
+	<a href="#dkim-configuration" id="dkim-configuration" class="section-link h2">&sect;</a>
+	<h2>DKIM configuration</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> File-based DKIM builders need one method rename. Version 8 also introduced property-backed DKIM defaults.
+		</p>
+		<pre class="full-width-example"><code class="language-java">// 7.x:
+DkimConfig oldConfig = DkimConfig.builder()
+    .dkimPrivateKeyData(keyFile)
+    .dkimSigningDomain("example.com")
+    .dkimSelector("mail")
+    .build();
+
+// Current API:
+DkimConfig config = DkimConfig.builder()
+    .dkimPrivateKeyPath(keyFile)
+    .dkimSigningDomain("example.com")
+    .dkimSelector("mail")
+    .build();</code></pre>
+		<pre class="full-width-example"><code class="language-properties">simplejavamail.dkim.signing.private_key_file_or_data=file:dkim-private-key.der
+simplejavamail.dkim.signing.selector=mail
+simplejavamail.dkim.signing.signing_domain=example.com</code></pre>
+		<p class="wide">
+			The property defaults are loaded once per Mailer. See <a href="security.html#section-sending-dkim">DKIM signing</a> for current key formats,
+			algorithms, canonicalization, and the narrow use of header exclusions.
+		</p>
+	</section>
+
+	<a href="#copying-and-outlook" id="copying-and-outlook" class="section-link h2">&sect;</a>
+	<h2>Copying and Outlook parsing</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Email copies keep more state, while malformed empty Outlook header names no longer stop conversion.
+		</p>
+		<p class="wide">
+			<code class="inline language-java">EmailBuilder.copying(email)</code> now preserves content-transfer encoding and S/MIME signing and encryption state.
+			Outlook <code class="inline language-text">.msg</code> parsing skips null or empty header names while retaining valid headers and values.
+		</p>
+	</section>
+
+	<a href="#low-level-api" id="low-level-api" class="section-link h2">&sect;</a>
+	<h2>Low-level API removals</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Only code using Simple Java Mail internals or the low-level S/MIME helper needs changes here.
+		</p>
+		<p class="wide">
+			<code class="inline language-java">MailerHelper.signAndOrEncryptMessageWithSmime(...)</code> lost its fourth
+			<code class="inline language-java">Pkcs12Config</code> argument; signing data now comes from the Email. The deprecated
+			<code class="inline language-java">Email.internalSetId(...)</code> and <code class="inline language-java">wasMergedWithSmimeSignedMessage()</code> methods were removed.
+		</p>
+	</section>
+
+	<section aria-label="Migration sequence">
+		<div class="button-group">
+			<a class="button" href="migration-notes-7.0.0.html#navigation">Previous: version 7</a>
+			<a class="button" href="migration-notes-9.0.0.html#navigation">Next: version 9</a>
+		</div>
+	</section>
+	{{/inline}}
+
+{{/layouts/base}}

@@ -153,6 +153,15 @@
       "description": "Breaking changes and migration guidance for Simple Java Mail 9.0."
     },
     {
+      "title": "Migrating to 8.0",
+      "section": "Maintain",
+      "src": "migration-notes-8.0.0.hbs",
+      "url": "/migration-notes-8.0.0.html",
+      "out": "migration-notes-8.0.0.html",
+      "chrome": "docs",
+      "description": "Migration guidance for the email-governance, validation, conversion, DKIM, S/MIME, and parser changes introduced in Simple Java Mail 8.0."
+    },
+    {
       "title": "Migrating to 7.0",
       "section": "Maintain",
       "src": "migration-notes-7.0.0.hbs",

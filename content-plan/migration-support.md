@@ -9,7 +9,7 @@ Primary audience: upgraders, contributors, and developers who are stuck
 ### Visible structure
 
 - Current major route first: 9.x migration.
-- Historical routes: 7.x, 6.x, 5.x.
+- Historical routes: 8.x, 7.x, 6.x, 5.x.
 - Each entry states source version range, type of breaking change, and approximate work category without inventing an effort estimate.
 - Link to release history and GitHub releases for changes that do not require migration prose.
 
@@ -25,7 +25,8 @@ Preserve content and anchors, but add consistent chrome:
 - verification checklist;
 - next migration or current docs.
 
-The 9.0 page foregrounds the recipient-builder change and relevant new behavior from the current release history.
+The 8.0 page covers the email-governance overhaul and its related validation, conversion, DKIM, S/MIME, and parser changes. The 9.0 page foregrounds
+the recipient-builder change and relevant new behavior from the current release history.
 
 ## Help and contribute: `/contact.html`
 

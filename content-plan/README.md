@@ -137,6 +137,7 @@ The public site uses a small orientation layer and preserves the existing refere
 | `/migration-notes-5.0.0.html` | 5.0 migration | Historical migration reference | preserve |
 | `/migration-notes-6.0.0.html` | 6.0 migration | Historical migration reference | preserve |
 | `/migration-notes-7.0.0.html` | 7.0 migration | Historical migration reference | preserve |
+| `/migration-notes-8.0.0.html` | 8.0 migration | Email governance migration reference | add |
 | `/migration-notes-9.0.0.html` | 9.0 migration | Current major migration reference | preserve and foreground |
 | `/contact.html` | Help and contribute | Route support, bugs, security, and contributions | rewrite |
 | `/redirect.html` | Redirect helper | Existing compatibility behavior | preserve if still required |

@@ -627,11 +627,15 @@ Email emailToBeEncrypted = currentEmailBuilder
     .buildEmail();
 </code></pre>
 				Sign all emails by default from Java:
-				<pre><code>currentMailerBuilder
+				<pre><code>SmimeSigningConfig signingDefaults = SmimeSigningConfig.builder()
+    .pkcs12Config(myKeyInfo)
+    .build();
+
+currentMailerBuilder
     (...)
     .withEmailDefaults(EmailBuilder.startingBlank()
-		.signWithSmime(myPkcs12Config)
-		.buildEmail())
+		.signWithSmime(signingDefaults)
+		.buildEmailCompletedWithDefaultsAndOverrides()) // retain property defaults too
     .buildMailer();
 </code></pre>
 				Property-only S/MIME defaults:
