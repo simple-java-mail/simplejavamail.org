@@ -188,7 +188,9 @@
     &lt;artifactId&gt;spring-module&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
 	  <p>
-		  This adds the Spring core dependency, which is assumed to be on the classpath already.
+		  The module integrates with the Spring libraries supplied by your application. It expects
+		  <code class="inline language-text">spring-core</code>, <code class="inline language-text">spring-context</code>, and
+		  <code class="inline language-text">spring-beans</code> to be available at runtime; Spring and Spring Boot applications normally provide these already.
 	  </p>
   </section>
 
