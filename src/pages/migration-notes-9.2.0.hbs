@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
 
 	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Migration notes for the email builder governance API, stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
+		<meta name="Description" content="Migration notes for email serialization, the builder governance API, stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -12,6 +12,7 @@
 	<section class="toc">
 		<ul>
 			<li><a href="#email-governance-builder">Governance options now follow the email starter</a></li>
+			<li><a href="#email-serialization-snapshots">Serialized emails keep their send-ready content</a></li>
 			<li><a href="#tls-certificate-trust">TLS certificate trust is strict by default</a></li>
 			<li><a href="#extra-property-precedence">Extra properties follow normal configuration precedence</a></li>
 			<li><a href="#embedded-image-containment">Embedded-image bases now contain resolution</a></li>
@@ -57,6 +58,40 @@ Email email = EmailBuilder.copying(original)
 			This does not make <code class="inline language-java">startingBlank()</code> ignore governance. It starts with no email content; unless you add an ignore
 			option afterward, defaults and overrides remain eligible for application when the Mailer prepares the email.
 			See <a href="https://github.com/bbottema/simple-java-mail/issues/689">GitHub issue #689</a> for the API history and implementation record.
+		</p>
+	</section>
+
+	<a href="#email-serialization-snapshots" id="email-serialization-snapshots" class="section-link h2">&sect;</a>
+	<h2>Serialized emails keep their send-ready content</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> Serializing an email can now read lazy or remote attachment sources and produce a larger result. The result may also contain
+			PKCS12 private-key material and passwords, so store and transport it as sensitive data.
+		</p>
+		<p class="wide">
+			Before 9.2.0, <code class="inline language-java">Email</code> implemented Java serialization, but several parts needed to send it were transient.
+			Attachment, embedded-image and decrypted-attachment metadata survived while their <code class="inline language-java">DataSource</code> content vanished.
+			A forwarded <code class="inline language-java">MimeMessage</code> and S/MIME signing configuration vanished as well.
+		</p>
+		<p class="wide">
+			Version 9.2.0 turns serialization into a send-ready snapshot. Resource input streams are read and closed while the email is written, then restored as
+			repeatable, read-only byte sources. Forwarded messages are stored as RFC 822 data and rebuilt with a neutral mail session. S/MIME signing configuration,
+			including its PKCS12 data, is retained. Attachment names, content types, descriptions, content IDs and transfer-encoding choices remain intact.
+		</p>
+		<p class="wide">
+			The snapshot preserves mail content, not the runtime behavior of a custom <code class="inline language-java">DataSource</code>. Its concrete class is not
+			serialized, even if that class implements <code class="inline language-java">Serializable</code>. Lazy loading, network access, caching, write support and
+			custom methods are not available on the restored byte source.
+		</p>
+		<p class="wide">
+			A pre-9.2.0 stream can still be deserialized for its subject, body, recipients, headers and resource metadata. Content that was never written cannot be
+			recovered: forwarded MIME content and signing configuration remain absent, while reading or sending a legacy attachment fails at the point of use with
+			a version-specific error.
+		</p>
+		<p class="wide">
+			See <a href="https://github.com/bbottema/simple-java-mail/issues/690">GitHub issue #690</a> for the implementation record and
+			<a href="features.html#section-serializing-emails">Serializing Email objects</a> for the ongoing behavior reference.
 		</p>
 	</section>
 

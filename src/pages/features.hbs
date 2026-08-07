@@ -1676,14 +1676,28 @@ mailer.testConnection(true);  // explicitly asynchronous
 
 	<section>
 		<p class="wide">
-			Simple Java Mail supports native Java serialization for Email objects with the following caveats:
+			An <code class="inline language-java">Email</code> can be written with Java's <code class="inline language-java">ObjectOutputStream</code>
+			and restored later. Since 9.2.0, that restored email still contains what it needs to be sent.
 		</p>
 		<ul class="indent wide">
-			<li>AttachmentResource.dataSource of type DataSource is transient</li>
-			<li>Email.emailToForward of type MimeMessage is transient</li>
-			<li>Email.dkimPrivateKeyInputStream of type InputStream is transient</li>
-			<li>Email.smimeSigningConfig of type SmimeSigningConfig is transient</li>
+			<li>Attachments, embedded images and decrypted attachments are stored with their bytes and MIME metadata.</li>
+			<li>A forwarded message is stored in RFC 822 form and restored with a neutral mail session.</li>
+			<li>S/MIME signing configuration is kept, including its PKCS12 data and passwords.</li>
 		</ul>
+		<p class="wide">
+			A custom <code class="inline language-java">DataSource</code> is read in full while the email is serialized. After deserialization it is a
+			repeatable, read-only byte source; the original class and any lazy loading, network access, caching, write support or other custom behavior are
+			not recreated. This also means that a lazy or remote source must be available at serialization time, and a read failure stops serialization.
+		</p>
+		<p class="wide">
+			Treat the serialized data as sensitive. It can contain the complete message, attachments, credentials, private keys and passwords.
+		</p>
+		<p class="wide">
+			Emails serialized before 9.2.0 can still be opened for their ordinary fields and attachment metadata. Those versions did not store the attachment
+			bytes, forwarded MIME message or S/MIME signing configuration, so that data cannot be recovered. Reading or sending a missing legacy attachment now
+			fails with a clear pre-9.2.0 error instead of an unrelated null failure. See the
+			<a href="migration-notes-9.2.0.html#email-serialization-snapshots">9.2 migration notes</a> for the exact boundary.
+		</p>
 	</section>
 
 
