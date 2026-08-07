@@ -564,7 +564,7 @@ MailerBuilder
 	  <div class="view">
 		  <p>
 			  By default content is encoded in the target MimeMessage or EML using <a href="https://learn.microsoft.com/en-us/previous-versions/office/developer/exchange-server-2010/aa579632(v=exchg.140)" target="_blank">quoted-printable</a>,
-			  so the EML is nicely and safely readable. However, you can change it to many other encoders such as base64, which for example is useful if you want to add an extra layer of obfuscation.
+			  so the EML is nicely and safely readable. You can also use other encoders. Base64, for example, turns the content into ASCII text for reliable MIME transport. It is encoding, not encryption; the original content remains directly decodable.
 		  </p>
 		  <p>
 			  The email header that governs this feature is <a href="https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html" target="_blank">Content-Transfer-Encoding</a> and Simple Java Mail takes care of inserting this header in the right places, which varies depending on the
