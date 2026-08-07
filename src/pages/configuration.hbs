@@ -1122,7 +1122,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 	   .(..)
 	   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it (default 0)
 	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up (default 4)
-	   .withConnectionPoolClaimTimeoutMillis(TimeUnit.MINUTES.toMillis(1)) // wait max 1 minute for available connection (default forever)
+	   .withConnectionPoolClaimTimeoutMillis(TimeUnit.MINUTES.toMillis(1)) // wait max 1 minute for available connection (default about 24.9 days)
 	   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour (default 5 seconds)
 	   .buildMailer();
 	</code></pre>
