@@ -3,7 +3,6 @@
     <section class="hero home-hero">
       <div class="shell hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow"><span>Outbound email for Java</span><span>v{{site.version}}</span></p>
           <h1>Simple to use.<br><em>Built for the real world.</em></h1>
           <p class="hero-lede">Send a well-formed email with a small fluent API. If you later need DKIM, S/MIME, proxies, batch sending, or multiple SMTP clusters, you keep using the same builders and mailer.</p>
           <div class="button-row">
@@ -15,6 +14,7 @@
         <div class="code-window hero-code" aria-label="Minimal Simple Java Mail example">
           <div class="code-window-bar">
             <span>FirstSend.java</span>
+            <span class="hero-version">v{{site.version}}</span>
           </div>
           <pre><code class="language-java">Email email = EmailBuilder.startingBlank()
     .from("Sender", "sender@example.org")
