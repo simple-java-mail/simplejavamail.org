@@ -327,6 +327,8 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole sequential 
 		<p class="wide">
 			For caller-owned queues that need custom work between successful sends, use <code class="inline">Mailer.withOpenConnection(...)</code>. It opens one
 			SMTP connection for the callback and provides a scoped sender; each send is still sequential and processed like a normal blocking send.
+			This form cannot be combined with a <a href="features.html#section-custom-mailer">CustomMailer</a>, which owns its own connection lifecycle. Use
+			<code class="inline language-java">sendMail(...)</code> normally and keep any connection reuse inside the custom implementation.
 		</p>
 		<pre><code>mailer.withOpenConnection(sender -> {
     while (database.hasPendingMail()) {

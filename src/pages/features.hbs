@@ -488,6 +488,8 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
         If the caller owns the queue and needs custom work between sends, use
         <code class="inline language-java">withOpenConnection(...)</code>. The scoped sender keeps one SMTP connection open for the callback, but it is still
         caller-managed, sequential and not pooled.
+        This form uses the Mailer's built-in SMTP connection. A <a href="#section-custom-mailer">CustomMailer</a> owns its own connection, so call
+        <code class="inline language-java">sendMail(...)</code> normally and manage any connection reuse inside that implementation.
       </p>
       <pre><code class="small">mailer.withOpenConnection(sender -> {
     while (database.hasPendingMail()) {
@@ -753,6 +755,10 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
       <p>
         This confirms submission acceptance by the SMTP server, not final recipient mailbox delivery. Use Delivery Status Notification, bounces, read
         receipts or provider-specific tracking when you need final delivery signals.
+      </p>
+      <p>
+        The open-connection example uses the Mailer's built-in SMTP transport. It cannot be combined with a
+        <a href="#section-custom-mailer">CustomMailer</a>, which owns its own connection lifecycle.
       </p>
     </div>
 
@@ -1843,6 +1849,11 @@ mailer.testConnection(true);  // explicitly asynchronous
 		<p class="wide">
 			You can keep Simple Java Mail's message building, validation, security, and async support while replacing the code that tests a server and sends
 			the message. Define a <em>CustomMailer</em> and plug it in.
+		</p>
+		<p class="wide">
+			A CustomMailer owns its sending connection, so call <code class="inline language-java">mailer.sendMail(...)</code> normally.
+			<code class="inline language-java">withOpenConnection(...)</code> is unavailable in this setup; keep any connection reuse inside the CustomMailer
+			implementation.
 		</p>
 
 		<hr/>

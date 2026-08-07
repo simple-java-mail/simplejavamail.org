@@ -960,6 +960,11 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 			<code class="inline language-java">withOpenConnection(...)</code>. Simple Java Mail owns and closes the SMTP connection for the callback, while the
 			callback decides what to send next. This is useful for database-backed queues where a message should be marked as sent before the next one is read.
 		</p>
+		<p>
+			This form uses the Mailer's built-in SMTP connection. It cannot be combined with a
+			<a href="features.html#section-custom-mailer">CustomMailer</a>, which owns its own connection lifecycle. Use
+			<code class="inline language-java">sendMail(...)</code> normally and keep any connection reuse inside that implementation.
+		</p>
 	</div>
 
 	<div class="wide full-width-example">
