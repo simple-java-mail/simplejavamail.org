@@ -99,16 +99,15 @@
     &lt;artifactId&gt;outlook-module&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
     <p>
-      This adds the following 3rd party dependencies:
+      The module delegates Outlook <code class="inline language-text">.msg</code> parsing to:
     </p>
     <ul>
-      <li><a class="indent" href="https://github.com/EsotericSoftware/kryo">com.esotericsoftware:kryo</a></li>
-      <li><a class="indent" href="https://github.com/magro/kryo-serializers">de.javakaffee:kryo-serializers</a></li>
       <li><a class="indent" href="https://github.com/bbottema/outlook-message-parser">org.simplejavamail:outlook-message-parser</a></li>
-      <li>Of which that last in turn adds:</li>
-      <li><a class="indent" href="https://poi.apache.org/">org.apache.poi:poi</a></li>
-      <li><a class="indent" href="https://poi.apache.org/">org.apache.poi:poi-scratchpad</a></li>
     </ul>
+    <p>
+      That parser reads the Outlook OLE container, message properties, bodies and attachments using Apache POI and related conversion libraries.
+      Its transitive dependency set belongs to the parser and can change independently of this module.
+    </p>
   </section>
 
   <h2 id="dkim-module" class="with-back-to-top">DKIM support</h2>
