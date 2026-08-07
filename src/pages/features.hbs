@@ -28,8 +28,8 @@
       </a>
       <a href="#section-reply-forward">
         <span>Conversations</span>
-        <strong>Reply &amp; forward</strong>
-        <p>Reply to or forward existing messages while keeping their content and attachments intact.</p>
+        <strong>Reply, reply-all &amp; forward</strong>
+        <p>Quote a message for one or all recipients, or forward the original as a complete email.</p>
       </a>
       <a href="#section-email-validation">
         <span>Recipient safety</span>
@@ -1566,36 +1566,163 @@ String rawHeaders = outlookData.getRawHeaders();
   <h2>Replying to and forwarding emails</h2>
 
   <section>
-    <div class="view">
+    <div>
+      <p class="wide">
+        <code class="inline language-java">EmailBuilder</code> can start a reply, reply-all, or forward from an existing
+        <code class="inline language-java">Email</code> or <code class="inline language-java">MimeMessage</code>. Each starter returns the same
+        <code class="inline language-java">EmailPopulatingBuilder</code> used for a new message.
+      </p>
+
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable reply and forward reference">
+        <table class="method-family-table">
+          <thead>
+          <tr>
+            <th>Start with</th>
+            <th>What it prepares</th>
+            <th>Recipients</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td><code>replyingTo(...)</code></td>
+            <td>A reply subject, reply headers, quoted plain and HTML bodies, and the original embedded images</td>
+            <td>The original message's reply address</td>
+          </tr>
+          <tr>
+            <td><code>replyingToAll(...)</code></td>
+            <td>The same quoted reply, prepared through Jakarta Mail's reply-all behavior</td>
+            <td>The reply address and the other recipients calculated from the original message</td>
+          </tr>
+          <tr>
+            <td><code>forwarding(...)</code></td>
+            <td>A forward subject and the original message as a <code>message/rfc822</code> body part</td>
+            <td>None; add the forward's recipients yourself</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  <h3>Keep the quoted message when adding your reply</h3>
+
+  <section>
+    <div>
       <p>
-        <code class="inline language-java">EmailBuilder</code> can start a reply or forward from an existing
-        <code class="inline language-java">Email</code> or <code class="inline language-java">MimeMessage</code>.
+        Both reply starters quote the original message in plain text and HTML. Add your response to both alternatives because the receiving mail client
+        normally displays only one of them.
       </p>
       <p>
-        <code class="inline language-java">replyingTo(...)</code> quotes the original message in both the plain-text and HTML alternatives.
-        Mail clients render one of those alternatives, so add the new reply to both as well.
+        A custom quote template changes the HTML alternative and must contain <code class="inline language-text">%s</code>, which is replaced with the
+        original HTML. The plain-text alternative keeps its usual <code class="inline language-text">&gt; </code> quoting.
       </p>
       <p>
-        <code class="inline language-java">forwarding(...)</code> includes the original message as a separate body inside the forward.
+        Use <code class="inline language-java">prependText(...)</code> and <code class="inline language-java">prependTextHTML(...)</code> to keep the
+        quoted content. Calling <code class="inline language-java">withPlainText(...)</code> or <code class="inline language-java">withHTMLText(...)</code>
+        here would replace it.
+      </p>
+      <p>
+        See the <a href="https://javadoc.io/doc/org.simplejavamail/core-module/latest/org/simplejavamail/api/email/EmailStartingBuilder.html" target="_blank">reply starter overloads</a>
+        for the complete <code class="inline language-java">Email</code> and <code class="inline language-java">MimeMessage</code> API.
       </p>
     </div>
 
-    <div class="side">
-      <p>Replying to an email:</p>
-      <pre><code class="language-java">Email reply = EmailBuilder
-    .replyingTo(receivedEmail) // Email or MimeMessage
+    <div>
+      <pre><code class="language-java">String quoteMarkup =
+    "&lt;blockquote class=\"quoted\"&gt;%s&lt;/blockquote&gt;";
+
+Email reply = EmailBuilder
+    .replyingToAll(receivedEmail, quoteMarkup)
     .from("sender@example.com")
     .prependText("Thanks, I'll take care of it.\n\n")
     .prependTextHTML("&lt;p&gt;Thanks, I'll take care of it.&lt;/p&gt;")
-    .buildEmail();
-</code></pre>
-      <p>Forwarding an email:</p>
-      <pre><code class="language-java">Email forward = EmailBuilder
-    .forwarding(receivedEmail) // Email or MimeMessage
-    .from("sender@example.com")
-    .withPlainText("For your reference, the original message is included below.")
-    .buildEmail();
-</code></pre>
+    .buildEmail();</code></pre>
+    </div>
+  </section>
+
+  <h3>Replace, extend, or remove body alternatives</h3>
+
+  <section>
+    <div>
+      <p class="wide">
+        The same body-editing methods work after <code class="inline language-java">startingBlank()</code>, <code class="inline language-java">copying(...)</code>,
+        or any reply starter. Keep the plain and HTML operations paired when the message contains both alternatives.
+      </p>
+
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable body-editing reference">
+        <table>
+          <thead>
+          <tr>
+            <th>Change</th>
+            <th>Paired methods</th>
+            <th>Effect</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>Replace</td>
+            <td><code>withPlainText(String | File)</code><br><code>withHTMLText(String | File)</code></td>
+            <td>Replaces the current alternative</td>
+          </tr>
+          <tr>
+            <td>Prepend</td>
+            <td><code>prependText(String | File)</code><br><code>prependTextHTML(String | File)</code></td>
+            <td>Adds content before the current alternative</td>
+          </tr>
+          <tr>
+            <td>Append</td>
+            <td><code>appendText(String | File)</code><br><code>appendTextHTML(String | File)</code></td>
+            <td>Adds content after the current alternative</td>
+          </tr>
+          <tr>
+            <td>Remove</td>
+            <td><code>clearPlainText()</code><br><code>clearHTMLText()</code></td>
+            <td>Removes that alternative from the email</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <pre><code class="language-java">Email revised = EmailBuilder.copying(draft)
+    .withPlainText(new File("mail/body.txt"))
+    .withHTMLText(new File("mail/body.html"))
+    .prependText("Reference: 42\n\n")
+    .prependTextHTML("&lt;p&gt;Reference: 42&lt;/p&gt;")
+    .appendText("\n\nContact support@example.com")
+    .appendTextHTML("&lt;p&gt;Contact support@example.com&lt;/p&gt;")
+    .buildEmail();</code></pre>
+
+      <p class="wide">
+        See <a href="https://javadoc.io/doc/org.simplejavamail/core-module/latest/org/simplejavamail/api/email/EmailPopulatingBuilder.html" target="_blank"><code class="inline language-java">EmailPopulatingBuilder</code></a>
+        for every overload and the other fields that can be cleared when copying or rebuilding an email.
+      </p>
+    </div>
+  </section>
+
+  <h3><code>Reply-To</code> is not an outgoing recipient</h3>
+
+  <section>
+    <div>
+      <p>
+        <code class="inline language-text">Reply-To</code> tells a recipient's mail client where a future reply should go. It does not add anyone to the
+        current message's To, CC, or BCC recipients.
+      </p>
+      <p>
+        Call <code class="inline language-java">withReplyTo(...)</code> more than once, or pass a <code class="inline language-java">List&lt;Recipient&gt;</code>,
+        when replies may go to more than one address.
+      </p>
+    </div>
+
+    <div>
+      <pre><code class="language-java">Email email = EmailBuilder.startingBlank()
+    .from("notices@example.com")
+    .withRecipients(customer)
+    .withReplyTo("Support", "support@example.com")
+    .withReplyTo("Escalations", "escalations@example.com")
+    .withSubject("Service notice")
+    .withPlainText("Planned maintenance starts at 22:00.")
+    .buildEmail();</code></pre>
     </div>
   </section>
 
