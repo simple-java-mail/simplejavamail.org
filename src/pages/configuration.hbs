@@ -74,6 +74,7 @@
       <li><a href="#section-programmatic-api-common">Programmatic API - common settings</a></li>
       <li><a href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
+	  <li><a href="#section-config-snapshot" class="indent">When changes take effect</a></li>
       <li><a href="#section-available-properties" class="indent">Available properties</a></li>
       <li><a href="#section-config-mailer">Mailer level email defaults and overrides</a></li>
       <li><a href="#section-combine-config">Combining everything for multiple environments</a></li>
@@ -327,6 +328,43 @@ ConfigLoader.loadProperties(usingMyOwnPropertiesObject, addProperties);
       <pre><code class="small">ConfigLoader.loadProperties(new Properties(), /* addProperties = */ false);
 </code></pre>
       Current system properties and environment variables still apply.
+    </div>
+  </section>
+
+  <a href="#section-config-snapshot" id="section-config-snapshot" class="section-link h3">&sect;</a>
+  <h3>When changes take effect</h3>
+
+  <section>
+    <div class="view">
+      <p>
+        <code class="inline language-java">ConfigLoader</code> holds one set of defaults for the entire process. Loading another source does not
+        reconfigure an existing <code class="inline language-java">Email</code>, <code class="inline language-java">Mailer</code>, or mail session.
+      </p>
+      <p>
+        Load every source for an environment before starting its builders. Then create a fresh builder and build the replacement object. Do not keep an
+        <code class="inline language-java">EmailBuilder</code> or <code class="inline language-java">MailerBuilder</code> around while reloading
+        <code class="inline language-java">ConfigLoader</code>: settings are read while builders and their final objects are created.
+      </p>
+      <p>
+        When replacing a <code class="inline language-java">Mailer</code>, let any work already using the old instance finish and then
+        <a href="#section-mailer-lifecycle">close it</a>.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java">ConfigLoader.loadProperties(productionProperties, false);
+Mailer productionMailer = MailerBuilder
+    .withSMTPServerPort(587)
+    .buildMailer();
+
+ConfigLoader.loadProperties(failoverProperties, false);
+Mailer failoverMailer = MailerBuilder
+    .withSMTPServerPort(587)
+    .buildMailer();
+
+// productionMailer still uses its original configuration
+productionMailer.close(); // once no work is using it
+</code></pre>
     </div>
   </section>
 
@@ -623,6 +661,9 @@ Email yourServerLevelOverrides = EmailBuilder.startingBlank()
     <h3>Now for the programmatic part</h3>
 
     <div>
+      <p>
+        Load the complete configuration for the selected environment first. Only then create its builder and <code class="inline language-java">Mailer</code>.
+      </p>
 <pre><code>// simplejavamail.properties is automatically loaded
 
 // replace previously loaded defaults with this environment's property file;
@@ -647,7 +688,8 @@ ConfigLoader.loadProperties(runtimeOverrides, true);
         Maybe we want to connect slightly different for some reason:
       </p>
 
-<pre><code>// override only the port and connection type, leave everything else to config files
+<pre><code>// start a fresh builder after every source for this environment has been loaded
+// override only the port and connection type, leave everything else to config files
 Mailer mailer = MailerBuilder
                   .withSMTPServerPort(587)
                   .withTransportStrategy(TransportStrategy.SMTP_TLS)
