@@ -75,6 +75,7 @@
       <li><a href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
 	  <li><a href="#section-config-snapshot" class="indent">When changes take effect</a></li>
+	  <li><a href="#section-environment-variables" class="indent">Environment variable names</a></li>
       <li><a href="#section-available-properties" class="indent">Available properties</a></li>
       <li><a href="#section-config-mailer">Mailer level email defaults and overrides</a></li>
       <li><a href="#section-combine-config">Combining everything for multiple environments</a></li>
@@ -364,6 +365,35 @@ Mailer failoverMailer = MailerBuilder
 
 // productionMailer still uses its original configuration
 productionMailer.close(); // once no work is using it
+</code></pre>
+    </div>
+  </section>
+
+  <a href="#section-environment-variables" id="section-environment-variables" class="section-link h3">&sect;</a>
+  <h3>Environment variable names</h3>
+
+  <section>
+    <div class="view">
+      <p>
+        For the fixed properties listed below, uppercase the property name and replace each dot with an underscore. There is no additional relaxed
+        binding: the name comes directly from the documented property key.
+      </p>
+      <p>
+        The two wildcard namespaces are different: <code class="inline language-properties">simplejavamail.extraproperties.*</code> and
+        <code class="inline language-properties">simplejavamail.defaults.connectionpool.clusters.*</code> are scanned as literal names. An environment
+        variable such as <code class="inline language-text">SIMPLEJAVAMAIL_EXTRAPROPERTIES_MAIL_SMTP_TIMEOUT</code> is therefore not recognized.
+      </p>
+      <p>
+        Some process launchers can supply literal lowercase names containing dots, but support varies between shells, containers, and operating systems.
+        For wildcard settings, prefer a property file, an exact dotted JVM <code class="inline language-text">-D</code> system property, or the Java API.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-properties">SIMPLEJAVAMAIL_SMTP_HOST=smtp.example.com
+SIMPLEJAVAMAIL_SMTP_PORT=587
+SIMPLEJAVAMAIL_TRANSPORTSTRATEGY=SMTP_TLS
+SIMPLEJAVAMAIL_DEFAULTS_FROM_ADDRESS=sender@example.com
 </code></pre>
     </div>
   </section>
