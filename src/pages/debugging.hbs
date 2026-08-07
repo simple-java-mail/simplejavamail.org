@@ -78,6 +78,15 @@ currentEmailBuilder.withOverrideReceivers(tester1Recipient, testGroupInboxRecipi
         By default Jakarta Mail's debug logging is turned off, but you can turn it on for more diagnostic info. You can also route the debug stream
         to stdout, stderr or SLF4J without touching the internal Session instance directly.
       </p>
+	  <p>
+		  Use <code class="inline language-java">withDebugPrinter(PrintStream)</code> when the built-in targets do not fit. Simple Java Mail passes that
+		  stream to Jakarta Mail but does not close it. Keep it open for as long as the Mailer may use it, then close it yourself.
+	  </p>
+	  <p>
+		  A custom <code class="inline language-java">PrintStream</code> is a Java-only setting: a live stream cannot be represented by a property or CLI
+		  argument. For those forms, choose <code class="inline language-java">STDOUT</code>, <code class="inline language-java">STDERR</code>, or
+		  <code class="inline language-java">SLF4J</code> through <code class="inline language-java">SessionDebugOutput</code> instead.
+	  </p>
     </div>
 
     <div class="side">
@@ -99,6 +108,29 @@ MailerBuilder.usingSession(yourSession);
 simplejavamail.javaxmail.debug.out=SLF4J
 </code></pre>
     </div>
+  </section>
+
+  <section>
+	<div class="view">
+	  <p>
+		  In this example both resources have a clear owner. Try-with-resources closes the Mailer first and the debug stream afterwards, so Jakarta Mail
+		  cannot write to an already closed stream.
+	  </p>
+	</div>
+
+	<div class="wide full-width-example">
+<pre><code class="language-java small">try (PrintStream jakartaMailDebug = new PrintStream(
+        Files.newOutputStream(Path.of("jakarta-mail-debug.log")));
+     Mailer mailer = MailerBuilder
+        .withSMTPServer("host", 587, "username", "password")
+        .withDebugLogging(true)
+        .withDebugPrinter(jakartaMailDebug)
+        .buildMailer()) {
+
+    mailer.testConnection();
+}
+</code></pre>
+	</div>
   </section>
 
 
