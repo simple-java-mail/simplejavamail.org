@@ -4,8 +4,8 @@
       <img class="brand-logo" src="/assets/sjm-logo.png" width="936" height="183" alt="">
     </a>
 
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">
-      <span>Menu</span>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation header-actions">
+      <span data-nav-toggle-label>Menu</span>
       <span class="nav-toggle-lines" aria-hidden="true"></span>
     </button>
 
@@ -17,7 +17,11 @@
               {{label}}{{#if (eq href "/docs.html")}}<span class="nav-submenu-caret" aria-hidden="true"></span>{{/if}}
             </a>
             {{#if (eq href "/docs.html")}}
-              <ul class="primary-submenu" aria-label="Documentation sections">
+              <button class="nav-submenu-toggle" type="button" aria-expanded="false" aria-controls="primary-docs-submenu">
+                <span class="visually-hidden">Show documentation sections</span>
+                <span class="nav-submenu-caret" aria-hidden="true"></span>
+              </button>
+              <ul id="primary-docs-submenu" class="primary-submenu" aria-label="Documentation sections">
                 {{#each @root.docsGroups}}
                   {{#unless (eq label "Maintain")}}
                     {{#each pages}}
@@ -34,7 +38,7 @@
       </ul>
     </nav>
 
-    <div class="header-actions">
+    <div id="header-actions" class="header-actions">
       <a class="header-utility" href="{{nav.utility.href}}">{{nav.utility.label}}</a>
       <a class="header-cta {{activeClass nav.cta.href currentUrl}}" href="{{nav.cta.href}}">{{nav.cta.label}}<span class="cta-arrow" aria-hidden="true">→</span></a>
     </div>

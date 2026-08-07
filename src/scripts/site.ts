@@ -1,17 +1,42 @@
 const header = document.querySelector<HTMLElement>('[data-site-header]');
 const navToggle = document.querySelector<HTMLButtonElement>('.nav-toggle');
+const navToggleLabel = navToggle?.querySelector<HTMLElement>('[data-nav-toggle-label]');
+const navSubmenuToggle = header?.querySelector<HTMLButtonElement>('.nav-submenu-toggle');
+const navSubmenu = navSubmenuToggle?.closest<HTMLElement>('.nav-has-submenu');
+
+const setSubmenuOpen = (open: boolean): void => {
+  navSubmenu?.classList.toggle('submenu-open', open);
+  navSubmenuToggle?.setAttribute('aria-expanded', String(open));
+  const accessibleLabel = open ? 'Hide documentation sections' : 'Show documentation sections';
+  const label = navSubmenuToggle?.querySelector<HTMLElement>('.visually-hidden');
+  if (label) label.textContent = accessibleLabel;
+};
+
+const setNavigationOpen = (open: boolean): void => {
+  header?.classList.toggle('nav-open', open);
+  document.documentElement.classList.toggle('nav-menu-open', open);
+  navToggle?.setAttribute('aria-expanded', String(open));
+  if (navToggleLabel) navToggleLabel.textContent = open ? 'Close' : 'Menu';
+  if (!open) setSubmenuOpen(false);
+};
 
 navToggle?.addEventListener('click', () => {
-  const open = header?.classList.toggle('nav-open') ?? false;
-  navToggle.setAttribute('aria-expanded', String(open));
+  setNavigationOpen(!header?.classList.contains('nav-open'));
+});
+
+navSubmenuToggle?.addEventListener('click', () => {
+  setSubmenuOpen(!navSubmenu?.classList.contains('submenu-open'));
 });
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && header?.classList.contains('nav-open')) {
-    header.classList.remove('nav-open');
-    navToggle?.setAttribute('aria-expanded', 'false');
+    setNavigationOpen(false);
     navToggle?.focus();
   }
+});
+
+window.matchMedia('(max-width: 1080px)').addEventListener('change', (event) => {
+  if (!event.matches) setNavigationOpen(false);
 });
 
 const docsSidebar = document.querySelector<HTMLElement>('[data-docs-sidebar]');
