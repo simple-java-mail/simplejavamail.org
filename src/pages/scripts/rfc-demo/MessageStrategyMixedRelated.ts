@@ -14,12 +14,12 @@ export class MessageStrategyMixedRelated extends MessageStrategy {
       "     <ul>" +
       "		    <li class=\"indent\">related" +
       "         <ul>" +
-      "			      <li class=\"indent\">HTML text</li>" +
-      "			      <li class=\"indent\">embeddable content (ie. images)</li>" +
+      "			      <li class=\"indent\">HTML</li>" +
+      "			      <li class=\"indent\">embedded resources</li>" +
       "		      </ul>" +
       "       </li>" +
-      (email.useEmailForward ? "<li class=\"indent\">forwarded email</li>" : "") +
-      (email.useAttachments ? "<li class=\"indent\">downloadable attachments</li>" : "") +
+      (email.useEmailForward ? "<li class=\"indent\">forwarded message</li>" : "") +
+      (email.useAttachments ? "<li class=\"indent\">attachments</li>" : "") +
       "	    </ul>" +
       "   </li>" +
       "</ul>";

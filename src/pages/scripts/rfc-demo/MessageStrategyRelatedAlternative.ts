@@ -13,12 +13,12 @@ export class MessageStrategyRelatedAlternative extends MessageStrategy {
       "   <li class=\"indent\">related (root)<ul>" +
       "   	<li class=\"indent\">alternative" +
       "       <ul>" +
-      (email.usePlainText ? "<li class=\"indent\">Plain text</li>" : "") +
-      (email.useHTMLText ? "<li class=\"indent\">HTML text</li>" : "") +
-      (email.useCalendarEvent ? "<li class=\"indent\">iCalendar text</li>" : "") +
+      (email.usePlainText ? "<li class=\"indent\">plain text</li>" : "") +
+      (email.useHTMLText ? "<li class=\"indent\">HTML</li>" : "") +
+      (email.useCalendarEvent ? "<li class=\"indent\">iCalendar</li>" : "") +
       "		    </ul>" +
       "    </li>" +
-      "		<li class=\"indent\">embeddable content (ie. images)</li>" +
+      "		<li class=\"indent\">embedded resources</li>" +
       "	</ul>" +
       "</li>";
   }

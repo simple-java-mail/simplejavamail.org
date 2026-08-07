@@ -12,9 +12,9 @@ export class MessageStrategyAlternative extends MessageStrategy {
     return "<ul>" +
       "  <li class=\"indent\">alternative (root)" +
       "     <ul>" +
-      (email.usePlainText ? "<li class=\"indent\">Plain text</li>" : "") +
-      (email.useHTMLText ? "<li class=\"indent\">HTML text</li>" : "") +
-      (email.useCalendarEvent ? "<li class=\"indent\">iCalendar text</li>" : "") +
+      (email.usePlainText ? "<li class=\"indent\">plain text</li>" : "") +
+      (email.useHTMLText ? "<li class=\"indent\">HTML</li>" : "") +
+      (email.useCalendarEvent ? "<li class=\"indent\">iCalendar</li>" : "") +
       "     </ul>" +
       "   </li>" +
       "</ul>";

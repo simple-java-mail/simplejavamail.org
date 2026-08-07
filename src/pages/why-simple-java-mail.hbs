@@ -5,6 +5,8 @@
       <h2>Jakarta Mail is a solid foundation. Application code still needs something higher-level.</h2>
       <p>Sun JavaMail—and now Jakarta Mail—gives Java applications standards-aware messages, sessions, and transports. That machinery is valuable, but low-level: your code still has to turn a message into addresses, multipart structures, properties, connection management, and error handling.</p>
       <p>Simple Java Mail was created to move that plumbing behind a usable API. The Jakarta transition changed stewardship and namespaces; it did not change the low-level way you work with mail. That is still the gap this library fills.</p>
+      <p>Library comparisons often miss the MIME layer. Supporting HTML, inline images, and attachments separately is not the same as combining them correctly in one message.</p>
+      <a class="text-link" href="/rfc-compliant.html">Why MIME structure matters <span aria-hidden="true">→</span></a>
     </section>
 
     <section id="what-the-boundary-removes" class="start-prose-section start-wide-section">

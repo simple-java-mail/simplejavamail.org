@@ -104,7 +104,7 @@
       "url": "/rfc-compliant.html",
       "out": "rfc-compliant.html",
       "chrome": "docs",
-      "description": "Learn how Simple Java Mail builds multipart messages, handles encodings and embedded files, and converts between message formats."
+      "description": "Understand why MIME structure matters, what malformed nesting looks like in mail clients, and how Simple Java Mail builds the message tree."
     },
     {
       "title": "Compare approaches",

@@ -1,6 +1,6 @@
 	<section>
 		<div class="view">
-			<p>Configure your email:</p>
+			<h3>Choose the message content</h3>
 
 			<form>
 				<div>
@@ -14,7 +14,7 @@
 				<div class="indent">
 					<input type="checkbox" id="useEmbeddedContent" name="useEmbeddedContent" onclick="switchCheckbox('useEmbeddedContent', this.checked)"
 					       disabled="disabled">
-					<label for="useEmbeddedContent">HTML body contains embedded content (such as image)</label>
+					<label for="useEmbeddedContent">HTML body contains embedded content (such as an image)</label>
 				</div>
 				<div>
 					<input type="checkbox" id="useCalendarEvent" name="useCalendarEvent" onclick="switchCheckbox('useCalendarEvent', this.checked)">
@@ -26,13 +26,13 @@
 				</div>
 				<div>
 					<input type="checkbox" id="useEmailForward" name="useEmailForward" onclick="switchCheckbox('useEmailForward', this.checked)">
-					<label for="useEmailForward">Forwards another email</label>
+					<label for="useEmailForward">Forwarded email</label>
 				</div>
 			</form>
 
 		</div>
 		<div class="side padded">
-			<p>Structure used for email:</p>
-			<div id="messageStructure">&nbsp;</div>
+			<h3>Resulting MIME tree</h3>
+			<div id="messageStructure" role="status" aria-live="polite">Select one or more content types to build the tree.</div>
 		</div>
 	</section>

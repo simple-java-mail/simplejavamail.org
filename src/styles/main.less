@@ -300,12 +300,20 @@ pre.has-copy-control { padding-top: 2.9rem; }
 .legacy-doc-content table { width: 100%; border-collapse: collapse; margin: @space-lg 0; background: @white; font-size: 0.84rem; }
 .legacy-doc-content th, .legacy-doc-content td { padding: 0.75rem; border: 1px solid @line; text-align: left; vertical-align: top; }
 .legacy-doc-content th { background: @ink; color: @white; font-family: @font-mono; font-size: 0.68rem; letter-spacing: 0.03em; text-transform: uppercase; }
+.legacy-doc-content .doc-table-wrap { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.legacy-doc-content .doc-table-wrap table { min-width: 680px; }
+.legacy-doc-content .mime-role-table th:first-child, .legacy-doc-content .mime-role-table td:first-child { width: 13rem; }
+.legacy-doc-content .mime-role-table td:first-child code { white-space: nowrap; }
 .legacy-doc-content .button { width: fit-content; margin: @space-md 0; }
 .legacy-doc-content .button-group { display: flex; flex-wrap: wrap; gap: @space-sm; }
 .legacy-doc-content input, .legacy-doc-content select { min-height: 40px; padding: 0.45rem 0.6rem; border: 1px solid @line; background: @white; }
 .legacy-doc-content input[type="checkbox"] { min-height: auto; accent-color: @teal; }
 .legacy-doc-content form > div { margin: 0.45rem 0; }
-.legacy-doc-content #messageStructure { padding: @space-md; border: 1px solid @line; background: @white; font-family: @font-mono; font-size: 0.78rem; white-space: pre-wrap; }
+.legacy-doc-content #messageStructure { padding: @space-md; border: 1px solid @line; background: @white; font-family: @font-mono; font-size: 0.78rem; }
+.legacy-doc-content #messageStructure ul { margin: 0; padding-left: 1.2rem; }
+.legacy-doc-content #messageStructure ul ul { margin-top: 0.2rem; }
+.legacy-doc-content #messageStructure .indent { margin-left: 0; }
+.legacy-doc-content #messageStructure li + li { margin-top: 0.18rem; }
 .legacy-doc-content img { height: auto; }
 .doc-next { display: grid; grid-template-columns: 1fr 1fr; gap: @space-md; margin-top: @space-2xl; padding-top: @space-xl; border-top: 1px solid @line; }
 .doc-next a { display: flex; flex-direction: column; gap: 0.25rem; padding: @space-md; border: 1px solid @line; background: @white; color: @ink; text-decoration: none; }

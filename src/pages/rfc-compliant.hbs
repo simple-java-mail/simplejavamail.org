@@ -1,89 +1,154 @@
-{{#> layouts/base head-sub-title="RFC Compliant" page-title="Simple Java Mail is RFC compliant" }}
-
-	{{#*inline "html-head-block"}}
-		<meta name="Description" content="How Simple Java Mail builds standards-oriented MIME structures and why interoperability matters">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="rfc compliant" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+{{#> layouts/base}}
+  {{#*inline "body-block"}}
   <section class="toc">
     <ul>
-      <li><a href="#section-why">Why RFC compliancy matters</a></li>
-      <li><a href="#section-how">How is Simple Java Mail RFC compliant?</a></li>
-      <li><a href="#section-explore-multipart">Explore the multipart structures used by Simple Java Mail</a></li>
+      <li><a href="#section-why">Why the MIME tree matters</a></li>
+      <li><a href="#section-failures">What goes wrong when the structure is wrong</a></li>
+      <li><a href="#section-how">What Simple Java Mail takes care of</a></li>
+      <li><a href="#section-explore-multipart">Explore the structures Simple Java Mail uses</a></li>
     </ul>
   </section>
 
   <a href="#section-why" id="section-why" class="section-link h2">&sect;</a>
-  <h2>Why MIME structure and interoperability matter</h2>
+  <h2>A message is a MIME tree, not a bag of parts</h2>
 
   <section>
-    <div class="view">
-      <p>
-        A plain-text message is simple. Add an HTML alternative, attachments, embedded images, and calendar content, and the exact MIME structure starts to matter.
+    <div>
+      <p class="wide">
+        SMTP acceptance is not a rendering test. A server can accept a message whose MIME parts are perfectly readable on their own but describe the
+        wrong relationships. The recipient's mail client then has to guess which body to show, whether an image belongs inside the HTML, and which files
+        are attachments.
       </p>
-      <p>
-        Test the same message in desktop, web, and mobile clients and malformed MIME often shows up in different ways. Symptoms include:
+      <p class="wide">
+        As soon as an email contains more than one representation or resource, its shape carries meaning. The MIME standards define three multipart
+        types that do most of the work in application email:
       </p>
-      <ul class="indent paragraph">
-        <li>not seeing embedded images, or</li>
-        <li>icon for attachment is shown while there are no attachments, or</li>
-        <li>embedded images are displayed as attachments,</li>
-        <li>not seeing the HTML version if a text version is present,</li>
-        <li>not seeing the text version if a HTML version is present,</li>
-        <li>not seeing attachments,</li>
-        <li>attachments aren't handled correctly according to mime type, or</li>
-        <li>header information is missing or incorrect so you can't see how long a download will take,</li>
-        <li>from/to addresses being malformed (like missing the <code class="inline language-text">&lt;name&gt;</code> part in <code
-          class="inline language-text">&lt;name&gt; address@domain.com</code>)
-        </li>
-      </ul>
 
-      <p>Simple Java Mail generates standards-oriented MIME structures for the content you declare and covers the common multipart combinations in its tests.
-        Rendering and policy still vary by receiving client and server, so no library can promise identical presentation everywhere.</p>
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable multipart type reference">
+        <table class="mime-role-table">
+          <thead>
+          <tr>
+            <th>Multipart type</th>
+            <th>What the relationship means</th>
+            <th>Typical use</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td><a href="https://www.rfc-editor.org/rfc/rfc2046.html#section-5.1.4"><code>multipart/alternative</code></a></td>
+            <td>Its children are different representations of the same content. The client chooses the best version it can display.</td>
+            <td>A plain-text body alongside an HTML body</td>
+          </tr>
+          <tr>
+            <td><a href="https://www.rfc-editor.org/rfc/rfc2387.html#section-2"><code>multipart/related</code></a></td>
+            <td>Its children form one compound object and only make complete sense together.</td>
+            <td>An HTML body with images referenced through <a href="https://www.rfc-editor.org/rfc/rfc2392.html#section-2"><code>cid:</code> URLs</a></td>
+          </tr>
+          <tr>
+            <td><a href="https://www.rfc-editor.org/rfc/rfc2046.html#section-5.1.3"><code>multipart/mixed</code></a></td>
+            <td>Its children are independent parts bundled in a particular order.</td>
+            <td>A message body followed by attachments or a forwarded message</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="wide">
+        These containers are not interchangeable. A rich message often nests all three: alternatives together, inline resources around those
+        alternatives, and independent attachments at the outside.
+      </p>
     </div>
   </section>
 
+  <a href="#section-failures" id="section-failures" class="section-link h2">&sect;</a>
+  <h2>What goes wrong when the structure is wrong</h2>
+
+  <section>
+    <div>
+      <p class="wide">
+        Mail clients do not all recover from a misleading MIME tree in the same way. A message may look fine in one client and fail somewhere else.
+        These are common symptoms; the exact cause still has to be confirmed from the raw message.
+      </p>
+
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable MIME problem reference">
+        <table>
+          <thead>
+          <tr>
+            <th>What the recipient sees</th>
+            <th>What the MIME message may be saying instead</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>The plain and HTML bodies appear together, one disappears, or one becomes an attachment.</td>
+            <td>The representations are not grouped and ordered as alternatives.</td>
+          </tr>
+          <tr>
+            <td>An inline image is broken or appears in the attachment list.</td>
+            <td>The image is outside the related body, or its <code>Content-ID</code> does not match the HTML's <code>cid:</code> reference.</td>
+          </tr>
+          <tr>
+            <td>A paperclip appears even though the sender added no downloadable attachment.</td>
+            <td>An inline resource or body part has been presented as an independent mixed part.</td>
+          </tr>
+          <tr>
+            <td>An attachment is missing, displayed inline, or handled as the wrong file type.</td>
+            <td>Its position, media type, or <a href="https://www.rfc-editor.org/rfc/rfc2183.html#section-2"><code>Content-Disposition</code></a> does not describe it correctly.</td>
+          </tr>
+          <tr>
+            <td>Text, filenames, or binary content arrive garbled.</td>
+            <td>The charset, transfer encoding, or MIME metadata does not match the content that was sent.</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
   <a href="#section-how" id="section-how" class="section-link h2">&sect;</a>
-  <h2>How Simple Java Mail builds interoperable messages</h2>
+  <h2>Jakarta Mail provides the parts. Simple Java Mail assembles them.</h2>
 
   <section>
     <div class="view">
-      <p>Simple Java Mail improves <a href="https://en.wikipedia.org/wiki/MIME">MIME interoperability</a> in two ways:</p>
-      <ol class="indent paragraph">
-        <li>It is built on <a href="https://jakartaee.github.io/mail-api/">Jakarta Mail</a>, Java's standard mail API. Jakarta Mail implements the
-          protocols and message formats defined by the relevant RFCs, including SMTP, POP3, and IMAP. Simple Java Mail focuses on outbound SMTP and
-          message composition.
-        </li>
-        <li>Simple Java Mail maps the content you declare to an appropriate multipart structure. It builds the usual
-          <code>MimeMessage</code>, <code>BodyPart</code> and <code>MimeMultipart</code> objects so your code can focus on the message itself.
-        </li>
-      </ol>
+      <p>
+        Jakarta Mail provides the standard <code>MimeMessage</code>, <code>MimeBodyPart</code>, and <code>MimeMultipart</code> building blocks. It serializes
+        the finished message, writes boundaries and headers, applies encodings, and transports the result. At that level, your application still decides
+        what every part means and how the parts should be nested.
+      </p>
+      <p>
+        Simple Java Mail starts from the content you declare—plain text, HTML, embedded resources, calendar data, attachments, or a forwarded
+        message—and selects the matching MIME structure. It then fills in the body parts, content IDs, dispositions, and encodings needed by that
+        structure.
+      </p>
+    </div>
+    <div class="side padded">
+      <blockquote>
+        Automatic MIME-structure selection is one of Simple Java Mail's core capabilities. It is also what library comparisons often miss: supporting
+        each content type is not the same as combining them correctly.
+      </blockquote>
+      <p>
+        Other APIs range from direct multipart control to helpers for common message types. The <a href="/feature-matrix.html">side-by-side comparison</a>
+        shows where each library leaves the work.
+      </p>
     </div>
   </section>
 
-
   <a href="#section-explore-multipart" id="section-explore-multipart" class="section-link h2">&sect;</a>
-  <h2>Explore the multipart structures used by Simple Java Mail</h2>
+  <h2>See the structure Simple Java Mail chooses</h2>
 
   <section>
-	  <div class="view">
-		  <p>
-			  Simple Java Mail chooses the MIME structure that matches the content you add. Use the controls below to see how plain text, HTML, embedded
-			  resources, and attachments change that structure:
-		  </p>
-	  </div>
+    <div>
+      <p class="wide">
+        Select the content in your message to see how Simple Java Mail combines <code>alternative</code>, <code>related</code>, and <code>mixed</code>.
+        The tree is simplified to show the relationship between parts; the generated message also contains the headers and encodings those parts need.
+      </p>
+    </div>
   </section>
 
   {{> components/mimemessage--structure-demo }}
-    {{/inline}}
+  {{/inline}}
 
-    {{#*inline "scripts-block"}}
-		{{> components/mimemessage--structure-demo-script }}
-    {{/inline}}
-
+  {{#*inline "scripts-block"}}
+    {{> components/mimemessage--structure-demo-script }}
+  {{/inline}}
 {{/layouts/base}}
