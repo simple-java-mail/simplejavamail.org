@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Features" page-title="Simple Java Mail Features" }}
 
 	{{#*inline "html-head-block"}}
-<meta name="Description" content="Simple Java Mail includes CLI, auth. socks proxy, OAUTH2, custom headers and properties, address validation, DKIM, S/MIME, config files, Spring support and conversions">
+<meta name="Description" content="Simple Java Mail includes CLI, authenticated SOCKS proxies, OAuth2, custom headers and properties, address validation, DKIM, S/MIME, configuration files, Spring support and conversions">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -111,7 +111,7 @@
 		<li><a href="#section-reusable-mailer" class="indent">Configure once, reuse many times</a></li>
 		<li><a href="#section-add-recipients" class="indent">Alternative API for almost everything</a></li>
 		<li><a href="#section-recipient-builders" class="indent">Dedicated recipient builders</a></li>
-		<li><a href="#authentication" class="indent">Authentication and OAUTH2 support</a></li>
+		<li><a href="#authentication" class="indent">Authentication and OAuth2 support</a></li>
 		<li><a href="#section-sending-asynchronously" class="indent">Asynchronous sending, simple batches and clustering</a></li>
 		<li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
 		<li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
@@ -395,7 +395,7 @@ Email email = EmailBuilder.startingBlank()
 
 
   <a href="#authentication" id="authentication" class="section-link h2">&sect;</a>
-  <h3>Authentication and OAUTH2 support</h3>
+  <h3>Authentication and OAuth2 support</h3>
   <section>
 	  <p class="wide">
 		  You use one of the builder methods on <em>MailerBuilder</em> for defining the server properties like host, port, username and password.
@@ -405,24 +405,32 @@ Email email = EmailBuilder.startingBlank()
 		  is OAuth2 (by means of XOAUTH2 which comes built-in in Jakarta Mail, the underlying SMTP framework).
 	  </p>
 	  <p class="wide">
-		  Then depending on the transport strategy that you choose, the password represents the SMTP server password or the OAuth2 token.
-		  However, obtaining the OAuth2 token and refreshing tokens etc. is outside the scope of this library, which varies from platform to platform.
+		  For a long-lived Mailer, an <code class="inline language-java">OAuth2AccessTokenProvider</code> supplies a current token whenever Simple Java Mail opens
+		  or reconnects a physical SMTP connection. Your provider handles acquisition, expiry, caching and refresh. An already-connected pooled transport is
+		  reused without another provider call.
 	  </p>
 
-	  <div class="wide">
+	  <div class="wide full-width-example">
 <pre><code>MailerBuilder
   .withSMTPServer("server host", 587, "username", yourPassword)
   .withTransportStrategy(TransportStrategy.SMTP_TLS)
   .buildMailer()
   .sendMail(email);
 </code></pre>
-		  <pre><code>MailerBuilder
-  .withSMTPServer("server host", 587, "username", yourOAuth2Token)
+		  <pre><code>OAuth2AccessTokenProvider accessTokens =
+    () -&gt; tokenService.currentAccessToken();
+
+MailerBuilder
+  .withSMTPServer("server host", 587, "username")
   .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+  .withOAuth2AccessTokenProvider(accessTokens)
   .buildMailer()
   .sendMail(email);
 </code></pre>
 	  </div>
+	  <p class="wide">
+		  The existing fixed-token form remains supported: pass the token as the SMTP password when it will stay valid for the Mailer's lifetime.
+	  </p>
 
 	  <p class="wide">
 		  See the security page for a more <a href="security.html#section-authentication-methods">in-depth explanation of transport strategies</a>.

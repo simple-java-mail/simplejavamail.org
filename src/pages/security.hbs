@@ -24,7 +24,7 @@
 				<a href="#section-transport-strategy-oauth2">
 					<span>Authentication</span>
 					<strong>OAuth2</strong>
-					<p>Authenticate with a provider-issued access token instead of a mailbox password.</p>
+					<p>Use fixed or refresh-aware access tokens instead of a mailbox password.</p>
 				</a>
 				<a href="#section-sending-dkim">
 					<span>Domain signing</span>
@@ -209,11 +209,45 @@ simplejavamail.opportunistic.tls=false
 
 		<section>
 			<p class="wide">
-				OAUTH2 authentication is easy, just use the SMTP_OAUTH2 TransportStrategy and provide the OAUTH2 token as the server password.
+				For a long-lived Mailer, give Simple Java Mail a provider that returns a current access token. The provider can use whichever OAuth client,
+				token endpoint, cache, or refresh flow your application already uses.
 			</p>
-<pre><code>MailerBuilder
-  .withSMTPServer("host", port, "username", yourOAUTH2Token)
-  .withTransportStrategy(TransportStrategy.SMTP_OAUTH2);</code></pre>
+			<pre class="full-width-example"><code class="language-java">OAuth2AccessTokenProvider accessTokens =
+    () -&gt; tokenService.currentAccessToken();
+
+Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user@example.com")
+    .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+    .withOAuth2AccessTokenProvider(accessTokens)
+    .buildMailer();</code></pre>
+			<p class="wide">
+				Simple Java Mail asks the provider for a token immediately before it opens a physical SMTP connection. It asks again after a disconnect when
+				the connection must be reopened. Reusing an already-connected pooled transport does not call the provider again. The provider should be
+				thread-safe and should cache a valid token instead of contacting the authorization server for every call.
+			</p>
+			<p class="wide">
+				A provider error, or a null or blank result, stops the connection with a clear error and keeps the token out of the message. If the SMTP server
+				rejects a token, that authentication failure is returned normally; Simple Java Mail does not request another token behind your back.
+			</p>
+		</section>
+		<section>
+			<p class="wide">
+				Fixed access tokens remain available through the existing password argument. This is handy when the token lifetime already matches the lifetime
+				of the Mailer.
+			</p>
+			<pre class="full-width-example"><code class="language-java">Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user@example.com", accessToken)
+    .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+    .buildMailer();</code></pre>
+			<p class="wide">
+				Choose either a fixed token or a provider for one Mailer. Configuring both is rejected. A supplied Jakarta Mail Session can use the provider too;
+				configure that Session for <code class="inline language-properties">mail.smtp.auth.mechanisms=XOAUTH2</code> and then call
+				<code class="inline language-java">MailerBuilder.usingSession(session).withOAuth2AccessTokenProvider(...)</code>.
+			</p>
+			<p class="wide">
+				Spring applications can register the provider as a bean. See <a href="configuration.html#section-spring-support">Spring support</a> for the direct
+				bean form and an adapter for Spring Security's OAuth2 client manager.
+			</p>
 		</section>
 
 

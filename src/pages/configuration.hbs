@@ -706,8 +706,46 @@ public class YourEmailService {
         }
 }
 </code></pre>
+	  When the default Mailer uses <code class="inline language-java">SMTP_OAUTH2</code>, a single OAuth2 token-provider bean is picked up automatically:
+	  <pre><code class="small">@Bean
+OAuth2AccessTokenProvider smtpAccessTokens(TokenService tokenService) {
+    return tokenService::currentAccessToken;
+}</code></pre>
+	  If the application has more than one <code class="inline language-java">OAuth2AccessTokenProvider</code> bean, mark the one for SMTP with
+	  <code class="inline language-java">@Primary</code> or use normal Spring bean disambiguation.
     </div>
   </section>
+
+	<section>
+		<div class="wide full-width-example">
+			<p>
+				Applications using Spring Security OAuth2 Client can adapt its
+				<a href="https://docs.spring.io/spring-security/reference/servlet/oauth2/client/core.html">OAuth2AuthorizedClientManager</a>. The manager obtains
+				or refreshes the authorized client when needed; Simple Java Mail receives only the current token value.
+			</p>
+			<pre><code class="small">@Bean
+OAuth2AccessTokenProvider smtpAccessTokens(
+        OAuth2AuthorizedClientManager authorizedClients) {
+    return () -&gt; {
+        OAuth2AuthorizeRequest request = OAuth2AuthorizeRequest
+                .withClientRegistrationId("smtp")
+                .principal("simple-java-mail")
+                .build();
+
+        OAuth2AuthorizedClient client = authorizedClients.authorize(request);
+        if (client == null) {
+            throw new IllegalStateException("Unable to authorize the SMTP OAuth2 client");
+        }
+        return client.getAccessToken().getTokenValue();
+    };
+}</code></pre>
+			<p>
+				For scheduled jobs and other code without an HTTP request, Spring Security recommends an
+				<code class="inline language-java">AuthorizedClientServiceOAuth2AuthorizedClientManager</code>. This adapter stays in your application; the Simple
+				Java Mail Spring module adds no Spring Security dependency.
+			</p>
+		</div>
+	</section>
   <section>
 
     <div class="wide">

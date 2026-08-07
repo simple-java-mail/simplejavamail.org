@@ -1,7 +1,7 @@
 {{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
 
 	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Migration notes for asynchronous failure handling, email serialization, the builder governance API, stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
+		<meta name="Description" content="Migration notes for refresh-aware OAuth2, asynchronous failure handling, email serialization, the builder governance API, stricter TLS certificate trust, configuration precedence, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2.0">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -11,6 +11,7 @@
 	{{#*inline "body-block"}}
 	<section class="toc">
 		<ul>
+			<li><a href="#refresh-aware-oauth2">Long-lived Mailers can refresh OAuth2 tokens</a></li>
 			<li><a href="#email-governance-builder">Governance options now follow the email starter</a></li>
 			<li><a href="#async-failure-reporting">Asynchronous failures stay with the returned future</a></li>
 			<li><a href="#email-serialization-snapshots">Serialized emails keep their send-ready content</a></li>
@@ -21,6 +22,49 @@
 			<li><a href="#dkim-key-property-formats">DKIM key properties can declare their format</a></li>
 			<li><a href="#smime-signature-status">S/MIME signature status reports integrity, not trust</a></li>
 		</ul>
+	</section>
+
+	<a href="#refresh-aware-oauth2" id="refresh-aware-oauth2" class="section-link h2">&sect;</a>
+	<h2>Long-lived Mailers can refresh OAuth2 tokens</h2>
+
+	<section>
+		<p class="wide" style="font-size:smaller">
+			<strong>Impact:</strong> New API only. Existing code that supplies a fixed OAuth2 token as the SMTP password continues to work.
+		</p>
+		<p class="wide">
+			A Mailer often lives much longer than one access token. Version 9.2.0 adds
+			<code class="inline language-java">OAuth2AccessTokenProvider</code>, a small Java 8 interface that your token service, cache, or OAuth client can
+			implement. Simple Java Mail asks it for a current token when a physical SMTP connection is opened or reopened.
+		</p>
+		<pre class="full-width-example"><code class="language-java">OAuth2AccessTokenProvider accessTokens =
+    () -&gt; tokenService.currentAccessToken();
+
+Mailer mailer = MailerBuilder
+    .withSMTPServer("smtp.example.com", 587, "user@example.com")
+    .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+    .withOAuth2AccessTokenProvider(accessTokens)
+    .buildMailer();</code></pre>
+		<p class="wide">
+			The provider owns token acquisition, expiry checks, caching and refresh. It must be thread-safe and return a nonblank token. Direct sending,
+			<code class="inline language-java">withOpenConnection(...)</code>, simple batches and pooled or clustered sending all resolve the provider at the
+			point where they need a new physical connection. Reusing an already-connected pooled transport does not resolve it again.
+		</p>
+		<p class="wide">
+			Choose one credential form per Mailer: a fixed token or a provider. A provider also requires
+			<code class="inline language-java">TransportStrategy.SMTP_OAUTH2</code>; for a supplied Session, configure
+			<code class="inline language-properties">mail.smtp.auth.mechanisms=XOAUTH2</code>. Provider failures and null or blank results become connection errors
+			without exposing the token. SMTP authentication failures are returned normally, without a hidden token retry.
+		</p>
+		<p class="wide">
+			The Spring module automatically applies a single <code class="inline language-java">OAuth2AccessTokenProvider</code> bean to its default Mailer. See
+			<a href="configuration.html#section-spring-support">Spring support</a> for a plain bean and a Spring Security adapter, or the
+			<a href="security.html#section-transport-strategy-oauth2">OAuth2 security reference</a> for the framework-free form.
+		</p>
+		<p class="wide">
+			See <a href="https://github.com/bbottema/simple-java-mail/issues/692">GitHub issue #692</a> for the Simple Java Mail implementation and
+			<a href="https://github.com/simple-java-mail/smtp-connection-pool/issues/9">smtp-connection-pool issue #9</a> for connection-time provider support
+			introduced in smtp-connection-pool 3.1.0.
+		</p>
 	</section>
 
 	<a href="#email-governance-builder" id="email-governance-builder" class="section-link h2">&sect;</a>
