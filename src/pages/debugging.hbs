@@ -187,11 +187,9 @@ try {
         This will tell you which properties are loaded by API and which from config file and which properties are without value.
       </p>
       <p>
-        When using maven, Simple Java Mail provides some default XML configuration for log4j2, but you can easily switch to something else. Below are
-        some examples.
-      </p>
-      <p>
-        You can also checkout the <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/simple-java-mail/src/main/resources/log4j2_example.xml">log4j2 configuration used in our own tests</a>.
+        Simple Java Mail logs through SLF4J, leaving the logging backend and its configuration to your application. If you use Log4j 2,
+        <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/simple-java-mail/src/main/resources/log4j2_example.xml"><code class="inline language-text">log4j2_example.xml</code></a>
+        provides a starting point that you can copy and adapt. More examples follow below.
       </p>
     </div>
   </section>
