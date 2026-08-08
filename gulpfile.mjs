@@ -213,6 +213,12 @@ function checkManifest(done) {
     outputs.add(page.out);
     urls.add(page.url);
   }
+  for (const page of site.pages) {
+    if (page.breadcrumbParent === page.url) errors.push(`page cannot be its own breadcrumb parent: ${page.url}`);
+    if (page.breadcrumbParent && !urls.has(page.breadcrumbParent)) {
+      errors.push(`breadcrumb parent references missing URL ${page.breadcrumbParent}`);
+    }
+  }
   for (const file of fs.readdirSync(path.join(SRC, 'pages'))) {
     if (file.endsWith('.hbs') && !sources.has(file)) errors.push(`unregistered page ${file}`);
   }

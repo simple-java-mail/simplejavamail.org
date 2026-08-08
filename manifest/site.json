@@ -141,6 +141,7 @@
       "url": "/migration-notes-9.2.0.html",
       "out": "migration-notes-9.2.0.html",
       "chrome": "docs",
+      "breadcrumbParent": "/migration-notes.html",
       "description": "Migration guidance for stricter TLS certificate trust, embedded-image containment, safer DKIM configuration, and precise S/MIME signature status in Simple Java Mail 9.2."
     },
     {
@@ -150,6 +151,7 @@
       "url": "/migration-notes-9.0.0.html",
       "out": "migration-notes-9.0.0.html",
       "chrome": "docs",
+      "breadcrumbParent": "/migration-notes.html",
       "description": "Breaking changes and migration guidance for Simple Java Mail 9.0."
     },
     {
@@ -159,6 +161,7 @@
       "url": "/migration-notes-8.0.0.html",
       "out": "migration-notes-8.0.0.html",
       "chrome": "docs",
+      "breadcrumbParent": "/migration-notes.html",
       "description": "Migration guidance for the email-governance, validation, conversion, DKIM, S/MIME, and parser changes introduced in Simple Java Mail 8.0."
     },
     {
@@ -168,6 +171,7 @@
       "url": "/migration-notes-7.0.0.html",
       "out": "migration-notes-7.0.0.html",
       "chrome": "docs",
+      "breadcrumbParent": "/migration-notes.html",
       "description": "Historical migration guidance for Simple Java Mail 7.0."
     },
     {
@@ -177,6 +181,7 @@
       "url": "/migration-notes-6.0.0.html",
       "out": "migration-notes-6.0.0.html",
       "chrome": "docs",
+      "breadcrumbParent": "/migration-notes.html",
       "description": "Historical migration guidance for Simple Java Mail 6.0."
     },
     {
@@ -186,6 +191,7 @@
       "url": "/migration-notes-5.0.0.html",
       "out": "migration-notes-5.0.0.html",
       "chrome": "docs",
+      "breadcrumbParent": "/migration-notes.html",
       "description": "Historical migration guidance for Simple Java Mail 5.0."
     },
     {

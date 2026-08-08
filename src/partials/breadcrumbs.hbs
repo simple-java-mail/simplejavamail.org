@@ -5,5 +5,11 @@
     <a href="/docs.html">Docs</a>
     <span aria-hidden="true">/</span>
   {{/unless}}
+  {{#if page.breadcrumbParent}}
+    {{#with (pageForUrl page.breadcrumbParent)}}
+      <a href="{{url}}">{{title}}</a>
+      <span aria-hidden="true">/</span>
+    {{/with}}
+  {{/if}}
   <span aria-current="page">{{page.title}}</span>
 </nav>
