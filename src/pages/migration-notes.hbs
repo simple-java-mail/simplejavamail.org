@@ -8,11 +8,11 @@
     <h2 id="version-9-2">Migrating to 9.2</h2>
     <section>
       <div class="view">
-		<p><strong>Version 9.2 tightens four security boundaries.</strong> TLS uses the JVM trust store by default, configured embedded-image bases contain file, classpath and URL resolution, DKIM refuses to exclude the mandatory <code class="inline language-java">From</code> header, and S/MIME signature status reports only verification that actually happened.</p>
+		<p>Version 9.2 changes governance-builder call order, asynchronous failure reporting, serialized email snapshots, configuration precedence, and several security defaults.</p>
 		<a class="button" href="migration-notes-9.2.0.html#navigation">Review the 9.2 changes</a>
       </div>
       <div class="side">
-		<p><strong>Check before upgrading:</strong> private SMTP certificates may need trust-store work, image references that leave a configured base will no longer resolve unless explicitly allowed, DKIM exclusions must not list <code class="inline language-java">From</code>, and S/MIME consumers must keep signature integrity separate from certificate trust.</p>
+		<p><strong>Main work:</strong> fix moved builder methods, review changed async and serialization behavior, then check TLS trust, embedded-image bases, DKIM exclusions, and S/MIME status handling.</p>
       </div>
     </section>
 
