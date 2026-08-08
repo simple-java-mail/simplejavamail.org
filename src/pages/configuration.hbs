@@ -17,27 +17,27 @@
       </header>
       <div class="doc-card-grid">
         <a href="#section-programmatic-api-common">
-          <span>Java API</span>
+          <span class="doc-card-meta"><span class="doc-card-kicker">Java API</span>{{> components/module-badges core=true}}</span>
           <strong>SMTP connection</strong>
           <p>Configure the server, credentials, transport, timeouts, proxy, and reusable mailer in Java.</p>
         </a>
         <a href="#section-config-properties">
-          <span>Files &amp; environment</span>
+          <span class="doc-card-meta"><span class="doc-card-kicker">Files &amp; environment</span>{{> components/module-badges core=true}}</span>
           <strong>Properties</strong>
           <p>Load settings from property files, system properties, or environment variables.</p>
         </a>
         <a href="#section-spring-support">
-          <span>Framework integration</span>
+          <span class="doc-card-meta"><span class="doc-card-kicker">Framework integration</span>{{> components/module-badges spring=true}}</span>
           <strong>Spring</strong>
           <p>Build and inject a Simple Java Mail mailer from Spring's environment and profiles.</p>
         </a>
         <a href="#section-config-mailer">
-          <span>Message policy</span>
+          <span class="doc-card-meta"><span class="doc-card-kicker">Message policy</span>{{> components/module-badges core=true}}</span>
           <strong>Defaults &amp; overrides</strong>
           <p>Fill in missing message values or enforce shared recipients, headers, validation, and signing.</p>
         </a>
         <a href="#section-batch-and-clustering">
-          <span>Throughput</span>
+          <span class="doc-card-meta"><span class="doc-card-kicker">Throughput</span>{{> components/module-badges batch=true}}</span>
           <strong>Pools &amp; clusters</strong>
           <p>Reuse SMTP connections and give different workloads their own pools and server sets.</p>
         </a>
@@ -83,8 +83,8 @@
       <li><a href="#section-spring-support">Spring support</a></li>
       <li><a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
       <li><a href="#section-batch-and-clustering">Batch and clustering support</a></li>
-      <li><a href="#section-not-reusing-connections" class="indent">How connections work without batch-module</a></li>
-      <li><a href="#section-reusing-connections" class="indent">Reusing connections with batch-module's connection pool</a></li>
+	  <li><a href="#section-not-reusing-connections" class="indent">How direct connections work</a></li>
+	  <li><a href="#section-reusing-connections" class="indent">Reusing connections with a pool</a></li>
       <li><a href="#section-clustering" class="indent">Advanced performance tuning: Clustering with multiple connection pools</a></li>
     </ul>
   </section>
@@ -242,7 +242,7 @@ currentMailerBuilder.verifyingServerIdentity(false);
 // restore the secure default
 currentMailerBuilder.resetVerifyingServerIdentity();
 </code></pre>
-<pre><code class="small">// batch-module executor defaults (used when batch-module is loaded)
+<pre><code class="small">// pooled-delivery executor defaults
 currentMailerBuilder.withThreadPoolSize(3);
 // 0: core threads stay alive, !0: threads die after delay (default 1)
 currentMailerBuilder.withThreadPoolKeepAliveTime(5000);
@@ -276,7 +276,7 @@ currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, 
 
 
   <a href="#section-proxy-bridge-ports" id="section-proxy-bridge-ports" class="section-link h3">&sect;</a>
-  <h3>Authenticated proxy bridge ports</h3>
+  {{#> components/feature-heading-h3 socks=true}}Authenticated proxy bridge ports{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
@@ -505,11 +505,11 @@ simplejavamail.defaults.body.text.content.transfer.encoding=BIT7
 simplejavamail.defaults.body.html.content.transfer.encoding=BASE_64
 simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
 
-# Batch-module executor defaults
+# Pooled-delivery executor defaults
 simplejavamail.defaults.poolsize=10
 simplejavamail.defaults.poolsize.keepalivetime=2000
 
-# Batch-module connection pool defaults
+# Connection-pool defaults
 simplejavamail.defaults.connectionpool.clusterkey.uuid=38400000-8cf0-11bd-b23e-10b96e4ef00d
 simplejavamail.defaults.connectionpool.coresize=0
 simplejavamail.defaults.connectionpool.maxsize=4
@@ -517,7 +517,7 @@ simplejavamail.defaults.connectionpool.claimtimeout.millis=10000
 simplejavamail.defaults.connectionpool.expireafter.millis=5000
 simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
 
-# Batch-module per-cluster defaults
+# Per-cluster defaults
 simplejavamail.defaults.connectionpool.clusters.orders.clusterkey.uuid=00000000-0000-0000-0000-000000000301
 simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
 simplejavamail.defaults.connectionpool.clusters.orders.maxsize=3
@@ -767,15 +767,12 @@ Mailer mailer = MailerBuilder
 
 
   <a href="#section-spring-support" id="section-spring-support" class="section-link h2">&sect;</a>
-  <h2>Spring support</h2>
+  {{#> components/feature-heading-h2 spring=true}}Spring support{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
       <p>
 		Spring can supply the same Simple Java Mail settings, so each profile can use its own SMTP server, credentials, transport strategy, and defaults.
-      </p>
-      <p>
-      	<strong>To enable this, include the <a href="modules.html#spring-module">spring-module</a> on your classpath.</strong>
       </p>
       <p>
         Import <code class="inline language-java">SimpleJavaMailSpringSupport</code> and the module passes Spring's
@@ -877,7 +874,7 @@ simplejavamail.proxy.port=1080
 simplejavamail.proxy.username=&lt;proxy_username&gt;
 simplejavamail.proxy.password=&lt;proxy_password&gt;
 </code></pre>
-      For per-cluster batch-module settings, Spring properties use the same dynamic namespace as regular property files:
+      For per-cluster pool settings, Spring properties use the same dynamic namespace as regular property files:
       <pre><code class="language-properties small">#application.properties
 simplejavamail.defaults.connectionpool.clusters.orders.clusterkey.uuid=00000000-0000-0000-0000-000000000301
 simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
@@ -895,7 +892,7 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 
 
   <a href="#section-mailer-lifecycle" id="section-mailer-lifecycle" class="section-link h2">&sect;</a>
-  <h2>Mailer lifecycle and resource ownership</h2>
+  {{#> components/feature-heading-h2 core=true batch=true spring=true}}Mailer lifecycle and resource ownership{{/components/feature-heading-h2}}
 
   <section>
     <div>
@@ -905,7 +902,7 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
         on how the Mailer is used and whether its executor came from Simple Java Mail or from your application.
       </p>
       <p class="wide">
-        Closing a Mailer releases the resources it owns: it stops an executor created by Simple Java Mail and, when batch-module is present, closes that
+        Closing a Mailer releases the resources it owns: it stops an executor created by Simple Java Mail and, when pooled delivery is active, closes that
         Mailer's connection-pool registration. It does not wait for outstanding send futures or stop an executor supplied by your application.
       </p>
 
@@ -919,13 +916,13 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
         </thead>
         <tbody>
         <tr>
-          <td>Synchronous sending without batch-module</td>
+          <td>Synchronous direct sending</td>
           <td>Each SMTP connection is closed after the operation. The internal executor starts no worker thread unless an asynchronous operation is scheduled.</td>
           <td>Call <code class="inline language-java">mailer.close()</code> when its application lifetime ends. There are no send futures to await if it was only used synchronously.</td>
         </tr>
         <tr>
           <td>Asynchronous sending with the default executor</td>
-          <td>The Mailer owns its executor. Without batch-module this is a single-thread executor.</td>
+          <td>The Mailer owns its executor. Direct sending uses a single-thread executor by default.</td>
           <td>Wait for every returned future, then call <code class="inline language-java">mailer.close()</code>.</td>
         </tr>
         <tr>
@@ -934,12 +931,12 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
           <td>Wait for the futures and call <code class="inline language-java">mailer.close()</code>. Shut down the executor separately when its owner is finished with it.</td>
         </tr>
         <tr>
-          <td>Sending with batch-module</td>
+          <td>Pooled sending</td>
           <td>The Mailer registers its SMTP connection pool and owns its default worker executor.</td>
           <td>Wait for the futures, then call <code class="inline language-java">close()</code> on every Mailer. In a cluster, each Mailer has its own pool registration.</td>
         </tr>
         <tr>
-          <td>The Mailer supplied by spring-module</td>
+          <td>A Spring-managed Mailer</td>
           <td>The same resources as its underlying configuration.</td>
           <td>Spring calls <code class="inline language-java">close()</code> on the managed Mailer when the application context stops. A Mailer created outside Spring bean management remains your responsibility.</td>
         </tr>
@@ -948,7 +945,7 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 
       <p class="wide">
         Use <code class="inline language-java">close()</code> for normal application shutdown. It shuts down an executor created by Simple Java Mail and,
-        with batch-module present, closes the connection pool registered for that Mailer. It never shuts down an executor supplied through
+        when pooled delivery is active, closes the connection pool registered for that Mailer. It never shuts down an executor supplied through
         <code class="inline language-java">withExecutorService(...)</code>.
       </p>
       <p class="wide">
@@ -992,7 +989,7 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 
 
   <a href="#section-batch-and-clustering" id="section-batch-and-clustering" class="section-link h2">&sect;</a>
-  <h2>Batch and clustering support</h2>
+  {{#> components/feature-heading-h2 batch=true}}Batch and clustering support{{/components/feature-heading-h2}}
 
   <section>
 	<div>
@@ -1002,24 +999,22 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 		<ol class="indent">
 			<li>regular synchronous sending, one email at a time</li>
 			<li>asynchronous sending using the mailer's configured <code class="inline language-java">ExecutorService</code></li>
-			<li>simple sequential batch sending over one SMTP connection, without the batch-module</li>
-			<li>pooled and clustered sending with the <strong><a href="modules.html#batch-module">batch-module</a></strong></li>
+			<li>simple sequential batch sending over one SMTP connection</li>
+			<li>pooled and clustered sending for sustained throughput</li>
 		</ol>
 	</div>
   </section>
 
   <a href="#section-not-reusing-connections" id="section-not-reusing-connections" class="section-link h3">&sect;</a>
-  <h3>How connections work without batch-module</h3>
+  {{#> components/feature-heading-h3 core=true}}How direct connections work{{/components/feature-heading-h3}}
 
   <section>
   	<div>
 		<p class="wide">
-			Without the <strong><a href="modules.html#batch-module">batch-module</a></strong>, Simple Java Mail supports asynchronous email sending by scheduling
-			send tasks on the mailer's configured <code class="inline language-java">ExecutorService</code>. Each send still opens and closes its own Transport
-			connection, managed independently of a connection pool. By default this non-batch executor is a single-thread executor; provide a custom
-			<code class="inline language-java">ExecutorService</code> if you want different concurrency. However, without the batch-module, every concurrent
-			send still needs its own SMTP connection, which is less efficient in high-volume scenarios. Additionally, you may find you will hit your maximum
-			concurrent connections for your server more easily without the batch module.
+			Direct asynchronous sending schedules send tasks on the mailer's configured <code class="inline language-java">ExecutorService</code>. Each send still opens and closes its own Transport
+			connection, managed independently of a connection pool. By default this direct executor is a single-thread executor; provide a custom
+			<code class="inline language-java">ExecutorService</code> if you want different concurrency. Every concurrent send still needs its own SMTP connection,
+			which is less efficient in high-volume scenarios and can reach the SMTP server's connection limit more quickly.
 		</p>
 		<div>
 			<pre><code class="language-java small">Mailer regularMailer = mailerBuilder.(..).buildMailer();
@@ -1032,8 +1027,8 @@ defaultAsyncMailer.sendMail(email); // doesn't block
 mailer.sendMail(email, /*async = */ true);
 </code></pre>
 		</div><br/>
-		Defining your own thread pool using an ExecutorService (without batch-module the default is
-		<code class="inline language-java">Executors.newSingleThreadExecutor</code>; with batch-module the default executor uses the batch-module pool settings):
+		Defining your own thread pool using an ExecutorService (the direct-sending default is
+		<code class="inline language-java">Executors.newSingleThreadExecutor</code>):
 		<div>
 			<pre><code class="language-java small">currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
 		</div>
@@ -1047,7 +1042,7 @@ mailer.sendMail(email, /*async = */ true);
 	<div class="view">
 		<p>
 			When reconnecting for every message is the only problem you need to solve, use simple sequential batch sending. It sends all provided emails
-			over one SMTP connection and does not require the batch-module. It sends one at a time, stops at the first failure and reuses only that connection.
+			over one SMTP connection. It sends one at a time, stops at the first failure and reuses only that connection.
 		</p>
 	</div>
 
@@ -1057,7 +1052,7 @@ mailer.sendMailsInSimpleBatch(emails, false); // blocks until the batch is done
 mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch asynchronously
 </code></pre>
 		<p>
-			For sustained high-volume sending, prefer the <a href="#section-reusing-connections">batch-module connection pool</a>.
+			For sustained high-volume sending, prefer <a href="#section-reusing-connections">pooled connections</a>.
 		</p>
 	</div>
   </section>
@@ -1087,8 +1082,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 </code></pre>
 		<p>
 			The scoped sender is sequential, not asynchronous, not pooled and not clustered. For asynchronous queueing, higher throughput, pooled connections
-			or clustered load balancing, use the
-			<a href="#section-reusing-connections">batch-module connection pool</a>.
+			or clustered load balancing, use <a href="#section-reusing-connections">pooled connections</a>.
 		</p>
 		<p>
 			Use <code class="inline language-java">sender.sendMailAndGetReceipt(next)</code> instead when the checkpoint needs the SMTP submission response
@@ -1099,13 +1093,12 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 
 
   <a href="#section-reusing-connections" id="section-reusing-connections" class="section-link h3">&sect;</a>
-  <h3>Reusing connections with batch-module's connection pool</h3>
+  {{#> components/feature-heading-h3 batch=true}}Reusing connections with a pool{{/components/feature-heading-h3}}
 
 	<section>
 		<div>
 			<p class="wide">
-				The <strong><a href="modules.html#batch-module">batch-module</a></strong> significantly boosts performance by introducing connection pooling. Simply include
-				the module in your classpath (add the Maven dependency) to enable up to four pooled connections. The default setup provides up to four pooled connections,
+				Pooled delivery reuses SMTP connections across worker threads. The default setup provides up to four pooled connections,
 				which automatically close if inactive for five seconds following their last use. This mechanism is optimal for managing bursts of email traffic, keeping
 				up to four connections active as long as needed.
 			</p>
@@ -1113,8 +1106,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 				The connection pool configuration is flexible, allowing adjustments to core connection pool size, maximum pool size, and connection expiry policy.
 			</p>
 			<p>
-				While the default setup without the batch-module allows for the creation of a custom thread pool to manage email sending, the batch-module introduces
-				a connection pool. This addition enables threads to reuse Transport connections more efficiently, significantly improving performance even with fewer
+				Direct sending can use a custom thread pool, while pooled sending also lets those threads reuse Transport connections. This can improve performance even with fewer
 				threads, as it eliminates the need to repeatedly open and close connections for each email.
 			</p>
 		<div>
@@ -1144,7 +1136,7 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 
 
 	<a href="#section-clustering" id="section-clustering" class="section-link h3">&sect;</a>
-	<h3>Clustered SMTP load balancing</h3>
+	{{#> components/feature-heading-h3 batch=true}}Clustered SMTP load balancing{{/components/feature-heading-h3}}
 
 	<section>
 		<div>
@@ -1154,7 +1146,7 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 					Mailers that share a cluster key each register a pool for their configured SMTP server.
 				</p>
 				<p>
-					For each send, the batch module selects one registered pool using the cluster's round-robin or random-access strategy.
+					For each send, the cluster selects one registered pool using its round-robin or random-access strategy.
 					This spreads work across the SMTP servers registered for that cluster.
 				</p>
 			</div>

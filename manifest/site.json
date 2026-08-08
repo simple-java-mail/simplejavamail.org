@@ -35,6 +35,15 @@
       "description": "Your code should describe the email, not build a MIME tree. See what Simple Java Mail handles and where Jakarta Mail still fits."
     },
     {
+      "title": "Use cases",
+      "src": "use-cases.hbs",
+      "url": "/use-cases.html",
+      "out": "use-cases.html",
+      "chrome": "marketing",
+      "style": "home",
+      "description": "Find the Simple Java Mail APIs and settings for correct MIME, secure sending, high throughput, batches, application integration, and delivery diagnostics."
+    },
+    {
       "title": "Documentation",
       "src": "docs.hbs",
       "url": "/docs.html",

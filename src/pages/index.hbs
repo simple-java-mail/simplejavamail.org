@@ -173,6 +173,7 @@ mailer.sendMail(email);</code></pre>
         <article class="rare-item">
           <div class="network-glyph cluster-glyph" aria-hidden="true"><i></i><i></i><i></i><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
           <p class="eyebrow">Many servers, one mailer</p>
+          {{> components/module-badges batch=true}}
           <h3>Multiple SMTP clusters</h3>
           <p>Give each workload its own connection pool and set of SMTP servers. That can isolate tenants, use more than one provider, or keep transactional mail separate from batch work.</p>
           <a href="/configuration.html#section-clustering">Configure clusters <span aria-hidden="true">→</span></a>
@@ -181,8 +182,9 @@ mailer.sendMail(email);</code></pre>
         <article class="rare-item">
           <div class="network-glyph proxy-glyph" aria-hidden="true"><i></i><i></i><b></b></div>
           <p class="eyebrow">Network constraints</p>
+          {{> components/module-badges socks=true}}
           <h3>Authenticated SOCKS</h3>
-          <p>Need to send through a SOCKS proxy that requires a username and password? Add the authenticated SOCKS module; the mailer configuration stays the same.</p>
+          <p>Send through a SOCKS proxy that requires a username and password without changing the mailer configuration model.</p>
           <a href="/features.html#section-proxy">Configure a proxy <span aria-hidden="true">→</span></a>
         </article>
       </div>

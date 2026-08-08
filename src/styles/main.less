@@ -139,7 +139,7 @@ pre.has-copy-control { padding-top: 2.9rem; }
 .brand:hover { color: @teal-deep; }
 .brand-logo { width: 190px; height: auto; }
 .primary-nav { justify-self: center; }
-.primary-nav > ul { display: flex; align-items: stretch; gap: 1.75rem; margin: 0; padding: 0; list-style: none; }
+.primary-nav > ul { display: flex; align-items: stretch; gap: 1.45rem; margin: 0; padding: 0; list-style: none; }
 .primary-nav > ul > li { position: relative; }
 .primary-nav a, .header-utility {
   position: relative;
@@ -170,6 +170,7 @@ pre.has-copy-control { padding-top: 2.9rem; }
 .primary-nav .primary-submenu a::after { display: none; }
 .primary-nav .primary-submenu a:hover, .primary-nav .primary-submenu a.is-active { background: @teal-tint; color: @ink; }
 .nav-has-submenu:hover > .primary-submenu, .nav-has-submenu:focus-within > .primary-submenu { transform: translate(-50%, 0); opacity: 1; visibility: visible; pointer-events: auto; }
+#primary-use-cases-submenu { min-width: 290px; }
 .header-actions { display: flex; align-items: center; gap: 1.2rem; }
 .header-cta {
   display: inline-flex;
@@ -287,11 +288,23 @@ pre.has-copy-control { padding-top: 2.9rem; }
 .doc-overview > header { max-width: @reading; margin-bottom: @space-xl; }
 .legacy-doc-content .doc-overview h2 { margin: @space-sm 0 @space-md; }
 .doc-overview > header > p:not(.eyebrow) { color: @steel; font-size: 1.02rem; }
+.module-badges { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0.3rem; }
+.module-badge { display: inline-flex; align-items: center; min-height: 1.35rem; padding: 0.12rem 0.42rem; border: 1px solid fade(@teal, 58%); background: @teal-tint; color: @teal-deep; font-family: @font-mono; font-size: 0.55rem; font-weight: 600; letter-spacing: 0.015em; line-height: 1.2; text-transform: none; white-space: nowrap; }
+.feature-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 0.55rem 0.85rem; text-wrap: wrap; }
+.feature-heading > .module-badges { transform: translateY(0.08em); }
+.module-capability-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); margin: 0 0 @space-lg; border-top: 1px solid @line; border-left: 1px solid @line; }
+.module-capability-links a { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; min-height: 96px; padding: @space-md; border-right: 1px solid @line; border-bottom: 1px solid @line; background: @white; color: @ink; text-decoration: none; transition: background 140ms ease, border-color 140ms ease; }
+.module-capability-links a:hover { border-color: @teal; background: @teal-tint; }
+.module-capability-links span { grid-column: 1; color: @teal-deep; font-family: @font-mono; font-size: 0.58rem; font-weight: 600; letter-spacing: @tracking-label; text-transform: uppercase; }
+.module-capability-links strong { grid-column: 1; margin-top: @space-xs; font-size: 0.84rem; line-height: 1.35; }
+.module-capability-links b { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: @teal-deep; font-weight: 400; }
 .doc-card-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: @space-md; }
 .doc-card-grid > a { display: flex; grid-column: span 2; flex-direction: column; min-height: 210px; padding: @space-lg; border: 1px solid @line; border-top: 3px solid @teal; background: @white; color: @ink; text-decoration: none; transition: border-color 140ms ease, transform 140ms ease; }
 .doc-card-grid > a:nth-child(4) { grid-column-start: 2; grid-column-end: span 2; }
 .doc-card-grid > a:hover { border-color: @teal; transform: translateY(-2px); }
-.doc-card-grid > a > span { color: @teal-deep; font-family: @font-mono; font-size: 0.62rem; font-weight: 600; letter-spacing: @tracking-label; text-transform: uppercase; }
+.doc-card-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: @space-sm; }
+.doc-card-kicker { color: @teal-deep; font-family: @font-mono; font-size: 0.62rem; font-weight: 600; letter-spacing: @tracking-label; text-transform: uppercase; }
+.doc-card-meta .module-badges { justify-content: flex-end; }
 .doc-card-grid > a > strong { margin-top: @space-lg; color: @ink; font-size: 1.35rem; }
 .doc-card-grid > a > p { margin: auto 0 0; color: @steel; font-size: 0.84rem; line-height: 1.55; }
 .legacy-doc-content .section-link { display: block; float: left; width: 1.6rem; margin: @space-2xl 0 0 -2rem; scroll-margin-top: @space-xl; color: @teal; font-family: @font-mono; font-size: 0; text-decoration: none; }

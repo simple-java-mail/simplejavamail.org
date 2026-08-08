@@ -15,6 +15,14 @@
       Outlook conversion, command-line use, Spring integration, or Karaf support.
     </p>
   </section>
+
+  <h2 id="core-module" class="with-back-to-top">Core</h2>
+  <nav class="module-capability-links" aria-label="Core capabilities">
+    <a href="features.html#section-basic-usage"><span>Compose</span><strong>Messages and recipients</strong><b aria-hidden="true">→</b></a>
+    <a href="features.html#section-attachments"><span>Content</span><strong>Attachments and images</strong><b aria-hidden="true">→</b></a>
+    <a href="security.html#section-authentication-methods"><span>Transport</span><strong>TLS and OAuth2</strong><b aria-hidden="true">→</b></a>
+    <a href="features.html#section-converting"><span>Interoperate</span><strong>EML and MIME conversion</strong><b aria-hidden="true">→</b></a>
+  </nav>
   <section>
     <div class="view">
       <p>
@@ -45,11 +53,16 @@
   </section>
 
   <h2 id="batch-module" class="with-back-to-top">Batch and clustering support</h2>
+  <nav class="module-capability-links" aria-label="Batch module capabilities">
+    <a href="features.html#section-sending-asynchronously"><span>Schedule</span><strong>Asynchronous sending</strong><b aria-hidden="true">→</b></a>
+    <a href="configuration.html#section-reusing-connections"><span>Reuse</span><strong>SMTP connection pools</strong><b aria-hidden="true">→</b></a>
+    <a href="configuration.html#section-clustering"><span>Route</span><strong>Multiple SMTP clusters</strong><b aria-hidden="true">→</b></a>
+    <a href="configuration.html#section-mailer-lifecycle"><span>Close</span><strong>Mailer lifecycle</strong><b aria-hidden="true">→</b></a>
+  </nav>
 
   <section>
     <p>
-      To enable support for async / batch mode sending using connection pooling, and clustering (see <a href="configuration.html#section-batch-and-clustering">Configuration</a>),
-		include the following library:
+      Add this library for pooled and clustered sending:
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
@@ -72,11 +85,14 @@
   </section>
 
   <h2 id="authenticated-socks-module" class="with-back-to-top">Authenticated (SOCKS) proxy support</h2>
+  <nav class="module-capability-links" aria-label="Authenticated SOCKS module capabilities">
+    <a href="features.html#section-proxy"><span>Send</span><strong>Authenticated SOCKS</strong><b aria-hidden="true">→</b></a>
+    <a href="configuration.html#section-proxy-bridge-ports"><span>Configure</span><strong>Proxy bridge ports</strong><b aria-hidden="true">→</b></a>
+  </nav>
 
   <section>
     <p>
-      To enable support for authenticated SOCKS proxy servers (see <a href="features.html#section-proxy">Features</a>),
-      include the following library:
+      Add this library for authenticated SOCKS proxy servers:
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
@@ -88,11 +104,14 @@
   </section>
 
   <h2 id="outlook-module" class="with-back-to-top">Outlook support</h2>
+  <nav class="module-capability-links" aria-label="Outlook module capabilities">
+    <a href="features.html#section-converting"><span>Convert</span><strong>Outlook .msg messages</strong><b aria-hidden="true">→</b></a>
+    <a href="security.html#section-reading-smime"><span>Read</span><strong>Protected Outlook messages</strong><b aria-hidden="true">→</b></a>
+  </nav>
 
   <section>
     <p>
-      To enable support for parsing Outlook messages (see <a href="features.html#section-converting">Features</a>),
-      include the following library:
+      Add this library for parsing Outlook messages:
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
@@ -111,11 +130,14 @@
   </section>
 
   <h2 id="dkim-module" class="with-back-to-top">DKIM support</h2>
+  <nav class="module-capability-links" aria-label="DKIM module capabilities">
+    <a href="security.html#section-sending-dkim"><span>Sign</span><strong>DKIM domain signatures</strong><b aria-hidden="true">→</b></a>
+    <a href="configuration.html#section-config-mailer"><span>Reuse</span><strong>Default signing rules</strong><b aria-hidden="true">→</b></a>
+  </nav>
 
   <section>
     <p>
-      To enable support for DKIM signing (see <a href="security.html#section-sending-dkim">Features</a>),
-      include the following library:
+      Add this library for DKIM signing:
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
@@ -130,12 +152,15 @@
   </section>
 
   <h2 id="smime-module" class="with-back-to-top">S/MIME support</h2>
+  <nav class="module-capability-links" aria-label="S/MIME module capabilities">
+    <a href="security.html#section-sending-smime"><span>Protect</span><strong>Sign and encrypt messages</strong><b aria-hidden="true">→</b></a>
+    <a href="security.html#section-reading-smime"><span>Read</span><strong>Protected messages</strong><b aria-hidden="true">→</b></a>
+    <a href="features.html#section-recipient-builders"><span>Target</span><strong>Recipient certificates</strong><b aria-hidden="true">→</b></a>
+  </nav>
 
   <section>
     <p>
-      To enable support for sending and reading <a href="https://en.wikipedia.org/wiki/S/MIME">S/MIME</a>
-      signed / encrypted email, (see <a href="security.html#section-sending-smime">Features</a>),
-      include the following library:
+      Add this library for sending and reading <a href="https://en.wikipedia.org/wiki/S/MIME">S/MIME</a> signed or encrypted email:
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
@@ -150,6 +175,11 @@
   </section>
 
   <h2 id="cli-module" class="with-back-to-top">CLI support</h2>
+  <nav class="module-capability-links" aria-label="CLI module capabilities">
+    <a href="cli.html#section-how-to-use"><span>Run</span><strong>Command-line sending</strong><b aria-hidden="true">→</b></a>
+    <a href="cli.html#section-at-files"><span>Reuse</span><strong>Argument files</strong><b aria-hidden="true">→</b></a>
+    <a href="cli.html#section-config-properties"><span>Configure</span><strong>Properties from the CLI</strong><b aria-hidden="true">→</b></a>
+  </nav>
 
   <section>
 	  <p class="wide">
@@ -178,10 +208,15 @@
   </section>
 
   <h2 id="spring-module" class="with-back-to-top">Spring support</h2>
+  <nav class="module-capability-links" aria-label="Spring module capabilities">
+    <a href="configuration.html#section-spring-support"><span>Inject</span><strong>Spring-managed Mailer</strong><b aria-hidden="true">→</b></a>
+    <a href="configuration.html#section-config-properties"><span>Configure</span><strong>Environment and profiles</strong><b aria-hidden="true">→</b></a>
+    <a href="security.html#section-transport-strategy-oauth2"><span>Authenticate</span><strong>OAuth2 provider bean</strong><b aria-hidden="true">→</b></a>
+  </nav>
 
   <section>
 	  <p>
-		  To enable Spring support (see <a href="configuration.html#section-spring-support">Configuration</a>), include the following module:
+		  Add this library for Spring support:
 	  </p>
 	  <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
@@ -195,10 +230,14 @@
   </section>
 
   <h2 id="karaf-module" class="with-back-to-top">Apache Karaf support</h2>
+  <nav class="module-capability-links" aria-label="Karaf module capabilities">
+    <a href="features.html#section-basic-usage"><span>Use</span><strong>Compose and send</strong><b aria-hidden="true">→</b></a>
+    <a href="configuration.html#section-programmatic-api-common"><span>Configure</span><strong>Build a Mailer</strong><b aria-hidden="true">→</b></a>
+  </nav>
 
   <section>
 	  <p>
-		  To enable Apache Karaf support, include the following module:
+		  Add this library for Apache Karaf support:
 	  </p>
 	  <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;

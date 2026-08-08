@@ -17,27 +17,27 @@
     </header>
     <div class="doc-card-grid">
       <a href="#section-basic-usage">
-        <span>Everyday sending</span>
+        <span class="doc-card-meta"><span class="doc-card-kicker">Everyday sending</span>{{> components/module-badges core=true}}</span>
         <strong>Compose an email</strong>
         <p>Build text, HTML, recipients, headers, and calendar content through one fluent API.</p>
       </a>
       <a href="#section-attachments">
-        <span>Rich content</span>
+        <span class="doc-card-meta"><span class="doc-card-kicker">Rich content</span>{{> components/module-badges core=true}}</span>
         <strong>Attachments &amp; images</strong>
         <p>Attach files or data and embed images without constructing MIME parts yourself.</p>
       </a>
       <a href="#section-reply-forward">
-        <span>Conversations</span>
+        <span class="doc-card-meta"><span class="doc-card-kicker">Conversations</span>{{> components/module-badges core=true}}</span>
         <strong>Reply, reply-all &amp; forward</strong>
         <p>Quote a message for one or all recipients, or forward the original as a complete email.</p>
       </a>
       <a href="#section-email-validation">
-        <span>Recipient safety</span>
+        <span class="doc-card-meta"><span class="doc-card-kicker">Recipient safety</span>{{> components/module-badges core=true}}</span>
         <strong>Address validation</strong>
         <p>Check addresses, handle invalid recipients, and apply reusable recipient rules.</p>
       </a>
       <a href="#section-sending-asynchronously">
-        <span>Delivery</span>
+        <span class="doc-card-meta"><span class="doc-card-kicker">Delivery</span>{{> components/module-badges core=true batch=true}}</span>
         <strong>Async &amp; batch sending</strong>
         <p>Send once, work asynchronously, reuse a connection, or grow into pooled delivery.</p>
       </a>
@@ -146,7 +146,7 @@
   </section>
 
   <a href="#section-basic-usage" id="section-basic-usage" class="section-link h2">&sect;</a>
-  <h2>Basic usage</h2>
+  {{#> components/feature-heading-h2 core=true}}Basic usage{{/components/feature-heading-h2}}
 
   <section>
 	  <div class="view">
@@ -190,7 +190,7 @@ MailerBuilder
 
 
   <a href="#section-rendered-templates" id="section-rendered-templates" class="section-link h3">&sect;</a>
-  <h3>Use content rendered by your template system</h3>
+  {{#> components/feature-heading-h3 core=true}}Use content rendered by your template system{{/components/feature-heading-h3}}
 
   <section>
     <p class="wide">
@@ -213,7 +213,7 @@ Email email = currentEmailBuilder
 
 
   <a href="#section-builder-api" id="section-builder-api" class="section-link h3">&sect;</a>
-  <h3>About the fluent API with the Builder pattern</h3>
+  {{#> components/feature-heading-h3 core=true}}About the fluent API with the Builder pattern{{/components/feature-heading-h3}}
 
   <section>
     <p class="wide">
@@ -250,7 +250,7 @@ Email email = currentEmailBuilder
   </section>
 
   <a href="#section-reusable-mailer" id="section-reusable-mailer" class="section-link h3">&sect;</a>
-  <h3>Configure once, reuse many times</h3>
+  {{#> components/feature-heading-h3 core=true}}Configure once, reuse many times{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
@@ -286,7 +286,7 @@ public Mailer inhouseMailer() {
 
 
   <a href="#section-add-recipients" id="section-add-recipients" class="section-link h3">&sect;</a>
-  <h3>Alternative API for almost everything</h3>
+  {{#> components/feature-heading-h3 core=true}}Alternative API for almost everything{{/components/feature-heading-h3}}
 
   <section>
     <div>
@@ -375,7 +375,7 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 
 
   <a href="#section-recipient-builders" id="section-recipient-builders" class="section-link h3">&sect;</a>
-  <h3>Dedicated recipient builders</h3>
+  {{#> components/feature-heading-h3 core=true smime=true}}Dedicated recipient builders{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
@@ -418,7 +418,7 @@ Email email = EmailBuilder.startingBlank()
 
 
   <a href="#authentication" id="authentication" class="section-link h2">&sect;</a>
-  <h3>Authentication and OAuth2 support</h3>
+  {{#> components/feature-heading-h3 core=true}}Authentication and OAuth2 support{{/components/feature-heading-h3}}
   <section>
 	  <p class="wide">
 		  You use one of the builder methods on <em>MailerBuilder</em> for defining the server properties like host, port, username and password.
@@ -462,7 +462,7 @@ MailerBuilder
 
 
   <a href="#section-sending-asynchronously" id="section-sending-asynchronously" class="section-link h3">&sect;</a>
-  <h3>Asynchronous sending, simple batches and clustering</h3>
+  {{#> components/feature-heading-h3 core=true batch=true}}Asynchronous sending, simple batches and clustering{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
@@ -491,7 +491,7 @@ Mailer mailer = mailerBuilder
 mailer.sendMail(email);
 </code></pre>
 		<p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
-			on how to set batch-module thread pool defaults or configure the executor service (thread pool manager), and to
+			on how to set thread-pool defaults or configure the executor service, and to
       <a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly shutdown.</p>
     </div>
   </section>
@@ -501,7 +501,7 @@ mailer.sendMail(email);
       <p class="wide">
         <strong>Simple sequential batch sending</strong><br/>
         If reconnecting for each email is the only overhead you need to avoid, use <code class="inline language-java">sendMailsInSimpleBatch(...)</code>.
-        It sends multiple emails sequentially over one SMTP connection and does not require the batch-module.
+        It sends multiple emails sequentially over one SMTP connection.
       </p>
       <pre><code class="small">mailer.sendMailsInSimpleBatch(emails);        // uses the mailer's async default
 mailer.sendMailsInSimpleBatch(emails, false); // blocks until the batch is done
@@ -524,8 +524,8 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 </code></pre>
       <p class="wide">
           <strong>Advanced pooled batch processing</strong><br/>
-        For sustained high-volume sending, include the <strong><a href="modules.html#batch-module">batch-module</a></strong>.
-        It pools SMTP connections over multiple sends and can cluster multiple pools for different SMTP servers.
+        For sustained high-volume sending, use pooled delivery. It reuses SMTP connections over multiple sends and can cluster multiple pools for
+        different SMTP servers.
       </p>
       <p class="wide">
         Refer to the <a href="configuration.html#section-batch-and-clustering">configuration section</a> for details.
@@ -535,7 +535,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
   </section>
 
   <a href="#section-handling-async-result" id="section-handling-async-result" class="section-link h3">&sect;</a>
-  <h3>Handling asynchronous results</h3>
+  {{#> components/feature-heading-h3 core=true}}Handling asynchronous results{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
@@ -570,7 +570,7 @@ future.whenComplete((unused, failure) -> {
 
 
   <a href="#section-custom-session" id="section-custom-session" class="section-link h2">&sect;</a>
-  <h2>Sending with your own Session instance</h2>
+  {{#> components/feature-heading-h2 core=true}}Sending with your own Session instance{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -593,7 +593,7 @@ MailerBuilder
 
 
   <a href="#section-content-transfer-encoding" id="section-content-transfer-encoding" class="section-link h2">&sect;</a>
-  <h2>Changing the content encoding</h2>
+  {{#> components/feature-heading-h2 core=true}}Changing the content encoding{{/components/feature-heading-h2}}
 
   <section>
 	  <div class="view">
@@ -710,7 +710,7 @@ simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
 
 
   <a href="#section-custom-id" id="section-custom-id" class="section-link h2">&sect;</a>
-  <h2>Setting a custom message ID on sent email</h2>
+  {{#> components/feature-heading-h2 core=true}}Setting a custom message ID on sent email{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -726,7 +726,7 @@ simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
 
 
   <a href="#section-custom-sentdate" id="section-custom-sentdate" class="section-link h2">&sect;</a>
-  <h2>Setting a custom sent date on sent email</h2>
+  {{#> components/feature-heading-h2 core=true}}Setting a custom sent date on sent email{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -741,7 +741,7 @@ simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
 
 
   <a href="#section-sent-id" id="section-sent-id" class="section-link h2">&sect;</a>
-  <h2>Getting the generated email id after sending</h2>
+  {{#> components/feature-heading-h2 core=true}}Getting the generated email id after sending{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -761,7 +761,7 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
 
 
   <a href="#section-submission-receipts" id="section-submission-receipts" class="section-link h2">&sect;</a>
-  <h2>Reading SMTP submission receipts</h2>
+  {{#> components/feature-heading-h2 core=true}}Reading SMTP submission receipts{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -806,7 +806,7 @@ receipt.getSmtpResponse().ifPresent(response ->
 
 
   <a href="#section-ssl-tls" id="section-ssl-tls" class="section-link h2">&sect;</a>
-  <h2>Sending with SSL and TLS</h2>
+  {{#> components/feature-heading-h2 core=true}}Sending with SSL and TLS{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -857,7 +857,7 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 
 
   <a href="#section-gmail" id="section-gmail" class="section-link h3">&sect;</a>
-  <h3>SSL and TLS with Google mail</h3>
+  {{#> components/feature-heading-h3 core=true}}SSL and TLS with Google mail{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
@@ -890,7 +890,7 @@ MailerBuilder
 
 
   <a href="#section-attachments" id="section-attachments" class="section-link h2">&sect;</a>
-  <h2>Adding attachments</h2>
+  {{#> components/feature-heading-h2 core=true}}Adding attachments{{/components/feature-heading-h2}}
 
   <section>
 	  <div class="view">
@@ -978,7 +978,7 @@ Black Tie Optional
 
 
   <a href="#section-embedding" id="section-embedding" class="section-link h2">&sect;</a>
-  <h2>Embedding images</h2>
+  {{#> components/feature-heading-h2 core=true}}Embedding images{{/components/feature-heading-h2}}
 
 	<section>
 		<div class="view">
@@ -1107,7 +1107,7 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 
 
   <a href="#section-custom-headers" id="section-custom-headers" class="section-link h2">&sect;</a>
-  <h2>Setting custom headers</h2>
+  {{#> components/feature-heading-h2 core=true}}Setting custom headers{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1131,7 +1131,7 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 
 
   <a href="#section-custom-properties" id="section-custom-properties" class="section-link h2">&sect;</a>
-  <h2>Setting custom properties on the internal Session</h2>
+  {{#> components/feature-heading-h2 core=true}}Setting custom properties on the internal Session{{/components/feature-heading-h2}}
 
 	<section>
 		<div class="view">
@@ -1173,7 +1173,7 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 
 
   <a href="#section-debug-output" id="section-debug-output" class="section-link h2">&sect;</a>
-  <h2>Routing Jakarta Mail debug output</h2>
+  {{#> components/feature-heading-h2 core=true}}Routing Jakarta Mail debug output{{/components/feature-heading-h2}}
 
   <section>
 	  <div class="view">
@@ -1198,7 +1198,7 @@ simplejavamail.javaxmail.debug.out=SLF4J
 
 
   <a href="#section-local-bind-address" id="section-local-bind-address" class="section-link h2">&sect;</a>
-  <h2>Binding the local/source SMTP address</h2>
+  {{#> components/feature-heading-h2 core=true}}Binding the local/source SMTP address{{/components/feature-heading-h2}}
 
   <section>
 	  <div class="view">
@@ -1225,7 +1225,7 @@ simplejavamail.smtp.localport=25252
   </section>
 
   <a href="#section-smtp-client-hostname" id="section-smtp-client-hostname" class="section-link h2">&sect;</a>
-  <h2>Setting the SMTP EHLO/HELO client hostname</h2>
+  {{#> components/feature-heading-h2 core=true}}Setting the SMTP EHLO/HELO client hostname{{/components/feature-heading-h2}}
 
   <section>
 	  <div class="view">
@@ -1255,7 +1255,7 @@ simplejavamail.smtp.localport=25252
 
 
   <a href="#section-icalendar-vevent" id="section-icalendar-vevent" class="section-link h2">&sect;</a>
-  <h2>Sending a Calendar event (iCalendar vEvent)</h2>
+  {{#> components/feature-heading-h2 core=true}}Sending a Calendar event (iCalendar vEvent){{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1295,7 +1295,7 @@ currentEmailBuilder
 
 
   <a href="#section-session-access" id="section-session-access" class="section-link h2">&sect;</a>
-  <h2>Direct access to the internal Session</h2>
+  {{#> components/feature-heading-h2 core=true}}Direct access to the internal Session{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1317,7 +1317,7 @@ Session session = mailer.getSession();
 
 
   <a href="#section-return-receipt" id="section-return-receipt" class="section-link h2">&sect;</a>
-  <h2>Configure delivery / read receipt</h2>
+  {{#> components/feature-heading-h2 core=true}}Configure delivery / read receipt{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1351,7 +1351,7 @@ Session session = mailer.getSession();
 
 
   <a href="#section-delivery-status-notification" id="section-delivery-status-notification" class="section-link h2">&sect;</a>
-  <h2>Configure Delivery Status Notification</h2>
+  {{#> components/feature-heading-h2 core=true}}Configure Delivery Status Notification{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1386,7 +1386,7 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
 
 
   <a href="#section-email-validation" id="section-email-validation" class="section-link h2">&sect;</a>
-  <h2>Validating Email Addresses</h2>
+  {{#> components/feature-heading-h2 core=true}}Validating Email Addresses{{/components/feature-heading-h2}}
 
   <section>
 	  <div class="view">
@@ -1451,7 +1451,7 @@ JMail.strictValidator()
 
 
   <a href="#section-converting" id="section-converting" class="section-link h2">&sect;</a>
-  <h2>Converting between, Email, MimeMessage, EML and Outlook .msg</h2>
+  {{#> components/feature-heading-h2 core=true outlook=true smime=true}}Converting between Email, MimeMessage, EML and Outlook .msg{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1478,13 +1478,6 @@ JMail.strictValidator()
       <p>
         For Outlook <code class="inline language-text">.msg</code> input, the <code class="inline language-java">String</code> overload takes a file path.
         Use the <code class="inline language-java">File</code> or <code class="inline language-java">InputStream</code> overload for those source types.
-      </p>
-      <br/>
-      <p>
-        To enable Outlook message parsing support, include the
-        <strong><a href="modules.html#outlook-module">outlook-module</a></strong>.
-        To enable S/MIME signed content and decryption support, include the
-        <strong><a href="modules.html#smime-module">smime-module</a></strong>
       </p>
     </div>
 
@@ -1575,7 +1568,7 @@ String rawHeaders = outlookData.getRawHeaders();
 
 
   <a href="#section-bouncing-emails" id="section-bouncing-emails" class="section-link h2">&sect;</a>
-  <h2>Setting a bounce address</h2>
+  {{#> components/feature-heading-h2 core=true}}Setting a bounce address{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1600,7 +1593,7 @@ String rawHeaders = outlookData.getRawHeaders();
 
 
   <a href="#section-reply-forward" id="section-reply-forward" class="section-link h2">&sect;</a>
-  <h2>Replying to and forwarding emails</h2>
+  {{#> components/feature-heading-h2 core=true}}Replying to and forwarding emails{{/components/feature-heading-h2}}
 
   <section>
     <div>
@@ -1642,7 +1635,7 @@ String rawHeaders = outlookData.getRawHeaders();
 
   </section>
 
-  <h3>Keep the quoted message when adding your reply</h3>
+  {{#> components/feature-heading-h3 core=true}}Keep the quoted message when adding your reply{{/components/feature-heading-h3}}
 
   <section>
     <div>
@@ -1678,7 +1671,7 @@ Email reply = EmailBuilder
     </div>
   </section>
 
-  <h3>Replace, extend, or remove body alternatives</h3>
+  {{#> components/feature-heading-h3 core=true}}Replace, extend, or remove body alternatives{{/components/feature-heading-h3}}
 
   <section>
     <div>
@@ -1737,7 +1730,7 @@ Email reply = EmailBuilder
     </div>
   </section>
 
-  <h3><code>Reply-To</code> is not an outgoing recipient</h3>
+  {{#> components/feature-heading-h3 core=true}}<code>Reply-To</code> is not an outgoing recipient{{/components/feature-heading-h3}}
 
   <section>
     <div>
@@ -1765,13 +1758,13 @@ Email reply = EmailBuilder
 
 
   <a href="#section-proxy" id="section-proxy" class="section-link h2">&sect;</a>
-  <h2>Send using a proxy</h2>
+  {{#> components/feature-heading-h2 core=true socks=true}}Send using a proxy{{/components/feature-heading-h2}}
 
   <section>
     <div>
       <p class="wide">
-        Simple Java Mail supports sending email through a SOCKS proxy. Its optional authenticated-SOCKS module also handles proxy username/password
-        negotiation, an uncommon built-in capability in Java mail libraries. The underlying
+        Simple Java Mail supports sending email through a SOCKS proxy, including proxy username/password negotiation—an uncommon built-in capability
+        in Java mail libraries. The underlying
         <a href="https://jakartaee.github.io/mail-api/" target="_blank">Jakarta Mail framework</a> supports anonymous SOCKS5 proxies, but
         <a href="https://jakartaee.github.io/mail-api/FAQ.html#proxy" target="_blank">not authenticated proxies</a>. Proxying works with SMTP,
         STARTTLS and implicit-TLS SMTPS connections.
@@ -1803,7 +1796,7 @@ currentMailerBuilder.withProxy("proxy.host.com", 1080, "proxy username", "proxy 
 
 
   <a href="#section-connection-test" id="section-connection-test" class="section-link h2">&sect;</a>
-  <h2>Testing a server connection</h2>
+  {{#> components/feature-heading-h2 core=true}}Testing a server connection{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1836,7 +1829,7 @@ mailer.testConnection(true);  // explicitly asynchronous
 
 
 	<a href="#section-serializing-emails" id="section-serializing-emails" class="section-link h2">&sect;</a>
-	<h2>Serializing Email objects</h2>
+	{{#> components/feature-heading-h2 core=true}}Serializing Email objects{{/components/feature-heading-h2}}
 
 	<section>
 		<p class="wide">
@@ -1866,7 +1859,7 @@ mailer.testConnection(true);  // explicitly asynchronous
 
 
 	<a href="#section-custom-mailer" id="section-custom-mailer" class="section-link h2">&sect;</a>
-	<h2>Plug your own sending logic</h2>
+	{{#> components/feature-heading-h2 core=true}}Plug your own sending logic{{/components/feature-heading-h2}}
 
 	<section>
 		<p class="wide">
@@ -1910,7 +1903,7 @@ mailer.testConnection(true);  // explicitly asynchronous
 
 
 	<a href="#section-maximum-emailsize" id="section-maximum-emailsize" class="section-link h2">&sect;</a>
-	<h2>Limit the maximum email size</h2>
+	{{#> components/feature-heading-h2 core=true}}Limit the maximum email size{{/components/feature-heading-h2}}
 
 	<section>
         <p class="wide">

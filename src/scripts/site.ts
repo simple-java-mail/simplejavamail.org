@@ -1,15 +1,22 @@
 const header = document.querySelector<HTMLElement>('[data-site-header]');
 const navToggle = document.querySelector<HTMLButtonElement>('.nav-toggle');
 const navToggleLabel = navToggle?.querySelector<HTMLElement>('[data-nav-toggle-label]');
-const navSubmenuToggle = header?.querySelector<HTMLButtonElement>('.nav-submenu-toggle');
-const navSubmenu = navSubmenuToggle?.closest<HTMLElement>('.nav-has-submenu');
+const navSubmenus = Array.from(header?.querySelectorAll<HTMLElement>('.nav-has-submenu') ?? []);
 
-const setSubmenuOpen = (open: boolean): void => {
-  navSubmenu?.classList.toggle('submenu-open', open);
-  navSubmenuToggle?.setAttribute('aria-expanded', String(open));
-  const accessibleLabel = open ? 'Hide documentation sections' : 'Show documentation sections';
-  const label = navSubmenuToggle?.querySelector<HTMLElement>('.visually-hidden');
+const setSubmenuOpen = (submenu: HTMLElement, open: boolean): void => {
+  const toggle = submenu.querySelector<HTMLButtonElement>('.nav-submenu-toggle');
+  const submenuLabel = toggle?.dataset.submenuLabel ?? 'submenu';
+  submenu.classList.toggle('submenu-open', open);
+  toggle?.setAttribute('aria-expanded', String(open));
+  const accessibleLabel = `${open ? 'Hide' : 'Show'} ${submenuLabel}`;
+  const label = toggle?.querySelector<HTMLElement>('.visually-hidden');
   if (label) label.textContent = accessibleLabel;
+};
+
+const closeSubmenus = (except?: HTMLElement): void => {
+  for (const submenu of navSubmenus) {
+    if (submenu !== except) setSubmenuOpen(submenu, false);
+  }
 };
 
 const setNavigationOpen = (open: boolean): void => {
@@ -17,16 +24,21 @@ const setNavigationOpen = (open: boolean): void => {
   document.documentElement.classList.toggle('nav-menu-open', open);
   navToggle?.setAttribute('aria-expanded', String(open));
   if (navToggleLabel) navToggleLabel.textContent = open ? 'Close' : 'Menu';
-  if (!open) setSubmenuOpen(false);
+  if (!open) closeSubmenus();
 };
 
 navToggle?.addEventListener('click', () => {
   setNavigationOpen(!header?.classList.contains('nav-open'));
 });
 
-navSubmenuToggle?.addEventListener('click', () => {
-  setSubmenuOpen(!navSubmenu?.classList.contains('submenu-open'));
-});
+for (const submenu of navSubmenus) {
+  const toggle = submenu.querySelector<HTMLButtonElement>('.nav-submenu-toggle');
+  toggle?.addEventListener('click', () => {
+    const open = !submenu.classList.contains('submenu-open');
+    closeSubmenus(submenu);
+    setSubmenuOpen(submenu, open);
+  });
+}
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && header?.classList.contains('nav-open')) {

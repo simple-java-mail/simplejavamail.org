@@ -12,25 +12,31 @@
     <nav id="primary-navigation" class="primary-nav" aria-label="Primary">
       <ul>
         {{#each nav.primary}}
-          <li class="{{#if (eq href "/docs.html")}}nav-has-submenu{{/if}}">
-            <a href="{{href}}" class="{{activeClass href @root.currentUrl}}"{{#if (eq href "/docs.html")}} aria-haspopup="true"{{/if}}>
-              {{label}}{{#if (eq href "/docs.html")}}<span class="nav-submenu-caret" aria-hidden="true"></span>{{/if}}
+          <li class="{{#if submenu}}nav-has-submenu{{/if}}">
+            <a href="{{href}}" class="{{activeClass href @root.currentUrl}}"{{#if submenu}} aria-haspopup="true"{{/if}}>
+              {{label}}{{#if submenu}}<span class="nav-submenu-caret" aria-hidden="true"></span>{{/if}}
             </a>
-            {{#if (eq href "/docs.html")}}
-              <button class="nav-submenu-toggle" type="button" aria-expanded="false" aria-controls="primary-docs-submenu">
-                <span class="visually-hidden">Show documentation sections</span>
+            {{#if submenu}}
+              <button class="nav-submenu-toggle" type="button" aria-expanded="false" aria-controls="primary-{{submenu.id}}-submenu" data-submenu-label="{{submenu.toggleLabel}}">
+                <span class="visually-hidden">Show {{submenu.toggleLabel}}</span>
                 <span class="nav-submenu-caret" aria-hidden="true"></span>
               </button>
-              <ul id="primary-docs-submenu" class="primary-submenu" aria-label="Documentation sections">
-                {{#each @root.docsGroups}}
-                  {{#unless (eq label "Maintain")}}
-                    {{#each pages}}
-                      {{#if @first}}
-                        <li><a href="{{url}}" class="{{activeClass url @root.currentUrl}}">{{../label}}</a></li>
-                      {{/if}}
-                    {{/each}}
-                  {{/unless}}
-                {{/each}}
+              <ul id="primary-{{submenu.id}}-submenu" class="primary-submenu" aria-label="{{submenu.label}}">
+                {{#if submenu.items}}
+                  {{#each submenu.items}}
+                    <li><a href="{{href}}">{{label}}</a></li>
+                  {{/each}}
+                {{else}}
+                  {{#each @root.docsGroups}}
+                    {{#unless (eq label "Maintain")}}
+                      {{#each pages}}
+                        {{#if @first}}
+                          <li><a href="{{url}}" class="{{activeClass url @root.currentUrl}}">{{../label}}</a></li>
+                        {{/if}}
+                      {{/each}}
+                    {{/unless}}
+                  {{/each}}
+                {{/if}}
               </ul>
             {{/if}}
           </li>

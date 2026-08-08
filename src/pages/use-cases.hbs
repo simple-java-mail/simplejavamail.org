@@ -1,0 +1,110 @@
+{{#> marketing}}
+  {{#*inline "body-block"}}
+    <div id="navigation" class="compatibility-anchor" aria-hidden="true"></div>
+
+    <section class="page-hero use-cases-hero">
+      <div class="shell narrow-shell">
+        <p class="eyebrow">Use cases</p>
+        <h1>Common email jobs.</h1>
+        <p class="hero-lede">Pick the situation closest to yours. Each route links directly to the message API, configuration, security settings, and optional modules involved.</p>
+        <nav class="use-case-jump" aria-label="Use cases on this page">
+          <a href="#correct-mime"><span>01</span>Build messages</a>
+          <a href="#secure-sending"><span>02</span>Send securely</a>
+          <a href="#high-throughput"><span>03</span>Handle high throughput</a>
+          <a href="#batch-delivery"><span>04</span>Send batches</a>
+          <a href="#application-integration"><span>05</span>Fit your application</a>
+          <a href="#delivery-diagnostics"><span>06</span>Diagnose a send</a>
+        </nav>
+      </div>
+    </section>
+
+    <section class="use-case-directory ruled-section">
+      <div class="shell">
+        <article id="correct-mime" class="use-case">
+          <div class="use-case-copy">
+            <p class="use-case-coordinate">01 · Message structure</p>
+            <h2>Build messages that render correctly.</h2>
+            <p>Declare plain text, HTML, inline images, attachments, or calendar events and Simple Java Mail builds the MIME tree mail clients expect. Your code does not have to assemble multipart nesting, content IDs, transfer encoding, and transport plumbing by hand.</p>
+          </div>
+          <nav class="use-case-links" aria-label="Message structure documentation">
+            <a href="/features.html#section-basic-usage"><span><strong>Compose messages</strong><small>Bodies, recipients, and headers</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/features.html#section-attachments"><span><strong>Attachments and inline images</strong><small>Files, streams, and embedded content</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/rfc-compliant.html#section-why"><span><strong>Why MIME structure matters</strong><small>Correct nesting across mail clients</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/configuration.html#section-programmatic-api-common"><span><strong>Configure SMTP once</strong><small>Server, credentials, and transport</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+          </nav>
+        </article>
+
+        <article id="secure-sending" class="use-case">
+          <div class="use-case-copy">
+            <p class="use-case-coordinate">02 · Security</p>
+            <h2>Send securely.</h2>
+            <p>Protect the SMTP connection with TLS, use a password or refresh-aware OAuth2 token, sign the sending domain with DKIM, or sign and encrypt message content with S/MIME. These are separate layers, so you can apply the ones your mail flow needs.</p>
+          </div>
+          <nav class="use-case-links" aria-label="Secure sending documentation">
+            <a href="/security.html#section-authentication-methods"><span><strong>TLS and OAuth2</strong><small>Transport and authentication</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/security.html#section-sending-dkim"><span><strong>DKIM signing</strong><small>Domain identity and integrity</small></span>{{> components/module-badges dkim=true}}<b aria-hidden="true">→</b></a>
+            <a href="/security.html#section-sending-smime"><span><strong>S/MIME</strong><small>Sign and encrypt message content</small></span>{{> components/module-badges smime=true}}<b aria-hidden="true">→</b></a>
+            <a href="/security.html#section-crlf-scanning"><span><strong>Input scanning</strong><small>Catch suspicious header content</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+          </nav>
+        </article>
+
+        <article id="high-throughput" class="use-case">
+          <div class="use-case-copy">
+            <p class="use-case-coordinate">03 · Sustained load</p>
+            <h2>Handle high throughput.</h2>
+            <p>When several workers send continuously, use bounded worker threads and reuse physical SMTP connections in a pool. Cluster keys can keep workloads separate or spread one workload over several SMTP servers.</p>
+          </div>
+          <nav class="use-case-links" aria-label="High-throughput documentation">
+            <a href="/features.html#section-sending-asynchronously"><span><strong>Asynchronous sending</strong><small>Schedule work and handle results</small></span>{{> components/module-badges core=true batch=true}}<b aria-hidden="true">→</b></a>
+            <a href="/configuration.html#section-reusing-connections"><span><strong>Connection pools</strong><small>Reuse transports across workers</small></span>{{> components/module-badges batch=true}}<b aria-hidden="true">→</b></a>
+            <a href="/configuration.html#section-clustering"><span><strong>SMTP clusters</strong><small>Separate and balance workloads</small></span>{{> components/module-badges batch=true}}<b aria-hidden="true">→</b></a>
+            <a href="/configuration.html#section-mailer-lifecycle"><span><strong>Mailer lifecycle</strong><small>Finish work and release resources</small></span>{{> components/module-badges core=true batch=true}}<b aria-hidden="true">→</b></a>
+          </nav>
+        </article>
+
+        <article id="batch-delivery" class="use-case">
+          <div class="use-case-copy">
+            <p class="use-case-coordinate">04 · Known workloads</p>
+            <h2>Send a batch without reconnecting.</h2>
+            <p>For a known list or a caller-owned queue, keep one SMTP connection open and send sequentially. This is part of the core API. Move to pooled delivery only when you need concurrency or sustained throughput.</p>
+          </div>
+          <nav class="use-case-links" aria-label="Batch delivery documentation">
+            <a href="/features.html#section-sending-asynchronously"><span><strong>Simple batches</strong><small>One connection for a known list</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/features.html#section-sending-asynchronously"><span><strong>Scoped open connection</strong><small>Drive a caller-owned queue</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/features.html#section-handling-async-result"><span><strong>Asynchronous results</strong><small>Observe success and failure</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/features.html#section-submission-receipts"><span><strong>SMTP submission receipts</strong><small>Read the server's replies</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+          </nav>
+        </article>
+
+        <article id="application-integration" class="use-case">
+          <div class="use-case-copy">
+            <p class="use-case-coordinate">05 · Application fit</p>
+            <h2>Fit an existing application.</h2>
+            <p>Configure a mailer in Java, properties, environment variables, or Spring. You can also supply your own Jakarta Mail Session, work through an authenticated SOCKS proxy, or send and test from the command line.</p>
+          </div>
+          <nav class="use-case-links" aria-label="Application integration documentation">
+            <a href="/configuration.html#section-spring-support"><span><strong>Spring support</strong><small>Build and inject a mailer</small></span>{{> components/module-badges spring=true}}<b aria-hidden="true">→</b></a>
+            <a href="/configuration.html#section-config-properties"><span><strong>Properties and environment</strong><small>Layer external configuration</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/features.html#section-custom-session"><span><strong>Your own Session</strong><small>Use preconfigured Jakarta Mail state</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/features.html#section-proxy"><span><strong>Authenticated SOCKS</strong><small>Bridge proxy authentication</small></span>{{> components/module-badges socks=true}}<b aria-hidden="true">→</b></a>
+            <a href="/cli.html#section-how-to-use"><span><strong>Command-line use</strong><small>Send, validate, and test</small></span>{{> components/module-badges cli=true}}<b aria-hidden="true">→</b></a>
+          </nav>
+        </article>
+
+        <article id="delivery-diagnostics" class="use-case">
+          <div class="use-case-copy">
+            <p class="use-case-coordinate">06 · Troubleshooting</p>
+            <h2>Diagnose a send.</h2>
+            <p>Test the exact mailer configuration without sending a message, inspect the effective settings, route Jakarta Mail's protocol output into your logs, and read the SMTP server's submission replies.</p>
+          </div>
+          <nav class="use-case-links" aria-label="Delivery diagnostics documentation">
+            <a href="/features.html#section-connection-test"><span><strong>Test a connection</strong><small>Exercise the effective mailer setup</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/debugging.html#section-inspect-mailer-email"><span><strong>Inspect mailer and email state</strong><small>See the values in use</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/debugging.html#section-debug-logging"><span><strong>Protocol debug output</strong><small>Trace the SMTP conversation</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            <a href="/debugging.html#section-mailexception"><span><strong>Handle failures</strong><small>Read synchronous and async errors</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+          </nav>
+        </article>
+      </div>
+    </section>
+  {{/inline}}
+{{/marketing}}
