@@ -1,10 +1,10 @@
 {
   "name": "Simple Java Mail",
   "shortName": "SJM",
-  "tagline": "Simple at the call site. Serious everywhere else.",
+  "tagline": "Simple to use. Built for the real world.",
   "url": "https://www.simplejavamail.org",
-  "version": "9.1.7",
-  "releaseDate": "6 August 2026",
+  "version": "9.2.0",
+  "releaseDate": "8 August 2026",
   "javaBaseline": "Java 8+",
   "license": "Apache-2.0",
   "repository": "https://github.com/bbottema/simple-java-mail",
