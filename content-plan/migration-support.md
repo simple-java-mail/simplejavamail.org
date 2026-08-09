@@ -46,7 +46,7 @@ Do not funnel ordinary support to a maintainer's personal email when a public, s
 
 ### Maintainer note
 
-A short factual paragraph names Benny Bottema and notes that the library was first published as VeSiJaMa on Google Code in April 2009. Keep it human, not founder-brand marketing.
+A short factual paragraph names Benny Bottema and notes that the library was first published as Vesijama (Very Simple Java Mail) on Google Code in April 2009 and reintroduced as Simple Java Mail on GitHub in 2015. Keep it human, not founder-brand marketing.
 
 ## Shared trust strip
 
