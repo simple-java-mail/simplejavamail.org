@@ -25,7 +25,10 @@
       "submenu": {
         "id": "docs",
         "label": "Documentation sections",
-        "toggleLabel": "documentation sections"
+        "toggleLabel": "documentation sections",
+        "trailingItems": [
+          { "label": "Help and contribute", "href": "/contact.html" }
+        ]
       }
     },
     { "label": "Compare", "href": "/feature-matrix.html" }

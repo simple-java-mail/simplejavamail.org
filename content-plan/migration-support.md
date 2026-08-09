@@ -40,7 +40,7 @@ Visible label: **Help and contribute**.
 - Roadmap -> public issue tracker, alongside feature proposals and planned improvements.
 - Documentation correction -> website repository issue/source route.
 - Contribution -> main repository and contribution guidance.
-- Sensitive vulnerability -> published security advisory/reporting route, only if one exists.
+- Sensitive report -> GitHub issue containing only a short, non-sensitive description; the maintainer then arranges a private channel for the details.
 
 Do not funnel ordinary support to a maintainer's personal email when a public, searchable route is suitable.
 
@@ -82,7 +82,7 @@ For an open-source library, mature support signals are findability, release tran
 
 ## Watch-items
 
-- Confirm security-reporting availability before linking to a private reporting route.
+- Never ask reporters to put credentials, private keys, personal mail, exploit details, or unsanitized test cases in a public issue.
 - Do not promise individual maintainer response times.
 - Keep historical migration URLs in the sitemap because external links may target them.
 - Use generated current-version data; never copy the version into multiple templates.

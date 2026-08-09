@@ -37,6 +37,9 @@
                     {{/unless}}
                   {{/each}}
                 {{/if}}
+                {{#each submenu.trailingItems}}
+                  <li><a href="{{href}}" class="{{activeClass href @root.currentUrl}}">{{label}}</a></li>
+                {{/each}}
               </ul>
             {{/if}}
           </li>

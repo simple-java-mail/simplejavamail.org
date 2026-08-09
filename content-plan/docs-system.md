@@ -53,7 +53,7 @@ All long reference routes share:
 
 ### Sidebar groups
 
-The global **Docs** item opens a compact flyout on hover or keyboard focus. It mirrors the first page of **Start**, **Build and configure**, **Protect and operate**, and **Integrate and understand**. Keep **Maintain** in the full docs navigation rather than the flyout.
+The global **Docs** item opens a compact flyout on hover or keyboard focus. It mirrors the first page of **Start**, **Build and configure**, **Protect and operate**, and **Integrate and understand**, then ends with a direct **Help and contribute** link. Keep the rest of **Maintain** in the full docs navigation rather than the flyout.
 
 **Start**
 
