@@ -16,31 +16,11 @@
         <p class="wide">Start with the route that matches your application. The same settings can be layered when you need more than one.</p>
       </header>
       <div class="doc-card-grid">
-        <a href="#section-programmatic-api-common">
-          <span class="doc-card-meta"><span class="doc-card-kicker">Java API</span>{{> components/module-badges core=true}}</span>
-          <strong>SMTP connection</strong>
-          <p>Configure the server, credentials, transport, timeouts, proxy, and reusable mailer in Java.</p>
-        </a>
-        <a href="#section-config-properties">
-          <span class="doc-card-meta"><span class="doc-card-kicker">Files &amp; environment</span>{{> components/module-badges core=true}}</span>
-          <strong>Properties</strong>
-          <p>Load settings from property files, system properties, or environment variables.</p>
-        </a>
-        <a href="#section-spring-support">
-          <span class="doc-card-meta"><span class="doc-card-kicker">Framework integration</span>{{> components/module-badges spring=true}}</span>
-          <strong>Spring</strong>
-          <p>Build and inject a Simple Java Mail mailer from Spring's environment and profiles.</p>
-        </a>
-        <a href="#section-config-mailer">
-          <span class="doc-card-meta"><span class="doc-card-kicker">Message policy</span>{{> components/module-badges core=true}}</span>
-          <strong>Defaults &amp; overrides</strong>
-          <p>Fill in missing message values or enforce shared recipients, headers, validation, and signing.</p>
-        </a>
-        <a href="#section-batch-and-clustering">
-          <span class="doc-card-meta"><span class="doc-card-kicker">Throughput</span>{{> components/module-badges batch=true}}</span>
-          <strong>Pools &amp; clusters</strong>
-          <p>Reuse SMTP connections and give different workloads their own pools and server sets.</p>
-        </a>
+        {{> components/doc-overview-card href="#section-programmatic-api-common" kicker="Java API" title="SMTP connection" description="Configure the server, credentials, transport, timeouts, proxy, and reusable mailer in Java." core=true}}
+        {{> components/doc-overview-card href="#section-config-properties" kicker="Files & environment" title="Properties" description="Load settings from property files, system properties, or environment variables." core=true}}
+        {{> components/doc-overview-card href="#section-spring-support" kicker="Framework integration" title="Spring" description="Build and inject a Simple Java Mail mailer from Spring's environment and profiles." spring=true}}
+        {{> components/doc-overview-card href="#section-config-mailer" kicker="Message policy" title="Defaults & overrides" description="Fill in missing message values or enforce shared recipients, headers, validation, and signing." core=true}}
+        {{> components/doc-overview-card href="#section-batch-and-clustering" kicker="Throughput" title="Pools & clusters" description="Reuse SMTP connections and give different workloads their own pools and server sets." batch=true}}
       </div>
     </section>
 
@@ -855,7 +835,7 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <section>
 
     <div class="wide">
-      Spring profiles can then provide different values—for example, <code>default</code> and <code>production</code>:
+      Spring profiles can then provide different values, for example <code>default</code> and <code>production</code>:
       <pre><code class="language-properties small">#application.properties
 simplejavamail.javaxmail.debug=true
 simplejavamail.smtp.host=smtp.host
@@ -892,7 +872,7 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 
 
   <a href="#section-mailer-lifecycle" id="section-mailer-lifecycle" class="section-link h2">&sect;</a>
-  {{#> components/feature-heading-h2 core=true batch=true spring=true}}Mailer lifecycle and resource ownership{{/components/feature-heading-h2}}
+  {{#> components/feature-heading-h2 batch=true spring=true}}Mailer lifecycle and resource ownership{{/components/feature-heading-h2}}
 
   <section>
     <div>

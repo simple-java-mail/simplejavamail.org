@@ -9,7 +9,7 @@ This plan leads; the templates follow. Changes to the public story, route hierar
 
 ## Brief
 
-Simple Java Mail is a mature open-source Java library that removes Sun JavaMail / Jakarta Mail plumbing from application code. Its clean API is not limited to simple messages: it also covers MIME composition, recipient rules, DKIM and S/MIME, transport security, shared configuration, diagnostics, proxies, conversion, connection reuse, batch work, and clustered SMTP pools.
+Simple Java Mail is a mature open-source Java library that removes Jakarta Mail plumbing from application code. Its clean API is not limited to simple messages: it also covers MIME composition, recipient rules, DKIM and S/MIME, transport security, shared configuration, diagnostics, proxies, conversion, connection reuse, batch work, and clustered SMTP pools.
 
 The website should make that depth legible without becoming commercial. It does not sell an edition, a service, or an enterprise upgrade. It helps developers:
 
@@ -37,12 +37,12 @@ The public story is a lifecycle, not a sales funnel:
 
 > Compose -> Configure -> Protect -> Deliver -> Diagnose -> Extend
 
-1. **Compose** — addresses, text and HTML, attachments, embedded images, calendars, replies, forwards, and MIME without constructing `MimeMessage` trees.
-2. **Configure** — reusable mailers, properties, Spring integration, defaults, overrides, validation, custom sessions, and lower-level escape hatches.
-3. **Protect** — SMTP transport strategies, OAuth2, DKIM, S/MIME, CRLF protection, trusted hosts, identity verification, and custom TLS behavior.
-4. **Deliver** — synchronous and asynchronous sends, open-connection batches, connection pools, multiple clusters, load balancing, local bind addresses, and authenticated SOCKS.
-5. **Diagnose** — connection tests, structured failures, Jakarta Mail debug routing, logging-only mode, submission and delivery receipts, inspectable configuration, and validation.
-6. **Extend** — custom sending logic, EML and Outlook conversion, CLI use, optional modules, OSGi/Karaf, and direct Jakarta Mail access when required.
+1. **Compose:** addresses, text and HTML, attachments, embedded images, calendars, replies, forwards, and MIME without constructing `MimeMessage` trees.
+2. **Configure:** reusable mailers, properties, Spring integration, defaults, overrides, validation, custom sessions, and lower-level escape hatches.
+3. **Protect:** SMTP transport strategies, OAuth2, DKIM, S/MIME, CRLF protection, trusted hosts, identity verification, and custom TLS behavior.
+4. **Deliver:** synchronous and asynchronous sends, open-connection batches, connection pools, multiple clusters, load balancing, local bind addresses, and authenticated SOCKS.
+5. **Diagnose:** connection tests, structured failures, Jakarta Mail debug routing, logging-only mode, submission and delivery receipts, inspectable configuration, and validation.
+6. **Extend:** custom sending logic, EML and Outlook conversion, CLI use, optional modules, OSGi/Karaf, and direct Jakarta Mail access when required.
 
 The short formulation used across the site is:
 

@@ -8,6 +8,8 @@
   margin: 0 0 @space-xl;
 }
 .start-fact-row > span {
+  display: inline-flex;
+  align-items: center;
   padding: 0.42rem 0.8rem;
   border: 1px solid @line;
   border-right: 0;
@@ -16,9 +18,16 @@
   font-family: @font-mono;
   font-size: 0.66rem;
   letter-spacing: 0.04em;
+  line-height: 1.3;
   text-transform: uppercase;
 }
 .start-fact-row > span:last-child { border-right: 1px solid @line; }
+.doc-hero-facts { margin: @space-lg 0 0; }
+.doc-hero-support { display: flex; flex-wrap: wrap; align-items: stretch; gap: @space-sm; margin-top: @space-lg; }
+.doc-hero-support .doc-hero-facts { margin: 0; }
+.doc-hero-support .button { padding: 0.42rem 0.8rem; background: @white; font-size: 0.66rem; line-height: 1.3; }
+.doc-hero-support .button:hover { border-color: @teal-deep; background: @teal-deep; color: @white; }
+.start-reference-links { display: flex; flex-direction: column; align-items: flex-start; gap: @space-sm; margin-top: @space-sm; }
 
 .legacy-doc-content .start-prose-section > h2,
 .legacy-doc-content .start-step > h2 {
@@ -172,7 +181,7 @@
   font-family: @font-mono;
 }
 .start-check-list li::before { content: "+"; }
-.start-plain-list li::before { content: "—"; color: @steel-light; }
+.start-plain-list li::before { content: "•"; color: @steel-light; }
 
 .legacy-doc-content > .start-action-section { padding-bottom: 0; border-bottom: 0; }
 .start-action-box {
@@ -306,6 +315,8 @@
   .start-fact-row { flex-direction: column; }
   .start-fact-row > span { border-right: 1px solid @line; border-bottom: 0; }
   .start-fact-row > span:last-child { border-bottom: 1px solid @line; }
+  .doc-hero-support { flex-direction: column; }
+  .doc-hero-support .button { width: 100%; }
   .start-stage-list li { grid-template-columns: 28px minmax(0, 1fr); padding: @space-md; }
   .start-feature-grid > a, .start-fit-grid > article, .start-verify-grid article { padding: @space-md; }
 }

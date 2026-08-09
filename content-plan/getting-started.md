@@ -51,14 +51,14 @@ Show `testConnection()` and `validate(email)`. Explain that connection acceptanc
 
 Small decision table:
 
-- batch module — pooled/high-throughput and clustered sending;
-- authenticated SOCKS module — proxy credentials;
-- DKIM module — domain-key signing;
-- S/MIME module — signing/encryption;
-- Outlook module — `.msg` parsing and conversion;
-- CLI module/distribution — command-line use;
-- Spring module — Spring-oriented configuration;
-- OSGi/Karaf artifacts — modular container deployment.
+- batch module: pooled/high-throughput and clustered sending;
+- authenticated SOCKS module: proxy credentials;
+- DKIM module: domain-key signing;
+- S/MIME module: signing/encryption;
+- Outlook module: `.msg` parsing and conversion;
+- CLI module/distribution: command-line use;
+- Spring module: Spring-oriented configuration;
+- OSGi/Karaf artifacts: modular container deployment.
 
 Link every row to the Modules page and exact capability documentation.
 

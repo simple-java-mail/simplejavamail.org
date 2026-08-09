@@ -16,39 +16,19 @@
       <p class="wide">Pick a common task below, or use the full table of contents for the complete API reference.</p>
     </header>
     <div class="doc-card-grid">
-      <a href="#section-basic-usage">
-        <span class="doc-card-meta"><span class="doc-card-kicker">Everyday sending</span>{{> components/module-badges core=true}}</span>
-        <strong>Compose an email</strong>
-        <p>Build text, HTML, recipients, headers, and calendar content through one fluent API.</p>
-      </a>
-      <a href="#section-attachments">
-        <span class="doc-card-meta"><span class="doc-card-kicker">Rich content</span>{{> components/module-badges core=true}}</span>
-        <strong>Attachments &amp; images</strong>
-        <p>Attach files or data and embed images without constructing MIME parts yourself.</p>
-      </a>
-      <a href="#section-reply-forward">
-        <span class="doc-card-meta"><span class="doc-card-kicker">Conversations</span>{{> components/module-badges core=true}}</span>
-        <strong>Reply, reply-all &amp; forward</strong>
-        <p>Quote a message for one or all recipients, or forward the original as a complete email.</p>
-      </a>
-      <a href="#section-email-validation">
-        <span class="doc-card-meta"><span class="doc-card-kicker">Recipient safety</span>{{> components/module-badges core=true}}</span>
-        <strong>Address validation</strong>
-        <p>Check addresses, handle invalid recipients, and apply reusable recipient rules.</p>
-      </a>
-      <a href="#section-sending-asynchronously">
-        <span class="doc-card-meta"><span class="doc-card-kicker">Delivery</span>{{> components/module-badges core=true batch=true}}</span>
-        <strong>Async &amp; batch sending</strong>
-        <p>Send once, work asynchronously, reuse a connection, or grow into pooled delivery.</p>
-      </a>
+      {{> components/doc-overview-card href="#section-basic-usage" kicker="Everyday sending" title="Compose an email" description="Build text, HTML, recipients, headers, and calendar content through one fluent API." core=true}}
+      {{> components/doc-overview-card href="#section-attachments" kicker="Rich content" title="Attachments & images" description="Attach files or data and embed images without constructing MIME parts yourself." core=true}}
+      {{> components/doc-overview-card href="#section-reply-forward" kicker="Conversations" title="Reply, reply-all & forward" description="Quote a message for one or all recipients, or forward the original as a complete email." core=true}}
+      {{> components/doc-overview-card href="#section-email-validation" kicker="Recipient safety" title="Address validation" description="Check addresses, handle invalid recipients, and apply reusable recipient rules." core=true}}
+      {{> components/doc-overview-card href="#section-sending-asynchronously" kicker="Delivery" title="Async & batch sending" description="Send once, work asynchronously, reuse a connection, or grow into pooled delivery." batch=true}}
     </div>
   </section>
 
   <section class="introduction">
     <p class="wide">
-      Simple Java Mail keeps everyday sending straightforward, but it does much more than build a <code class="inline language-text">MimeMessage</code>.
-      It covers reusable mailer configuration, TLS and OAuth2, recipient defaults and overrides, diagnostics, message conversion, batching and clustered
-      delivery—without asking you to manage Jakarta Mail transports yourself.
+      Simple Java Mail starts with well-formed MIME messages. The same mailer model also covers reusable defaults and overrides, TLS and OAuth2, DKIM,
+      S/MIME, diagnostics, conversion, authenticated SOCKS, batching, connection pools, and SMTP clusters. Some are absent from Jakarta Mail itself;
+      the rest otherwise require direct work with its Session, MimeMessage, or Transport APIs.
     </p>
     <p class="wide">
       This page is the complete feature reference. If you have a specific job in mind, start with the
@@ -375,7 +355,7 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
 
 
   <a href="#section-recipient-builders" id="section-recipient-builders" class="section-link h3">&sect;</a>
-  {{#> components/feature-heading-h3 core=true smime=true}}Dedicated recipient builders{{/components/feature-heading-h3}}
+  {{#> components/feature-heading-h3 smime=true}}Dedicated recipient builders{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
@@ -462,7 +442,7 @@ MailerBuilder
 
 
   <a href="#section-sending-asynchronously" id="section-sending-asynchronously" class="section-link h3">&sect;</a>
-  {{#> components/feature-heading-h3 core=true batch=true}}Asynchronous sending, simple batches and clustering{{/components/feature-heading-h3}}
+  {{#> components/feature-heading-h3 batch=true}}Asynchronous sending, simple batches and clustering{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
@@ -1451,7 +1431,7 @@ JMail.strictValidator()
 
 
   <a href="#section-converting" id="section-converting" class="section-link h2">&sect;</a>
-  {{#> components/feature-heading-h2 core=true outlook=true smime=true}}Converting between Email, MimeMessage, EML and Outlook .msg{{/components/feature-heading-h2}}
+  {{#> components/feature-heading-h2 outlook=true smime=true}}Converting between Email, MimeMessage, EML and Outlook .msg{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
@@ -1758,13 +1738,13 @@ Email reply = EmailBuilder
 
 
   <a href="#section-proxy" id="section-proxy" class="section-link h2">&sect;</a>
-  {{#> components/feature-heading-h2 core=true socks=true}}Send using a proxy{{/components/feature-heading-h2}}
+  {{#> components/feature-heading-h2 socks=true}}Send using a proxy{{/components/feature-heading-h2}}
 
   <section>
     <div>
       <p class="wide">
-        Simple Java Mail supports sending email through a SOCKS proxy, including proxy username/password negotiation—an uncommon built-in capability
-        in Java mail libraries. The underlying
+        Simple Java Mail supports sending email through a SOCKS proxy, including proxy username/password negotiation. This is an uncommon built-in
+        capability in Java mail libraries. The underlying
         <a href="https://jakartaee.github.io/mail-api/" target="_blank">Jakarta Mail framework</a> supports anonymous SOCKS5 proxies, but
         <a href="https://jakartaee.github.io/mail-api/FAQ.html#proxy" target="_blank">not authenticated proxies</a>. Proxying works with SMTP,
         STARTTLS and implicit-TLS SMTPS connections.

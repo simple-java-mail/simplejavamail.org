@@ -14,6 +14,8 @@ Primary audience: implementers who need more than the main `simple-java-mail` de
 
 Start with a compact dependency diagram generated in HTML/CSS rather than the current raster-only explanation. Show the main artifact and core, then optional modules:
 
+First establish what core already covers: well-formed MIME, reusable configuration and message rules, TLS and OAuth2, diagnostics, conversion, and simple batches. The optional modules extend that same model; they are not the library's only advanced capabilities.
+
 - batch;
 - authenticated SOCKS;
 - Outlook;

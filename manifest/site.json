@@ -32,7 +32,8 @@
       "out": "why-simple-java-mail.html",
       "chrome": "docs",
       "style": "start",
-      "description": "Your code should describe the email, not build a MIME tree. See what Simple Java Mail handles and where Jakarta Mail still fits."
+      "showOpenSourceBadges": true,
+      "description": "Simple Java Mail is not just a Jakarta Mail wrapper. It builds well-formed MIME through a highly streamlined API and, on top of that, adds reusable message rules, security, diagnostics, conversion, and advanced SMTP delivery."
     },
     {
       "title": "Use cases",
@@ -59,7 +60,7 @@
       "url": "/features.html",
       "out": "features.html",
       "chrome": "docs",
-      "description": "Build messages and recipients, send them, convert them, validate them, and drop down to Jakarta Mail when needed."
+      "description": "Explore well-formed MIME, reusable message rules, security, diagnostics, conversion, authenticated SOCKS, batches, pools, and SMTP clusters."
     },
     {
       "title": "Configuration",

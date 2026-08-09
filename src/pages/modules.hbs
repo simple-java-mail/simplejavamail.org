@@ -11,8 +11,9 @@
   {{#*inline "body-block"}}
   <section>
     <p class="wide">
-      Start with <code>simple-java-mail</code>. Add an optional module only when you need pooled batch delivery, authenticated SOCKS, DKIM, S/MIME,
-      Outlook conversion, command-line use, Spring integration, or Karaf support.
+      Core already covers well-formed MIME, reusable configuration and message rules, TLS and OAuth2, diagnostics, conversion, and simple batches.
+      Add an optional module only when you need pooled or clustered delivery, authenticated SOCKS, DKIM, S/MIME, Outlook conversion, command-line use,
+      Spring integration, or Karaf support.
     </p>
   </section>
 
@@ -34,9 +35,9 @@
       </p>
       <p style="margin-top: 1em">The main core dependencies are:</p>
       <ul class="indent">
-        <li><code>jakarta.mail:jakarta.mail-api</code> — the standard mail API</li>
-        <li><code>org.eclipse.angus:angus-mail</code> — the Jakarta Mail implementation</li>
-        <li><code>com.sanctionco.jmail:jmail</code> — address validation</li>
+        <li><code>jakarta.mail:jakarta.mail-api</code>: the standard mail API</li>
+        <li><code>org.eclipse.angus:angus-mail</code>: the Jakarta Mail implementation</li>
+        <li><code>com.sanctionco.jmail:jmail</code>: address validation</li>
       </ul>
       <p>Use the published POM on Maven Central as the authoritative list of transitive dependencies for the current release.</p>
       <p style="margin-top: 1em">

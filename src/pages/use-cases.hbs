@@ -27,10 +27,10 @@
             <p>Declare plain text, HTML, inline images, attachments, or calendar events and Simple Java Mail builds the MIME tree mail clients expect. Your code does not have to assemble multipart nesting, content IDs, transfer encoding, and transport plumbing by hand.</p>
           </div>
           <nav class="use-case-links" aria-label="Message structure documentation">
-            <a href="/features.html#section-basic-usage"><span><strong>Compose messages</strong><small>Bodies, recipients, and headers</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/features.html#section-attachments"><span><strong>Attachments and inline images</strong><small>Files, streams, and embedded content</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/rfc-compliant.html#section-why"><span><strong>Why MIME structure matters</strong><small>Correct nesting across mail clients</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/configuration.html#section-programmatic-api-common"><span><strong>Configure SMTP once</strong><small>Server, credentials, and transport</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            {{> components/use-case-link href="/features.html#section-basic-usage" title="Compose messages" description="Bodies, recipients, and headers" core=true}}
+            {{> components/use-case-link href="/features.html#section-attachments" title="Attachments and inline images" description="Files, streams, and embedded content" core=true}}
+            {{> components/use-case-link href="/rfc-compliant.html#section-why" title="Why MIME structure matters" description="Correct nesting across mail clients" core=true}}
+            {{> components/use-case-link href="/configuration.html#section-programmatic-api-common" title="Configure SMTP once" description="Server, credentials, and transport" core=true}}
           </nav>
         </article>
 
@@ -41,10 +41,10 @@
             <p>Protect the SMTP connection with TLS, use a password or refresh-aware OAuth2 token, sign the sending domain with DKIM, or sign and encrypt message content with S/MIME. These are separate layers, so you can apply the ones your mail flow needs.</p>
           </div>
           <nav class="use-case-links" aria-label="Secure sending documentation">
-            <a href="/security.html#section-authentication-methods"><span><strong>TLS and OAuth2</strong><small>Transport and authentication</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/security.html#section-sending-dkim"><span><strong>DKIM signing</strong><small>Domain identity and integrity</small></span>{{> components/module-badges dkim=true}}<b aria-hidden="true">→</b></a>
-            <a href="/security.html#section-sending-smime"><span><strong>S/MIME</strong><small>Sign and encrypt message content</small></span>{{> components/module-badges smime=true}}<b aria-hidden="true">→</b></a>
-            <a href="/security.html#section-crlf-scanning"><span><strong>Input scanning</strong><small>Catch suspicious header content</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            {{> components/use-case-link href="/security.html#section-authentication-methods" title="TLS and OAuth2" description="Transport and authentication" core=true}}
+            {{> components/use-case-link href="/security.html#section-sending-dkim" title="DKIM signing" description="Domain identity and integrity" dkim=true}}
+            {{> components/use-case-link href="/security.html#section-sending-smime" title="S/MIME" description="Sign and encrypt message content" smime=true}}
+            {{> components/use-case-link href="/security.html#section-crlf-scanning" title="Input scanning" description="Catch suspicious header content" core=true}}
           </nav>
         </article>
 
@@ -55,10 +55,10 @@
             <p>When several workers send continuously, use bounded worker threads and reuse physical SMTP connections in a pool. Cluster keys can keep workloads separate or spread one workload over several SMTP servers.</p>
           </div>
           <nav class="use-case-links" aria-label="High-throughput documentation">
-            <a href="/features.html#section-sending-asynchronously"><span><strong>Asynchronous sending</strong><small>Schedule work and handle results</small></span>{{> components/module-badges core=true batch=true}}<b aria-hidden="true">→</b></a>
-            <a href="/configuration.html#section-reusing-connections"><span><strong>Connection pools</strong><small>Reuse transports across workers</small></span>{{> components/module-badges batch=true}}<b aria-hidden="true">→</b></a>
-            <a href="/configuration.html#section-clustering"><span><strong>SMTP clusters</strong><small>Separate and balance workloads</small></span>{{> components/module-badges batch=true}}<b aria-hidden="true">→</b></a>
-            <a href="/configuration.html#section-mailer-lifecycle"><span><strong>Mailer lifecycle</strong><small>Finish work and release resources</small></span>{{> components/module-badges core=true batch=true}}<b aria-hidden="true">→</b></a>
+            {{> components/use-case-link href="/features.html#section-sending-asynchronously" title="Asynchronous sending" description="Schedule work and handle results" batch=true}}
+            {{> components/use-case-link href="/configuration.html#section-reusing-connections" title="Connection pools" description="Reuse transports across workers" batch=true}}
+            {{> components/use-case-link href="/configuration.html#section-clustering" title="SMTP clusters" description="Separate and balance workloads" batch=true}}
+            {{> components/use-case-link href="/configuration.html#section-mailer-lifecycle" title="Mailer lifecycle" description="Finish work and release resources" batch=true}}
           </nav>
         </article>
 
@@ -69,10 +69,10 @@
             <p>For a known list or a caller-owned queue, keep one SMTP connection open and send sequentially. This is part of the core API. Move to pooled delivery only when you need concurrency or sustained throughput.</p>
           </div>
           <nav class="use-case-links" aria-label="Batch delivery documentation">
-            <a href="/features.html#section-sending-asynchronously"><span><strong>Simple batches</strong><small>One connection for a known list</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/features.html#section-sending-asynchronously"><span><strong>Scoped open connection</strong><small>Drive a caller-owned queue</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/features.html#section-handling-async-result"><span><strong>Asynchronous results</strong><small>Observe success and failure</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/features.html#section-submission-receipts"><span><strong>SMTP submission receipts</strong><small>Read the server's replies</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            {{> components/use-case-link href="/features.html#section-sending-asynchronously" title="Simple batches" description="One connection for a known list" core=true}}
+            {{> components/use-case-link href="/features.html#section-sending-asynchronously" title="Scoped open connection" description="Drive a caller-owned queue" core=true}}
+            {{> components/use-case-link href="/features.html#section-handling-async-result" title="Asynchronous results" description="Observe success and failure" core=true}}
+            {{> components/use-case-link href="/features.html#section-submission-receipts" title="SMTP submission receipts" description="Read the server's replies" core=true}}
           </nav>
         </article>
 
@@ -83,11 +83,12 @@
             <p>Configure a mailer in Java, properties, environment variables, or Spring. You can also supply your own Jakarta Mail Session, work through an authenticated SOCKS proxy, or send and test from the command line.</p>
           </div>
           <nav class="use-case-links" aria-label="Application integration documentation">
-            <a href="/configuration.html#section-spring-support"><span><strong>Spring support</strong><small>Build and inject a mailer</small></span>{{> components/module-badges spring=true}}<b aria-hidden="true">→</b></a>
-            <a href="/configuration.html#section-config-properties"><span><strong>Properties and environment</strong><small>Layer external configuration</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/features.html#section-custom-session"><span><strong>Your own Session</strong><small>Use preconfigured Jakarta Mail state</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/features.html#section-proxy"><span><strong>Authenticated SOCKS</strong><small>Bridge proxy authentication</small></span>{{> components/module-badges socks=true}}<b aria-hidden="true">→</b></a>
-            <a href="/cli.html#section-how-to-use"><span><strong>Command-line use</strong><small>Send, validate, and test</small></span>{{> components/module-badges cli=true}}<b aria-hidden="true">→</b></a>
+            {{> components/use-case-link href="/configuration.html#section-spring-support" title="Spring support" description="Build and inject a mailer" spring=true}}
+            {{> components/use-case-link href="/configuration.html#section-config-properties" title="Properties and environment" description="Layer external configuration" core=true}}
+            {{> components/use-case-link href="/features.html#section-custom-session" title="Your own Session" description="Use preconfigured Jakarta Mail state" core=true}}
+            {{> components/use-case-link href="/features.html#section-proxy" title="Authenticated SOCKS" description="Bridge proxy authentication" socks=true}}
+            {{> components/use-case-link href="/cli.html#section-how-to-use" title="Command-line use" description="Send, validate, and test" cli=true}}
+            {{> components/use-case-link href="/modules.html#karaf-module" title="Apache Karaf" description="Install Simple Java Mail as a Karaf feature" karaf=true}}
           </nav>
         </article>
 
@@ -98,10 +99,10 @@
             <p>Test the exact mailer configuration without sending a message, inspect the effective settings, route Jakarta Mail's protocol output into your logs, and read the SMTP server's submission replies.</p>
           </div>
           <nav class="use-case-links" aria-label="Delivery diagnostics documentation">
-            <a href="/features.html#section-connection-test"><span><strong>Test a connection</strong><small>Exercise the effective mailer setup</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/debugging.html#section-inspect-mailer-email"><span><strong>Inspect mailer and email state</strong><small>See the values in use</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/debugging.html#section-debug-logging"><span><strong>Protocol debug output</strong><small>Trace the SMTP conversation</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
-            <a href="/debugging.html#section-mailexception"><span><strong>Handle failures</strong><small>Read synchronous and async errors</small></span>{{> components/module-badges core=true}}<b aria-hidden="true">→</b></a>
+            {{> components/use-case-link href="/features.html#section-connection-test" title="Test a connection" description="Exercise the effective mailer setup" core=true}}
+            {{> components/use-case-link href="/debugging.html#section-inspect-mailer-email" title="Inspect mailer and email state" description="See the values in use" core=true}}
+            {{> components/use-case-link href="/debugging.html#section-debug-logging" title="Protocol debug output" description="Trace the SMTP conversation" core=true}}
+            {{> components/use-case-link href="/debugging.html#section-mailexception" title="Handle failures" description="Read synchronous and async errors" core=true}}
           </nav>
         </article>
       </div>

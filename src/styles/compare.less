@@ -2,17 +2,23 @@
 
 @matrix-support: #18A66A;
 @matrix-gap: #C7474F;
+@profile-green: #087D49;
+@profile-green-tint: #E4F3EA;
 
 .compare-hero { background: @white; }
-.profiles, .matrix-section, .scenario-section { padding: @space-3xl 0; }
+.profiles, .matrix-section, .footprint-section, .scenario-section { padding: @space-3xl 0; }
 .profile-list { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid @line; border-left: 1px solid @line; }
 .profile-list article { display: flex; flex-direction: column; min-height: 390px; padding: @space-xl; border-right: 1px solid @line; border-bottom: 1px solid @line; background: @white; }
-.profile-list article > span { color: @steel-light; font-family: @font-mono; font-size: 0.62rem; letter-spacing: @tracking-label; text-transform: uppercase; }
 .profile-list h3 { margin-top: @space-xl; font-size: 1.5rem; }
 .profile-list p { margin-top: @space-md; color: @steel; }
 .profile-list a { margin-top: auto; font-family: @font-mono; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; }
-.profile-list .profile-primary { position: relative; border-top: 4px solid @teal; background: @teal-tint; }
-.profile-list .profile-primary::before { content: "Current project"; position: absolute; top: 0; right: 0; padding: 0.25rem 0.5rem; background: @teal; color: @white; font-family: @font-mono; font-size: 0.55rem; letter-spacing: 0.05em; text-transform: uppercase; }
+.profile-list .profile-low, .profile-list .profile-basic, .profile-list .profile-caution, .profile-list .profile-primary { position: relative; }
+.profile-list .profile-low, .profile-list .profile-basic { border-top: 4px solid @amber; }
+.profile-list .profile-caution { position: relative; border-top: 4px solid @matrix-gap; }
+.profile-list .profile-status { position: absolute; top: 0; right: 0; padding: 0.25rem 0.5rem; background: @amber; color: @white; font-family: @font-mono; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.05em; line-height: 1.3; text-transform: uppercase; }
+.profile-list .profile-caution .profile-status { background: @matrix-gap; color: @white; }
+.profile-list .profile-primary { position: relative; border-top: 4px solid @profile-green; background: @profile-green-tint; }
+.profile-list .profile-primary .profile-status { background: @profile-green; color: @white; }
 
 .matrix-section { background: @white; }
 .matrix-legend { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
@@ -25,6 +31,8 @@
 .comparison-table { width: 100%; min-width: 1100px; border-collapse: collapse; table-layout: fixed; background: @white; font-size: 0.76rem; }
 .comparison-table th, .comparison-table td { padding: 0.9rem; border-right: 1px solid @line; border-bottom: 1px solid @line; text-align: left; vertical-align: top; overflow-wrap: break-word; }
 .comparison-table thead th { background: @ink; color: @white; font-family: @font-mono; font-size: 0.62rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.comparison-table thead .project-home-link { display: inline-block; margin-left: 0.25rem; color: @amber; font-size: 0.8rem; line-height: 1; text-decoration: none; vertical-align: -0.04em; }
+.comparison-table thead .project-home-link:hover, .comparison-table thead .project-home-link:focus-visible { color: @white; }
 .comparison-table thead th:first-child { width: 19%; background: @ink-deep; }
 .comparison-table tbody th { background: darken(@paper, 1%); color: @ink; font-weight: 600; }
 .comparison-table tbody td { position: relative; padding-left: 1.9rem; color: @steel; }
@@ -35,15 +43,36 @@
 .comparison-table td:last-child { background: fade(@teal-tint, 45%); }
 .comparison-table tbody tr:hover th, .comparison-table tbody tr:hover td { background: @amber-tint; }
 .comparison-table code { padding: 0; border: 0; background: transparent; font-size: 0.95em; }
-.matrix-note { max-width: 920px; margin: @space-md 0 0; color: @steel; font-size: 0.82rem; }
+.matrix-note { max-width: 920px; margin: @space-lg 0 0; padding: @space-md @space-lg; border: 1px solid @line; border-left: 3px solid @matrix-gap; background: @paper; color: @steel; font-size: 0.84rem; }
 
-.scenario-list { border-top: 1px solid @line; }
-.scenario-list article { display: grid; grid-template-columns: 110px 1fr; gap: @space-xl; padding: @space-xl; border: 1px solid @line; border-top: 0; }
-.scenario-list article > span { color: @teal; font-family: @font-mono; font-size: 1rem; }
-.scenario-list h3 { font-size: 1.5rem; }
-.scenario-list p { max-width: 780px; margin-top: @space-sm; color: @steel; }
-.scenario-list a { font-family: @font-mono; font-size: 0.66rem; font-weight: 600; text-transform: uppercase; }
-.scenario-list .scenario-primary { border-left: 4px solid @teal; background: @teal-tint; }
+.footprint-section { background: @paper; }
+.dependency-list { border-top: 1px solid @line; border-left: 1px solid @line; }
+.dependency-list article { display: grid; grid-template-columns: 210px minmax(320px, 1fr) minmax(260px, 0.9fr); align-items: center; gap: @space-lg; padding: @space-lg; border-right: 1px solid @line; border-bottom: 1px solid @line; background: @white; }
+.dependency-name > span, .fit-library > span { color: @steel-light; font-family: @font-mono; font-size: 0.6rem; letter-spacing: @tracking-label; text-transform: uppercase; }
+.dependency-name h3 { margin-top: @space-xs; font-size: 1.15rem; }
+.dependency-parts { margin: 0; padding-left: 1rem; }
+.dependency-parts li { padding: 0.12rem 0; color: @steel-light; font-family: @font-mono; font-size: 0.65rem; letter-spacing: 0.02em; line-height: 1.45; text-transform: uppercase; }
+.dependency-parts li::marker { color: @line-dark; font-size: 0.7em; }
+.dependency-parts .dependency-base { color: @steel-light; font-weight: 400; }
+.dependency-parts .dependency-base::marker { color: @steel-light; }
+.dependency-parts .dependency-focus { color: @ink; font-weight: 700; }
+.dependency-parts .dependency-focus::marker { color: @ink; }
+.dependency-parts .dependency-optional { color: @teal-deep; font-weight: 600; }
+.dependency-parts .dependency-optional::marker { color: @teal-deep; }
+.dependency-primary .dependency-parts .dependency-focus { color: @profile-green; }
+.dependency-primary .dependency-parts .dependency-focus::marker { color: @profile-green; }
+.dependency-list article > p { margin: 0; color: @steel; font-size: 0.82rem; }
+.dependency-list .dependency-primary { border-left: 4px solid @teal; background: fade(@teal-tint, 45%); }
+
+.scenario-section { background: @white; }
+.fit-list { border-top: 1px solid @line; border-left: 1px solid @line; }
+.fit-list article { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: @space-xl; padding: @space-xl; border-right: 1px solid @line; border-bottom: 1px solid @line; background: @paper; }
+.fit-library strong { display: block; margin-top: @space-xs; color: @ink; font-size: 1rem; }
+.fit-list h3 { font-size: 1.5rem; }
+.fit-list p { max-width: 800px; margin: @space-sm 0 0; color: @steel; }
+.fit-list .fit-primary { border-left: 4px solid @teal; background: @teal-tint; }
+.fit-actions { display: flex; flex-wrap: wrap; gap: @space-lg; margin-top: @space-md; }
+.fit-actions a { font-family: @font-mono; font-size: 0.66rem; font-weight: 600; text-transform: uppercase; }
 .scope-band { padding: @space-2xl 0; background: @ink; color: #C7D2D4; }
 .scope-grid { display: grid; grid-template-columns: 180px 1fr 1fr; align-items: start; gap: @space-xl; }
 .scope-grid h2 { color: @white; font-size: clamp(1.8rem, 3vw, 2.6rem); }
@@ -52,6 +81,8 @@
 @media (max-width: 1000px) {
   .profile-list { grid-template-columns: 1fr 1fr; }
   .profile-list article { min-height: 320px; }
+  .dependency-list article { grid-template-columns: 180px minmax(0, 1fr); }
+  .dependency-list article > p { grid-column: 2; }
   .scope-grid { grid-template-columns: 1fr 1fr; }
   .scope-grid .eyebrow { grid-column-start: 1; grid-column-end: -1; }
 }
@@ -67,7 +98,9 @@
 @media (max-width: 760px) {
   .profile-list { grid-template-columns: 1fr; }
   .profile-list article { min-height: 0; }
-  .scenario-list article { grid-template-columns: 52px 1fr; gap: @space-md; padding-inline: @space-md; }
+  .dependency-list article, .fit-list article { grid-template-columns: 1fr; gap: @space-md; padding: @space-lg @space-md; }
+  .dependency-list article > p { grid-column: 1; }
+  .fit-library { padding-bottom: @space-sm; border-bottom: 1px solid @line; }
   .scope-grid { grid-template-columns: 1fr; }
   .scope-grid .eyebrow { grid-column: 1; }
 }

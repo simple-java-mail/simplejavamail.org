@@ -78,7 +78,7 @@ Contact title: `Simple Java Mail help and contributions`
 
 ## Rationale
 
-For an open-source library, mature support signals are findability, release transparency, migrations, accurate ownership, and a clear contribution path—not commercial support language.
+For an open-source library, mature support signals are findability, release transparency, migrations, accurate ownership, and a clear contribution path. Commercial support language is not one of them.
 
 ## Watch-items
 

@@ -12,15 +12,15 @@ Primary audience: teams preparing production mailers
 
 ### Visible structure
 
-1. **Configuration at a glance** — link cards for the Java SMTP API, properties, Spring, defaults and overrides, and pools and clusters. Keep individual settings in the table of contents.
-2. **Choose a configuration route** — Java builders, properties, Spring, or supplied Jakarta `Session`.
-3. **Build a reusable Mailer** — server, port, credentials, transport strategy, timeouts.
-4. **Layer configuration** — common properties, environment overrides, and precedence.
-5. **Set message rules once** — defaults, forced overrides, validation, default DKIM/S/MIME where applicable.
-6. **Configure delivery behavior** — async, connection reuse, simple batch.
-7. **Configure pooled and clustered delivery** — batch module, pool sizing, keys, multiple clusters, load balancing.
-8. **Inspect the settings in use** — server, runtime, recipient rules, proxy, transport, and Session views.
-9. **Reference appendix** — complete property inventory.
+1. **Configuration at a glance:** link cards for the Java SMTP API, properties, Spring, defaults and overrides, and pools and clusters. Keep individual settings in the table of contents.
+2. **Choose a configuration route:** Java builders, properties, Spring, or supplied Jakarta `Session`.
+3. **Build a reusable Mailer:** server, port, credentials, transport strategy, timeouts.
+4. **Layer configuration:** common properties, environment overrides, and precedence.
+5. **Set message rules once:** defaults, forced overrides, validation, default DKIM/S/MIME where applicable.
+6. **Configure delivery behavior:** async, connection reuse, simple batch.
+7. **Configure pooled and clustered delivery:** batch module, pool sizing, keys, multiple clusters, load balancing.
+8. **Inspect the settings in use:** server, runtime, recipient rules, proxy, transport, and Session views.
+9. **Reference appendix:** complete property inventory.
 
 Preserve current anchors for common/other programmatic APIs, properties, available properties, defaults/overrides, environments, Spring, batch/clustering, connection reuse, and multiple pools.
 
@@ -30,7 +30,7 @@ The page distinguishes **message data** from **mailer settings**. Defaults fill 
 
 ### Metadata intent
 
-Title: `Configure Simple Java Mail — Java, properties, Spring, and delivery pools`
+Title: `Configure Simple Java Mail: Java, properties, Spring, and delivery pools`
 Description: `Configure reusable mailers, layered properties, Spring integration, defaults and overrides, validation, connection reuse, batch pools, and multiple SMTP clusters.`
 
 ## Security page
@@ -41,13 +41,13 @@ Description: `Configure reusable mailers, layered properties, Spring integration
 
 ### Visible structure
 
-1. **Security at a glance** — link cards for TLS, OAuth2, DKIM, S/MIME, and header-injection protection. Keep connection factories, individual transport variants, trust settings, and other lower-level controls in the table of contents.
-2. **Choose a transport strategy** — SMTP, SMTPS, SMTP with STARTTLS, OAuth2; explain what each does and does not protect.
-3. **Verify the server** — trusted hosts, server identity, custom SSL factory, certificate behavior.
-4. **Prevent header injection** — CRLF handling and where validation occurs.
-5. **Sign with DKIM** — per-message and mailer defaults, selectors/keys, optional module note.
-6. **Sign and encrypt with S/MIME** — signing, encryption, per-recipient certificates, reading/merging/decrypting, optional module note.
-7. **Security checklist** — secrets, TLS verification, key handling, logging, tests.
+1. **Security at a glance:** link cards for TLS, OAuth2, DKIM, S/MIME, and header-injection protection. Keep connection factories, individual transport variants, trust settings, and other lower-level controls in the table of contents.
+2. **Choose a transport strategy:** SMTP, SMTPS, SMTP with STARTTLS, OAuth2; explain what each does and does not protect.
+3. **Verify the server:** trusted hosts, server identity, custom SSL factory, certificate behavior.
+4. **Prevent header injection:** CRLF handling and where validation occurs.
+5. **Sign with DKIM:** per-message and mailer defaults, selectors/keys, optional module note.
+6. **Sign and encrypt with S/MIME:** signing, encryption, per-recipient certificates, reading/merging/decrypting, optional module note.
+7. **Security checklist:** secrets, TLS verification, key handling, logging, tests.
 
 Preserve all current transport-strategy, SSL, trusted-host, server-identity, CRLF, DKIM, and S/MIME anchors.
 

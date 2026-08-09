@@ -8,12 +8,12 @@ Primary audience: backend, platform, and operations-minded developers
 
 Delivery is presented as a progression. None of the later modes makes the earlier one obsolete:
 
-1. **One send** — `sendMail` for ordinary work.
-2. **Async send** — completion and failure through the returned future/callback model.
-3. **Simple batch** — sequential messages without the batch module.
-4. **Open connection** — callback-scoped reuse for a bounded group.
-5. **Pooled batch** — reusable connections and worker sizing through the optional batch module.
-6. **Keyed cluster** — independent pools and policies for multiple SMTP targets/workloads.
+1. **One send:** `sendMail` for ordinary work.
+2. **Async send:** completion and failure through the returned future/callback model.
+3. **Simple batch:** sequential messages without the batch module.
+4. **Open connection:** callback-scoped reuse for a bounded group.
+5. **Pooled batch:** reusable connections and worker sizing through the optional batch module.
+6. **Keyed cluster:** independent pools and policies for multiple SMTP targets/workloads.
 
 Each level states connection ownership, concurrency model, result behavior, and module requirement.
 
@@ -46,19 +46,19 @@ Link to the full property and Java configuration reference.
 
 ### Reader question
 
-> Did the message fail validation, connection, SMTP submission, or a later delivery stage—and what can I inspect safely?
+> Did the message fail validation, connection, SMTP submission, or a later delivery stage? What can I inspect safely?
 
 ### Visible structure
 
-1. **Diagnose by stage** — build/validate, connect/authenticate, submit, downstream delivery.
-2. **Validate without sending** — email validation and maximum size.
-3. **Test the connection** — sync/async connection test and error handling.
-4. **Inspect what will be used** — mailer config, Session, email, generated `MimeMessage`, submission receipt.
-5. **Route debug output** — Jakarta Mail debug to SLF4J or a chosen output.
-6. **Use logging-only mode** — see composed output without delivery.
-7. **Override envelope recipients safely** — development/test routing with a prominent warning.
-8. **Understand failures** — exception families and async propagation.
-9. **Logging integrations** — Log4j and Logback examples.
+1. **Diagnose by stage:** build/validate, connect/authenticate, submit, downstream delivery.
+2. **Validate without sending:** email validation and maximum size.
+3. **Test the connection:** sync/async connection test and error handling.
+4. **Inspect what will be used:** mailer config, Session, email, generated `MimeMessage`, submission receipt.
+5. **Route debug output:** Jakarta Mail debug to SLF4J or a chosen output.
+6. **Use logging-only mode:** see composed output without delivery.
+7. **Override envelope recipients safely:** development/test routing with a prominent warning.
+8. **Understand failures:** exception families and async propagation.
+9. **Logging integrations:** Log4j and Logback examples.
 
 Preserve all current debugging anchors.
 
@@ -74,7 +74,7 @@ Make the stages explicit:
 
 ### Metadata intent
 
-Title: `Diagnose Simple Java Mail — connection tests, logs, receipts, and failures`
+Title: `Diagnose Simple Java Mail: connection tests, logs, receipts, and failures`
 Description: `Test SMTP connections, validate messages, inspect the settings in use, route Jakarta Mail debug output, understand async failures, and read server replies.`
 
 ## Rationale

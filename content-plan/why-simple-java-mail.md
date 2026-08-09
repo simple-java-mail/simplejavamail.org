@@ -17,7 +17,11 @@ This page belongs to the **Start** group and uses the same docs shell, breadcrum
 
 ### Hero: Why Simple Java Mail
 
-Use `Your code should describe the email, not build a MIME tree` as the lede. Explain the origin plainly: Sun JavaMail exposed the protocol and message machinery; the Jakarta transition changed namespaces and stewardship but did not redesign the low-level API. Simple Java Mail handles that plumbing for application code.
+Place a small, factual `Open source · Apache-2.0` badge row inside the page hero, beneath the lede, beside a `Compare to other libraries` button linking to the comparison page. Stack the controls cleanly on narrow screens.
+
+Use `Your code should describe the email, not build a MIME tree` as the lede. Explain the origin plainly: Jakarta Mail exposes the protocol and message machinery through a low-level API. Simple Java Mail began by handling that plumbing while keeping Jakarta Mail as its standards and transport foundation, then grew to cover capabilities outside Jakarta Mail itself: reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.
+
+Bold the sentence fragments that state the original API improvement and the later breadth. Follow the MIME explanation with two restrained reference links: `Why MIME structure matters` and `See what new capabilities Simple Java Mail adds`.
 
 ### What the library takes care of
 
@@ -100,8 +104,8 @@ Probably not the fit:
 
 ## Metadata intent
 
-Title: `Why Simple Java Mail — A higher-level email API for Java`
-Description: `Your code should describe the email, not build a MIME tree. See what Simple Java Mail handles and where Jakarta Mail still fits.`
+Title: `Why Simple Java Mail: Complete outbound email for Java`
+Description: `Simple Java Mail is not just a Jakarta Mail wrapper. It builds well-formed MIME through a highly streamlined API and, on top of that, adds reusable message rules, security, diagnostics, conversion, and advanced SMTP delivery.`
 
 ## Rationale
 

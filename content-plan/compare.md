@@ -17,7 +17,7 @@ Any time-sensitive project-health fact must be sourced from a current official p
 
 ## Visible structure
 
-### Hero: Compare what each library handles, not how short the demo looks
+### Hero: Compare what each library handles, and what it leaves to you
 
 Lede:
 
@@ -27,10 +27,14 @@ Lede:
 
 Four concise profiles:
 
-- **Jakarta Mail / Angus Mail** — the standard MIME and mail-protocol API; you directly control sessions, message structure, and transports.
-- **Spring Mail** — Spring's sending integration and `MimeMessageHelper`; a natural fit when those cover the whole requirement.
-- **Apache Commons Email** — a smaller API for common message types; your code supplies anything outside that API.
-- **Simple Java Mail** — a higher-level API for messages, security, shared configuration, advanced sending, diagnostics, and conversion.
+- **Jakarta Mail / Angus Mail:** badge: `Low-level SMTP toolkit`; the standard MIME and mail-protocol API supplies the parts and your code assembles, configures, and reuses them.
+- **Spring Mail:** badge: `Rudimentary support`; Spring's `JavaMailSender`, `MailException`, and `MimeMessageHelper` fit when the application already uses those APIs.
+- **Apache Commons Email:** badge: `Maintenance mode`; a handful of message classes remove some Jakarta Mail boilerplate, while leaving most of the harder work to the application.
+- **Simple Java Mail:** badge: `Complete SMTP solution`; it builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.
+
+Use one top badge per card. Do not add a second eyebrow label inside the card.
+
+The first three profiles link to the responsibility matrix. The Simple Java Mail profile links to the fuller explanation on `Why Simple Java Mail`. The matrix column headings carry a small external link to the corresponding project home.
 
 ### Responsibility matrix
 
@@ -38,36 +42,49 @@ Rows are developer responsibilities, not arbitrary feature trivia:
 
 1. Basic and rich message composition
 2. Attachments, embedded content, and calendars
-3. Recipient validation, defaults, and overrides
+3. Recipient rules, validation, defaults, and overrides
 4. DKIM
 5. S/MIME signing and encryption
-6. Transport/TLS policy and OAuth2
+6. Transport security and OAuth2
 7. Async result handling and connection tests
 8. Connection reuse and simple batches
 9. Pooled and multi-cluster delivery
 10. Authenticated SOCKS
 11. EML, `MimeMessage`, and Outlook conversion
-12. Properties and Spring configuration
-13. Diagnostics and debug-output routing
-14. Low-level session/property escape hatches
+12. Code and external configuration
+13. Spring application integration, including Boot auto-configuration and the native `JavaMailSender` contract
+14. Diagnostics and debug-output routing
+15. Low-level session/property escape hatches
 
-Cells use four states with visible text and symbols:
+Cells use three states with visible text and symbols:
 
 - built-in high-level support;
 - helper or integration support;
-- available through the underlying API / application code;
-- outside intended scope.
+- handled by application code or another integration.
 
 Every cell with a non-obvious claim has a footnote linking to the official documentation used during the site update.
 
-### Read the table by scenario
+Show the explanation of `Your code handles it` as a restrained callout below the matrix so readers do not mistake it for “impossible.”
 
-Four scenarios interpret the matrix:
+### Dependency footprint
 
-- **I need full low-level control** -> Choose Jakarta Mail / Angus when you want to build and manage sessions, transports, and MIME parts yourself.
-- **I need Spring's standard sending integration** -> Lead with the linked Simple Java Mail Spring integration: its Spring module supports property configuration and an injectable mailer. Then clarify that Spring Mail itself may be sufficient when `JavaMailSender` and `MimeMessageHelper` cover the whole requirement.
-- **I need a small convenience layer for common messages** -> Commons Email may be enough when common messages are all you need and you are happy to handle validation, security, and delivery setup elsewhere.
-- **I need the API to keep up as requirements grow** -> Simple Java Mail keeps the first send easy, then adds the difficult features without making you switch libraries.
+Use compact bullet lists in the middle column to show the dependencies for each option. Keep the order consistent: the mail foundation first and subdued, the selected library second and bold, then any optional module the application may choose to add. Application context, such as Spring already being present, belongs in the explanation rather than the dependency list. For wrapped libraries, name the foundation `Jakarta Mail / Angus` consistently. Do not draw rails or put the names in badges or boxes. These lists show structure, not proportional jar sizes:
+
+- **Jakarta Mail / Angus:** the API and implementation; validation, message construction, connection reuse, and the rest stay in application code;
+- **Spring Mail:** adds little when Spring is already present, but brings Spring dependencies with it in an otherwise non-Spring application;
+- **Commons Email:** a small footprint because it remains a narrow layer of typed message classes over the mail implementation;
+- **Simple Java Mail:** core covers well-formed MIME, reusable message rules, TLS and OAuth2, diagnostics, conversion, and simple batches; DKIM, S/MIME, pools and clusters, Outlook, Spring, authenticated SOCKS, CLI, and Karaf support are separate modules.
+
+Link the `Optional modules` item in the Simple Java Mail dependency list to the modules page. Avoid exact byte-size claims because versions and the application's existing dependency graph change the result.
+
+### Where each option fits
+
+Use four unnumbered rows; these are alternatives, not steps:
+
+- **Jakarta Mail / Angus, you want to own the mail mechanics:** build the Session, MIME tree, and transport handling yourself, including how they are validated, secured, and reused.
+- **Spring Mail, your application already speaks `JavaMailSender`:** the honest Spring-specific fit is an existing `JavaMailSender` contract, Boot auto-configuration, `spring.mail.*`, JNDI Session support, and requirements already covered by `MimeMessageHelper`. Lead with the link to Simple Java Mail's Spring integration so Spring users know they are not excluded.
+- **Commons Email, you only want a little less Jakarta Mail boilerplate:** it makes basic Jakarta Mail code shorter, but that is about as far as it goes. Version 2 mainly split the project into separate Jakarta and Javax artifacts, while the way messages are built and sent remained largely unchanged. The project still receives updates, but most recent work focuses on dependency, build, and security upkeep. Connect that maintenance focus and limited scope directly to why the library is difficult to recommend as the mail layer for a new application.
+- **Simple Java Mail, you need more than message composition:** it handles well-formed MIME, reusable message rules, diagnostics, and conversion, then adds capabilities outside Jakarta Mail itself such as DKIM, S/MIME, authenticated SOCKS, connection pools, and SMTP clusters; add modules only when their features are needed.
 
 ### Two concrete comparisons
 
@@ -110,3 +127,12 @@ The current matrix damages trust through stale and dismissive language. A respon
 - Avoid checkmark overload; textual cell states must remain understandable to screen readers.
 - Do not imply that Spring Mail lacks `MimeMessageHelper`.
 - Do not imply that Simple Java Mail replaces Jakarta Mail for receiving mail.
+
+## Apache Commons Email source note
+
+Reviewed 9 August 2026:
+
+- The current release is `2.0.0-M1`, published in June 2024. Its defining change was splitting Commons Email into core, Jakarta, and Javax modules; the public model remains the familiar mutable `Email`, `SimpleEmail`, `MultiPartEmail`, and `HtmlEmail` hierarchy.
+- The old `commons-email` artifact has a substantial installed base. That should not be confused with momentum in the 2.x line, whose GitHub dependency graph shows very limited adoption.
+- The repository is maintained rather than abandoned. Recent work is dominated by dependency, build, CI, documentation, and security maintenance; several substantive pull requests have remained open for a year or more.
+- Keep public claims qualitative and link them to the [official release page](https://commons.apache.org/proper/commons-email/) and [current commit history](https://github.com/apache/commons-email/commits/master/). Recheck before materially changing the wording.

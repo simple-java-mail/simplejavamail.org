@@ -16,31 +16,11 @@
 				<p class="wide">These are the security features most applications come here for. The table of contents below covers every transport, certificate, and connection setting.</p>
 			</header>
 			<div class="doc-card-grid">
-				<a href="#section-transport-strategy-tls">
-					<span class="doc-card-meta"><span class="doc-card-kicker">Connection</span>{{> components/module-badges core=true}}</span>
-					<strong>TLS</strong>
-					<p>Encrypt the SMTP connection and verify the identity of the server receiving your mail.</p>
-				</a>
-				<a href="#section-transport-strategy-oauth2">
-					<span class="doc-card-meta"><span class="doc-card-kicker">Authentication</span>{{> components/module-badges core=true}}</span>
-					<strong>OAuth2</strong>
-					<p>Use fixed or refresh-aware access tokens instead of a mailbox password.</p>
-				</a>
-				<a href="#section-sending-dkim">
-					<span class="doc-card-meta"><span class="doc-card-kicker">Domain signing</span>{{> components/module-badges dkim=true}}</span>
-					<strong>DKIM</strong>
-					<p>Sign outgoing mail so receiving systems can verify the signing domain and message integrity.</p>
-				</a>
-				<a href="#section-sending-smime">
-					<span class="doc-card-meta"><span class="doc-card-kicker">Content protection</span>{{> components/module-badges smime=true}}</span>
-					<strong>S/MIME</strong>
-					<p>Sign message content, encrypt it for recipients, and read protected attachments.</p>
-				</a>
-				<a href="#section-crlf-scanning">
-					<span class="doc-card-meta"><span class="doc-card-kicker">Input safety</span>{{> components/module-badges core=true}}</span>
-					<strong>Header injection</strong>
-					<p>Catch suspicious CR/LF sequences before untrusted input can alter message headers.</p>
-				</a>
+				{{> components/doc-overview-card href="#section-transport-strategy-tls" kicker="Connection" title="TLS" description="Encrypt the SMTP connection and verify the identity of the server receiving your mail." core=true}}
+				{{> components/doc-overview-card href="#section-transport-strategy-oauth2" kicker="Authentication" title="OAuth2" description="Use fixed or refresh-aware access tokens instead of a mailbox password." core=true}}
+				{{> components/doc-overview-card href="#section-sending-dkim" kicker="Domain signing" title="DKIM" description="Sign outgoing mail so receiving systems can verify the signing domain and message integrity." dkim=true}}
+				{{> components/doc-overview-card href="#section-sending-smime" kicker="Content protection" title="S/MIME" description="Sign message content, encrypt it for recipients, and read protected attachments." smime=true}}
+				{{> components/doc-overview-card href="#section-crlf-scanning" kicker="Input safety" title="Header injection" description="Catch suspicious CR/LF sequences before untrusted input can alter message headers." core=true}}
 			</div>
 		</section>
 
@@ -214,7 +194,7 @@ simplejavamail.opportunistic.tls=false
 				so the connection is encrypted before authentication.
 			</p>
 			<p class="wide">
-				The SMTP username identifies the mailbox and the credential is an OAuth2 access token—not a refresh token, client secret, or authorization
+				The SMTP username identifies the mailbox and the credential is an OAuth2 access token, not a refresh token, client secret, or authorization
 				code. If your application already has a token whose lifetime covers the Mailer, pass it in the usual password position.
 			</p>
 			<pre class="full-width-example"><code class="language-java">Mailer mailer = MailerBuilder

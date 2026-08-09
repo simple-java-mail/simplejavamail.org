@@ -137,13 +137,16 @@
 .use-case-copy h2 { max-width: 690px; font-size: clamp(2.15rem, 4vw, 3.35rem); }
 .use-case-copy > p:last-child { max-width: 690px; margin: @space-lg 0 0; color: @steel; font-size: 1.02rem; }
 .use-case-links { display: grid; grid-column: 2; grid-row: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); align-self: stretch; gap: @space-sm; }
-.use-case-links > a { position: relative; display: flex; min-height: 154px; padding: @space-md; flex-direction: column; border: 1px solid @line; color: @ink; text-decoration: none; transition: background 140ms ease, border-color 140ms ease; }
-.use-case-links > a:hover { border-color: @teal; background: @teal-tint; }
-.use-case-links > a > span:first-child { display: flex; min-width: 0; padding-right: 1.2rem; flex-direction: column; }
+.use-case-links > article { position: relative; display: flex; min-height: 154px; padding: @space-md; flex-direction: column; border: 1px solid @line; transition: background 140ms ease, border-color 140ms ease; }
+.use-case-links > article:hover { border-color: @teal; background: @teal-tint; }
+.use-case-links > article:focus-within { border-color: @teal; box-shadow: 0 0 0 2px fade(@teal, 22%); }
+.use-case-card-link { color: @ink; text-decoration: none; }
+.use-case-card-link::after { position: absolute; z-index: 1; inset: 0; content: ""; }
+.use-case-card-link > span:first-child { display: flex; min-width: 0; padding-right: 1.2rem; flex-direction: column; }
 .use-case-links strong { font-size: 0.9rem; }
 .use-case-links small { margin-top: 0.14rem; color: @steel; font-size: 0.7rem; }
 .use-case-links b { position: absolute; top: @space-md; right: @space-md; color: @teal-deep; font-weight: 400; }
-.use-case-links .module-badges { margin-top: auto; padding-top: @space-lg; justify-content: flex-start; }
+.use-case-links .module-badges { position: relative; z-index: 2; margin-top: auto; padding-top: @space-lg; justify-content: flex-start; align-self: flex-start; }
 
 // Documentation index
 .docs-index-hero { background: @white; }
@@ -241,7 +244,7 @@
   .use-case-jump { grid-template-columns: minmax(0, 1fr); }
   .use-case { padding: @space-2xl 0; }
   .use-case-links { gap: @space-xs; }
-  .use-case-links > a { min-height: 146px; padding: 0.85rem; }
+  .use-case-links > article { min-height: 146px; padding: 0.85rem; }
   .use-case-links b { top: 0.85rem; right: 0.85rem; }
   .use-case-links .module-badge { white-space: normal; overflow-wrap: anywhere; }
 }

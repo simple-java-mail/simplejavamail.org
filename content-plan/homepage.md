@@ -16,7 +16,7 @@ Secondary action: see what the library can handle as requirements grow
 
 Compact product mark, primary navigation, GitHub utility link, and **Get started** action. Navigation is visible before the hero and remains available while reading.
 
-### Hero: Simple at the call site. Serious everywhere else.
+### Hero: Simple to use. Built for the real world.
 
 Lede:
 
@@ -47,18 +47,18 @@ Anchor: `delivery-route`
 
 Six connected stages:
 
-1. Compose — readable messages, not MIME trees.
-2. Configure — set up one reusable mailer.
-3. Protect — transport security, DKIM, and S/MIME.
-4. Deliver — one send, open connection, pool, or cluster.
-5. Diagnose — test, inspect, log, and collect receipts.
-6. Extend — modules, conversion, CLI, and Jakarta Mail escape hatches.
+1. Compose: readable messages, not MIME trees.
+2. Configure: set up one reusable mailer.
+3. Protect: transport security, DKIM, and S/MIME.
+4. Deliver: one send, open connection, pool, or cluster.
+5. Diagnose: test, inspect, log, and collect receipts.
+6. Extend: modules, conversion, CLI, and Jakarta Mail escape hatches.
 
 Each stage gets one sentence and one exact reference link. The route is a map, not six equal marketing cards.
 
 ### Start small without starting over
 
-Left: the first-email path—dependency, email builder, mailer builder, send.
+Left: the first-email path, from dependency to email builder, mailer builder, and send.
 Right: a progression showing how a requirement is added without changing the mental model: TLS -> DKIM default -> async delivery -> connection reuse.
 
 The copy explicitly says that optional complexity stays optional.
@@ -67,9 +67,9 @@ The copy explicitly says that optional complexity stays optional.
 
 Three substantial capability rows, not a wall of badges:
 
-- **Messages and recipient rules** — rich MIME, calendars, attachments, validation, defaults, overrides, and per-recipient S/MIME certificates.
-- **Security with a usable API** — OAuth2, transport strategies, trusted hosts, DKIM, S/MIME signing/encryption, and CRLF protection.
-- **Sending you can see and control** — async results, connection tests, debug routing, receipts, local binding, open connections, batch pools, and clusters.
+- **Messages and recipient rules:** rich MIME, calendars, attachments, validation, defaults, overrides, and per-recipient S/MIME certificates.
+- **Security with a usable API:** OAuth2, transport strategies, trusted hosts, DKIM, S/MIME signing/encryption, and CRLF protection.
+- **Sending you can see and control:** async results, connection tests, debug routing, receipts, local binding, open connections, batch pools, and clusters.
 
 Each row pairs a short task statement with a small code/config fragment and routes to the relevant reference page.
 
@@ -86,7 +86,7 @@ The section explains who needs each capability and links to exact anchors. It do
 
 Brief comparison framing:
 
-> Jakarta Mail gives you direct control. Spring Mail fits sending into a Spring application. Commons Email simplifies common message types. Simple Java Mail also takes care of security, reusable configuration, diagnostics, and advanced sending.
+> Jakarta Mail gives you the protocol and message foundation. Spring Mail adds Spring's standard sender contract. Commons Email shortens some basic message code. Simple Java Mail builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.
 
 Action: **Compare the approaches** -> `/feature-matrix.html`.
 
@@ -109,9 +109,11 @@ Show the Maven coordinate and one copy action. Repeat **Get started**, then offe
 
 Docs, project, release, legal/license, and maintainer routes. No newsletter, sales contact, pricing, or product-led-growth content.
 
+The short product summary must cover both sides of the library: well-formed email through one API, plus integrated DKIM, S/MIME, proxies, batches, pools, and clusters when needed. Do not reduce the site-wide footer to Jakarta Mail plumbing alone.
+
 ## Metadata intent
 
-Title: `Simple Java Mail — Send email from Java without the plumbing`
+Title: `Simple Java Mail: Build, secure, and send email from Java`
 Description: `Send email from Java with a small fluent API and built-in support for security, shared configuration, diagnostics, conversion, batching, clusters, and proxies.`
 
 ## Rationale

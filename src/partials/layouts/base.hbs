@@ -17,6 +17,15 @@
           {{#if page.section}}<p class="eyebrow">{{page.section}}</p>{{/if}}
           <h1>{{page.title}}</h1>
           <p class="doc-lede">{{page.description}}</p>
+          {{#if page.showOpenSourceBadges}}
+            <div class="doc-hero-support">
+              <div class="start-fact-row doc-hero-facts" aria-label="Project details">
+                <span>Open source</span>
+                <span>{{site.license}}</span>
+              </div>
+              <a class="button button-secondary" href="/feature-matrix.html">Compare to other libraries <span aria-hidden="true">→</span></a>
+            </div>
+          {{/if}}
         </header>
 
         <article class="legacy-doc-content">
