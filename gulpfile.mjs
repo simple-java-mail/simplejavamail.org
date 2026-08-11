@@ -70,8 +70,8 @@ function setupHandlebars(site) {
   hb.registerHelper('year', () => new Date().getFullYear());
   hb.registerHelper('activeClass', (href, current) => href === current ? 'is-active' : '');
   hb.registerHelper('docsActiveClass', (href, current) => {
-    const isMigrationChild = href === '/migration-notes.html' && /^\/migration-notes-\d/.test(current);
-    return href === current || isMigrationChild ? 'is-active' : '';
+    const currentPage = pagesByUrl.get(current);
+    return href === current || currentPage?.breadcrumbParent === href ? 'is-active' : '';
   });
   hb.registerHelper('pageForUrl', (url) => pagesByUrl.get(url));
   hb.registerHelper('json', (value) => JSON.stringify(value));

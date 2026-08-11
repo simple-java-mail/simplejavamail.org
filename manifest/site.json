@@ -241,7 +241,7 @@
     },
     {
       "label": "Build and configure",
-      "urls": ["/features.html", "/configuration.html", "/modules.html", "/smtp-connection-pooling.html"]
+      "urls": ["/features.html", "/configuration.html", "/modules.html"]
     },
     {
       "label": "Protect and operate",
