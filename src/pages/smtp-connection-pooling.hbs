@@ -408,14 +408,15 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
   <h2>Executable examples and deeper references</h2>
   <section>
     <ul>
-      <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/tree/4.0.1/smtp-connection-pool-demo">Pool, Jakarta Mail, Spring, Camel, and Simple Java Mail smoke demos</a></li>
+      <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/tree/master/smtp-connection-pool-demo">Direct pool, standalone batch, Jakarta Mail, Spring, Camel, and Simple Java Mail smoke demos</a></li>
       <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/blob/4.0.1/README.md">Direct pool and provider reference</a></li>
       <li><a href="configuration.html#section-reusing-connections">Mailer pool configuration</a> and <a href="configuration.html#section-clustering">cluster configuration</a></li>
       <li><a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
     </ul>
     <p class="wide">
-      The upstream demo will add the standalone batch-module path after Simple Java Mail 9.3.0 is available as a released dependency. Until then, the
-      callback above and the generated batch-module Javadocs are the canonical API references.
+      The upstream <a href="https://github.com/simple-java-mail/smtp-connection-pool/blob/master/smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/BatchModuleDemo.java"><code>BatchModuleDemo</code></a>
+      runs the standalone path against a real dummy SMTP server. It uses only the public batch API; the callback above and the generated
+      batch-module Javadocs remain the complete API references.
     </p>
   </section>
 	{{/inline}}
