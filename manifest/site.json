@@ -3,8 +3,8 @@
   "shortName": "SJM",
   "tagline": "Simple to use. Built for the real world.",
   "url": "https://www.simplejavamail.org",
-  "version": "9.2.0",
-  "releaseDate": "8 August 2026",
+  "version": "9.3.0",
+  "releaseDate": "11 August 2026",
   "javaBaseline": "Java 8+",
   "license": "Apache-2.0",
   "repository": "https://github.com/bbottema/simple-java-mail",
@@ -97,6 +97,17 @@
       "out": "modules.html",
       "chrome": "docs",
       "description": "Choose only the extra modules you need: batching, authenticated SOCKS, DKIM, S/MIME, Outlook, CLI, Spring, OSGi, or Karaf."
+    },
+    {
+      "title": "SMTP connection pooling and batch orchestration",
+      "section": "Build and configure",
+      "src": "smtp-connection-pooling.hbs",
+      "url": "/smtp-connection-pooling.html",
+      "out": "smtp-connection-pooling.html",
+      "chrome": "docs",
+      "style": "pooling",
+      "breadcrumbParent": "/modules.html",
+      "description": "Choose who owns SMTP connection reuse, leases, asynchronous work, and shutdown across Simple Java Mail, batch-module, direct pools, Jakarta Mail, Spring, and Camel."
     },
     {
       "title": "Command-line interface",
@@ -230,7 +241,7 @@
     },
     {
       "label": "Build and configure",
-      "urls": ["/features.html", "/configuration.html", "/modules.html"]
+      "urls": ["/features.html", "/configuration.html", "/modules.html", "/smtp-connection-pooling.html"]
     },
     {
       "label": "Protect and operate",

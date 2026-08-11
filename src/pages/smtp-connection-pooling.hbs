@@ -1,0 +1,422 @@
+{{#> layouts/base head-sub-title="SMTP connection pooling and batch orchestration" page-title="SMTP connection pooling and batch orchestration" }}
+
+	{{#*inline "html-head-block"}}
+<meta name="Description" content="Choose between sequential connection reuse, Simple Java Mail batch pooling, the standalone batch facade, direct leases, Jakarta Mail smtppool, and Camel.">
+	{{/inline}}
+
+	{{#*inline "header-block"}}
+		{{> includes/header topic="modules" }}
+	{{/inline}}
+
+	{{#*inline "body-block"}}
+  <section>
+    <p class="wide">
+      There is one underlying connection-pool implementation and several ways to orchestrate it. The right choice depends less on raw throughput than on
+      which layer already owns your messages, work queue, Jakarta Mail <code class="inline language-java">Session</code>, and shutdown boundary.
+    </p>
+
+    <div class="pooling-question-flow" aria-label="Connection-pooling chooser">
+      <article>
+        <h2>Do you need a pool?</h2>
+        <p>If one sequential callback can reuse one connection, choose <a href="#option-no-pool"><code>withOpenConnection</code> or simple batch</a>.</p>
+      </article>
+      <article>
+        <h2>Do you use <code>Mailer</code>?</h2>
+        <p>Let <a href="#option-mailer">Simple Java Mail own callbacks, leases, the pool, and shutdown</a>.</p>
+      </article>
+      <article>
+        <h2>Who owns the work?</h2>
+        <p>Choose the <a href="#option-batch-facade">standalone batch facade</a> for callbacks/futures, or the <a href="#option-direct-pool">direct pool</a> for explicit leases.</p>
+      </article>
+      <article>
+        <h2>Does a framework own Transport?</h2>
+        <p>Use the <a href="#option-provider"><code>smtppool</code> provider</a> for Jakarta Mail/Spring, or the <a href="#option-camel">Camel adapter</a>.</p>
+      </article>
+    </div>
+
+    <blockquote class="pool-owner-rule">
+      <strong>Single physical-pool owner</strong>
+      Exactly one component owns the physical connection pool. Never place <code>batch-module</code> or a direct pool around an
+      <code>smtppool</code> transport.
+    </blockquote>
+  </section>
+
+  <a href="#ownership" id="ownership" class="section-link h2">&sect;</a>
+  <h2>Follow the ownership lane</h2>
+  <section>
+    <p class="wide">
+      Each row is a complete lifecycle. Moving across rows mid-flow creates ambiguous release, failure, and shutdown behavior.
+    </p>
+    <div class="ownership-rail-wrap" tabindex="0" aria-label="Scrollable ownership comparison">
+      <div class="ownership-rail" role="table" aria-label="Ownership of pool orchestration responsibilities">
+        <div class="ownership-row ownership-head" role="row">
+          <div role="columnheader">Option</div><div role="columnheader">Executor</div><div role="columnheader">Accepted work</div>
+          <div role="columnheader">Session</div><div role="columnheader">Lease</div><div role="columnheader">Pool + shutdown</div>
+        </div>
+        <div class="ownership-row" role="row">
+          <div class="ownership-option" role="rowheader">No pool</div>
+          <div class="ownership-cell" data-owner="application"><strong>Caller / Mailer</strong>Optional</div>
+          <div class="ownership-cell" data-owner="application"><strong>Caller</strong>Sequential unit</div>
+          <div class="ownership-cell"><strong>Mailer / caller</strong>One connection</div>
+          <div class="ownership-cell" data-owner="none"><strong>None</strong>No shared lease</div>
+          <div class="ownership-cell"><strong>Scope owner</strong>Callback / Mailer close</div>
+        </div>
+        <div class="ownership-row" role="row">
+          <div class="ownership-option" role="rowheader">Mailer + batch-module</div>
+          <div class="ownership-cell"><strong>Simple Java Mail</strong>Unless supplied</div>
+          <div class="ownership-cell"><strong>Simple Java Mail</strong>Send futures</div>
+          <div class="ownership-cell"><strong>Simple Java Mail</strong>Selected Mailer</div>
+          <div class="ownership-cell"><strong>Simple Java Mail</strong>Automatic</div>
+          <div class="ownership-cell"><strong>Mailer</strong><code>close()</code></div>
+        </div>
+        <div class="ownership-row" role="row">
+          <div class="ownership-option" role="rowheader">Standalone batch facade</div>
+          <div class="ownership-cell"><strong>Batch facade</strong>Unless supplied</div>
+          <div class="ownership-cell"><strong>Batch facade</strong>Callbacks / futures</div>
+          <div class="ownership-cell" data-owner="application"><strong>Caller</strong>Registered Sessions</div>
+          <div class="ownership-cell"><strong>Batch facade</strong>Automatic</div>
+          <div class="ownership-cell"><strong>Batch facade</strong>Graceful / forced</div>
+        </div>
+        <div class="ownership-row" role="row">
+          <div class="ownership-option" role="rowheader">Direct smtp-connection-pool</div>
+          <div class="ownership-cell" data-owner="application"><strong>Application</strong>Optional</div>
+          <div class="ownership-cell" data-owner="application"><strong>Application</strong>All tracking</div>
+          <div class="ownership-cell" data-owner="application"><strong>Application</strong>Pool key</div>
+          <div class="ownership-cell" data-owner="application"><strong>Application</strong>Explicit</div>
+          <div class="ownership-cell" data-owner="application"><strong>Application</strong>Explicit wait</div>
+        </div>
+        <div class="ownership-row" role="row">
+          <div class="ownership-option" role="rowheader">Jakarta smtppool provider</div>
+          <div class="ownership-cell" data-owner="application"><strong>Application / framework</strong>Outside provider</div>
+          <div class="ownership-cell" data-owner="application"><strong>Application / framework</strong>Outside provider</div>
+          <div class="ownership-cell" data-owner="application"><strong>Caller / Spring</strong>Provider scoped</div>
+          <div class="ownership-cell"><strong>Provider</strong><code>connect</code> / <code>close</code></div>
+          <div class="ownership-cell"><strong>Provider registry</strong>Explicit shutdown</div>
+        </div>
+        <div class="ownership-row" role="row">
+          <div class="ownership-option" role="rowheader">Camel smtppool adapter</div>
+          <div class="ownership-cell"><strong>Camel</strong>Routes</div>
+          <div class="ownership-cell"><strong>Camel</strong>Exchanges</div>
+          <div class="ownership-cell"><strong>Camel component</strong>Endpoint config</div>
+          <div class="ownership-cell"><strong>Adapter / provider</strong>Automatic</div>
+          <div class="ownership-cell"><strong>Camel / registry</strong>Route lifecycle</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <a href="#comparison" id="comparison" class="section-link h2">&sect;</a>
+  <h2>Compare the six options</h2>
+  <section>
+    <div class="pooling-matrix-wrap" tabindex="0" aria-label="Scrollable pool orchestration comparison">
+      <table class="pooling-matrix">
+        <thead><tr><th>Option</th><th>Best when</th><th>Orchestration owner</th><th>Lease handling</th><th>Pooling / clustering</th></tr></thead>
+        <tbody>
+          <tr><td>No pool: <code>withOpenConnection</code> / simple batch</td><td>One sequential unit of work</td><td>Application / Simple Java Mail</td><td>Not applicable</td><td>No</td></tr>
+          <tr><td>Simple Java Mail <code>Mailer</code> + <code>batch-module</code></td><td>Using <code>EmailBuilder</code> and <code>Mailer</code></td><td>Simple Java Mail</td><td>Automatic</td><td>Yes</td></tr>
+          <tr><td>Standalone <code>batch-module</code> facade</td><td>Creating <code>MimeMessage</code> objects while wanting managed callbacks and futures</td><td>Batch facade</td><td>Automatic</td><td>Yes</td></tr>
+          <tr><td>Direct <code>smtp-connection-pool</code></td><td>Needing exact claim, failure, and shutdown control</td><td>Application</td><td>Explicit lease</td><td>Yes</td></tr>
+          <tr><td>Jakarta <code>smtppool</code> provider</td><td>Plain Jakarta Mail or Spring owns <code>Transport</code> calls</td><td>Provider</td><td>Mapped to <code>connect</code> / <code>close</code></td><td>Yes</td></tr>
+          <tr><td>Camel <code>smtppool:</code> adapter</td><td>Camel owns endpoints and component lifecycle</td><td>Camel adapter / provider</td><td>Automatic</td><td>Yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <a href="#option-no-pool" id="option-no-pool" class="section-link h2">&sect;</a>
+  <h2>1. Reuse one connection without a pool</h2>
+  <section class="pooling-option">
+    <div class="view">
+      <div class="pooling-option-meta"><span class="pooling-owner">Owner: callback / Mailer</span><span>Sequential</span><span>No clustering</span></div>
+      <p>
+        Use this when reconnecting is the only overhead and the work is naturally sequential. The scoped sender keeps one connection open and closes it
+        when the callback ends. There is no shared lease or pool to shut down.
+      </p>
+      <p><strong>Dependency:</strong> <code>org.simplejavamail:simple-java-mail:9.3.0</code></p>
+    </div>
+    <div class="side">
+<pre><code class="language-java">try (Mailer mailer = MailerBuilder
+        .withSMTPServer("smtp.example.com", 587, "user", "secret")
+        .buildMailer()) {
+    mailer.withOpenConnection(sender -> {
+        for (Email email : emails) {
+            sender.sendMail(email);
+        }
+    });
+}</code></pre>
+    </div>
+    <div class="wide full-width-example">
+      <p>
+        If you already have all messages, <code>mailer.sendMailsInSimpleBatch(emails, false)</code> is the shorter equivalent. Move to a pool only when
+        independent work must run concurrently or several SMTP Sessions must form a cluster.
+      </p>
+    </div>
+  </section>
+
+  <a href="#option-mailer" id="option-mailer" class="section-link h2">&sect;</a>
+  <h2>2. Let Simple Java Mail orchestrate pooled sends</h2>
+  <section class="pooling-option">
+    <div class="view">
+      <div class="pooling-option-meta"><span class="pooling-owner">Owner: Simple Java Mail</span><span>Automatic leases</span><span>Clusters</span></div>
+      <p>
+        This is the normal choice when you use <code>EmailBuilder</code> and <code>Mailer</code>. The optional batch module sections off the upstream pool
+        dependency and lets the Mailer own message conversion, asynchronous work, selected Session, success release, failure invalidation, and shutdown.
+      </p>
+      <p><strong>Dependencies:</strong> <code>simple-java-mail:9.3.0</code> plus <code>batch-module:9.3.0</code></p>
+    </div>
+    <div class="side">
+<pre><code class="language-java">try (Mailer mailer = MailerBuilder
+        .withSMTPServer("smtp.example.com", 587, "user", "secret")
+        .withConnectionPoolCoreSize(2)
+        .withConnectionPoolMaxSize(10)
+        .withConnectionPoolExpireAfterMillis(30_000)
+        .buildMailer()) {
+    mailer.sendMail(email); // sync or async, as configured
+}</code></pre>
+    </div>
+    <div class="wide full-width-example">
+      <ul class="pooling-checklist">
+        <li>A default executor belongs to the Mailer; a supplied executor remains caller-owned.</li>
+        <li>The Mailer chooses the actual clustered Session and builds the message for it.</li>
+        <li><code>Mailer.close()</code> waits for accepted work and closes that Mailer's registered pool.</li>
+        <li>Retry, circuit breaking, and ambiguous-delivery policy remain application concerns.</li>
+      </ul>
+    </div>
+  </section>
+
+  <a href="#option-batch-facade" id="option-batch-facade" class="section-link h2">&sect;</a>
+  <h2>3. Use batch-module without EmailBuilder or Mailer</h2>
+  <section class="pooling-option">
+    <div class="view">
+      <div class="pooling-option-meta"><span class="pooling-owner">Owner: BatchTransportExecutor</span><span>Callbacks</span><span>CompletableFuture</span></div>
+      <p>
+        New in 9.3.0, <code>BatchTransportExecutor&lt;K&gt;</code> is the middle path for applications that own Jakarta Mail message construction but want
+        callback-scoped transports, cluster selection, futures, and deterministic lifecycle. It orchestrates
+        <code>smtp-connection-pool</code>; it is not another pool implementation.
+      </p>
+      <p><strong>Dependency:</strong> <code>org.simplejavamail:batch-module:9.3.0</code>. The main <code>simple-java-mail</code> facade is not required.</p>
+    </div>
+    <div class="side">
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;batch-module&lt;/artifactId&gt;
+    &lt;version&gt;9.3.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java">Properties properties = new Properties();
+properties.setProperty("mail.smtp.host", "smtp.example.com");
+properties.setProperty("mail.smtp.port", "587");
+properties.setProperty("mail.smtp.auth", "true");
+
+Session session = Session.getInstance(properties, new Authenticator() {
+    protected PasswordAuthentication getPasswordAuthentication() {
+        return new PasswordAuthentication("user", "secret");
+    }
+});
+
+try (BatchTransportExecutor&lt;String&gt; batch =
+             BatchTransportExecutor.&lt;String&gt;builder()
+                     .withMaxPoolSize(8)
+                     .withClaimTimeoutMillis(30_000)
+                     .withExpireAfterMillis(60_000)
+                     .build()) {
+    batch.registerSession("transactional", session);
+
+    CompletableFuture&lt;Void&gt; sent = batch.submit("transactional",
+            (selectedSession, transport) -> {
+                MimeMessage message = new MimeMessage(selectedSession);
+                message.setFrom("sender@example.com");
+                message.setRecipients(Message.RecipientType.TO, "recipient@example.com");
+                message.setSubject("Queued report");
+                message.setText("The report is ready.");
+                transport.sendMessage(message, message.getAllRecipients());
+                return null;
+            });
+    sent.join();
+}</code></pre>
+      <p>
+        A cluster-selected callback receives the Session that actually won selection. When a message was already created for one registered Session,
+        use the exact-Session overload: <code>batch.execute(clusterKey, session, operation)</code>.
+      </p>
+      <p>
+        The callback must not connect or close the Transport. A normal return releases it. Any escaping checked exception, runtime exception, or error
+        invalidates it before the same failure is propagated or placed on the future.
+      </p>
+    </div>
+  </section>
+
+  <a href="#option-direct-pool" id="option-direct-pool" class="section-link h2">&sect;</a>
+  <h2>4. Claim leases from smtp-connection-pool directly</h2>
+  <section class="pooling-option">
+    <div class="view">
+      <div class="pooling-option-meta"><span class="pooling-owner">Owner: Application</span><span>Explicit lease</span><span>Maximum control</span></div>
+      <p>
+        Choose the direct API when your application must decide exactly when to claim, release, invalidate, or drain a pool. This is also how the full
+        Simple Java Mail Mailer integrates internally.
+      </p>
+      <p><strong>Dependency:</strong> <code>org.simplejavamail:smtp-connection-pool:4.0.1</code></p>
+    </div>
+    <div class="side">
+<pre><code class="language-java">SmtpConnectionPool pool =
+        new SmtpConnectionPool(new SmtpClusterConfig&lt;Session&gt;());
+
+try (SmtpTransportLease lease = pool.claimTransport(session)) {
+    try {
+        lease.getTransport().sendMessage(message, message.getAllRecipients());
+    } catch (MessagingException | RuntimeException failure) {
+        lease.invalidate();
+        throw failure;
+    }
+}
+
+pool.shutDown().get();</code></pre>
+    </div>
+    <div class="wide full-width-example">
+      <p>
+        The try-with-resources close releases an active lease. Invalidate first when connection health is uncertain. Your code owns interruption policy,
+        active-work tracking, shutdown waiting, and every path that could otherwise leak a lease.
+      </p>
+    </div>
+  </section>
+
+  <a href="#option-provider" id="option-provider" class="section-link h2">&sect;</a>
+  <h2>5. Present the pool as a Jakarta Mail Transport</h2>
+  <section class="pooling-option">
+    <div class="view">
+      <div class="pooling-option-meta"><span class="pooling-owner">Owner: smtppool provider</span><span>Jakarta Mail</span><span>Spring</span></div>
+      <p>
+        Use the provider when existing code already speaks the Jakarta Mail <code>Transport.connect()</code> / <code>close()</code> lifecycle. It is the
+        natural fit for plain Jakarta Mail and Spring's <code>JavaMailSenderImpl</code>. The provider maps that lifecycle onto an internal lease.
+      </p>
+      <p><strong>Dependencies:</strong> <code>smtp-connection-pool-jakarta-provider:4.0.1</code> and one physical provider such as <code>angus-mail:2.0.5</code></p>
+    </div>
+    <div class="side">
+<pre><code class="language-java">Properties properties = new Properties();
+properties.setProperty(SmtpPoolProperties.DELEGATE_PROTOCOL, "smtp");
+Session session = Session.getInstance(properties);
+
+Transport transport = session.getTransport("smtppool");
+transport.connect("smtp.example.com", 587, "user", "secret");
+try {
+    transport.sendMessage(message, message.getAllRecipients());
+} finally {
+    transport.close(); // release healthy; invalidate unhealthy
+}
+
+SmtpPoolRegistry.shutdown(session).get();</code></pre>
+    </div>
+    <div class="wide full-width-example">
+      <p>
+        Spring configures the same provider with <code>JavaMailSenderImpl#setProtocol("smtppool")</code>. Application/framework executors and queued work
+        remain outside the provider; the Session-scoped registry owns pool draining and forced escalation.
+      </p>
+    </div>
+  </section>
+
+  <a href="#option-camel" id="option-camel" class="section-link h2">&sect;</a>
+  <h2>6. Let Camel select the pooled provider</h2>
+  <section class="pooling-option">
+    <div class="view">
+      <div class="pooling-option-meta"><span class="pooling-owner">Owner: Camel + provider</span><span>Routes</span><span>Java 17+</span></div>
+      <p>
+        Choose the Camel adapter when Camel already owns endpoints, exchanges, and component lifecycle. The adapter selects the same provider; it does
+        not contain a second pool.
+      </p>
+      <p><strong>Dependency:</strong> <code>org.simplejavamail:smtp-connection-pool-camel:4.0.1</code></p>
+    </div>
+    <div class="side">
+<pre><code class="language-java">from("direct:mail")
+    .to("smtppool://smtp.example.com:587"
+        + "?username=user"
+        + "&amp;password=secret"
+        + "&amp;to=recipient@example.com");</code></pre>
+    </div>
+    <div class="wide full-width-example">
+      <p>
+        Camel 4.21.x and the adapter require Java 17+. The original direct pool, Jakarta provider, and Simple Java Mail batch facade remain Java 8 compatible.
+      </p>
+    </div>
+  </section>
+
+  <a href="#lifecycle" id="lifecycle" class="section-link h2">&sect;</a>
+  <h2>Failure, OAuth2, and shutdown semantics</h2>
+  <section>
+    <h3>Successful work releases; uncertain failure invalidates</h3>
+    <p class="wide">
+      The Mailer and standalone batch facade make this decision automatically around their callback boundary. Direct users make it on the lease.
+      Provider users express it through Transport health and <code>close()</code>. Catch a recipient-level failure inside a callback only when you know the
+      physical SMTP conversation remains synchronized and reusable.
+    </p>
+
+    <h3>OAuth2 belongs to the selected Session</h3>
+    <p class="wide">
+      The standalone facade bridges its fixed-token and supplier properties when each Session is registered. A clustered claim therefore resolves the
+      supplier from the Session actually selected—not from whichever Session happened to submit the work. Suppliers run only when a physical Transport
+      connects or reconnects; reusing an already-connected Transport does not request a new token.
+    </p>
+<pre><code class="language-java">session.getProperties().put(
+        BatchTransportExecutor.OAUTH2_TOKEN_PROVIDER_PROPERTY,
+        (Supplier&lt;String&gt;) tokenService::currentAccessToken);</code></pre>
+
+    <h3>JPMS names are stable through the full pool chain</h3>
+    <p class="wide">
+      Simple Java Mail 9.3.0 consumes the fixed chain: <code>org.bbottema.genericobjectpool</code>,
+      <code>org.bbottema.clusteredobjectpool</code>, <code>org.simplejavamail.smtpconnectionpool</code>, and
+      <code>org.simplejavamail.batch</code>. The optional provider and Camel adapter add
+      <code>org.simplejavamail.smtpconnectionpool.jakarta</code> and <code>org.simplejavamail.smtpconnectionpool.camel</code>.
+      Release builds compile real module-path consumers so these manifest names cannot silently regress.
+    </p>
+
+    <h3>Graceful and forced shutdown have different jobs</h3>
+    <ul class="pooling-checklist">
+      <li><strong>Graceful:</strong> stop accepting work, let accepted callbacks finish, then drain physical pools and close connections.</li>
+      <li><strong>Forced:</strong> also reject pending claims, invalidate active leases, and attempt to cancel queued module-owned work.</li>
+      <li><strong>Default executor:</strong> module-owned and stopped by the facade or Mailer.</li>
+      <li><strong>Supplied executor:</strong> caller-owned and left running; it must keep progressing accepted work during graceful shutdown.</li>
+    </ul>
+  </section>
+
+  <a href="#invalid-combinations" id="invalid-combinations" class="section-link h2">&sect;</a>
+  <h2>Invalid double-pooling combinations</h2>
+  <section>
+    <div class="invalid-combinations">
+      <article><h3>batch-module → smtppool</h3><p>Rejected during Session registration. Both layers would believe they own release and shutdown.</p></article>
+      <article><h3>direct pool → smtppool</h3><p>Do not allocate provider-owned pooled Transports inside a caller-owned direct pool.</p></article>
+      <article><h3>Mailer pool → wrapped provider</h3><p>Do not change a pooled Mailer's physical protocol to <code>smtppool</code>. Use one integration path.</p></article>
+    </div>
+    <p class="wide">
+      A Spring application should normally choose the provider path if it wants to keep <code>JavaMailSender</code> ownership. A Simple Java Mail application
+      should normally choose the Mailer path. Wrapping either in the standalone facade adds a second owner without adding pooling capability.
+    </p>
+  </section>
+
+  <a href="#transport-optimizations" id="transport-optimizations" class="section-link h2">&sect;</a>
+  <h2>Pooling is orthogonal to SMTP protocol optimizations</h2>
+  <section>
+    <div class="orthogonal-note">
+      <p class="eyebrow">#699 boundary</p>
+      <p>
+        PIPELINING, CHUNKING, EHLO capability negotiation, and response parsing belong to the physical Jakarta Mail Transport. Issue #698 changes
+        orchestration only and requires no Angus change. A future #699 Jakarta Transport can sit beneath one chosen pool owner; a
+        <code>CustomMailer</code> implementation instead owns a separate lifecycle and stays outside these pooling paths.
+      </p>
+    </div>
+  </section>
+
+  <a href="#runnable-examples" id="runnable-examples" class="section-link h2">&sect;</a>
+  <h2>Executable examples and deeper references</h2>
+  <section>
+    <ul>
+      <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/tree/4.0.1/smtp-connection-pool-demo">Pool, Jakarta Mail, Spring, Camel, and Simple Java Mail smoke demos</a></li>
+      <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/blob/4.0.1/README.md">Direct pool and provider reference</a></li>
+      <li><a href="configuration.html#section-reusing-connections">Mailer pool configuration</a> and <a href="configuration.html#section-clustering">cluster configuration</a></li>
+      <li><a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
+    </ul>
+    <p class="wide">
+      The upstream demo will add the standalone batch-module path after Simple Java Mail 9.3.0 is available as a released dependency. Until then, the
+      callback above and the generated batch-module Javadocs are the canonical API references.
+    </p>
+  </section>
+	{{/inline}}
+{{/layouts/base}}

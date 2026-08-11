@@ -56,7 +56,7 @@
   <h2 id="batch-module" class="with-back-to-top">Batch and clustering support</h2>
   <nav class="module-capability-links" aria-label="Batch module capabilities">
     <a href="features.html#section-sending-asynchronously"><span>Schedule</span><strong>Asynchronous sending</strong><b aria-hidden="true">→</b></a>
-    <a href="configuration.html#section-reusing-connections"><span>Reuse</span><strong>SMTP connection pools</strong><b aria-hidden="true">→</b></a>
+    <a href="smtp-connection-pooling.html"><span>Choose</span><strong>Pool orchestration options</strong><b aria-hidden="true">→</b></a>
     <a href="configuration.html#section-clustering"><span>Route</span><strong>Multiple SMTP clusters</strong><b aria-hidden="true">→</b></a>
     <a href="configuration.html#section-mailer-lifecycle"><span>Close</span><strong>Mailer lifecycle</strong><b aria-hidden="true">→</b></a>
   </nav>
@@ -76,8 +76,10 @@
       <li><a class="indent" href="https://github.com/simple-java-mail/smtp-connection-pool">simple-java-mail:smtp-connection-pool</a></li>
     </ul>
 	  <p class="wide">
-      The module sends work asynchronously and adds configurable worker threads and SMTP connection pools. See
-      <a href="configuration.html#section-batch-and-clustering">configuration</a> for details.
+      The module sends work asynchronously and orchestrates the optional <code>smtp-connection-pool</code> dependency. Use the
+      <a href="smtp-connection-pooling.html">pooling and batch orchestration guide</a> to compare the full Mailer integration, the standalone
+      callback facade, direct leases, and the Jakarta Mail or Camel provider paths. See
+      <a href="configuration.html#section-batch-and-clustering">Mailer configuration</a> for its settings.
     </p>
 	  <p class="wide">
 		  A live connection pool keeps the JVM running. See <a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a>

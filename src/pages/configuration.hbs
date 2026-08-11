@@ -982,6 +982,10 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 			<li>simple sequential batch sending over one SMTP connection</li>
 			<li>pooled and clustered sending for sustained throughput</li>
 		</ol>
+		<p class="wide">
+			If your application creates its own Jakarta Mail messages or a framework already owns <code>Transport</code>, first use the
+			<a href="smtp-connection-pooling.html">SMTP connection pooling and batch orchestration guide</a> to choose the one pool owner.
+		</p>
 	</div>
   </section>
 
@@ -1085,6 +1089,10 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 			<p class="wide">
 				The connection pool configuration is flexible, allowing adjustments to core connection pool size, maximum pool size, and connection expiry policy.
 			</p>
+			<p class="wide">
+				This section configures the Simple Java Mail <code>Mailer</code> path. Compare it with the standalone batch facade, direct leases, and
+				provider-owned pooling in the <a href="smtp-connection-pooling.html">pool orchestration guide</a>.
+			</p>
 			<p>
 				Direct sending can use a custom thread pool, while pooled sending also lets those threads reuse Transport connections. This can improve performance even with fewer
 				threads, as it eliminates the need to repeatedly open and close connections for each email.
@@ -1128,6 +1136,10 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 				<p>
 					For each send, the cluster selects one registered pool using its round-robin or random-access strategy.
 					This spreads work across the SMTP servers registered for that cluster.
+				</p>
+				<p>
+					For cluster-selected versus exact-Session callbacks outside the full Mailer API, see the
+					<a href="smtp-connection-pooling.html#option-batch-facade">standalone batch-module facade</a>.
 				</p>
 			</div>
 

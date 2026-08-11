@@ -146,6 +146,7 @@ function styles(done) {
     path.join(SRC, 'styles', 'main.less'),
     path.join(SRC, 'styles', 'home.less'),
     path.join(SRC, 'styles', 'compare.less'),
+    path.join(SRC, 'styles', 'pooling.less'),
     path.join(SRC, 'styles', 'start.less'),
   ])
     .pipe(less())
