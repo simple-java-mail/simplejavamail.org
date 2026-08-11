@@ -219,6 +219,10 @@ function checkManifest(done) {
     if (page.breadcrumbParent && !urls.has(page.breadcrumbParent)) {
       errors.push(`breadcrumb parent references missing URL ${page.breadcrumbParent}`);
     }
+    for (const item of page.subnav || []) {
+      const targetUrl = item.href.split('#')[0];
+      if (!urls.has(targetUrl)) errors.push(`docs submenu references missing URL ${item.href}`);
+    }
   }
   for (const file of fs.readdirSync(path.join(SRC, 'pages'))) {
     if (file.endsWith('.hbs') && !sources.has(file)) errors.push(`unregistered page ${file}`);
