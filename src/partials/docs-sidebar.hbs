@@ -11,18 +11,9 @@
       {{#each docsGroups}}
         <section class="docs-nav-group">
           <h2>{{label}}</h2>
-          <ul class="docs-nav-list">
+          <ul>
             {{#each pages}}
-              <li>
-                <a href="{{url}}" class="{{docsActiveClass url @root.currentUrl}}">{{title}}</a>
-                {{#if subnav}}
-                  <ul class="docs-nav-submenu" aria-label="{{title}} sections">
-                    {{#each subnav}}
-                      <li><a href="{{href}}" class="{{docsActiveClass href @root.currentUrl}}">{{label}}</a></li>
-                    {{/each}}
-                  </ul>
-                {{/if}}
-              </li>
+              <li><a href="{{url}}" class="{{docsActiveClass url @root.currentUrl}}">{{#if navTitle}}{{navTitle}}{{else}}{{title}}{{/if}}</a></li>
             {{/each}}
           </ul>
         </section>

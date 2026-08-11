@@ -96,29 +96,17 @@
       "url": "/modules.html",
       "out": "modules.html",
       "chrome": "docs",
-      "subnav": [
-        { "label": "Core", "href": "/modules.html#core-module" },
-        { "label": "Batch and clustering", "href": "/modules.html#batch-module" },
-        { "label": "Pool orchestration", "href": "/smtp-connection-pooling.html" },
-        { "label": "Authenticated SOCKS", "href": "/modules.html#authenticated-socks-module" },
-        { "label": "Outlook", "href": "/modules.html#outlook-module" },
-        { "label": "DKIM", "href": "/modules.html#dkim-module" },
-        { "label": "S/MIME", "href": "/modules.html#smime-module" },
-        { "label": "CLI", "href": "/modules.html#cli-module" },
-        { "label": "Spring", "href": "/modules.html#spring-module" },
-        { "label": "Apache Karaf", "href": "/modules.html#karaf-module" }
-      ],
       "description": "Choose only the extra modules you need: batching, authenticated SOCKS, DKIM, S/MIME, Outlook, CLI, Spring, OSGi, or Karaf."
     },
     {
       "title": "SMTP connection pooling and batch orchestration",
+      "navTitle": "Pool orchestration",
       "section": "Build and configure",
       "src": "smtp-connection-pooling.hbs",
       "url": "/smtp-connection-pooling.html",
       "out": "smtp-connection-pooling.html",
       "chrome": "docs",
       "style": "pooling",
-      "breadcrumbParent": "/modules.html",
       "description": "Choose who owns SMTP connection reuse, leases, asynchronous work, and shutdown across Simple Java Mail, batch-module, direct pools, Jakarta Mail, Spring, and Camel."
     },
     {
@@ -253,7 +241,7 @@
     },
     {
       "label": "Build and configure",
-      "urls": ["/features.html", "/configuration.html", "/modules.html"]
+      "urls": ["/features.html", "/configuration.html", "/smtp-connection-pooling.html", "/modules.html"]
     },
     {
       "label": "Protect and operate",

@@ -14,119 +14,250 @@
       <p class="eyebrow">On this page</p>
       <h2 id="pooling-overview-title">Choose who should own delivery.</h2>
       <p class="wide">
-        Every path can avoid needless SMTP reconnects. Start with the programming model you want to keep; each card jumps to the performance benefit,
-        ownership boundary, and complete example.
+        Every path can avoid needless SMTP reconnects. Start with the programming model you want to keep; each card names the payoff, the lifecycle
+        owner, and the boundary-honoring API that fits.
       </p>
     </header>
-    <nav class="pooling-option-jumps" aria-label="Pooling option details">
-      <a href="#option-no-pool"><span class="pooling-jump-number">01</span><span><small>Sequential burst</small><strong>Reuse one connection</strong></span><b aria-hidden="true">&darr;</b></a>
-      <a href="#option-mailer"><span class="pooling-jump-number">02</span><span><small>Simple Java Mail</small><strong>Pool Mailer sends</strong></span><b aria-hidden="true">&darr;</b></a>
-      <a href="#option-batch-facade"><span class="pooling-jump-number">03</span><span><small>Jakarta callbacks</small><strong>Keep your MimeMessages</strong></span><b aria-hidden="true">&darr;</b></a>
-      <a href="#option-direct-pool"><span class="pooling-jump-number">04</span><span><small>Infrastructure code</small><strong>Own every lease</strong></span><b aria-hidden="true">&darr;</b></a>
-      <a href="#option-provider"><span class="pooling-jump-number">05</span><span><small>Jakarta Mail / Spring</small><strong>Keep Transport semantics</strong></span><b aria-hidden="true">&darr;</b></a>
-      <a href="#option-camel"><span class="pooling-jump-number">06</span><span><small>Camel 4.21+</small><strong>Pool Camel routes</strong></span><b aria-hidden="true">&darr;</b></a>
-    </nav>
+    <div class="pooling-path-grid">
+      <article class="pooling-path-card">
+        <a href="#option-no-pool">
+          <header><span class="pooling-path-number">01</span><h3>Reuse one connection with Simple Java Mail</h3><b aria-hidden="true">&darr;</b></header>
+          <ul>
+            <li><strong>You get</strong> <span>Connection reuse for one bounded, sequential burst, without shared pool state.</span></li>
+            <li><strong>Lifecycle</strong> <span>Simple Java Mail opens and closes one Transport for the bounded <code>Mailer</code> operation; no lease or pool exists.</span></li>
+            <li><strong>Use</strong> <span><code>withOpenConnection(...)</code> or <code>sendMailsInSimpleBatch(...)</code> from <code>simple-java-mail</code>. No connection pool.</span></li>
+          </ul>
+        </a>
+      </article>
+      <article class="pooling-path-card">
+        <a href="#option-mailer">
+          <header><span class="pooling-path-number">02</span><h3>Use Simple Java Mail's fully managed Connection Pool</h3><b aria-hidden="true">&darr;</b></header>
+          <ul>
+            <li><strong>You get</strong> <span>Concurrent, pooled and clustered sends without leaving <code>EmailBuilder</code> and <code>Mailer</code>.</span></li>
+            <li><strong>Lifecycle</strong> <span>Simple Java Mail owns work, Session selection, lease release or invalidation, and shutdown through <code>Mailer.close()</code>.</span></li>
+            <li><strong>Use</strong> <span><code>simple-java-mail</code> with <code>batch-module</code>, backed by <code>smtp-connection-pool</code>.</span></li>
+          </ul>
+        </a>
+      </article>
+      <article class="pooling-path-card">
+        <a href="#option-batch-facade">
+          <header><span class="pooling-path-number">03</span><h3>Manage pooled delivery for application-owned MimeMessages</h3><b aria-hidden="true">&darr;</b></header>
+          <ul>
+            <li><strong>You get</strong> <span>An SMTP connection pool without giving up your <code>MimeMessage</code> code. Each submission gives the callback a scoped <code>Transport</code> and returns a <code>CompletableFuture</code>.</span></li>
+            <li><strong>Lifecycle</strong> <span>The executor owns workers, leases, and the pool; your application registers Sessions and closes it.</span></li>
+            <li><strong>Use</strong> <span><code>BatchTransportExecutor&lt;K&gt;</code> from <code>batch-module</code>, backed by <code>smtp-connection-pool</code>.</span></li>
+          </ul>
+        </a>
+      </article>
+      <article class="pooling-path-card">
+        <a href="#option-direct-pool">
+          <header><span class="pooling-path-number">04</span><h3>Add Connection Pooling to your own delivery infrastructure</h3><b aria-hidden="true">&darr;</b></header>
+          <ul>
+            <li><strong>You get</strong> <span>Only the reusable SMTP pool. Keep your existing queue, executor, routing, retry, and observability code instead of adopting another orchestration layer.</span></li>
+            <li><strong>Lifecycle</strong> <span>Your infrastructure selects the Session, claims each Transport, releases healthy connections, invalidates failed ones, and shuts down the pool.</span></li>
+            <li><strong>Use</strong> <span><code>smtp-connection-pool</code> directly through <code>SmtpConnectionPool.claimTransport(...)</code> and <code>SmtpTransportLease</code>.</span></li>
+          </ul>
+        </a>
+      </article>
+      <article class="pooling-path-card">
+        <a href="#option-provider">
+          <header><span class="pooling-path-number">05</span><h3>Add Connection Pooling to existing Jakarta Mail or Spring code</h3><b aria-hidden="true">&darr;</b></header>
+          <ul>
+            <li><strong>You get</strong> <span>Keep your existing <code>Transport.connect()</code> / <code>close()</code> or <code>JavaMailSender</code> workflow while pooled SMTP connections are reused behind it. No new message API or work queue.</span></li>
+            <li><strong>Lifecycle</strong> <span>Jakarta Mail or Spring still opens and closes logical Transports. The provider maps those calls to leases; your application or container shuts down the Session pool.</span></li>
+            <li><strong>Use</strong> <span><code>smtp-connection-pool-jakarta-provider</code> over <code>smtp-connection-pool</code>, using the <code>smtppool</code> protocol.</span></li>
+          </ul>
+        </a>
+      </article>
+      <article class="pooling-path-card">
+        <a href="#option-camel">
+          <header><span class="pooling-path-number">06</span><h3>Add Connection Pooling to existing Camel mail routes</h3><b aria-hidden="true">&darr;</b></header>
+          <ul>
+            <li><strong>You get</strong> <span>Keep your routes, endpoints, exchanges, error handling, and physical SMTP settings. Only Transport selection changes; pooled connections are reused underneath Camel.</span></li>
+            <li><strong>Lifecycle</strong> <span>Camel keeps route and exchange ownership. The adapter selects the provider; the provider owns leases and pooling; stopping the component shuts down pools for Sessions it owns.</span></li>
+            <li><strong>Use</strong> <span><code>smtp-connection-pool-camel</code> over the Jakarta provider and <code>smtp-connection-pool</code>, using <code>smtppool:</code> or <code>smtppools:</code>.</span></li>
+          </ul>
+        </a>
+      </article>
+    </div>
     <nav class="pooling-overview-links" aria-label="Further sections on this page">
-      <a href="#ownership">Ownership lanes</a>
-      <a href="#comparison">Side-by-side comparison</a>
+      <a href="#layers">Layer map</a>
+      <a href="#ownership">Delivery lifecycle</a>
       <a href="#lifecycle">Failure and shutdown</a>
-      <a href="#invalid-combinations">Combinations to avoid</a>
       <a href="#runnable-examples">Runnable examples</a>
     </nav>
   </section>
 
+  <a href="#layers" id="layers" class="section-link h2">&sect;</a>
+  <h2 id="pooling-layers-title">One application, six delivery paths</h2>
   <section>
     <p class="wide">
-      There is one underlying connection-pool implementation and several ways to orchestrate it. The right choice depends less on raw throughput than on
-      which layer already owns your messages, work queue, Jakarta Mail <code class="inline language-java">Session</code>, and shutdown boundary.
+      One physical pool sits underneath five orchestration paths; the bounded sequential path stops before a pool is introduced. Follow the path that
+      preserves the layer already owning your messages, work queue, Jakarta Mail <code class="inline language-java">Session</code>, and shutdown boundary.
     </p>
 
+    <figure class="pooling-layer-map pooling-flowchart-map" aria-labelledby="pooling-layers-title">
+      <div class="pooling-flowchart-wrap">
+        <svg class="pooling-flowchart" viewBox="-5 0 1120 663" role="img" aria-labelledby="pooling-flowchart-title pooling-flowchart-description">
+          <title id="pooling-flowchart-title">Connection pooling abstraction paths</title>
+          <desc id="pooling-flowchart-description">
+            Your application can reuse one scoped connection without a pool, or enter the shared smtp-connection-pool through Simple Java Mail,
+            batch-module, the direct API, the Jakarta provider, or the Camel component.
+          </desc>
+          <defs>
+            <marker id="pooling-flow-use-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+              <path class="pooling-flow-use-arrow" d="M0,0 L8,4 L0,8 Z"></path>
+            </marker>
+            <marker id="pooling-flow-dependency-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+              <path class="pooling-flow-dependency-arrow" d="M0,0 L8,4 L0,8 Z"></path>
+            </marker>
+          </defs>
+
+          <path class="pooling-flow-bus" d="M550 80 V105 M100 105 H1000"></path>
+          <path class="pooling-flow-use-edge" d="M100 105 V265"></path>
+          <path class="pooling-flow-use-edge" d="M280 105 V265"></path>
+          <path class="pooling-flow-use-edge" d="M460 105 V425"></path>
+          <path class="pooling-flow-use-edge" d="M640 105 V585"></path>
+          <path class="pooling-flow-use-edge" d="M820 105 V425"></path>
+          <path class="pooling-flow-use-edge" d="M1000 105 V265"></path>
+
+          <path class="pooling-flow-dependency" d="M280 323 C280 372 350 395 410 425"></path>
+          <path class="pooling-flow-dependency" d="M460 483 C465 532 505 583 540 614"></path>
+          <path class="pooling-flow-dependency" d="M1000 323 C1000 372 930 395 870 425"></path>
+          <path class="pooling-flow-dependency" d="M820 483 C805 532 770 583 740 614"></path>
+
+          <g class="pooling-flow-node pooling-flow-application">
+            <rect x="440" y="20" width="220" height="60"></rect>
+            <text x="550" y="57">Your application</text>
+          </g>
+          <g class="pooling-flow-node pooling-flow-no-pool">
+            <rect x="15" y="265" width="170" height="58"></rect>
+            <text x="100" y="300">One scoped connection</text>
+            <rect class="pooling-flow-no-pool-badge" x="68" y="330" width="64" height="22"></rect>
+            <text class="pooling-flow-no-pool-badge-text" x="100" y="345">No pool</text>
+          </g>
+          <g class="pooling-flow-node pooling-flow-sjm">
+            <rect x="195" y="265" width="170" height="58"></rect>
+            <text x="280" y="300">simple-java-mail</text>
+          </g>
+          <g class="pooling-flow-node">
+            <rect x="370" y="425" width="180" height="58"></rect>
+            <text x="460" y="460">batch-module</text>
+          </g>
+          <g class="pooling-flow-node">
+            <rect x="540" y="585" width="200" height="58"></rect>
+            <text x="640" y="620">smtp-connection-pool</text>
+          </g>
+          <g class="pooling-flow-node">
+            <rect x="660" y="425" width="320" height="58"></rect>
+            <text x="820" y="460">smtp-connection-pool-jakarta-provider</text>
+          </g>
+          <g class="pooling-flow-node">
+            <rect x="905" y="265" width="190" height="58"></rect>
+            <text x="1000" y="300">smtp-connection-pool-camel</text>
+          </g>
+
+          <a class="pooling-flow-usecase" href="#option-no-pool" aria-label="Option 01: Reuse one connection with Simple Java Mail">
+            <rect x="15" y="120" width="170" height="85"></rect>
+            <text x="100" y="143"><tspan class="pooling-flow-number" x="32">01</tspan><tspan x="100" y="164">Reuse one connection</tspan><tspan x="100" dy="18">with Simple Java Mail</tspan></text>
+          </a>
+          <a class="pooling-flow-usecase" href="#option-mailer" aria-label="Option 02: Simple Java Mail's fully managed connection pool">
+            <rect x="195" y="120" width="170" height="85"></rect>
+            <text x="280" y="143"><tspan class="pooling-flow-number" x="212">02</tspan><tspan x="280" y="158">Simple Java Mail's</tspan><tspan x="280" dy="17">fully managed</tspan><tspan x="280" dy="17">connection pool</tspan></text>
+          </a>
+          <a class="pooling-flow-usecase" href="#option-batch-facade" aria-label="Option 03: Managed pooling for application-owned MimeMessages">
+            <rect x="375" y="120" width="170" height="85"></rect>
+            <text x="460" y="143"><tspan class="pooling-flow-number" x="392">03</tspan><tspan x="460" y="158">Managed pooling for</tspan><tspan x="460" dy="17">application-owned</tspan><tspan x="460" dy="17">MimeMessages</tspan></text>
+          </a>
+          <a class="pooling-flow-usecase" href="#option-direct-pool" aria-label="Option 04: Pooling for your own delivery infrastructure">
+            <rect x="555" y="120" width="170" height="85"></rect>
+            <text x="640" y="143"><tspan class="pooling-flow-number" x="572">04</tspan><tspan x="640" y="164">Pooling for your own</tspan><tspan x="640" dy="18">delivery infrastructure</tspan></text>
+          </a>
+          <a class="pooling-flow-usecase" href="#option-provider" aria-label="Option 05: Pooling for existing Jakarta Mail or Spring code">
+            <rect x="735" y="120" width="170" height="85"></rect>
+            <text x="820" y="143"><tspan class="pooling-flow-number" x="752">05</tspan><tspan x="820" y="158">Pooling for existing</tspan><tspan x="820" dy="17">Jakarta Mail or Spring</tspan><tspan x="820" dy="17">code</tspan></text>
+          </a>
+          <a class="pooling-flow-usecase" href="#option-camel" aria-label="Option 06: Pooling for existing Camel mail routes">
+            <rect x="915" y="120" width="170" height="85"></rect>
+            <text x="1000" y="143"><tspan class="pooling-flow-number" x="932">06</tspan><tspan x="1000" y="164">Pooling for existing</tspan><tspan x="1000" dy="18">Camel mail routes</tspan></text>
+          </a>
+        </svg>
+      </div>
+    </figure>
+
     <blockquote class="pool-owner-rule">
-      <strong>Single physical-pool owner</strong>
-      Exactly one component owns the physical connection pool. Never place <code>batch-module</code> or a direct pool around an
-      <code>smtppool</code> transport.
+      <strong>One path, one physical-pool owner</strong>
+      Choose one numbered path and let it own the physical pool. Never point <code>batch-module</code>, a pooled <code>Mailer</code>, or a direct pool at an
+      <code>smtppool</code> Transport. The provider beneath Camel is already part of path 06.
     </blockquote>
   </section>
 
   <a href="#ownership" id="ownership" class="section-link h2">&sect;</a>
-  <h2>Follow the ownership lane</h2>
+  <h2>Who owns the delivery lifecycle?</h2>
   <section>
     <p class="wide">
-      Each row is a complete lifecycle. Moving across rows mid-flow creates ambiguous release, failure, and shutdown behavior.
+      Read one option from delivery work to SMTP connection to shutdown. Keep all three responsibilities in that lane.
     </p>
-    <div class="ownership-rail-wrap" aria-label="Ownership comparison">
-      <div class="ownership-rail" role="table" aria-label="Ownership of pool orchestration responsibilities">
-        <div class="ownership-row ownership-head" role="row">
-          <div role="columnheader">Option</div><div role="columnheader">Executor</div><div role="columnheader">Accepted work</div>
-          <div role="columnheader">Session</div><div role="columnheader">Lease</div><div role="columnheader">Pool + shutdown</div>
-        </div>
-        <div class="ownership-row" role="row">
-          <div class="ownership-option" role="rowheader">No pool</div>
-          <div class="ownership-cell" data-owner="application"><strong>Caller / Mailer</strong>Optional</div>
-          <div class="ownership-cell" data-owner="application"><strong>Caller</strong>Sequential unit</div>
-          <div class="ownership-cell"><strong>Mailer / caller</strong>One connection</div>
-          <div class="ownership-cell" data-owner="none"><strong>None</strong>No shared lease</div>
-          <div class="ownership-cell"><strong>Scope owner</strong>Callback / Mailer close</div>
-        </div>
-        <div class="ownership-row" role="row">
-          <div class="ownership-option" role="rowheader">Mailer + batch-module</div>
-          <div class="ownership-cell"><strong>Simple Java Mail</strong>Unless supplied</div>
-          <div class="ownership-cell"><strong>Simple Java Mail</strong>Send futures</div>
-          <div class="ownership-cell"><strong>Simple Java Mail</strong>Selected Mailer</div>
-          <div class="ownership-cell"><strong>Simple Java Mail</strong>Automatic</div>
-          <div class="ownership-cell"><strong>Mailer</strong><code>close()</code></div>
-        </div>
-        <div class="ownership-row" role="row">
-          <div class="ownership-option" role="rowheader">Standalone batch facade</div>
-          <div class="ownership-cell"><strong>Batch facade</strong>Unless supplied</div>
-          <div class="ownership-cell"><strong>Batch facade</strong>Callbacks / futures</div>
-          <div class="ownership-cell" data-owner="application"><strong>Caller</strong>Registered Sessions</div>
-          <div class="ownership-cell"><strong>Batch facade</strong>Automatic</div>
-          <div class="ownership-cell"><strong>Batch facade</strong>Graceful / forced</div>
-        </div>
-        <div class="ownership-row" role="row">
-          <div class="ownership-option" role="rowheader">Direct smtp-connection-pool</div>
-          <div class="ownership-cell" data-owner="application"><strong>Application</strong>Optional</div>
-          <div class="ownership-cell" data-owner="application"><strong>Application</strong>All tracking</div>
-          <div class="ownership-cell" data-owner="application"><strong>Application</strong>Pool key</div>
-          <div class="ownership-cell" data-owner="application"><strong>Application</strong>Explicit</div>
-          <div class="ownership-cell" data-owner="application"><strong>Application</strong>Explicit wait</div>
-        </div>
-        <div class="ownership-row" role="row">
-          <div class="ownership-option" role="rowheader">Jakarta smtppool provider</div>
-          <div class="ownership-cell" data-owner="application"><strong>Application / framework</strong>Outside provider</div>
-          <div class="ownership-cell" data-owner="application"><strong>Application / framework</strong>Outside provider</div>
-          <div class="ownership-cell" data-owner="application"><strong>Caller / Spring</strong>Provider scoped</div>
-          <div class="ownership-cell"><strong>Provider</strong><code>connect</code> / <code>close</code></div>
-          <div class="ownership-cell"><strong>Provider registry</strong>Explicit shutdown</div>
-        </div>
-        <div class="ownership-row" role="row">
-          <div class="ownership-option" role="rowheader">Camel smtppool adapter</div>
-          <div class="ownership-cell"><strong>Camel</strong>Routes</div>
-          <div class="ownership-cell"><strong>Camel</strong>Exchanges</div>
-          <div class="ownership-cell"><strong>Camel component</strong>Endpoint config</div>
-          <div class="ownership-cell"><strong>Adapter / provider</strong>Automatic</div>
-          <div class="ownership-cell"><strong>Camel / registry</strong>Route lifecycle</div>
-        </div>
+    <div class="ownership-lanes" aria-label="Ownership through the delivery lifecycle">
+      <div class="ownership-lifecycle" aria-hidden="true">
+        <span>Delivery work</span>
+        <span>SMTP connection</span>
+        <span>Shutdown</span>
       </div>
-    </div>
-  </section>
 
-  <a href="#comparison" id="comparison" class="section-link h2">&sect;</a>
-  <h2>Compare the six options</h2>
-  <section>
-    <div class="pooling-matrix-wrap" tabindex="0" aria-label="Scrollable pool orchestration comparison">
-      <table class="pooling-matrix">
-        <thead><tr><th>Option</th><th>Best when</th><th>Orchestration owner</th><th>Lease handling</th><th>Pooling / clustering</th></tr></thead>
-        <tbody>
-          <tr><td>No pool: <code>withOpenConnection</code> / simple batch</td><td>One sequential unit of work</td><td>Application / Simple Java Mail</td><td>Not applicable</td><td>No</td></tr>
-          <tr><td>Simple Java Mail <code>Mailer</code> + <code>batch-module</code></td><td>Using <code>EmailBuilder</code> and <code>Mailer</code></td><td>Simple Java Mail</td><td>Automatic</td><td>Yes</td></tr>
-          <tr><td>Standalone <code>batch-module</code> facade</td><td>Creating <code>MimeMessage</code> objects while wanting managed callbacks and futures</td><td>Batch facade</td><td>Automatic</td><td>Yes</td></tr>
-          <tr><td>Direct <code>smtp-connection-pool</code></td><td>Needing exact claim, failure, and shutdown control</td><td>Application</td><td>Explicit lease</td><td>Yes</td></tr>
-          <tr><td>Jakarta <code>smtppool</code> provider</td><td>Plain Jakarta Mail or Spring owns <code>Transport</code> calls</td><td>Provider</td><td>Mapped to <code>connect</code> / <code>close</code></td><td>Yes</td></tr>
-          <tr><td>Camel <code>smtppool:</code> adapter</td><td>Camel owns endpoints and component lifecycle</td><td>Camel adapter / provider</td><td>Automatic</td><td>Yes</td></tr>
-        </tbody>
-      </table>
+      <article class="ownership-lane">
+        <h3><a href="#option-no-pool"><span>01</span>Reuse one connection with Simple Java Mail</a></h3>
+        <ol>
+          <li><b>Delivery work</b><p><strong>Caller and Mailer</strong> run one sequential operation.</p></li>
+          <li><b>SMTP connection</b><p><strong>Mailer</strong> opens and closes one <code>Transport</code>.</p></li>
+          <li><b>Shutdown</b><p><strong>The operation</strong> ends the connection. No pool remains.</p></li>
+        </ol>
+      </article>
+
+      <article class="ownership-lane">
+        <h3><a href="#option-mailer"><span>02</span>Use Simple Java Mail's fully managed Connection Pool</a></h3>
+        <ol>
+          <li><b>Delivery work</b><p><strong>Simple Java Mail</strong> runs and tracks sends.</p></li>
+          <li><b>SMTP connection</b><p><strong>Simple Java Mail</strong> selects Sessions and manages leases.</p></li>
+          <li><b>Shutdown</b><p><strong>Mailer</strong> drains and closes everything through <code>close()</code>.</p></li>
+        </ol>
+      </article>
+
+      <article class="ownership-lane">
+        <h3><a href="#option-batch-facade"><span>03</span>Manage pooled delivery for application-owned MimeMessages</a></h3>
+        <ol>
+          <li><b>Delivery work</b><p><strong>BatchTransportExecutor</strong> runs callbacks and completes futures.</p></li>
+          <li><b>SMTP connection</b><p><strong>BatchTransportExecutor</strong> selects registered Sessions and manages leases.</p></li>
+          <li><b>Shutdown</b><p><strong>BatchTransportExecutor</strong> performs graceful or forced close.</p></li>
+        </ol>
+      </article>
+
+      <article class="ownership-lane">
+        <h3><a href="#option-direct-pool"><span>04</span>Add Connection Pooling to your own delivery infrastructure</a></h3>
+        <ol>
+          <li><b>Delivery work</b><p><strong>Your application</strong> queues, executes, routes and retries.</p></li>
+          <li><b>SMTP connection</b><p><strong>Your application</strong> claims, releases or invalidates every lease.</p></li>
+          <li><b>Shutdown</b><p><strong>Your application</strong> drains work and closes the pool.</p></li>
+        </ol>
+      </article>
+
+      <article class="ownership-lane">
+        <h3><a href="#option-provider"><span>05</span>Add Connection Pooling to existing Jakarta Mail or Spring code</a></h3>
+        <ol>
+          <li><b>Delivery work</b><p><strong>Jakarta Mail or Spring</strong> keeps its existing send flow.</p></li>
+          <li><b>SMTP connection</b><p><strong>The provider</strong> maps <code>connect()</code> and <code>close()</code> to leases.</p></li>
+          <li><b>Shutdown</b><p><strong>Your application or container</strong> closes the provider registry.</p></li>
+        </ol>
+      </article>
+
+      <article class="ownership-lane">
+        <h3><a href="#option-camel"><span>06</span>Add Connection Pooling to existing Camel mail routes</a></h3>
+        <ol>
+          <li><b>Delivery work</b><p><strong>Camel</strong> owns routes, exchanges and error handling.</p></li>
+          <li><b>SMTP connection</b><p><strong>The adapter and provider</strong> select and manage pooled Transports.</p></li>
+          <li><b>Shutdown</b><p><strong>The Camel component</strong> closes pools for the Sessions it owns.</p></li>
+        </ol>
+      </article>
     </div>
   </section>
 
@@ -134,16 +265,17 @@
   <h2>1. Reuse one connection without a pool</h2>
   <section class="pooling-option">
     <div class="view">
-      <div class="pooling-option-meta"><span class="pooling-owner">Owner: callback / Mailer</span><span>Sequential</span><span>No clustering</span></div>
+      <div class="pooling-option-meta"><span class="pooling-owner">Owner: Simple Java Mail</span><span>Sequential</span><span>No clustering</span></div>
       <p>
-        Use this when reconnecting is the only overhead and the work is naturally sequential. The scoped sender keeps one connection open and closes it
-        when the callback ends. There is no shared lease or pool to shut down.
+        Use this when reconnecting is the only overhead and the work is naturally sequential. <code>sendMailsInSimpleBatch(...)</code> sends a known
+        collection over one connection; <code>withOpenConnection(...)</code> keeps one connection open while the caller drives the callback. Neither API
+        creates a shared lease or pool to shut down.
       </p>
       <div class="pooling-benefit">
         <strong>This gives you</strong>
         <p>
-          Most of the connection-reuse speed-up for a sequential burst, without sizing, sharing, or draining a pool. Stop here when one callback owns one
-          SMTP connection; choose a pooled option when sends must overlap or Sessions must cluster.
+          Most of the connection-reuse speed-up for a sequential burst, without sizing, sharing, or draining a pool. Stop here when one bounded
+          <code>Mailer</code> operation can own one SMTP connection; choose a pooled option when sends must overlap or Sessions must cluster.
         </p>
       </div>
       <p><strong>Dependency:</strong> <code>org.simplejavamail:simple-java-mail:9.3.0</code></p>
@@ -402,7 +534,7 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
     <h3>OAuth2 belongs to the selected Session</h3>
     <p class="wide">
       The standalone facade bridges its fixed-token and supplier properties when each Session is registered. A clustered claim therefore resolves the
-      supplier from the Session actually selected—not from whichever Session happened to submit the work. Suppliers run only when a physical Transport
+      supplier from the Session actually selected, not from whichever Session happened to submit the work. Suppliers run only when a physical Transport
       connects or reconnects; reusing an already-connected Transport does not request a new token.
     </p>
 <pre><code class="language-java">session.getProperties().put(
@@ -425,20 +557,6 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
       <li><strong>Default executor:</strong> module-owned and stopped by the facade or Mailer.</li>
       <li><strong>Supplied executor:</strong> caller-owned and left running; it must keep progressing accepted work during graceful shutdown.</li>
     </ul>
-  </section>
-
-  <a href="#invalid-combinations" id="invalid-combinations" class="section-link h2">&sect;</a>
-  <h2>Invalid double-pooling combinations</h2>
-  <section>
-    <div class="invalid-combinations">
-      <article><h3>batch-module → smtppool</h3><p>Rejected during Session registration. Both layers would believe they own release and shutdown.</p></article>
-      <article><h3>direct pool → smtppool</h3><p>Do not allocate provider-owned pooled Transports inside a caller-owned direct pool.</p></article>
-      <article><h3>Mailer pool → wrapped provider</h3><p>Do not change a pooled Mailer's physical protocol to <code>smtppool</code>. Use one integration path.</p></article>
-    </div>
-    <p class="wide">
-      A Spring application should normally choose the provider path if it wants to keep <code>JavaMailSender</code> ownership. A Simple Java Mail application
-      should normally choose the Mailer path. Wrapping either in the standalone facade adds a second owner without adding pooling capability.
-    </p>
   </section>
 
   <a href="#runnable-examples" id="runnable-examples" class="section-link h2">&sect;</a>

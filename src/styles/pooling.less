@@ -5,40 +5,75 @@
 @benefit-green-line: #A9D5BA;
 
 .pooling-overview > header { margin-bottom: @space-lg; }
-.pooling-option-jumps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid @line; border-left: 1px solid @line; }
-.pooling-option-jumps a { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) auto; align-items: center; gap: @space-sm; min-height: 84px; padding: @space-sm @space-md; border-right: 1px solid @line; border-bottom: 1px solid @line; background: @white; color: @ink; text-decoration: none; transition: background 140ms ease, border-color 140ms ease; }
-.pooling-option-jumps a:hover { border-color: @teal; background: @teal-tint; }
-.pooling-option-jumps a:focus-visible { position: relative; z-index: 1; .focus-ring(); }
-.pooling-option-jumps a > span:nth-child(2) { display: flex; min-width: 0; flex-direction: column; gap: 0.2rem; }
-.pooling-option-jumps small, .pooling-jump-number { color: @teal-deep; font-family: @font-mono; font-size: 0.56rem; font-weight: 600; letter-spacing: 0.055em; line-height: 1.3; text-transform: uppercase; }
-.pooling-option-jumps strong { font-size: 0.82rem; line-height: 1.28; }
-.pooling-option-jumps b { color: @teal-deep; font-weight: 400; }
+.legacy-doc-content > .pooling-overview { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+.pooling-path-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: @space-md; }
+.pooling-path-card { min-width: 0; border: 1px solid @line; border-top: 3px solid @teal; background: @white; transition: border-color 140ms ease, transform 140ms ease; }
+.pooling-path-card:hover { border-color: @teal; transform: translateY(-2px); }
+.pooling-path-card:focus-within { border-color: @teal; box-shadow: 0 0 0 2px fade(@teal, 22%); }
+.pooling-path-card > a { display: flex; height: 100%; padding: @space-md; flex-direction: column; color: @ink; text-decoration: none; }
+.pooling-path-card > a:focus-visible { outline: 0; }
+.pooling-path-card header { display: grid; grid-template-columns: 1.7rem minmax(0, 1fr) auto; align-items: center; gap: @space-xs; min-height: 3.75rem; }
+.pooling-path-number { grid-column: 1; color: @teal-deep; font-family: @font-mono; font-size: 0.58rem; font-weight: 600; }
+.legacy-doc-content .pooling-path-card h3 { grid-column: 2; margin: 0; font-size: 0.96rem; line-height: 1.3; }
+.pooling-path-card header b { grid-column: 3; color: @teal-deep; font-weight: 400; }
+.legacy-doc-content .pooling-path-card ul { display: grid; flex: 1; grid-template-rows: repeat(3, auto); max-width: none; margin: @space-sm 0 0; padding: 0; list-style: none; }
+.legacy-doc-content .pooling-path-card li { display: block; margin: 0; padding: 0.62rem 0; border-top: 1px solid @line; color: @steel; font-size: 0.73rem; line-height: 1.45; }
+.legacy-doc-content .pooling-path-card li + li { margin-top: 0; }
+.pooling-path-card li > strong { margin-right: 0.42rem; color: @teal-deep; font-family: @font-mono; font-size: 0.55rem; letter-spacing: 0.035em; text-transform: uppercase; }
+.pooling-path-card code { font-size: 0.68rem; overflow-wrap: anywhere; }
 .pooling-overview-links { display: flex; flex-wrap: wrap; gap: @space-xs @space-lg; margin-top: @space-xl; padding: @space-md 0; border-top: 1px solid @line; border-bottom: 1px solid @line; }
 .pooling-overview-links a { color: @teal-deep; font-family: @font-mono; font-size: 0.64rem; font-weight: 600; letter-spacing: 0.025em; text-decoration: none; }
 .pooling-overview-links a::after { margin-left: 0.35rem; content: "↓"; }
 .pooling-overview-links a:hover { color: @ink; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.22em; }
 .pooling-overview-links a:focus-visible { .focus-ring(); }
 
+.pooling-layer-map { max-width: none; margin: @space-lg 0 @space-xl; }
+.pooling-flowchart-wrap { max-width: 100%; overflow: hidden; border: 1px solid @line; background: @white; }
+.pooling-flowchart { display: block; width: 100%; min-width: 0; height: auto; }
+.pooling-flowchart path, .pooling-flowchart rect { vector-effect: non-scaling-stroke; }
+.pooling-flow-bus { fill: none; stroke: @benefit-green; stroke-width: 1.6; }
+.pooling-flow-use-edge { fill: none; marker-end: url(#pooling-flow-use-arrow); stroke: @benefit-green; stroke-width: 1.6; }
+.pooling-flow-dependency { fill: none; marker-end: url(#pooling-flow-dependency-arrow); stroke: @steel-light; stroke-width: 1.6; stroke-dasharray: 7 6; }
+.pooling-flow-use-arrow { fill: @benefit-green; }
+.pooling-flow-dependency-arrow { fill: @steel-light; }
+.pooling-flow-node rect { fill: @white; stroke: @steel-light; stroke-width: 1.5; }
+.pooling-flow-node text { fill: @ink; font-family: @font-mono; font-size: 11.5px; font-weight: 600; text-anchor: middle; }
+.pooling-flow-application rect { fill: @ink; stroke: @ink; }
+.pooling-flow-application text { fill: @white; font-family: @font-sans; font-size: 17px; }
+.pooling-flow-no-pool text { fill: @ink; font-family: @font-sans; font-size: 13px; }
+.pooling-flow-no-pool .pooling-flow-no-pool-badge { fill: @amber; stroke: @amber; }
+.pooling-flow-no-pool .pooling-flow-no-pool-badge-text { fill: @white; font-family: @font-mono; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; }
+.pooling-flow-sjm rect { fill: @benefit-green-tint; stroke: @benefit-green; }
+.pooling-flow-sjm text { fill: @benefit-green; }
+.pooling-flow-usecase rect { fill: @white; stroke: @line; stroke-width: 1; transition: fill 140ms ease, stroke 140ms ease; }
+.pooling-flow-usecase text { fill: @ink; font-family: @font-sans; font-size: 12px; font-weight: 600; text-anchor: middle; }
+.pooling-flow-usecase .pooling-flow-number { fill: @teal-deep; font-family: @font-mono; font-size: 10px; text-anchor: start; }
+.pooling-flow-usecase:hover rect { fill: @benefit-green-tint; stroke: @benefit-green; }
+.pooling-flow-usecase:focus { outline: 0; }
+.pooling-flow-usecase:focus-visible rect { fill: @benefit-green-tint; stroke: @amber; stroke-width: 3; }
+
 .legacy-doc-content .pool-owner-rule { max-width: none; padding: @space-lg; border: 1px solid darken(@amber, 6%); border-left: 5px solid @amber; background: @amber-tint; }
 .pool-owner-rule strong { display: block; margin-bottom: @space-xs; color: @ink; font-family: @font-mono; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; }
 
-.ownership-rail-wrap, .pooling-matrix-wrap { max-width: 100%; margin: @space-lg 0; overflow-x: auto; border: 1px solid @line; overscroll-behavior-inline: contain; }
-.ownership-rail { min-width: 880px; background: @white; }
-.ownership-row { display: grid; grid-template-columns: minmax(170px, 1.35fr) repeat(5, minmax(132px, 1fr)); }
-.ownership-row > * { min-width: 0; padding: 0.8rem; border-right: 1px solid @line; border-bottom: 1px solid @line; }
-.ownership-row > *:last-child { border-right: 0; }
-.ownership-row:last-child > * { border-bottom: 0; }
-.ownership-head { background: @ink; color: @white; font-family: @font-mono; font-size: 0.61rem; letter-spacing: 0.04em; text-transform: uppercase; }
-.ownership-option { color: @ink; font-weight: 600; }
-.ownership-cell { color: @steel; font-size: 0.75rem; line-height: 1.45; }
-.ownership-cell strong { display: block; color: @teal-deep; font-family: @font-mono; font-size: 0.58rem; letter-spacing: 0.03em; text-transform: uppercase; }
-.ownership-cell[data-owner="application"] strong { color: @danger; }
-.ownership-cell[data-owner="none"] strong { color: @steel-light; }
-
-.pooling-matrix { width: 100%; min-width: 880px; margin: 0 !important; border-collapse: collapse; table-layout: fixed; }
-.pooling-matrix th:first-child { width: 19%; }
-.pooling-matrix td:first-child { color: @ink; font-weight: 600; }
-.pooling-matrix tbody tr:hover td { background: @amber-tint; }
+.ownership-lanes { margin: @space-lg 0 @space-xl; border-top: 1px solid @ink; }
+.ownership-lifecycle { display: grid; grid-template-columns: minmax(235px, 1.05fr) repeat(3, minmax(0, 1fr)); border-bottom: 1px solid @line; background: @white; }
+.ownership-lifecycle::before { content: ""; }
+.ownership-lifecycle span { position: relative; padding: 0.72rem @space-lg; color: @teal-deep; font-family: @font-mono; font-size: 0.59rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.ownership-lifecycle span:not(:last-child)::after { position: absolute; right: -0.24rem; color: @benefit-green; content: "→"; font-size: 0.8rem; }
+.ownership-lane { display: grid; grid-template-columns: minmax(235px, 1.05fr) minmax(0, 3fr); border-bottom: 1px solid @line; background: @white; }
+.legacy-doc-content .ownership-lane h3 { min-width: 0; margin: 0; padding: 1rem @space-lg 1rem 0; font-size: 0.78rem; line-height: 1.45; }
+.ownership-lane h3 a { display: grid; grid-template-columns: 1.65rem minmax(0, 1fr); color: @ink; text-decoration: none; }
+.ownership-lane h3 a:hover { color: @teal-deep; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.ownership-lane h3 a:focus-visible { .focus-ring(); }
+.ownership-lane h3 span { color: @teal-deep; font-family: @font-mono; font-size: 0.58rem; font-weight: 600; }
+.legacy-doc-content .ownership-lane ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: none; margin: 0; padding: 0; list-style: none; }
+.legacy-doc-content .ownership-lane li { position: relative; display: flex; min-width: 0; margin: 0; padding: 1rem @space-lg; align-items: center; }
+.legacy-doc-content .ownership-lane li + li { margin-top: 0; }
+.ownership-lane li:not(:last-child)::after { position: absolute; top: 50%; right: -0.24rem; z-index: 1; padding: 0.12rem 0; background: @white; color: @steel-light; content: "→"; font-family: @font-mono; font-size: 0.72rem; transform: translateY(-50%); }
+.ownership-lane li > b { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.legacy-doc-content .ownership-lane p { max-width: none; margin: 0; color: @steel; font-size: 0.74rem; line-height: 1.5; }
+.ownership-lane p strong { color: @ink; font-weight: 600; }
+.ownership-lane code { font-size: 0.69rem; overflow-wrap: anywhere; }
 
 .pooling-option { padding-top: @space-sm; }
 .pooling-option-meta { display: flex; flex-wrap: wrap; gap: @space-xs; margin-bottom: @space-md; }
@@ -52,43 +87,31 @@
 .pooling-checklist li { position: relative; margin: 0 !important; padding-left: 1.15rem; }
 .pooling-checklist li::before { position: absolute; left: 0; color: @teal-deep; content: "→"; }
 
-.invalid-combinations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: @space-lg; border-top: 1px solid @line; border-left: 1px solid @line; }
-.invalid-combinations article { padding: @space-lg; border-right: 1px solid @line; border-bottom: 1px solid @line; background: @white; }
-.invalid-combinations h3 { color: @danger; font-size: 1rem; }
-.invalid-combinations p { margin: @space-sm 0 0; color: @steel; font-size: 0.8rem; }
-
 @media (max-width: 1080px) {
-  .pooling-option-jumps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ownership-rail-wrap { overflow: visible; border: 0; }
-  .ownership-rail { min-width: 0; background: transparent; }
-  .ownership-head { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-  .ownership-row:not(.ownership-head) { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; margin-bottom: @space-md; padding: 1px; background: @line; }
-  .ownership-row:not(.ownership-head) > * { border: 0; background: @white; }
-  .ownership-row:not(.ownership-head) > .ownership-option { grid-column-start: 1; grid-column-end: -1; padding: @space-sm @space-md; background: @ink; color: @white; }
-  .ownership-row:not(.ownership-head) > .ownership-cell { padding: @space-sm; }
-  .ownership-row:not(.ownership-head) > .ownership-cell::before { display: block; margin-bottom: 0.3rem; color: @steel-light; font-family: @font-mono; font-size: 0.54rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .ownership-row:not(.ownership-head) > :nth-child(2)::before { content: "Executor"; }
-  .ownership-row:not(.ownership-head) > :nth-child(3)::before { content: "Accepted work"; }
-  .ownership-row:not(.ownership-head) > :nth-child(4)::before { content: "Session"; }
-  .ownership-row:not(.ownership-head) > :nth-child(5)::before { content: "Lease"; }
-  .ownership-row:not(.ownership-head) > :nth-child(6)::before { content: "Pool + shutdown"; }
+  .pooling-path-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .legacy-doc-content section.pooling-option:has(> .view + .side) { display: block; }
   .pooling-option > .side { margin-top: @space-xl; }
-  .invalid-combinations { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 920px) {
-  .ownership-row:not(.ownership-head) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ownership-row:not(.ownership-head) > :nth-child(6) { grid-column-start: 1; grid-column-end: -1; }
+  .ownership-lanes { border-top: 0; }
+  .ownership-lifecycle { display: none; }
+  .ownership-lane { display: block; margin-bottom: @space-md; border: 1px solid @line; }
+  .legacy-doc-content .ownership-lane h3 { padding: @space-md; border-bottom: 1px solid @line; }
+  .ownership-lane h3 a { grid-template-columns: 1.75rem minmax(0, 1fr); }
+  .legacy-doc-content .ownership-lane ol { display: block; }
+  .legacy-doc-content .ownership-lane li { display: grid; grid-template-columns: 7rem minmax(0, 1fr); padding: 0.72rem @space-md; align-items: start; }
+  .legacy-doc-content .ownership-lane li + li { border-top: 1px solid @line; }
+  .ownership-lane li:not(:last-child)::after { display: none; }
+  .ownership-lane li > b { position: static; width: auto; height: auto; padding: 0; overflow: visible; clip: auto; color: @teal-deep; font-family: @font-mono; font-size: 0.55rem; letter-spacing: 0.035em; text-transform: uppercase; white-space: normal; }
 }
 
 @media (max-width: 620px) {
+  .pooling-path-grid { grid-template-columns: minmax(0, 1fr); }
   .pooling-checklist { grid-template-columns: 1fr; }
   .pooling-benefit { padding-right: @space-md; padding-left: 3.1rem; }
 }
 
 @media (max-width: 460px) {
-  .pooling-option-jumps, .ownership-row:not(.ownership-head) { grid-template-columns: minmax(0, 1fr); }
-  .ownership-row:not(.ownership-head) > .ownership-option,
-  .ownership-row:not(.ownership-head) > :nth-child(6) { grid-column-start: 1; grid-column-end: 2; }
+  .legacy-doc-content .ownership-lane li { grid-template-columns: 6.2rem minmax(0, 1fr); }
 }
