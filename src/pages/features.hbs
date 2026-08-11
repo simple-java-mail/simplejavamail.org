@@ -508,7 +508,8 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
         different SMTP servers.
       </p>
       <p class="wide">
-        Refer to the <a href="configuration.html#section-batch-and-clustering">configuration section</a> for details.
+        First use the <a href="smtp-connection-pooling.html">pool orchestration guide</a> to choose the delivery path and lifecycle boundary that match
+        your code. Then refer to the <a href="configuration.html#section-batch-and-clustering">configuration section</a> for Mailer settings.
         Its <a href="configuration.html#section-mailer-lifecycle">lifecycle section</a> explains how to finish queued work and close each Mailer.
       </p>
     </div>

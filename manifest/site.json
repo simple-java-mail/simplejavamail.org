@@ -107,7 +107,7 @@
       "out": "smtp-connection-pooling.html",
       "chrome": "docs",
       "style": "pooling",
-      "description": "Choose who owns SMTP connection reuse, leases, asynchronous work, and shutdown across Simple Java Mail, batch-module, direct pools, Jakarta Mail, Spring, and Camel."
+      "description": "Reuse SMTP connections without giving up the API or framework that already owns delivery. See how Simple Java Mail, batch-module, direct pooling, Jakarta Mail, Spring, and Camel share one physical-pool foundation."
     },
     {
       "title": "Command-line interface",
