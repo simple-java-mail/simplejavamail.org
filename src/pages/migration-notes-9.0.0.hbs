@@ -32,6 +32,11 @@
 			Build recipients explicitly with <code class="inline language-java">RecipientBuilder</code>, set their recipient type, and add them through
 			<code class="inline language-java">withRecipients(...)</code>.
 		</p>
+		<p class="wide">
+			A <code class="inline language-java">RecipientBuilder</code> always produces exactly one <code class="inline language-java">Recipient</code>.
+			Pass one RFC 2822 address to <code class="inline language-java">withAddress(...)</code>, optionally including a display name such as
+			<code class="inline language-text">Alice &lt;alice@example.com&gt;</code>. It does not split comma- or semicolon-delimited address lists.
+		</p>
 		<pre class="full-width-example"><code class="language-java">// Before 9.0.0:
 Email email = EmailBuilder.startingBlank()
     .from("me@example.com")
@@ -56,10 +61,30 @@ Email email = EmailBuilder.startingBlank()
     .withPlainText("Hello")
     .buildEmail();</code></pre>
 		<p class="wide">
+			For several recipients, use <code class="inline language-java">RecipientsBuilder</code>. Each String argument may contain one address or a
+			comma- or semicolon-delimited list; every parsed address becomes a separate <code class="inline language-java">Recipient</code>:
+		</p>
+		<pre class="full-width-example"><code class="language-java">Collection&lt;Recipient&gt; recipients = new RecipientsBuilder()
+    .withRecipientsWithDefaultName(
+        null,
+        Message.RecipientType.TO,
+        "alice@example.com,bob@example.com",
+        "Carol &lt;carol@example.com&gt;;dave@example.com")
+    .buildRecipients();
+
+Email email = EmailBuilder.startingBlank()
+    .from("me@example.com")
+    .withRecipients(recipients)
+    .withPlainText("Hello")
+    .buildEmail();</code></pre>
+		<p class="wide">
 			For an existing <code class="inline language-java">Recipient</code> or collection, replace
 			<code class="inline language-java">to(...)</code>, <code class="inline language-java">cc(...)</code>, or
 			<code class="inline language-java">bcc(...)</code> with <code class="inline language-java">withRecipients(...)</code> and make sure each recipient
 			already carries the intended type.
+		</p>
+		<p class="wide">
+			See the <a href="features.html#section-recipient-builders">dedicated recipient builder examples</a> for the current API.
 		</p>
 	</section>
 

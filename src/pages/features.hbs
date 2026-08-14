@@ -365,6 +365,12 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
         <code class="inline">RecipientsBuilder</code> lets you apply their shared names and certificates before adding the group to an email.
       </p>
       <p>
+        <code class="inline">RecipientBuilder</code> always creates exactly one recipient: pass one RFC 2822 address to
+        <code class="inline">withAddress(...)</code>, optionally with a display name. For multiple recipients, use
+        <code class="inline">RecipientsBuilder</code>. Its String inputs may be separate addresses or comma- and semicolon-delimited lists, and every parsed
+        address becomes its own recipient. Set the recipient type explicitly to TO, CC or BCC in either builder.
+      </p>
+      <p>
         Default names and default certificates only fill missing values. Fixed names and fixed certificates override source data for the whole group.
         <code class="inline">clearingSmimeCertificates()</code> removes certificate state from reused recipients when the current email should use its own
         S/MIME fallback instead.
@@ -375,21 +381,24 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
     </div>
 
     <div class="side">
-<pre><code class="small">Recipient alice = new RecipientBuilder()
-    .withAddressAndNameOrDefault("Alice &lt;alice@example.com&gt;", null)
+<pre><code class="small">// Exactly one address
+Recipient alice = new RecipientBuilder()
+    .withName("Alice")
+    .withAddress("alice@example.com")
     .withType(Message.RecipientType.TO)
-    .withSmimeCertificate(aliceCertificate)
     .build();
 
-Collection&lt;Recipient&gt; archive = new RecipientsBuilder()
-    .withDefaultSmimeCertificate(archiveCertificate)
-    .withRecipientsWithDefaultName("Archive", Message.RecipientType.BCC, "audit@example.com", "records@example.com")
+// Separate inputs and delimited lists can be combined
+Collection&lt;Recipient&gt; reviewers = new RecipientsBuilder()
+    .withRecipientsWithDefaultName(null, Message.RecipientType.CC,
+            "Bob &lt;bob@example.com&gt;",
+            "carol@example.com;dave@example.com")
     .buildRecipients();
 
 Email email = EmailBuilder.startingBlank()
     .from("sender@example.com")
     .withRecipients(alice)
-    .withRecipients(archive)
+    .withRecipients(reviewers)
     .withPlainText("Hello")
     .buildEmail();
 </code></pre>
