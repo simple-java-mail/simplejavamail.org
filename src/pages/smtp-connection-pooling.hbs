@@ -278,7 +278,7 @@
           <code>Mailer</code> operation can own one SMTP connection; choose a pooled option when sends must overlap or Sessions must cluster.
         </p>
       </div>
-      <p><strong>Dependency:</strong> <code>org.simplejavamail:simple-java-mail:9.3.0</code></p>
+      <p><strong>Dependency:</strong> <code>org.simplejavamail:simple-java-mail:{{site.version}}</code></p>
     </div>
     <div class="side">
 <pre><code class="language-java">try (Mailer mailer = MailerBuilder
@@ -316,7 +316,7 @@
           application code.
         </p>
       </div>
-      <p><strong>Dependencies:</strong> <code>simple-java-mail:9.3.0</code> plus <code>batch-module:9.3.0</code></p>
+      <p><strong>Dependencies:</strong> <code>simple-java-mail:{{site.version}}</code> plus <code>batch-module:{{site.version}}</code></p>
     </div>
     <div class="side">
 <pre><code class="language-java">try (Mailer mailer = MailerBuilder
@@ -344,7 +344,7 @@
     <div class="view">
       <div class="pooling-option-meta"><span class="pooling-owner">Owner: BatchTransportExecutor</span><span>Callbacks</span><span>CompletableFuture</span></div>
       <p>
-        New in 9.3.0, <code>BatchTransportExecutor&lt;K&gt;</code> is the middle path for applications that own Jakarta Mail message construction but want
+        <code>BatchTransportExecutor&lt;K&gt;</code> is the middle path for applications that own Jakarta Mail message construction but want
         callback-scoped transports, cluster selection, futures, and deterministic lifecycle. It orchestrates
         <code>smtp-connection-pool</code>; it is not another pool implementation.
       </p>
@@ -355,13 +355,13 @@
           owning each unit of work. Choose this boundary when callbacks and futures fit, but adopting <code>EmailBuilder</code> and <code>Mailer</code> does not.
         </p>
       </div>
-      <p><strong>Dependency:</strong> <code>org.simplejavamail:batch-module:9.3.0</code>. The main <code>simple-java-mail</code> facade is not required.</p>
+      <p><strong>Dependency:</strong> <code>org.simplejavamail:batch-module:{{site.version}}</code>. The main <code>simple-java-mail</code> facade is not required.</p>
     </div>
     <div class="side">
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
     &lt;artifactId&gt;batch-module&lt;/artifactId&gt;
-    &lt;version&gt;9.3.0&lt;/version&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
     </div>
     <div class="wide full-width-example">
@@ -549,7 +549,7 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
 
     <h3>JPMS names are stable through the full pool chain</h3>
     <p class="wide">
-      Simple Java Mail 9.3.0 consumes the fixed chain: <code>org.bbottema.genericobjectpool</code>,
+      Simple Java Mail consumes the fixed chain: <code>org.bbottema.genericobjectpool</code>,
       <code>org.bbottema.clusteredobjectpool</code>, <code>org.simplejavamail.smtpconnectionpool</code>, and
       <code>org.simplejavamail.batch</code>. The optional provider and Camel adapter add
       <code>org.simplejavamail.smtpconnectionpool.jakarta</code> and <code>org.simplejavamail.smtpconnectionpool.camel</code>.
