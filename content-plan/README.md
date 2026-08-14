@@ -277,7 +277,6 @@ The relaunch does not invent support SLAs, compatibility promises, a vulnerabili
 - Existing documentation URLs and anchor IDs remain valid.
 - Comparison is accurate and respectful; it shows what each API handles.
 - Jakarta Mail is named as the lower-level foundation, not misrepresented as obsolete or useless.
-- The upgraded AtlasArc build architecture is reused, but Simple Java Mail receives its own visual identity and navigation pattern.
 - Planning files are source material only and are never copied into `dist/`.
 
 ## Pre-ship content checklist
