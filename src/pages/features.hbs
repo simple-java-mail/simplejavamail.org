@@ -121,6 +121,7 @@
 		<li><a href="#section-connection-test">Testing a server connection</a></li>
 		<li><a href="#section-serializing-emails">Serializing Email objects</a></li>
 		<li><a href="#section-custom-mailer">Plug your own sending logic</a></li>
+		<li><a href="#section-rendered-templates">Use content rendered by your template system</a></li>
 		<li><a href="#section-maximum-emailsize">Limit the maximum email size</a></li>
     </ul>
   </section>
@@ -167,30 +168,6 @@ MailerBuilder
 </code></pre>
 	  </div>
   </section>
-
-
-  <a href="#section-rendered-templates" id="section-rendered-templates" class="section-link h3">&sect;</a>
-  {{#> components/feature-heading-h3 core=true}}Use content rendered by your template system{{/components/feature-heading-h3}}
-
-  <section>
-    <p class="wide">
-      Render the body with the template system your application already uses, then pass the resulting plain-text and HTML strings to the email builder.
-    </p>
-    <div class="wide full-width-example">
-<pre><code class="language-java">String plainText = templateEngine.render("order-confirmation.txt", model);
-String html = templateEngine.render("order-confirmation.html", model);
-
-Email email = currentEmailBuilder
-    .withPlainText(plainText)
-    .withHTMLText(html)
-    .buildEmail();</code></pre>
-    </div>
-    <p class="wide">
-      The <code class="inline language-text">%s</code> template accepted by reply starters only controls how the original HTML is quoted. See
-      <a href="#section-reply-forward">replying to and forwarding emails</a>.
-    </p>
-  </section>
-
 
   <a href="#section-builder-api" id="section-builder-api" class="section-link h3">&sect;</a>
   {{#> components/feature-heading-h3 core=true}}About the fluent API with the Builder pattern{{/components/feature-heading-h3}}
@@ -1890,6 +1867,115 @@ mailer.testConnection(true);  // explicitly asynchronous
   </code></pre>
       </div>
 	</section>
+
+
+	<a href="#section-rendered-templates" id="section-rendered-templates" class="section-link h2">&sect;</a>
+	{{#> components/feature-heading-h2 core=true}}Use content rendered by your template system{{/components/feature-heading-h2}}
+
+  <section>
+    <p class="wide">
+      Simple Java Mail does not choose or run a template engine. Render the plain-text and HTML bodies in your application, then pass those strings to
+      the email builder. Rendering completes before <code class="inline language-java">buildEmail()</code>, so a template failure happens before email
+      building or SMTP delivery.
+    </p>
+
+    <h4>The handoff to Simple Java Mail</h4>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// Application code: render with the template system you already use
+String plainText = renderTextBody(model, locale);
+String html = renderHtmlBody(model, locale);
+
+Email email = currentEmailBuilder
+    .withPlainText(plainText)
+    .withHTMLText(html)
+    .buildEmail();</code></pre>
+    </div>
+    <p class="wide">
+      The <code class="inline language-java">Email</code> contains the rendered bodies, not a template name or model. Template selection, locale handling,
+      model validation, caching, and rendering remain part of your application.
+    </p>
+
+    <h4>Thymeleaf</h4>
+    <p class="wide">
+      With an application-configured Thymeleaf <code class="inline language-java">TemplateEngine</code>, create a non-web context and render both
+      alternatives:
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">Context context = new Context(locale, model);
+
+String plainText =
+    templateEngine.process("text/order-confirmation", context);
+String html =
+    templateEngine.process("html/order-confirmation", context);</code></pre>
+    </div>
+    <p class="wide">
+      The template resolvers determine where those names are loaded from and whether they use text or HTML template mode. See
+      <a href="https://www.thymeleaf.org/doc/articles/springmail.html" target="_blank">Thymeleaf's email template configuration</a>.
+    </p>
+
+    <h4>FreeMarker</h4>
+    <p class="wide">
+      FreeMarker writes rendered output to a <code class="inline language-java">Writer</code>, so a small application helper can return it as a string:
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">String plainText = render(
+    freeMarkerConfiguration,
+    "order-confirmation.ftl",
+    model,
+    locale);
+
+String html = render(
+    freeMarkerConfiguration,
+    "order-confirmation.ftlh",
+    model,
+    locale);
+
+private static String render(
+        Configuration configuration,
+        String templateName,
+        Map&lt;String, Object&gt; model,
+        Locale locale) throws IOException, TemplateException {
+
+    StringWriter output = new StringWriter();
+    configuration
+        .getTemplate(templateName, locale)
+        .process(model, output);
+    return output.toString();
+}</code></pre>
+    </div>
+    <p class="wide">
+      Template lookup and caching are configured on FreeMarker's <code class="inline language-java">Configuration</code>. See the
+      <a href="https://freemarker.apache.org/docs/pgui_config_templateloading.html" target="_blank">FreeMarker template-loading guide</a>.
+    </p>
+
+    <h4>Escaping and editable templates</h4>
+    <p class="wide">
+      Simple Java Mail treats the rendered HTML as message content; it does not escape or sanitize it. Use the template engine's output-aware escaping
+      for values inserted into HTML. With Thymeleaf, <code class="inline language-text">th:text</code> and
+      <code class="inline language-text">[[...]]</code> escape output, while <code class="inline language-text">th:utext</code> and
+      <code class="inline language-text">[(...)]</code> do not. With FreeMarker, <code class="inline language-text">.ftlh</code> is the recommended
+      extension for associating templates with HTML output and automatic escaping. Escaping model values does not make untrusted template source safe;
+      apply the engine's security model to who may edit templates. Read the
+      <a href="https://www.thymeleaf.org/doc/tutorials/3.1/usingthymeleaf.html" target="_blank">Thymeleaf escaping guide</a> and
+      <a href="https://freemarker.apache.org/docs/dgui_misc_autoescaping.html" target="_blank">FreeMarker auto-escaping guide</a>.
+    </p>
+    <p class="wide">
+      If the rendered HTML contains images that should travel with the message, continue with <a href="#section-embedding">embedding images</a>.
+      Image auto-resolution remains opt-in and is constrained by its configured file, classpath, or URL bases.
+    </p>
+    <p class="wide">
+      Using Spring? Inject the application-configured renderer and Simple Java Mail's <code class="inline language-java">Mailer</code> into the service
+      that composes the message. Simple Java Mail Spring Support can supply the <code class="inline language-java">Mailer</code>; it does not discover or
+      configure template engines.
+    </p>
+    <p class="wide">
+      Thymeleaf and FreeMarker are examples, not Simple Java Mail dependencies or engine-specific integrations.
+    </p>
+    <p class="wide">
+      The <code class="inline language-text">%s</code> template accepted by reply starters only controls how the original HTML is quoted. It is not a
+      general body-template API. See <a href="#section-reply-forward">replying to and forwarding emails</a>.
+    </p>
+  </section>
 
 
 	<a href="#section-maximum-emailsize" id="section-maximum-emailsize" class="section-link h2">&sect;</a>

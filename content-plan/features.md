@@ -71,6 +71,36 @@ Clearly label which features are part of the main dependency and which require a
 - direct Jakarta Mail properties and Session;
 - lifecycle callbacks/async completion where available.
 
+### Use content rendered by your template system
+
+Preserve the existing `section-rendered-templates` anchor and place this near the end of the page, after custom sending logic and before maximum message size.
+
+This is a useful application integration recipe, not a core Simple Java Mail capability. Keep it out of the opening quick links and the primary Compose summary.
+
+Reader question:
+
+> How do I use Thymeleaf, FreeMarker, or another template system with Simple Java Mail?
+
+Lead with the render-then-build flow: the application renders its templates first, passes the completed plain-text and HTML strings to `withPlainText(...)` and `withHTMLText(...)`, and then builds and sends the `Email`.
+
+Present this as a composition pattern, not as a built-in template-engine integration.
+
+The section must:
+
+- keep one short engine-neutral example showing both text and HTML alternatives;
+- add compact, concrete Thymeleaf and FreeMarker examples using their real APIs rather than an invented shared renderer API;
+- use the same model and message example so readers can compare only the rendering step;
+- complete rendering before `buildEmail()`, keeping rendering failures separate from email building and SMTP delivery;
+- state that Simple Java Mail does not select, configure, discover, or invoke the template engine;
+- state that the application owns template lookup, locale, model validation, escaping, unescaped markup, and whether template authors are trusted;
+- explain that Simple Java Mail accepts the resulting HTML as message content and does not sanitize it;
+- link rendered `<img>` references to the existing embedded-image documentation instead of presenting resource resolution as a template integration;
+- retain the explanation that the reply-builder `%s` placeholder only formats quoted original HTML and is not a general template API.
+
+A short Spring note may show an application service receiving both a `Mailer` and its application-configured renderer. Do not imply that Simple Java Mail Spring Support discovers or configures template engines.
+
+The concrete engines are examples, not an endorsement or compatibility matrix. Do not add template-engine dependencies, version promises, a renderer SPI, delayed rendering, or engine-specific Simple Java Mail modules.
+
 ### Grand example appendix
 
 Retain a complete, feature-rich example as a clearly labeled appendix. Break it into logical annotated regions and keep it out of the main reading path.
@@ -80,6 +110,7 @@ Retain a complete, feature-rich example as a clearly labeled appendix. Break it 
 Preserve every current section ID, including:
 
 - `section-basic-usage`
+- `section-rendered-templates`
 - `authentication`
 - all existing IDs for builder APIs, batch/clustering, custom Session, encodings, IDs/dates/receipts, transport examples, resources, headers/properties/debug, binding/hostname, iCalendar, delivery notifications/DSN, validation, conversion, bounce/reply/forward, proxy, connection tests, serialization, custom sending, and maximum size.
 
@@ -108,4 +139,5 @@ The features already exist, but the current page reads like a chronological accu
 - Keep project planning and the public roadmap on `/contact.html`, not in the capability reference.
 - Identify optional-module requirements before the code sample.
 - Keep examples current with version 9 recipient builders.
+- Do not describe template engines as supported integrations; describe the render-then-build contract.
 - Preserve all existing anchors even if an old label is retired.
