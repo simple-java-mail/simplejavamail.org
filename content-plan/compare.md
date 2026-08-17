@@ -30,7 +30,7 @@ Four concise profiles:
 - **Jakarta Mail / Angus Mail:** badge: `Low-level SMTP toolkit`; the standard MIME and mail-protocol API supplies the parts and your code assembles, configures, and reuses them.
 - **Spring Mail:** badge: `Rudimentary support`; Spring's `JavaMailSender`, `MailException`, and `MimeMessageHelper` fit when the application already uses those APIs.
 - **Apache Commons Email:** badge: `Maintenance mode`; a handful of message classes remove some Jakarta Mail boilerplate, while leaving most of the harder work to the application.
-- **Simple Java Mail:** badge: `Complete SMTP solution`; it builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.
+- **Simple Java Mail:** badge: `Complete SMTP solution`; it builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, OpenPGP/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.
 
 Use one top badge per card. Do not add a second eyebrow label inside the card.
 
@@ -45,16 +45,17 @@ Rows are developer responsibilities, not arbitrary feature trivia:
 3. Recipient rules, validation, defaults, and overrides
 4. DKIM
 5. S/MIME signing and encryption
-6. Transport security and OAuth2
-7. Async result handling and connection tests
-8. Connection reuse and simple batches
-9. Pooled and multi-cluster delivery
-10. Authenticated SOCKS
-11. EML, `MimeMessage`, and Outlook conversion
-12. Code and external configuration
-13. Spring application integration, including Boot auto-configuration and the native `JavaMailSender` contract
-14. Diagnostics and debug-output routing
-15. Low-level session/property escape hatches
+6. OpenPGP/MIME signing, encryption, verification, and decryption
+7. Transport security and OAuth2
+8. Async result handling and connection tests
+9. Connection reuse and simple batches
+10. Pooled and multi-cluster delivery
+11. Authenticated SOCKS
+12. EML, `MimeMessage`, and Outlook conversion
+13. Code and external configuration
+14. Spring application integration, including Boot auto-configuration and the native `JavaMailSender` contract
+15. Diagnostics and debug-output routing
+16. Low-level session/property escape hatches
 
 Cells use three states with visible text and symbols:
 
@@ -73,7 +74,7 @@ Use compact bullet lists in the middle column to show the dependencies for each 
 - **Jakarta Mail / Angus:** the API and implementation; validation, message construction, connection reuse, and the rest stay in application code;
 - **Spring Mail:** adds little when Spring is already present, but brings Spring dependencies with it in an otherwise non-Spring application;
 - **Commons Email:** a small footprint because it remains a narrow layer of typed message classes over the mail implementation;
-- **Simple Java Mail:** core covers well-formed MIME, reusable message rules, TLS and OAuth2, diagnostics, conversion, and simple batches; DKIM, S/MIME, pools and clusters, Outlook, Spring, authenticated SOCKS, CLI, and Karaf support are separate modules.
+- **Simple Java Mail:** the main artifact includes the Jakarta Mail API plus the Angus provider adapter at runtime. Core covers well-formed MIME, reusable message rules, TLS and OAuth2, diagnostics, conversion, and simple batches; DKIM, S/MIME, OpenPGP/MIME, pools and clusters, Outlook, Spring, authenticated SOCKS, CLI, and Karaf support are separate modules.
 
 Link the `Optional modules` item in the Simple Java Mail dependency list to the modules page. Avoid exact byte-size claims because versions and the application's existing dependency graph change the result.
 
@@ -84,7 +85,7 @@ Use four unnumbered rows; these are alternatives, not steps:
 - **Jakarta Mail / Angus, you want to own the mail mechanics:** build the Session, MIME tree, and transport handling yourself, including how they are validated, secured, and reused.
 - **Spring Mail, your application already speaks `JavaMailSender`:** the honest Spring-specific fit is an existing `JavaMailSender` contract, Boot auto-configuration, `spring.mail.*`, JNDI Session support, and requirements already covered by `MimeMessageHelper`. Lead with the link to Simple Java Mail's Spring integration so Spring users know they are not excluded.
 - **Commons Email, you only want a little less Jakarta Mail boilerplate:** it makes basic Jakarta Mail code shorter, but that is about as far as it goes. Version 2 mainly split the project into separate Jakarta and Javax artifacts, while the way messages are built and sent remained largely unchanged. The project still receives updates, but most recent work focuses on dependency, build, and security upkeep. Connect that maintenance focus and limited scope directly to why the library is difficult to recommend as the mail layer for a new application.
-- **Simple Java Mail, you need more than message composition:** it handles well-formed MIME, reusable message rules, diagnostics, and conversion, then adds capabilities outside Jakarta Mail itself such as DKIM, S/MIME, authenticated SOCKS, connection pools, and SMTP clusters; add modules only when their features are needed.
+- **Simple Java Mail, you need more than message composition:** it handles well-formed MIME, reusable message rules, diagnostics, and conversion, then adds capabilities outside Jakarta Mail itself such as DKIM, S/MIME, OpenPGP/MIME, authenticated SOCKS, connection pools, and SMTP clusters; add modules only when their features are needed.
 
 ### Two concrete comparisons
 

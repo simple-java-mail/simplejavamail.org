@@ -1,7 +1,7 @@
-{{#> layouts/base head-sub-title="Security" page-title="Simple Java Mail Security settings" }}
+{{#> layouts/base head-sub-title="Security" page-title="Secure Java email with TLS, OAuth2, DKIM, S/MIME, and OpenPGP" }}
 
 	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Summary of all security related settings in Simple Java Mail">
+		<meta name="Description" content="Configure TLS, OAuth2, CRLF protection, DKIM signing, and S/MIME or OpenPGP/MIME signing and encryption in Simple Java Mail.">
 	{{/inline}}
 
 	{{#*inline "header-block"}}
@@ -12,20 +12,61 @@
 		<section class="doc-overview" aria-labelledby="security-overview-title">
 			<header>
 				<p class="eyebrow">Security at a glance</p>
-				<h2 id="security-overview-title">Choose your protection.</h2>
-				<p class="wide">These are the security features most applications come here for. The table of contents below covers every transport, certificate, and connection setting.</p>
+				<h2 id="security-overview-title">Choose the layer you need.</h2>
+				<p class="wide">Mail security is a stack. Protect the SMTP connection, authenticate the sending domain, protect the message content, or combine those layers. The matrix below shows which job each route does.</p>
 			</header>
 			<div class="doc-card-grid">
 				{{> components/doc-overview-card href="#section-transport-strategy-tls" kicker="Connection" title="TLS" description="Encrypt the SMTP connection and verify the identity of the server receiving your mail." core=true}}
 				{{> components/doc-overview-card href="#section-transport-strategy-oauth2" kicker="Authentication" title="OAuth2" description="Use fixed or refresh-aware access tokens instead of a mailbox password." core=true}}
 				{{> components/doc-overview-card href="#section-sending-dkim" kicker="Domain signing" title="DKIM" description="Sign outgoing mail so receiving systems can verify the signing domain and message integrity." dkim=true}}
 				{{> components/doc-overview-card href="#section-sending-smime" kicker="Content protection" title="S/MIME" description="Sign message content, encrypt it for recipients, and read protected attachments." smime=true}}
+				{{> components/doc-overview-card href="#section-sending-openpgp" kicker="Content protection" title="OpenPGP/MIME" description="Sign or encrypt RFC 3156 messages with OpenPGP key rings, then verify or decrypt supplied EML." openpgp=true}}
 				{{> components/doc-overview-card href="#section-crlf-scanning" kicker="Input safety" title="Header injection" description="Catch suspicious CR/LF sequences before untrusted input can alter message headers." core=true}}
 			</div>
 		</section>
 
+		<a href="#section-security-routes" id="section-security-routes" class="section-link h2">&sect;</a>
+		<h2>Which security route handles what?</h2>
+
+		<section>
+			<p class="wide">
+				These mechanisms solve different problems. In a normal production setup you will usually use verified TLS for submission, then add DKIM and
+				one content-protection format only when your mail flow calls for them. SPF and DMARC are included here for context, but they are not configured
+				by Simple Java Mail.
+			</p>
+			<div class="doc-table-wrap" tabindex="0" aria-label="Scrollable email security route comparison">
+				<table class="security-route-table">
+					<thead>
+						<tr><th>Route</th><th>What it protects or proves</th><th>Who checks it</th><th>DMARC role</th><th>Where it lives</th></tr>
+					</thead>
+					<tbody>
+						<tr><th>TLS / STARTTLS</th><td>The SMTP hop between your application and its submission server</td><td>Your application and SMTP server</td><td>None</td><td>Simple Java Mail core</td></tr>
+						<tr><th>OAuth2</th><td>Your application's right to use an SMTP account, without giving the mailer a mailbox password</td><td>The SMTP server</td><td>None</td><td>Simple Java Mail core plus your token provider</td></tr>
+						<tr><th>DKIM</th><td>A signing domain and the integrity of the signed headers and body</td><td>Receiving mail systems</td><td>Can satisfy DMARC when the valid DKIM signing domain aligns with the visible From domain</td><td><code>dkim-module</code> plus the domain's DNS record</td></tr>
+						<tr><th>SPF</th><td>Whether the sending server is authorized for the SMTP envelope domain</td><td>Receiving mail systems</td><td>Can satisfy DMARC when SPF passes and the envelope domain aligns with the visible From domain</td><td>Sending infrastructure and DNS, outside this library</td></tr>
+						<tr><th>DMARC</th><td>How aligned DKIM or SPF results should be evaluated for the visible From domain</td><td>Receiving mail systems</td><td>This is the policy and evaluation itself</td><td>Domain DNS and the receiver, outside this library</td></tr>
+						<tr><th>S/MIME</th><td>Message-content signatures and encryption using certificates</td><td>The recipient's client or your receiving code</td><td>None</td><td><code>smime-module</code></td></tr>
+						<tr><th>OpenPGP/MIME</th><td>Message-content signatures and encryption using OpenPGP keys</td><td>The recipient's client or your receiving code</td><td>None</td><td><code>openpgp-module</code></td></tr>
+						<tr><th>CRLF scanning</th><td>Your generated headers against newline injection from untrusted values</td><td>Simple Java Mail before sending</td><td>None</td><td>Simple Java Mail core</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<p class="wide">
+				DMARC checks alignment with the domain in the visible <code class="inline language-text">From</code> header. For the DKIM route, configure
+				<code class="inline language-java">dkimSigningDomain(...)</code> for an aligned domain. SPF uses the SMTP
+				<code class="inline language-text">MAIL FROM</code> identity and the sending server's DNS authorization. A Simple Java Mail bounce address can
+				set that envelope identity, but it cannot publish SPF or make the sending IP pass. See
+				<a href="https://www.rfc-editor.org/rfc/rfc9989.html">RFC 9989</a> for the current DMARC model.
+			</p>
+			<p class="wide">
+				S/MIME and OpenPGP/MIME can authenticate and protect content under your application's trust rules, but receivers do not use either one for
+				DMARC. TLS and OAuth2 protect the submission path and account access, not the From domain.
+			</p>
+		</section>
+
 		<section class="toc">
 			<ul>
+				<li><a href="#section-security-routes">Which security route handles what?</a></li>
 				<li><a href="#section-authentication-methods">Authentication methods with transport strategies</a></li>
 				<li><a href="#section-transport-strategy-smtp" class="indent">TransportStrategy.SMTP</a></li>
 				<li><a href="#section-transport-strategy-smtps" class="indent">TransportStrategy.SMTPS</a></li>
@@ -41,6 +82,9 @@
 				<li><a href="#section-reading-smime-verification" class="indent">What the signature status means</a></li>
 				<li><a href="#section-reading-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
 				<li><a href="#section-reading-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
+				<li><a href="#section-sending-openpgp">Signing / encrypting emails with OpenPGP/MIME</a></li>
+				<li><a href="#section-reading-openpgp">Reading OpenPGP/MIME messages</a></li>
+				<li><a href="#section-reading-openpgp-status" class="indent">What the OpenPGP status means</a></li>
 			</ul>
 		</section>
 
@@ -797,6 +841,152 @@ EmailConverter.emlToEmail("yourSMIMEEncryptedMessage.eml", yourPkcs12Config);
 mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENCRYPTED
 </code></pre>
 			</div>
+		</section>
+
+
+		<a href="#section-sending-openpgp" id="section-sending-openpgp" class="section-link h2">&sect;</a>
+		{{#> components/feature-heading-h2 openpgp=true}}Signing / encrypting emails with OpenPGP/MIME{{/components/feature-heading-h2}}
+
+		<section>
+			<div class="view">
+				<p>
+					The optional <code class="inline language-text">openpgp-module</code> adds
+					<a href="https://www.rfc-editor.org/rfc/rfc3156.html">RFC 3156</a> signing and encryption. Give it armored or binary key-ring bytes from
+					your application's key store. The module does not look up keys on WKD or a public keyserver.
+				</p>
+				<p>
+					You can sign, encrypt, or do both. When both are configured, Simple Java Mail signs the clear MIME entity first and then encrypts it.
+					Add one public key ring for every key that should be able to decrypt the message. This list is separate from the email's To, Cc, and Bcc
+					recipients, so your application remains responsible for choosing the right keys.
+				</p>
+				<p>
+					S/MIME and OpenPGP/MIME are alternative content-protection formats in 10.0, so one email cannot configure both. DKIM can be combined with
+					either format and is applied after content protection to the final outgoing message.
+				</p>
+			</div>
+			<div class="side">
+				Add the module:
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;openpgp-module&lt;/artifactId&gt;
+    &lt;version&gt;10.0.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+				Sign and encrypt:
+<pre><code class="language-java">OpenPgpSigningConfig signing = OpenPgpSigningConfig.builder()
+    .secretKeyRing(senderSecretKeyRing)
+    .passphrase(senderPassphrase)
+    .build();
+
+OpenPgpEncryptionConfig encryption = OpenPgpEncryptionConfig.builder()
+    .addRecipientPublicKeyRing(alicePublicKeyRing)
+    .addRecipientPublicKeyRing(bobPublicKeyRing)
+    .build();
+
+Email protectedEmail = currentEmailBuilder
+    .signWithOpenPgp(signing)
+    .encryptWithOpenPgp(encryption)
+    .buildEmail();
+
+mailer.sendMail(protectedEmail);</code></pre>
+			</div>
+		</section>
+
+		<section>
+			<div class="view">
+				<p><strong>Keys and algorithm choices</strong></p>
+				<p>
+					Signing uses SHA-256 by default; SHA-384 and SHA-512 are also available. Encryption uses AES-256 by default; AES-128 and AES-192 are
+					available for interoperability needs. You can also select a signing key ID when a secret key ring contains more than one signing key.
+				</p>
+				<p>
+					Key-ring data and passphrases are copied into the configuration object, hidden from <code class="inline language-java">toString()</code>, and
+					not written when an <code class="inline language-java">Email</code> is serialized. Supply the OpenPGP configuration again after deserializing
+					an email that still needs to be protected and sent.
+				</p>
+			</div>
+			<div class="side">
+<pre><code class="language-java">OpenPgpSigningConfig signing = OpenPgpSigningConfig.builder()
+    .secretKeyRing(senderSecretKeyRing)
+    .passphrase(senderPassphrase)
+    .signingKeyId(signingKeyId) // optional
+    .hashAlgorithm(OpenPgpSigningConfig.HashAlgorithm.SHA512)
+    .build();
+
+OpenPgpEncryptionConfig encryption = OpenPgpEncryptionConfig.builder()
+    .addRecipientPublicKeyRing(recipientPublicKeyRing)
+    .symmetricAlgorithm(
+        OpenPgpEncryptionConfig.SymmetricAlgorithm.AES_256)
+    .build();</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-reading-openpgp" id="section-reading-openpgp" class="section-link h2">&sect;</a>
+		{{#> components/feature-heading-h2 openpgp=true}}Reading OpenPGP/MIME messages{{/components/feature-heading-h2}}
+
+		<section>
+			<div class="view">
+				<p>
+					Configure the public keys you trust for verification and the secret keys available for decryption, then pass that configuration while
+					converting EML. “Reading” here means parsing an <code class="inline language-text">.eml</code> stream or a
+					<code class="inline language-java">MimeMessage</code> supplied by your application. Simple Java Mail does not fetch a mailbox over IMAP or POP3.
+				</p>
+				<p>
+					For a larger key store, use <code class="inline language-java">passphraseProvider(...)</code> to resolve a passphrase by key ID instead of
+					attaching one to every configured secret key ring.
+				</p>
+			</div>
+			<div class="side">
+<pre><code class="language-java">OpenPgpReceiveConfig receive = OpenPgpReceiveConfig.builder()
+    .addVerificationKeyRing(senderPublicKeyRing)
+    .addDecryptionKeyRing(recipientSecretKeyRing, recipientPassphrase)
+    .build();
+
+Email received = EmailConverter.emlToEmailWithOpenPgp(
+    emlInputStream,
+    receive);
+
+OriginalOpenPgpDetails details =
+    received.getOriginalOpenPgpDetails();</code></pre>
+			</div>
+		</section>
+
+
+		<a href="#section-reading-openpgp-status" id="section-reading-openpgp-status" class="section-link h3">&sect;</a>
+		{{#> components/feature-heading-h3 openpgp=true}}What the OpenPGP status means{{/components/feature-heading-h3}}
+
+		<section>
+			<p class="wide">
+				<code class="inline language-java">OriginalOpenPgpDetails</code> reports the detected mode, signature status, decryption status, key IDs,
+				fingerprint, algorithms, and a safe failure reason when processing did not succeed. Signature states are
+				<code class="inline language-java">NOT_PRESENT</code>, <code class="inline language-java">VALID</code>,
+				<code class="inline language-java">INVALID</code>, <code class="inline language-java">KEY_MISSING</code>, and
+				<code class="inline language-java">ERROR</code>. Decryption separately reports <code class="inline language-java">NOT_ENCRYPTED</code>,
+				<code class="inline language-java">DECRYPTED</code>, <code class="inline language-java">KEY_MISSING</code>, or
+				<code class="inline language-java">FAILED</code>.
+			</p>
+			<div class="wide full-width-example">
+<pre><code class="language-java">OriginalOpenPgpDetails details = received.getOriginalOpenPgpDetails();
+
+if (details.getSignatureStatus() != SignatureStatus.VALID) {
+    // Reject, quarantine, or continue under your application's policy.
+}
+
+if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
+    byte[] originalEncryptedEml = details.getOriginalProtectedMessage();
+}</code></pre>
+			</div>
+			<p class="wide">
+				A <code class="inline language-java">VALID</code> signature proves that the supplied key matches the signed MIME entity. It does not prove
+				that the key belongs to the address in the From header. Key ownership, acceptable fingerprints, revocation handling, and the application's
+				trust rules remain with your code.
+			</p>
+			<p class="wide">
+				When a verification key is missing, the clear signed content remains readable and the result says
+				<code class="inline language-java">KEY_MISSING</code>. When no decryption key matches, the encrypted message stays intact and its exact protected
+				EML bytes remain available through <code class="inline language-java">getOriginalProtectedMessage()</code>.
+			</p>
 		</section>
 
 	{{/inline}}

@@ -27,7 +27,8 @@
         "label": "Documentation sections",
         "toggleLabel": "documentation sections",
         "trailingItems": [
-          { "label": "Help and contribute", "href": "/contact.html" }
+          { "label": "Help and contribute", "href": "/contact.html" },
+          { "label": "Modules", "href": "/modules.html" }
         ]
       }
     },

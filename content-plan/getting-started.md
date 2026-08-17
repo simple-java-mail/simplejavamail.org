@@ -25,7 +25,7 @@ Maven is primary because the project publishes Maven coordinates. Put Gradle in 
 
 `org.simplejavamail:simple-java-mail:<current-version>`
 
-Explain in one sentence that `simple-java-mail` gives the developer the public API and everything needed for the usual send.
+Explain in one sentence that `simple-java-mail` gives the developer the public API and everything needed for the usual send, including the default Angus runtime. Do not make the normal setup depend on a second manually declared provider module.
 
 ### 2. Build a message
 
@@ -55,6 +55,7 @@ Small decision table:
 - authenticated SOCKS module: proxy credentials;
 - DKIM module: domain-key signing;
 - S/MIME module: signing/encryption;
+- OpenPGP module: RFC 3156 signing, encryption, verification, and decryption;
 - Outlook module: `.msg` parsing and conversion;
 - CLI module/distribution: command-line use;
 - Spring module: Spring-oriented configuration;

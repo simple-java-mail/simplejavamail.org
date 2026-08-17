@@ -16,7 +16,7 @@
           <article class="profile-low"><small class="profile-status">Low-level SMTP toolkit</small><h3>Jakarta Mail / Angus Mail</h3><p>The standard MIME and mail-protocol API. It gives you the parts; your code decides how to assemble, configure, and reuse them.</p><a href="#responsibility-matrix">Compare</a></article>
           <article class="profile-basic"><small class="profile-status">Rudimentary support</small><h3>Spring Mail</h3><p>Spring's <code>JavaMailSender</code>, <code>MailException</code>, and <code>MimeMessageHelper</code>. It fits naturally when the rest of the application already uses those APIs.</p><a href="#responsibility-matrix">Compare</a></article>
           <article class="profile-caution"><small class="profile-status">Maintenance mode</small><h3>Apache Commons Email</h3><p>A handful of message classes that save some Jakarta Mail boilerplate. Useful for basic messages, but most of the harder work is still yours.</p><a href="#responsibility-matrix">Compare</a></article>
-          <article class="profile-primary"><small class="profile-status">Complete SMTP solution</small><h3>Simple Java Mail</h3><p>Builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.</p><a href="/why-simple-java-mail.html">Why Simple Java Mail <span aria-hidden="true">→</span></a></article>
+          <article class="profile-primary"><small class="profile-status">Complete SMTP solution</small><h3>Simple Java Mail</h3><p>Builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, OpenPGP/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.</p><a href="/why-simple-java-mail.html">Why Simple Java Mail <span aria-hidden="true">→</span></a></article>
         </div>
       </div>
     </section>
@@ -33,6 +33,7 @@
               <tr><th>Recipient rules and validation</th><td data-state="owned">You build this</td><td data-state="owned">You add it around the sender/helper</td><td data-state="helper">Basic recipient setters</td><td data-state="built">Builders, parsing, validation, defaults, forced overrides</td></tr>
               <tr><th>DKIM signing</th><td data-state="owned">You add an extension or integration</td><td data-state="owned">You add an integration</td><td data-state="owned">You add an integration</td><td data-state="built">Optional module; per-message or mailer default</td></tr>
               <tr><th>S/MIME signing and encryption</th><td data-state="owned">You add an extension or integration</td><td data-state="owned">You add an integration</td><td data-state="owned">You add an integration</td><td data-state="built">Optional module; send, read, decrypt, per-recipient certificates</td></tr>
+              <tr><th>OpenPGP/MIME signing and encryption</th><td data-state="owned">You add an extension or integration</td><td data-state="owned">You add an integration</td><td data-state="owned">You add an integration</td><td data-state="built">Optional module; sign, encrypt, verify, decrypt, multiple recipient keys</td></tr>
               <tr><th>Transport security and OAuth2</th><td data-state="owned">Session properties and authenticators</td><td data-state="helper">Spring configuration plus Jakarta properties</td><td data-state="helper">Host, credentials, and TLS/SSL switches; no OAuth2 in a released version</td><td data-state="built">Named transport strategies, OAuth2, verification, raw-property escape hatch</td></tr>
               <tr><th>Async results and connection tests</th><td data-state="owned">You build this</td><td data-state="owned">You or your framework builds this</td><td data-state="owned">You build this</td><td data-state="built">Async <code>Future</code> plus sync and async connection tests</td></tr>
               <tr><th>Connection reuse and bounded batches</th><td data-state="owned">You open, reuse, and close the transport</td><td data-state="owned">You build this</td><td data-state="owned">You build this</td><td data-state="built">Send a batch or run work against one open connection</td></tr>
@@ -71,8 +72,8 @@
           </article>
           <article class="dependency-primary">
             <div class="dependency-name"><span>Modular library</span><h3>Simple Java Mail</h3></div>
-            <ul class="dependency-parts" aria-label="Simple Java Mail dependencies"><li class="dependency-base">Jakarta Mail / Angus</li><li class="dependency-focus">Simple Java Mail</li><li class="dependency-optional"><a href="/modules.html">Optional modules</a></li></ul>
-            <p>Core covers well-formed MIME, reusable message rules, TLS and OAuth2, diagnostics, conversion, and simple batches. Add DKIM, S/MIME, pools and clusters, Outlook, Spring, authenticated SOCKS, CLI, or Karaf only when needed.</p>
+            <ul class="dependency-parts" aria-label="Simple Java Mail dependencies"><li class="dependency-base">Jakarta Mail API</li><li class="dependency-base">Angus adapter at runtime</li><li class="dependency-focus">Simple Java Mail</li><li class="dependency-optional"><a href="/modules.html">Optional modules</a></li></ul>
+            <p>The main dependency includes Angus as the default runtime. Core covers well-formed MIME, reusable message rules, TLS and OAuth2, diagnostics, conversion, and simple batches. Add DKIM, S/MIME, OpenPGP/MIME, pools and clusters, Outlook, Spring, authenticated SOCKS, CLI, or Karaf only when needed.</p>
           </article>
         </div>
       </div>
@@ -96,7 +97,7 @@
           </article>
           <article class="fit-primary">
             <div class="fit-library"><span>Complete SMTP solution</span><strong>Simple Java Mail</strong></div>
-            <div><h3>You need more than message composition</h3><p>Simple Java Mail handles well-formed MIME, reusable message rules, diagnostics, and conversion, then adds features outside Jakarta Mail itself: DKIM, S/MIME, authenticated SOCKS, connection pools, and SMTP clusters. Start with core and add only the modules you need.</p><div class="fit-actions"><a href="/download.html">Try the first send <span aria-hidden="true">→</span></a><a href="/modules.html">Browse modules <span aria-hidden="true">→</span></a></div></div>
+            <div><h3>You need more than message composition</h3><p>Simple Java Mail handles well-formed MIME, reusable message rules, diagnostics, and conversion, then adds features outside Jakarta Mail itself: DKIM, S/MIME, OpenPGP/MIME, authenticated SOCKS, connection pools, and SMTP clusters. Start with the main dependency and add only the modules you need.</p><div class="fit-actions"><a href="/download.html">Try the first send <span aria-hidden="true">→</span></a><a href="/modules.html">Browse modules <span aria-hidden="true">→</span></a></div></div>
           </article>
         </div>
       </div>

@@ -4,7 +4,7 @@
       <div class="shell hero-grid">
         <div class="hero-copy">
           <h1>Simple to use.<br><em>Built for the real world.</em></h1>
-          <p class="hero-lede">Send a well-formed email with a small fluent API. If you later need DKIM, S/MIME, proxies, batch sending, or multiple SMTP clusters, you keep using the same builders and mailer.</p>
+          <p class="hero-lede">Send a well-formed email with a small fluent API. If you later need DKIM, S/MIME, OpenPGP/MIME, proxies, batch sending, or multiple SMTP clusters, you keep using the same builders and mailer.</p>
           <div class="button-row">
             <a class="button button-primary" href="/download.html">Send your first email <span aria-hidden="true">→</span></a>
             <a class="text-link" href="#delivery-route">See what it handles <span aria-hidden="true">↓</span></a>
@@ -41,7 +41,7 @@ mailer.sendMail(email);</code></pre>
         <div><span>Current release</span><strong>v{{site.version}}</strong><small>{{site.releaseDate}}</small></div>
         <div><span>Runtime</span><strong>{{site.javaBaseline}}</strong><small>Source and target</small></div>
         <div><span>License</span><strong>{{site.license}}</strong><small>Open source</small></div>
-        <div><span>Foundation</span><strong>Angus / Jakarta Mail</strong><small>Standards and transport</small></div>
+        <div><span>Mail foundation</span><strong>Jakarta Mail API</strong><small>Angus included by default</small></div>
       </div>
     </section>
 
@@ -71,7 +71,7 @@ mailer.sendMail(email);</code></pre>
           <li>
             <span class="route-number">03</span>
             <h3>Protect</h3>
-            <p>Transport policy, OAuth2, DKIM, S/MIME, and injection protection.</p>
+            <p>Transport policy, OAuth2, DKIM, S/MIME, OpenPGP/MIME, and injection protection.</p>
             <a href="/security.html#section-authentication-methods">Security <span aria-hidden="true">→</span></a>
           </li>
           <li>
@@ -146,7 +146,7 @@ mailer.sendMail(email);</code></pre>
           <div class="story-index"><span>02</span><code>MailerBuilder</code></div>
           <div class="story-copy">
             <h3>Security with a usable API</h3>
-            <p>Match the transport strategy to your server, authenticate with OAuth2, verify its identity, block header injection, sign with DKIM, and sign or encrypt content with S/MIME.</p>
+            <p>Match the transport strategy to your server, authenticate with OAuth2, verify its identity, block header injection, sign with DKIM, and protect content with S/MIME or OpenPGP/MIME.</p>
           </div>
           <a href="/security.html#navigation" aria-label="Read about security capabilities">Explore <span aria-hidden="true">→</span></a>
         </article>
@@ -197,7 +197,7 @@ mailer.sendMail(email);</code></pre>
           <h2>The difference is how much code you still have to write.</h2>
         </div>
         <div>
-          <p>Jakarta Mail gives you the protocol and message foundation. Spring Mail adds Spring's standard sender contract. Commons Email shortens some basic message code. Simple Java Mail builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.</p>
+          <p>Jakarta Mail gives you the protocol and message foundation. Spring Mail adds Spring's standard sender contract. Commons Email shortens some basic message code. Simple Java Mail builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, OpenPGP/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.</p>
           <a class="button button-secondary" href="/feature-matrix.html">Compare the approaches <span aria-hidden="true">→</span></a>
         </div>
       </div>
@@ -215,7 +215,7 @@ mailer.sendMail(email);</code></pre>
         <div class="wayfinding-grid">
           <a href="/features.html"><span>01</span><strong>Build messages</strong><small>Content, recipients, conversion</small></a>
           <a href="/configuration.html"><span>02</span><strong>Configure an application</strong><small>Java, properties, Spring, pools</small></a>
-          <a href="/security.html"><span>03</span><strong>Protect mail</strong><small>TLS, OAuth2, DKIM, S/MIME</small></a>
+          <a href="/security.html"><span>03</span><strong>Protect mail</strong><small>TLS, OAuth2, DKIM, S/MIME, OpenPGP</small></a>
           <a href="/debugging.html"><span>04</span><strong>Diagnose delivery</strong><small>Tests, logs, failures, receipts</small></a>
         </div>
       </div>
@@ -226,7 +226,7 @@ mailer.sendMail(email);</code></pre>
         <div>
           <p class="eyebrow">Ready when you are</p>
           <h2>Add one dependency.</h2>
-          <p>Start with <code>simple-java-mail</code>. Add another module only when you need features such as DKIM, S/MIME, pooling, or Spring integration.</p>
+          <p>Start with <code>simple-java-mail</code>. Add another module only when you need features such as DKIM, S/MIME, OpenPGP/MIME, pooling, or Spring integration.</p>
         </div>
         <div class="install-coordinate">
           <code>org.simplejavamail:simple-java-mail:{{site.version}}</code>

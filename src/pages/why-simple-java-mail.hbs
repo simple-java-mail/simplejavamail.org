@@ -5,7 +5,7 @@
       <h2>Jakarta Mail is a solid foundation. Application code still needs something higher-level.</h2>
       <p>Jakarta Mail gives Java applications standards-aware messages, sessions, and transports. That machinery is valuable, but low-level: your code still has to turn a message into addresses, multipart structures, properties, connection management, and error handling.</p>
       <p><strong>Simple Java Mail began by moving that plumbing behind a usable API</strong> while keeping Jakarta Mail as its standards and transport foundation.</p>
-      <p>It has since grown beyond that original role. <strong>The same mailer API covers reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery</strong>. Jakarta Mail leaves these capabilities to application code or does not provide them.</p>
+      <p>It has since grown beyond that original role. <strong>The same mailer API covers reusable message rules, DKIM, S/MIME, OpenPGP/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery</strong>. Jakarta Mail leaves these capabilities to application code or does not provide them.</p>
       <p>Library comparisons often miss the MIME layer. Supporting HTML, inline images, and attachments separately is not the same as combining them correctly in one message.</p>
       <nav class="start-reference-links" aria-label="Related documentation">
         <a class="text-link" href="/rfc-compliant.html">Why MIME structure matters <span aria-hidden="true">→</span></a>
@@ -50,7 +50,7 @@
       <ol class="start-stage-list">
         <li><span>01</span><div><strong>Compose</strong><p>Declare content and recipients; the library chooses and builds the MIME structure.</p></div></li>
         <li><span>02</span><div><strong>Configure</strong><p>Keep server settings, defaults, overrides, and validation on a reusable mailer.</p></div></li>
-        <li><span>03</span><div><strong>Protect</strong><p>Add transport verification, OAuth2, DKIM, or S/MIME at the appropriate layer.</p></div></li>
+        <li><span>03</span><div><strong>Protect</strong><p>Add transport verification, OAuth2, DKIM, S/MIME, or OpenPGP/MIME at the appropriate layer.</p></div></li>
         <li><span>04</span><div><strong>Deliver</strong><p>Use a single send, async results, an open connection, pools, or keyed clusters.</p></div></li>
         <li><span>05</span><div><strong>Diagnose</strong><p>Test connections, inspect the final settings, route debug output, and read server replies.</p></div></li>
         <li><span>06</span><div><strong>Extend</strong><p>Supply a Session, raw properties, generated MimeMessage, or custom sending operation.</p></div></li>
@@ -75,10 +75,10 @@
       <p class="start-section-intro">These are not separate integrations bolted onto the side. They are part of the same message and mailer model.</p>
       <div class="start-feature-grid">
         <a href="/configuration.html#section-config-mailer"><span>01 · Message rules</span><strong>Recipient defaults</strong><p>Set defaults and overrides, validate addresses, choose bounce and receipt addresses, and attach an S/MIME certificate per recipient.</p></a>
-        <a href="/security.html#section-sending-dkim"><span>02 · Content security</span><strong>DKIM and S/MIME</strong><p>Configure default signing or encryption without manually rebuilding the message content.</p></a>
+        <a href="/security.html#section-security-routes"><span>02 · Content security</span><strong>DKIM, S/MIME, and OpenPGP</strong><p>Sign the sending domain or protect message content without manually rebuilding the MIME structure.</p></a>
         <a href="/configuration.html#section-clustering"><span>03 · Delivery</span><strong>Pools and clusters</strong><p>Reuse an open connection, send through a pool, or give different workloads their own SMTP clusters and server sets.</p></a>
         <a href="/features.html#section-proxy"><span>04 · Networking</span><strong>Authenticated SOCKS</strong><p>Use local binding, custom TLS behavior, trusted-host rules, client identity, and proxy credentials.</p></a>
-        <a href="/features.html#section-converting"><span>05 · Interoperability</span><strong>Message conversion</strong><p>Move between Email, MimeMessage, EML, and Outlook MSG while retaining relevant S/MIME metadata.</p></a>
+        <a href="/features.html#section-converting"><span>05 · Interoperability</span><strong>Message conversion</strong><p>Move between Email, MimeMessage, EML, and Outlook MSG while retaining relevant S/MIME or OpenPGP metadata.</p></a>
         <a href="/debugging.html#navigation"><span>06 · Operations</span><strong>Troubleshooting</strong><p>Test connections, inspect final settings, route debug output, and read SMTP acceptance replies.</p></a>
       </div>
     </section>
@@ -86,7 +86,8 @@
     <section id="jakarta-mail-escape-hatches" class="start-prose-section">
       <p class="eyebrow">Direct control remains available</p>
       <h2>Jakarta Mail is still there when you need it.</h2>
-      <p>Angus Mail implements Jakarta Mail underneath. Simple Java Mail focuses on sending; it does not replace Jakarta Mail's IMAP or POP support.</p>
+      <p>Jakarta Mail remains the API and standards foundation. The main dependency includes Angus and its Simple Java Mail adapter as the supported default sending runtime. Simple Java Mail focuses on sending; it does not replace Jakarta Mail's IMAP or POP support.</p>
+      <p>The public MIME and cryptography APIs stay provider-neutral, so applications can exclude the Angus adapter for conversion-only use or a future alternative provider setup.</p>
       <p>When you need lower-level control, supply a Jakarta <code>Session</code>, set raw properties, inspect the generated <code>MimeMessage</code>, or keep the <code>Email</code> builder while providing your own send operation.</p>
       <a class="text-link" href="/features.html#section-custom-mailer">Explore the extension points <span aria-hidden="true">→</span></a>
     </section>

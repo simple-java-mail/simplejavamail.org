@@ -12,7 +12,9 @@ Primary audience: implementers who need more than the main `simple-java-mail` de
 
 ### Visible structure
 
-Start with a compact dependency diagram generated in HTML/CSS rather than the current raster-only explanation. Show the main artifact and core, then optional modules:
+Start by explaining the default path: applications still add only `simple-java-mail`. It brings the Angus provider adapter and Angus implementation at runtime. The adapter keeps Angus-specific envelope, DSN, and submission-response behavior out of the public MIME model. Developers can exclude it for provider-neutral conversion or a future alternative provider setup.
+
+Then show the main artifact and core, the default provider adapter, and optional feature modules:
 
 First establish what core already covers: well-formed MIME, reusable configuration and message rules, TLS and OAuth2, diagnostics, conversion, and simple batches. The optional modules extend that same model; they are not the library's only advanced capabilities.
 
@@ -21,11 +23,12 @@ First establish what core already covers: well-formed MIME, reusable configurati
 - Outlook;
 - DKIM;
 - S/MIME;
+- OpenPGP/MIME;
 - CLI;
 - Spring;
 - OSGi/Karaf.
 
-Each module entry includes:
+Each module or adapter entry includes:
 
 1. capability;
 2. use it when;
@@ -34,12 +37,16 @@ Each module entry includes:
 5. first documentation link;
 6. connection or cleanup note if relevant.
 
+The OpenPGP entry names its Bouncy Castle dependencies. The Angus adapter entry says plainly that no alternative adapter ships with Simple Java Mail today and that sending still needs a Jakarta Mail provider.
+
+The Angus entry also explains direct Angus imports and JPMS requirements in place. Evergreen module documentation must not rely on a versioned migration guide to explain current dependency or provider behavior.
+
 Keep the architecture image as a downloadable/reference asset only if still accurate.
 
 ### Metadata intent
 
 Title: `Simple Java Mail modules and artifacts`
-Description: `Choose optional Simple Java Mail modules for batch pools, authenticated SOCKS, DKIM, S/MIME, Outlook conversion, CLI, Spring, OSGi, and Karaf.`
+Description: `Understand the default Angus provider adapter and choose optional Simple Java Mail modules for pools, proxies, DKIM, S/MIME, OpenPGP, Outlook, CLI, Spring, OSGi, and Karaf.`
 
 ## CLI page
 

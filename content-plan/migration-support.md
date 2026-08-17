@@ -8,8 +8,8 @@ Primary audience: upgraders, contributors, and developers who are stuck
 
 ### Visible structure
 
-- Current major route first: 9.x migration.
-- Historical routes: 8.x, 7.x, 6.x, 5.x.
+- Current major route first: 10.0 migration.
+- Historical routes: 9.x, 8.x, 7.x, 6.x, 5.x.
 - Each entry states source version range, type of breaking change, and approximate work category without inventing an effort estimate.
 - Link to release history and GitHub releases for changes that do not require migration prose.
 
@@ -24,6 +24,18 @@ Preserve content and anchors, but add consistent chrome:
 - removed/deprecated APIs;
 - verification checklist;
 - next migration or current docs.
+
+The 10.0 page is deliberately narrower than release notes. It covers only public-facing breaks and behavior that would be easy to miss while upgrading:
+
+- the main dependency still brings Angus at runtime, but Angus types are no longer part of its compile or JPMS API surface;
+- converted MIME is provider-neutral, so code must not cast it to an Angus SMTP message subtype;
+- bounce and DSN settings are delivery-envelope data and no longer appear in conversion-only MIME output;
+- S/MIME or OpenPGP/MIME content protection happens before final DKIM signing, and the two content-protection families cannot be combined on one message;
+- large finalized or protected MIME entities may use temporary storage, including the public threshold setting and cleanup ownership.
+
+The page links to OpenPGP documentation but does not repeat the new-feature tutorial. Internal class moves, implementation-only helper removal, and refactoring details do not belong in migration notes.
+
+Migration pages are upgrade records, not substitutes for current reference documentation. Evergreen feature and module pages state current behavior directly. They may link to the migration index as an upgrade route, but they do not send readers to an old version-specific note to understand how the current API works.
 
 The 8.0 page covers the email-governance overhaul and its related validation, conversion, DKIM, S/MIME, and parser changes. The 9.0 page foregrounds
 the recipient-builder change and relevant new behavior from the current release history.
@@ -58,7 +70,7 @@ The site may display only manifest/repository-backed facts:
 - Apache-2.0;
 - Maven Central and Javadocs;
 - GitHub source, issues, and releases;
-- Angus/Jakarta foundation.
+- Jakarta Mail API with Angus included by default.
 
 No invented support policy, SLA, LTS label, vulnerability promise, or compatibility matrix.
 

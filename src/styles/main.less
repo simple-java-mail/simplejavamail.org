@@ -302,7 +302,7 @@ pre.has-copy-control { padding-top: 2.9rem; }
 .module-capability-links b { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: @teal-deep; font-weight: 400; }
 .doc-card-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: @space-md; }
 .doc-card-grid > article { position: relative; display: flex; grid-column: span 2; flex-direction: column; min-height: 210px; padding: @space-lg; border: 1px solid @line; border-top: 3px solid @teal; background: @white; transition: border-color 140ms ease, transform 140ms ease; }
-.doc-card-grid > article:nth-child(4) { grid-column-start: 2; grid-column-end: span 2; }
+.doc-card-grid > article:nth-child(4):nth-last-child(2) { grid-column-start: 2; grid-column-end: span 2; }
 .doc-card-grid > article:hover { border-color: @teal; transform: translateY(-2px); }
 .doc-card-grid > article:focus-within { border-color: @teal; box-shadow: 0 0 0 2px fade(@teal, 22%); }
 .doc-card-link { display: flex; flex: 1; flex-direction: column; color: @ink; text-decoration: none; }
@@ -325,6 +325,10 @@ pre.has-copy-control { padding-top: 2.9rem; }
 .legacy-doc-content .mime-role-table td:first-child code { white-space: nowrap; }
 .legacy-doc-content .method-family-table th:first-child, .legacy-doc-content .method-family-table td:first-child { width: 12rem; }
 .legacy-doc-content .method-family-table td:first-child code { white-space: nowrap; }
+.legacy-doc-content .doc-table-wrap .artifact-path-table { min-width: 0; }
+.legacy-doc-content .doc-table-wrap .security-route-table { min-width: 880px; }
+.legacy-doc-content .security-route-table th:first-child { width: 8.5rem; }
+.legacy-doc-content .security-route-table td:nth-child(4) { width: 13rem; }
 .legacy-doc-content .button { width: fit-content; margin: @space-md 0; }
 .legacy-doc-content .button-group { display: flex; flex-wrap: wrap; gap: @space-sm; }
 .legacy-doc-content input, .legacy-doc-content select { min-height: 40px; padding: 0.45rem 0.6rem; border: 1px solid @line; background: @white; }
@@ -387,7 +391,7 @@ pre.has-copy-control { padding-top: 2.9rem; }
   .docs-shell { grid-template-columns: 230px minmax(0, 1fr); gap: @space-xl; }
   .doc-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .doc-card-grid > article { grid-column: auto; }
-  .doc-card-grid > article:nth-child(4) { grid-column-start: auto; grid-column-end: auto; }
+  .doc-card-grid > article:nth-child(4):nth-last-child(2) { grid-column-start: auto; grid-column-end: auto; }
 }
 
 @media (max-width: 760px) {

@@ -17,7 +17,7 @@ The hub, Get started, and Why Simple Java Mail use the same grouped left navigat
 
 - First email -> `/download.html#first-email`
 - Why the library exists -> `/why-simple-java-mail.html`
-- Upgrade to 9.x -> `/migration-notes-9.0.0.html`
+- Upgrade to 10.0 -> `/migration-notes-10.0.0.html`
 
 ### Browse by task
 
@@ -25,7 +25,7 @@ Use the six canonical stages:
 
 - Compose -> features: content, recipients, replies/forwards, conversion
 - Configure -> configuration: builders, properties, Spring, shared defaults and overrides
-- Protect -> security: TLS, OAuth2, DKIM, S/MIME, CRLF
+- Protect -> security: TLS, OAuth2, DKIM, S/MIME, OpenPGP/MIME, CRLF
 - Deliver -> features/configuration: async, open connection, batch, pools, clusters, proxies
 - Diagnose -> debugging: tests, logs, receipts, validation, inspection
 - Extend -> modules, CLI, RFC/MIME, custom sending
@@ -53,7 +53,7 @@ All long reference routes share:
 
 ### Sidebar groups
 
-The global **Docs** item opens a compact flyout on hover or keyboard focus. It mirrors the first page of **Start**, **Build and configure**, **Protect and operate**, and **Integrate and understand**, then ends with a direct **Help and contribute** link. Keep the rest of **Maintain** in the full docs navigation rather than the flyout.
+The global **Docs** item opens a compact flyout on hover or keyboard focus. It mirrors the first page of **Start**, **Build and configure**, **Protect and operate**, and **Integrate and understand**, followed by **Help and contribute**. **Modules** is the final item so the artifact map is directly available from the main navigation. Keep the rest of **Maintain** in the full docs navigation rather than the flyout.
 
 **Start**
 

@@ -5,6 +5,17 @@
       <p class="wide">Some releases need a quick migration check because an API or default changed. Choose your target version below, and follow the older guides in order if your application is several major versions behind.</p>
     </section>
 
+    <h2 id="version-10">Migrating to 10.0</h2>
+    <section>
+      <div class="view">
+        <p>Version 10 separates public MIME handling from the default Angus SMTP implementation. The normal one-dependency setup stays in place.</p>
+        <a class="button" href="migration-notes-10.0.0.html#navigation">Review the 10.0 changes</a>
+      </div>
+      <div class="side">
+        <p><strong>Main work:</strong> check direct Angus imports or message casts, conversion-only bounce and DSN assumptions, protected-message ordering, and temporary-storage policy.</p>
+      </div>
+    </section>
+
     <h2 id="version-9-2">Migrating to 9.2</h2>
     <section>
       <div class="view">

@@ -17,7 +17,7 @@ Short orientation plus local search/filter links. Preserve the legacy `navigatio
 
 Follow the hero with quick-link cards for composing, attachments and embedded images, replies and forwards, address validation, and asynchronous or batch sending. Keep the exhaustive feature list in the table of contents.
 
-The opening copy must establish that this is not only a friendlier `MimeMessage` API. Name the integrated capabilities: reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, batching, connection pools, and SMTP clusters. Distinguish features absent from Jakarta Mail itself from those that would otherwise require direct Session, MimeMessage, or Transport work.
+The opening copy must establish that this is not only a friendlier `MimeMessage` API. Name the integrated capabilities: reusable message rules, DKIM, S/MIME, OpenPGP/MIME, diagnostics, conversion, authenticated SOCKS, batching, connection pools, and SMTP clusters. Distinguish features absent from Jakarta Mail itself from those that would otherwise require direct Session, MimeMessage, or Transport work.
 
 ### Compose messages
 

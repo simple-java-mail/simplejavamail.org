@@ -38,12 +38,13 @@
           <div class="use-case-copy">
             <p class="use-case-coordinate">02 · Security</p>
             <h2>Send securely.</h2>
-            <p>Protect the SMTP connection with TLS, use a password or refresh-aware OAuth2 token, sign the sending domain with DKIM, or sign and encrypt message content with S/MIME. These are separate layers, so you can apply the ones your mail flow needs.</p>
+            <p>Protect the SMTP connection with TLS, use a password or refresh-aware OAuth2 token, sign the sending domain with DKIM, or protect message content with S/MIME or OpenPGP/MIME. These are separate layers, so you can apply the ones your mail flow needs.</p>
           </div>
           <nav class="use-case-links" aria-label="Secure sending documentation">
             {{> components/use-case-link href="/security.html#section-authentication-methods" title="TLS and OAuth2" description="Transport and authentication" core=true}}
             {{> components/use-case-link href="/security.html#section-sending-dkim" title="DKIM signing" description="Domain identity and integrity" dkim=true}}
             {{> components/use-case-link href="/security.html#section-sending-smime" title="S/MIME" description="Sign and encrypt message content" smime=true}}
+            {{> components/use-case-link href="/security.html#section-sending-openpgp" title="OpenPGP/MIME" description="Sign and encrypt with OpenPGP keys" openpgp=true}}
             {{> components/use-case-link href="/security.html#section-crlf-scanning" title="Input scanning" description="Catch suspicious header content" core=true}}
           </nav>
         </article>

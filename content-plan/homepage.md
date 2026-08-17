@@ -20,7 +20,7 @@ Compact product mark, primary navigation, GitHub utility link, and **Get started
 
 Lede:
 
-> Send a well-formed email with a small fluent API. If you later need DKIM, S/MIME, proxies, batch sending, or multiple SMTP clusters, you keep using the same builders and mailer.
+> Send a well-formed email with a small fluent API. If you later need DKIM, S/MIME, OpenPGP/MIME, proxies, batch sending, or multiple SMTP clusters, you keep using the same builders and mailer.
 
 Actions:
 
@@ -36,7 +36,7 @@ Visible factual items:
 - current release and release date;
 - Java 8+;
 - Apache-2.0;
-- built on Angus Mail / Jakarta Mail;
+- built against the Jakarta Mail API, with Angus included by default;
 - active source and releases on GitHub.
 
 No vanity counters or unsourced adoption numbers.
@@ -49,7 +49,7 @@ Six connected stages:
 
 1. Compose: readable messages, not MIME trees.
 2. Configure: set up one reusable mailer.
-3. Protect: transport security, DKIM, and S/MIME.
+3. Protect: transport security, DKIM, S/MIME, and OpenPGP/MIME.
 4. Deliver: one send, open connection, pool, or cluster.
 5. Diagnose: test, inspect, log, and collect receipts.
 6. Extend: modules, conversion, CLI, and Jakarta Mail escape hatches.
@@ -68,7 +68,7 @@ The copy explicitly says that optional complexity stays optional.
 Three substantial capability rows, not a wall of badges:
 
 - **Messages and recipient rules:** rich MIME, calendars, attachments, validation, defaults, overrides, and per-recipient S/MIME certificates.
-- **Security with a usable API:** OAuth2, transport strategies, trusted hosts, DKIM, S/MIME signing/encryption, and CRLF protection.
+- **Security with a usable API:** OAuth2, transport strategies, trusted hosts, DKIM, S/MIME and OpenPGP/MIME signing/encryption, and CRLF protection.
 - **Sending you can see and control:** async results, connection tests, debug routing, receipts, local binding, open connections, batch pools, and clusters.
 
 Each row pairs a short task statement with a small code/config fragment and routes to the relevant reference page.
@@ -86,7 +86,7 @@ The section explains who needs each capability and links to exact anchors. It do
 
 Brief comparison framing:
 
-> Jakarta Mail gives you the protocol and message foundation. Spring Mail adds Spring's standard sender contract. Commons Email shortens some basic message code. Simple Java Mail builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.
+> Jakarta Mail gives you the protocol and message foundation. Spring Mail adds Spring's standard sender contract. Commons Email shortens some basic message code. Simple Java Mail builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, OpenPGP/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.
 
 Action: **Compare the approaches** -> `/feature-matrix.html`.
 
@@ -109,7 +109,7 @@ Show the Maven coordinate and one copy action. Repeat **Get started**, then offe
 
 Docs, project, release, legal/license, and maintainer routes. No newsletter, sales contact, pricing, or product-led-growth content.
 
-The short product summary must cover both sides of the library: well-formed email through one API, plus integrated DKIM, S/MIME, proxies, batches, pools, and clusters when needed. Do not reduce the site-wide footer to Jakarta Mail plumbing alone.
+The short product summary must cover both sides of the library: well-formed email through one API, plus integrated DKIM, S/MIME, OpenPGP/MIME, proxies, batches, pools, and clusters when needed. Do not reduce the site-wide footer to Jakarta Mail plumbing alone.
 
 ## Metadata intent
 
@@ -125,5 +125,6 @@ The current site leads with personality and a large example but makes readers wo
 - Keep the hero below roughly 720px on a typical laptop viewport.
 - Do not put the grand example on the homepage.
 - Do not turn the lifecycle into generic feature cards.
+- Keep OpenPGP beside DKIM and S/MIME in existing security lists. Do not create a dedicated homepage feature band for it.
 - Version and release date must be manifest-driven.
 - The acceptance receipt must be clearly illustrative, not a claim that delivery to the recipient is guaranteed.

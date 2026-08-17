@@ -1,0 +1,165 @@
+{{#> layouts/base head-sub-title="Migrating to 10.0" page-title="Migrating to Simple Java Mail 10.0" }}
+
+  {{#*inline "html-head-block"}}
+    <meta name="Description" content="Public breaking changes and non-obvious behavior changes when upgrading to Simple Java Mail 10.0.">
+  {{/inline}}
+
+  {{#*inline "body-block"}}
+  <section class="introduction">
+    <p class="wide">
+      If your application depends on <code class="inline language-text">simple-java-mail</code> and uses only Simple Java Mail or Jakarta Mail types,
+      the normal sending dependency does not change. Version 10 still includes Angus at runtime. The checks below matter when your code imports Angus
+      classes, inspects converted message subtypes, uses bounce or DSN data during conversion, or handles very large protected messages.
+    </p>
+    <p class="wide">
+      New OpenPGP/MIME APIs are documented on the <a href="security.html#section-sending-openpgp">security page</a>. They are not repeated here because
+      adding a new feature is not a migration step.
+    </p>
+  </section>
+
+  <section class="toc">
+    <ul>
+      <li><a href="#default-dependency">The normal dependency stays the same</a></li>
+      <li><a href="#angus-api-boundary">Angus is no longer part of the compile API</a></li>
+      <li><a href="#provider-neutral-mime">Converted messages no longer use Angus subtypes</a></li>
+      <li><a href="#delivery-envelope">Bounce and DSN settings stay in the delivery envelope</a></li>
+      <li><a href="#protection-order">Content protection is finalized before DKIM</a></li>
+      <li><a href="#protected-message-storage">Large protected messages may use temporary storage</a></li>
+    </ul>
+  </section>
+
+  <a href="#default-dependency" id="default-dependency" class="section-link h2">&sect;</a>
+  <h2>The normal dependency stays the same</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>Impact:</strong> None for the usual setup. Keep one <code class="inline language-text">simple-java-mail</code> dependency.
+    </p>
+    <p class="wide">
+      The main artifact now brings <code class="inline language-text">angus-mail-provider-module</code> at runtime. That adapter brings Angus Mail and
+      preserves the supported SMTP setup, including envelope sender, delivery-status notification, and detailed submission-response handling.
+    </p>
+    <pre class="full-width-example"><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;simple-java-mail&lt;/artifactId&gt;
+    &lt;version&gt;10.0.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+    <p class="wide">
+      There is no requirement to add both the main artifact and the Angus adapter yourself. See the
+      <a href="modules.html#angus-mail-provider-module">module explanation</a> if you intentionally want to exclude the default provider.
+    </p>
+  </section>
+
+  <a href="#angus-api-boundary" id="angus-api-boundary" class="section-link h2">&sect;</a>
+  <h2>Angus is no longer part of the compile API</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>Impact:</strong> Code that imports <code class="inline language-java">org.eclipse.angus.*</code> only because Angus arrived transitively
+      through Simple Java Mail must declare Angus directly or stop using those implementation classes.
+    </p>
+    <p class="wide">
+      Angus is still present at runtime in the default setup, but it is no longer a compile dependency or a transitive JPMS requirement of
+      <code class="inline language-text">org.simplejavamail</code>. This keeps provider classes out of the public MIME and cryptography APIs.
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-xml">&lt;!-- Only when your own source imports Angus classes directly. --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.eclipse.angus&lt;/groupId&gt;
+    &lt;artifactId&gt;angus-mail&lt;/artifactId&gt;
+    &lt;version&gt;2.0.5&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+<pre><code class="language-java">module your.application {
+    requires org.simplejavamail;
+    requires org.eclipse.angus.mail; // only for direct Angus API use
+}</code></pre>
+    </div>
+    <p class="wide">
+      If the import was only used to get at envelope or response details, prefer the Simple Java Mail APIs described below instead of adding the
+      implementation dependency back to your source contract.
+    </p>
+  </section>
+
+  <a href="#provider-neutral-mime" id="provider-neutral-mime" class="section-link h2">&sect;</a>
+  <h2>Converted messages no longer use Angus subtypes</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>Impact:</strong> Remove casts from a converted <code class="inline language-java">MimeMessage</code> to
+      <code class="inline language-java">org.eclipse.angus.mail.smtp.SMTPMessage</code> or another Angus-specific message class.
+    </p>
+    <p class="wide">
+      <code class="inline language-java">EmailConverter.emailToMimeMessage(...)</code> now returns provider-neutral MIME. Provider-specific submission
+      settings are applied later by the transport adapter, when the message is actually sent. Code that only reads standard Jakarta Mail headers and
+      content can keep using the returned <code class="inline language-java">MimeMessage</code> as before.
+    </p>
+  </section>
+
+  <a href="#delivery-envelope" id="delivery-envelope" class="section-link h2">&sect;</a>
+  <h2>Bounce and DSN settings stay in the delivery envelope</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>Impact:</strong> Conversion-only code no longer finds a bounce address or DSN request encoded in an Angus message subtype. Sending through
+      the default mailer keeps the same SMTP behavior.
+    </p>
+    <p class="wide">
+      An SMTP envelope sender and a delivery-status notification request are transport commands, not MIME headers. Version 10 keeps them on the
+      <code class="inline language-java">Email</code> until the selected adapter submits the message. Inspect
+      <code class="inline language-java">email.getBounceToRecipient()</code> and
+      <code class="inline language-java">email.getDeliveryStatusNotification()</code> when your application needs those values before sending.
+    </p>
+    <p class="wide">
+      An alternate Jakarta Mail provider can handle ordinary sends through Jakarta Mail's regular Transport API. If the message asks for provider-specific envelope
+      or DSN behavior and no matching adapter supports it, the send fails before submission instead of quietly dropping the request.
+    </p>
+  </section>
+
+  <a href="#protection-order" id="protection-order" class="section-link h2">&sect;</a>
+  <h2>Content protection is finalized before DKIM</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>Impact:</strong> Tests or integrations that compare exact protected MIME bytes should expect the version 10 ordering and finalization rules.
+    </p>
+    <ol class="indent wide">
+      <li>Build the ordinary MIME entity and finalize its headers, encodings, and boundaries.</li>
+      <li>Apply S/MIME or OpenPGP/MIME signing, then encryption when configured.</li>
+      <li>Apply DKIM to the final outgoing representation.</li>
+      <li>Give the stable message and separate delivery envelope to the transport adapter.</li>
+    </ol>
+    <p class="wide">
+      S/MIME and OpenPGP/MIME are alternative content-protection formats in 10.0. Configuring both on one email now fails validation. Within either
+      family, signing happens before encryption. DKIM can be combined with either family.
+    </p>
+  </section>
+
+  <a href="#protected-message-storage" id="protected-message-storage" class="section-link h2">&sect;</a>
+  <h2>Large protected messages may use temporary storage</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>Impact:</strong> Hosts with a locked-down temporary directory should allow the mail process to create temporary files or choose a different
+      in-memory threshold.
+    </p>
+    <p class="wide">
+      Finalized MIME must be repeatable so a later transport step cannot change bytes covered by S/MIME, OpenPGP/MIME, or DKIM. Version 10 keeps up to
+      1 MiB in memory by default and spills larger finalized entities to a temporary file. The normal mailer closes and removes that storage after the
+      send attempt.
+    </p>
+    <pre class="full-width-example"><code class="language-properties"># Byte threshold before finalized MIME uses temporary storage
+org.simplejavamail.mime.finalization.memoryThresholdBytes=1048576</code></pre>
+    <p class="wide">
+      Change the threshold only when your application's memory and temporary-storage policy calls for a different balance.
+    </p>
+  </section>
+
+  <section aria-label="Migration sequence">
+    <div class="button-group">
+      <a class="button" href="migration-notes-9.2.0.html#navigation">Previous: version 9.2</a>
+      <a class="button" href="security.html#section-security-routes">Review security routes</a>
+    </div>
+  </section>
+  {{/inline}}
+
+{{/layouts/base}}

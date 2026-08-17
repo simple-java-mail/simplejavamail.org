@@ -9,7 +9,7 @@
     <section id="dependency" class="start-step">
       <p class="start-step-label"><span>01</span> Add the dependency</p>
       <h2>Install Simple Java Mail.</h2>
-      <p>Start with <code>simple-java-mail</code>. It gives you the public API and everything needed for the usual send.</p>
+      <p>Start with <code>simple-java-mail</code>. It gives you the public API, the default Angus sending runtime, and everything needed for the usual send.</p>
       <div class="code-window start-code-window">
         <div class="code-window-bar"><span>pom.xml</span><span>Maven</span></div>
         <pre><code class="language-xml">&lt;dependency&gt;
@@ -91,6 +91,7 @@ mailer.sendMail(email);</code></pre>
         <a role="listitem" href="/features.html#section-proxy"><code>authenticated-socks-module</code><strong>SOCKS proxy credentials</strong><span>Configure →</span></a>
         <a role="listitem" href="/security.html#section-sending-dkim"><code>dkim-module</code><strong>Domain-key signing</strong><span>Configure →</span></a>
         <a role="listitem" href="/security.html#section-sending-smime"><code>smime-module</code><strong>S/MIME signing and encryption</strong><span>Configure →</span></a>
+        <a role="listitem" href="/security.html#section-sending-openpgp"><code>openpgp-module</code><strong>OpenPGP/MIME signing and encryption</strong><span>Configure →</span></a>
         <a role="listitem" href="/features.html#section-converting"><code>outlook-module</code><strong>Outlook MSG conversion</strong><span>Convert →</span></a>
         <a role="listitem" href="/cli.html#navigation"><code>cli-module</code><strong>Standalone command-line use</strong><span>Use the CLI →</span></a>
         <a role="listitem" href="/configuration.html#section-spring-support"><code>spring-module</code><strong>Spring configuration</strong><span>Integrate →</span></a>
@@ -104,7 +105,7 @@ mailer.sendMail(email);</code></pre>
       <div class="start-next-grid">
         <a href="/features.html#section-basic-usage"><span>Build</span><strong>Add rich content</strong><small>HTML, attachments, images, calendars</small></a>
         <a href="/configuration.html#navigation"><span>Configure</span><strong>Set shared defaults once</strong><small>Properties, Spring, defaults, overrides</small></a>
-        <a href="/security.html#navigation"><span>Protect</span><strong>Secure transport and content</strong><small>TLS, OAuth2, DKIM, S/MIME</small></a>
+        <a href="/security.html#navigation"><span>Protect</span><strong>Secure transport and content</strong><small>TLS, OAuth2, DKIM, S/MIME, OpenPGP</small></a>
       </div>
     </section>
   {{/inline}}

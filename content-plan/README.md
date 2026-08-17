@@ -1,7 +1,7 @@
 # Simple Java Mail website content plan
 
 Status: canonical plan for the website relaunch
-Last synced: 2026-08-05
+Last synced: 2026-08-17
 Direction: start simple, stay production-ready
 Modernization: full visual and structural redesign on the upgraded static-site stack
 
@@ -9,7 +9,7 @@ This plan leads; the templates follow. Changes to the public story, route hierar
 
 ## Brief
 
-Simple Java Mail is a mature open-source Java library that removes Jakarta Mail plumbing from application code. Its clean API is not limited to simple messages: it also covers MIME composition, recipient rules, DKIM and S/MIME, transport security, shared configuration, diagnostics, proxies, conversion, connection reuse, batch work, and clustered SMTP pools.
+Simple Java Mail is a mature open-source Java library that removes Jakarta Mail plumbing from application code. Its clean API is not limited to simple messages: it also covers MIME composition, recipient rules, DKIM, S/MIME and OpenPGP/MIME, transport security, shared configuration, diagnostics, proxies, conversion, connection reuse, batch work, and clustered SMTP pools.
 
 The website should make that depth legible without becoming commercial. It does not sell an edition, a service, or an enterprise upgrade. It helps developers:
 
@@ -39,7 +39,7 @@ The public story is a lifecycle, not a sales funnel:
 
 1. **Compose:** addresses, text and HTML, attachments, embedded images, calendars, replies, forwards, and MIME without constructing `MimeMessage` trees.
 2. **Configure:** reusable mailers, properties, Spring integration, defaults, overrides, validation, custom sessions, and lower-level escape hatches.
-3. **Protect:** SMTP transport strategies, OAuth2, DKIM, S/MIME, CRLF protection, trusted hosts, identity verification, and custom TLS behavior.
+3. **Protect:** SMTP transport strategies, OAuth2, DKIM, S/MIME, OpenPGP/MIME, CRLF protection, trusted hosts, identity verification, and custom TLS behavior.
 4. **Deliver:** synchronous and asynchronous sends, open-connection batches, connection pools, multiple clusters, load balancing, local bind addresses, and authenticated SOCKS.
 5. **Diagnose:** connection tests, structured failures, Jakarta Mail debug routing, logging-only mode, submission and delivery receipts, inspectable configuration, and validation.
 6. **Extend:** custom sending logic, EML and Outlook conversion, CLI use, optional modules, OSGi/Karaf, and direct Jakarta Mail access when required.
@@ -85,7 +85,7 @@ Every prominent claim must be one of:
 
 Specific limits:
 
-- Simple Java Mail delegates SMTP and MIME mechanics to Angus Mail and the Jakarta Mail API. Its value is the usable API and the sending features built around that foundation.
+- Simple Java Mail builds against the Jakarta Mail API. The main artifact includes Angus and its Simple Java Mail adapter as the supported default runtime, while keeping provider-specific behavior outside the public MIME and cryptography APIs.
 - Do not claim feature parity with every Jakarta Mail protocol. State that the library covers production outbound mail while retaining Jakarta Mail escape hatches.
 - Spring's mail support includes `JavaMailSender` and helpers. Compare its thinner abstraction and Spring integration role; do not claim that it has no convenience API.
 - Apache Commons Email is a narrower convenience layer. Avoid claims about project health or release cadence unless the page is updated from authoritative current sources.
@@ -113,6 +113,7 @@ The public site uses a small orientation layer and preserves the existing refere
 - **Why Simple Java Mail** -> `/why-simple-java-mail.html`
 - **Capabilities** -> `/features.html`
 - **Docs** -> `/docs.html`
+  - **Modules** -> `/modules.html` as the last submenu item
 - **Compare** -> `/feature-matrix.html`
 - **GitHub** -> repository
 - **Get started** -> `/download.html`
@@ -134,11 +135,12 @@ The public site uses a small orientation layer and preserves the existing refere
 | `/feature-matrix.html` | Compare approaches | Help readers choose the right abstraction level | rewrite completely |
 | `/download.html` | Get started | Install, send, and choose optional modules | rewrite completely |
 | `/migration-notes.html` | Migration notes | Version chooser | restyle |
+| `/migration-notes-10.0.0.html` | 10.0 migration | Current major migration reference | add and foreground |
 | `/migration-notes-5.0.0.html` | 5.0 migration | Historical migration reference | preserve |
 | `/migration-notes-6.0.0.html` | 6.0 migration | Historical migration reference | preserve |
 | `/migration-notes-7.0.0.html` | 7.0 migration | Historical migration reference | preserve |
 | `/migration-notes-8.0.0.html` | 8.0 migration | Email governance migration reference | add |
-| `/migration-notes-9.0.0.html` | 9.0 migration | Current major migration reference | preserve and foreground |
+| `/migration-notes-9.0.0.html` | 9.0 migration | Historical major migration reference | preserve |
 | `/contact.html` | Help and contribute | Route support, bugs, security, and contributions | rewrite |
 | `/redirect.html` | Redirect helper | Existing compatibility behavior | preserve if still required |
 
@@ -205,7 +207,7 @@ Teal must pass contrast requirements wherever it carries text. Amber is a signal
 |  Short explanatory line        |  [copy]                          |
 |  [Get started] [See the depth]  |  route: composed -> accepted    |
 +---------------------------------+--------------------------------+
-|  vX.Y.Z     Java 8+     Apache-2.0     built on Angus/Jakarta Mail|
+|  vX.Y.Z     Java 8+     Apache-2.0     Jakarta API, Angus included|
 +------------------------------------------------------------------+
 |  01 Compose -- 02 Configure -- 03 Protect -- 04 Deliver ...      |
 |     one continuous route line connects the six stages             |
@@ -242,7 +244,7 @@ The hero pairs a restrained editorial statement with a compact SMTP receipt rath
 - **First-send sample:** one canonical `EmailBuilder` plus `MailerBuilder` example, reused verbatim where appropriate.
 - **Depth sample:** one short configuration progression, never the existing everything-at-once grand example on the homepage.
 - **Capability route:** the six lifecycle stages and their canonical links.
-- **Proof strip:** current version, Java baseline, license, current release date, and Angus/Jakarta foundation; sourced from the manifest.
+- **Proof strip:** current version, Java baseline, license, current release date, and the Jakarta Mail API with Angus included by default; sourced from the manifest.
 - **Requirement callout:** task, built-in mechanism, optional module if any, and reference link.
 - **Code tabs:** Java builder, properties, Spring only when all three genuinely apply.
 - **Next step:** every reference page ends with one adjacent task and one route back to the docs hub.
@@ -252,7 +254,7 @@ The hero pairs a restrained editorial statement with a compact SMTP receipt rath
 Trust content stays factual and lightweight:
 
 - current version and release date;
-- Java runtime baseline and Jakarta/Angus relationship;
+- Java runtime baseline and the Jakarta Mail API / default Angus-provider relationship;
 - Apache-2.0 license;
 - Maven Central, Javadocs, source, issues, and release links;
 - supported migration pages;
@@ -277,6 +279,8 @@ The relaunch does not invent support SLAs, compatibility promises, a vulnerabili
 - Existing documentation URLs and anchor IDs remain valid.
 - Comparison is accurate and respectful; it shows what each API handles.
 - Jakarta Mail is named as the lower-level foundation, not misrepresented as obsolete or useless.
+- DKIM, S/MIME, and OpenPGP/MIME are presented together where security capabilities are listed. OpenPGP does not get a special homepage section merely because it is new.
+- Migration pages cover public breaking changes and non-obvious behavior changes. New-feature tutorials stay in the feature and security documentation.
 - Planning files are source material only and are never copied into `dist/`.
 
 ## Pre-ship content checklist
@@ -285,6 +289,7 @@ The relaunch does not invent support SLAs, compatibility promises, a vulnerabili
 - [ ] The homepage reveals security, pools, clusters, and diagnostics without an enormous feature dump.
 - [ ] Authenticated SOCKS and multi-cluster pools are explained in plain language and linked to exact docs.
 - [ ] Every capability claim maps to current code or a current module.
+- [ ] The security matrix says which mechanisms contribute to DMARC and which protect a different layer.
 - [ ] No page implies coverage of IMAP/POP or all Jakarta Mail protocols.
 - [ ] No competitor is described with a stale maintenance claim or dismissive language.
 - [ ] The current version is sourced once and rendered consistently.

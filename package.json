@@ -34,7 +34,8 @@
     "jakarta mail",
     "smtp",
     "dkim",
-    "smime"
+    "smime",
+    "openpgp"
   ],
   "repository": {
     "type": "git",
