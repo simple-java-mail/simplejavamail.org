@@ -1,66 +1,491 @@
-{{#> layouts/base head-sub-title="Migrating to 10.0" page-title="Migrating to Simple Java Mail 10.0" }}
+{{#> layouts/base head-sub-title="Migrating to 10.0.0" page-title="Migrating to Simple Java Mail 10.0.0" }}
 
   {{#*inline "html-head-block"}}
-    <meta name="Description" content="Public breaking changes and non-obvious behavior changes when upgrading to Simple Java Mail 10.0.">
+    <meta name="Description" content="Public breaking changes and non-obvious behavior changes when upgrading an existing Simple Java Mail application to 10.0.0.">
   {{/inline}}
 
   {{#*inline "body-block"}}
   <section class="introduction">
     <p class="wide">
-      If your application depends on <code class="inline language-text">simple-java-mail</code> and uses only Simple Java Mail or Jakarta Mail types,
-      the normal sending dependency does not change. Version 10 still includes Angus at runtime. The checks below matter when your code imports Angus
-      classes, inspects converted message subtypes, uses bounce or DSN data during conversion, or handles very large protected messages.
+      Upgrading will mostly mean following a few compiler errors. If you used <code class="inline language-java">EmailBuilder</code>,
+      <code class="inline language-java">MailerBuilder</code>, or <code class="inline language-java">ConfigLoader</code> directly, those calls need a
+      small rewrite. You now create one <code class="inline language-java">SimpleJavaMail</code> object for your application and get builders from there.
+      You still use the same fluent builder API after that.
     </p>
     <p class="wide">
-      New OpenPGP/MIME APIs are documented on the <a href="security.html#section-sending-openpgp">security page</a>. They are not repeated here because
-      adding a new feature is not a migration step.
+      The main behavior change is that mail settings are read once and stay with that <code class="inline language-java">SimpleJavaMail</code> object.
+      Changing a system property later will not silently change builders you create afterwards. Most applications will not notice anything else. Take a
+      closer look if you reload mail settings at runtime, use several mail configurations, inject the Spring builder bean, cast converted messages to
+      Angus classes, send converted MimeMessages yourself, or compare raw MIME in tests.
+    </p>
+    <p class="wide">
+      Your normal dependency remains <code class="inline language-text">org.simplejavamail:simple-java-mail:10.0.0</code>. You do not need to add Angus
+      separately unless your own source code imports Angus classes. This page only covers changes to existing code and behavior. New 10.0.0 features are
+      documented on their regular documentation pages.
     </p>
   </section>
 
   <section class="toc">
     <ul>
-      <li><a href="#default-dependency">The normal dependency stays the same</a></li>
-      <li><a href="#angus-api-boundary">Angus is no longer part of the compile API</a></li>
-      <li><a href="#provider-neutral-mime">Converted messages no longer use Angus subtypes</a></li>
-      <li><a href="#delivery-envelope">Bounce and DSN settings stay in the delivery envelope</a></li>
-      <li><a href="#protection-order">Content protection is finalized before DKIM</a></li>
-      <li><a href="#protected-message-storage">Large protected messages may use temporary storage</a></li>
+      <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
+      <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
+      <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
+      <li><a href="#config-types">Check types if you read config values yourself</a></li>
+      <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
+      <li><a href="#opportunistic-tls">Move opportunistic TLS to the Mailer builder</a></li>
+      <li><a href="#direct-session">If you create Jakarta Mail Sessions yourself</a></li>
+      <li><a href="#spring-context">Replace the Spring builder bean</a></li>
+      <li><a href="#embedded-route-flags">Check two embedded-image settings</a></li>
+      <li><a href="#angus-api-boundary">If your own code imports Angus</a></li>
+      <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
+      <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
+      <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
+      <li><a href="#finalized-mime">Check raw MIME tests and size limits</a></li>
     </ul>
   </section>
 
-  <a href="#default-dependency" id="default-dependency" class="section-link h2">&sect;</a>
-  <h2>The normal dependency stays the same</h2>
+  <a href="#builder-entry" id="builder-entry" class="section-link h2">&sect;</a>
+  <h2>Move builder calls to SimpleJavaMail</h2>
 
   <section>
     <p class="wide" style="font-size:smaller">
-      <strong>Impact:</strong> None for the usual setup. Keep one <code class="inline language-text">simple-java-mail</code> dependency.
+      <strong>What breaks:</strong> Imports and calls to <code class="inline language-java">org.simplejavamail.email.EmailBuilder</code> and
+      <code class="inline language-java">org.simplejavamail.mailer.MailerBuilder</code> no longer compile. You are not losing any builder options. Only
+      the way you start a builder has changed.
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// 9.x
+Email email = EmailBuilder.startingBlank()
+        .withSubject("Hello")
+        .buildEmail();
+
+Mailer mailer = MailerBuilder
+        .withSMTPServer("smtp.example.com", 587, "user", "password")
+        .buildMailer();</code></pre>
+<pre><code class="language-java">// 10.0.0
+SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+Email email = mail.emailBuilder().startingBlank()
+        .withSubject("Hello")
+        .buildEmail();
+
+Mailer mailer = mail.mailerBuilder()
+        .withSMTPServer("smtp.example.com", 587, "user", "password")
+        .buildMailer();</code></pre>
+    </div>
+    <p class="wide">
+      Import <code class="inline language-java">org.simplejavamail.api.SimpleJavaMail</code> and create it alongside the rest of your application setup.
+      Reuse that object. Each call to <code class="inline language-java">emailBuilder()</code> or
+      <code class="inline language-java">mailerBuilder()</code> still gives you a fresh builder. The
+      <code class="inline language-java">SimpleJavaMail</code> object itself opens no SMTP connections, but each Mailer you build still needs to be closed
+      when your application is done with it.
+    </p>
+
+    <h3>Every EmailBuilder starter</h3>
+    <table>
+      <thead>
+      <tr><th>9.x call</th><th>10.0.0 replacement</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code class="inline language-java">EmailBuilder.startingBlank()</code></td><td><code class="inline language-java">mail.emailBuilder().startingBlank()</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.copying(Email)</code></td><td><code class="inline language-java">mail.emailBuilder().copying(email)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.copying(EmailPopulatingBuilder)</code></td><td><code class="inline language-java">mail.emailBuilder().copying(builder)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.copying(MimeMessage)</code></td><td><code class="inline language-java">mail.emailBuilder().copying(message)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.replyingTo(Email)</code></td><td><code class="inline language-java">mail.emailBuilder().replyingTo(email)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.replyingTo(Email, String)</code></td><td><code class="inline language-java">mail.emailBuilder().replyingTo(email, template)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.replyingTo(MimeMessage)</code></td><td><code class="inline language-java">mail.emailBuilder().replyingTo(message)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.replyingTo(MimeMessage, String)</code></td><td><code class="inline language-java">mail.emailBuilder().replyingTo(message, template)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.replyingToAll(Email)</code></td><td><code class="inline language-java">mail.emailBuilder().replyingToAll(email)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.replyingToAll(Email, String)</code></td><td><code class="inline language-java">mail.emailBuilder().replyingToAll(email, template)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.replyingToAll(MimeMessage)</code></td><td><code class="inline language-java">mail.emailBuilder().replyingToAll(message)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.replyingToAll(MimeMessage, String)</code></td><td><code class="inline language-java">mail.emailBuilder().replyingToAll(message, template)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.forwarding(Email)</code></td><td><code class="inline language-java">mail.emailBuilder().forwarding(email)</code></td></tr>
+      <tr><td><code class="inline language-java">EmailBuilder.forwarding(MimeMessage)</code></td><td><code class="inline language-java">mail.emailBuilder().forwarding(message)</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Every MailerBuilder starter</h3>
+    <table>
+      <thead>
+      <tr><th>9.x call</th><th>10.0.0 replacement</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code class="inline language-java">MailerBuilder.usingSession(session)</code></td><td><code class="inline language-java">mail.mailerBuilder(session)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.buildMailer()</code></td><td><code class="inline language-java">mail.mailerBuilder().buildMailer()</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withTransportStrategy(strategy)</code></td><td><code class="inline language-java">mail.mailerBuilder().withTransportStrategy(strategy)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withOAuth2AccessTokenProvider(provider)</code></td><td><code class="inline language-java">mail.mailerBuilder().withOAuth2AccessTokenProvider(provider)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withSMTPServer(host, port)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServer(host, port)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withSMTPServer(host, port, username)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServer(host, port, username)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withSMTPServer(host, port, username, password)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServer(host, port, username, password)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withSMTPServerHost(host)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServerHost(host)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withSMTPServerPort(port)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServerPort(port)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withSMTPServerUsername(username)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServerUsername(username)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withSMTPServerPassword(password)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServerPassword(password)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withDebugLogging(enabled)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugLogging(enabled)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withDebugPrinter(printStream)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugPrinter(printStream)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withDebugOutput(output)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugOutput(output)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withCustomMailer(customMailer)</code></td><td><code class="inline language-java">mail.mailerBuilder().withCustomMailer(customMailer)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withTransportModeLoggingOnly()</code></td><td><code class="inline language-java">mail.mailerBuilder().withTransportModeLoggingOnly()</code></td></tr>
+      </tbody>
+    </table>
+    <p class="wide">
+      If you keep a Mailer builder in a variable, use the public interfaces such as
+      <code class="inline language-java">MailerRegularBuilder&lt;?&gt;</code> or
+      <code class="inline language-java">MailerFromSessionBuilder&lt;?&gt;</code>. The old shortcuts happened to return internal implementation classes.
+      The new entry point returns the public interfaces instead.
+    </p>
+  </section>
+
+  <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>
+  <h2>Replace static ConfigLoader calls</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>What breaks:</strong> Static calls such as <code class="inline language-java">ConfigLoader.loadProperties(...)</code>,
+      <code class="inline language-java">getProperty(...)</code>, and <code class="inline language-java">valueOrProperty(...)</code> no longer compile.
+      Load the settings into a <code class="inline language-java">SimpleJavaMailConfig</code> object instead, then give that object to
+      <code class="inline language-java">SimpleJavaMail</code>.
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// 9.x
+ConfigLoader.loadProperties(applicationProperties, false);
+Mailer mailer = MailerBuilder.buildMailer();</code></pre>
+<pre><code class="language-java">// 10.0.0
+SimpleJavaMailConfig config = ConfigLoader.builder()
+        .withProperties("application", applicationProperties)
+        .withEnvironmentVariables()
+        .withSystemProperties()
+        .load();
+
+SimpleJavaMail mail = SimpleJavaMail.withConfig(config);
+Mailer mailer = mail.mailerBuilder().buildMailer();</code></pre>
+    </div>
+    <p class="wide">
+      The example includes environment variables and system properties because the old
+      <code class="inline language-java">loadProperties(...)</code> method always read them too. If you only want the Properties object you supplied,
+      simply leave those two lines out.
+    </p>
+
+    <h3>Old loading calls</h3>
+    <table>
+      <thead>
+      <tr><th>9.x call or result</th><th>10.0.0 replacement</th></tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td><code class="inline language-java">loadProperties(filename, false)</code></td>
+        <td><code class="inline language-java">builder().withClasspathResource(filename).withEnvironmentVariables().withSystemProperties().load()</code></td>
+      </tr>
+      <tr>
+        <td><code class="inline language-java">loadProperties(properties, false)</code></td>
+        <td><code class="inline language-java">builder().withProperties(properties).withEnvironmentVariables().withSystemProperties().load()</code></td>
+      </tr>
+      <tr>
+        <td><code class="inline language-java">loadProperties(inputStream, false)</code></td>
+        <td><code class="inline language-java">builder().withInputStream(inputStream).withEnvironmentVariables().withSystemProperties().load()</code></td>
+      </tr>
+      <tr>
+        <td>Several calls with <code class="inline language-java">addProperties=true</code></td>
+        <td>Add each source to one loader in merge order, then call <code class="inline language-java">load()</code> once.</td>
+      </tr>
+      <tr>
+        <td>Add values to settings you already loaded</td>
+        <td><code class="inline language-java">builder().withConfig(previous).withProperties(overrides).load()</code></td>
+      </tr>
+      <tr>
+        <td>The returned <code class="inline language-java">Map&lt;Property, Object&gt;</code></td>
+        <td>Keep the returned <code class="inline language-java">SimpleJavaMailConfig</code>; use <code class="inline language-java">config.asMap()</code> only for inspection.</td>
+      </tr>
+      </tbody>
+    </table>
+    <pre class="full-width-example"><code class="language-java">SimpleJavaMailConfig config = ConfigLoader.builder()
+        .withProperties("base", baseProperties)
+        .withProperties("deployment overrides", overrideProperties)
+        .withEnvironmentVariables()
+        .withSystemProperties()
+        .load();</code></pre>
+
+    <h3>Old read calls</h3>
+    <table>
+      <thead>
+      <tr><th>Removed static call</th><th>10.0.0 call</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code class="inline language-java">ConfigLoader.hasProperty(property)</code></td><td><code class="inline language-java">config.hasProperty(property)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.getProperty(property)</code></td><td><code class="inline language-java">config.getProperty(property)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.getStringProperty(property)</code></td><td><code class="inline language-java">config.getStringProperty(property)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.getIntegerProperty(property)</code></td><td><code class="inline language-java">config.getIntegerProperty(property)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.getBooleanProperty(property)</code></td><td><code class="inline language-java">config.getBooleanProperty(property)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.valueOrProperty(value, property)</code></td><td><code class="inline language-java">config.valueOrProperty(value, property)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.valueOrProperty(value, property, fallback)</code></td><td><code class="inline language-java">config.valueOrProperty(value, property, fallback)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.valueOrPropertyAsString(...)</code></td><td><code class="inline language-java">config.valueOrProperty(stringValue, property, stringFallback)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.valueOrPropertyAsBoolean(...)</code></td><td><code class="inline language-java">config.valueOrProperty(booleanValue, property, booleanFallback)</code></td></tr>
+      <tr><td><code class="inline language-java">ConfigLoader.valueOrPropertyAsInteger(...)</code></td><td><code class="inline language-java">config.valueOrProperty(integerValue, property, integerFallback)</code></td></tr>
+      </tbody>
+    </table>
+    <p class="wide">
+      If you need to see why a value won, <code class="inline language-java">config.getPropertySource(property)</code> tells you which named source it
+      came from. <code class="inline language-java">config.asMap()</code> gives you a read-only map of the result. Unlike the map returned in 9.x, it will
+      not change underneath you when somebody loads another set of properties later.
+    </p>
+  </section>
+
+  <a href="#config-behavior" id="config-behavior" class="section-link h2">&sect;</a>
+  <h2>Check when settings are read and which sources are included</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>What stayed the same:</strong> the usual priority is still system properties over environment variables over
+      <code class="inline language-text">simplejavamail.properties</code>. Version 10.0.0 deliberately keeps that 9.x behavior.
     </p>
     <p class="wide">
-      The main artifact now brings <code class="inline language-text">angus-mail-provider-module</code> at runtime. That adapter brings Angus Mail and
-      preserves the supported SMTP setup, including envelope sender, delivery-status notification, and detailed submission-response handling.
+      For the usual setup, this is all you need:
     </p>
-    <pre class="full-width-example"><code class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
-    &lt;artifactId&gt;simple-java-mail&lt;/artifactId&gt;
-    &lt;version&gt;10.0.0&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
+    <pre class="full-width-example"><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();</code></pre>
     <p class="wide">
-      There is no requirement to add both the main artifact and the Angus adapter yourself. See the
-      <a href="modules.html#angus-mail-provider-module">module explanation</a> if you intentionally want to exclude the default provider.
+      What changed is how long those settings live. In 9.x, <code class="inline language-java">ConfigLoader</code> held one process-wide set of settings,
+      and another <code class="inline language-java">loadProperties(...)</code> call could change what builders created later would see. In 10.0.0,
+      <code class="inline language-java">fromDefaults()</code> reads the three conventional sources on its first call and keeps that result. Changing the
+      file, an environment variable, or a system property later will not affect it. If your application reloads mail settings, create a new config and a
+      new <code class="inline language-java">SimpleJavaMail</code> object explicitly. Also note that
+      <code class="inline language-java">fromDefaults()</code> never reads Spring's Environment. The Spring module has its own setup, covered below.
+    </p>
+
+    <h3>If you previously called loadProperties</h3>
+    <p class="wide">
+      In 9.x, every <code class="inline language-java">loadProperties(...)</code> call also read environment variables and system properties, even when
+      you only passed a Properties object, file, or stream. In 10.0.0, <code class="inline language-java">ConfigLoader.builder()</code> starts empty and
+      only uses the sources you add. The explicit version of the usual setup is:
+    </p>
+    <pre class="full-width-example"><code class="language-java">SimpleJavaMailConfig config = ConfigLoader.builder()
+        .withClasspathResource("simplejavamail.properties")
+        .withEnvironmentVariables()
+        .withSystemProperties()
+        .load();
+
+SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
+    <p class="wide">
+      Add those sources from lowest to highest priority. This is the direct replacement for repeated calls with
+      <code class="inline language-java">addProperties=true</code>. Input streams are still read and closed as soon as you pass them in. Properties,
+      maps, and custom sources are read when you call <code class="inline language-java">load()</code>. See the
+      <a href="configuration.html#section-config-properties">configuration guide</a> for the complete ordering, blank-value, validation, and parsing
+      rules.
+    </p>
+  </section>
+
+  <a href="#config-types" id="config-types" class="section-link h2">&sect;</a>
+  <h2>Check types if you read config values yourself</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>You can skip this section</strong> if you never called <code class="inline language-java">ConfigLoader.getProperty(...)</code> yourself.
+      The builders already ask for the right type.
+    </p>
+    <p class="wide">
+      In 9.x, the loader tried to turn every piece of text into a boolean, integer, or known enum before it knew what the setting meant. That could produce
+      some odd results: a host name equal to <code class="inline language-text">true</code> became a Boolean, and a numeric password became an Integer.
+      Version 10.0.0 knows the expected type for each setting. Text settings now stay Strings, even when the text looks like another type.
+    </p>
+    <table>
+      <thead>
+      <tr><th>Kind of setting</th><th>Value you get</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Host names, usernames, passwords, paths, algorithms, and other text</td><td><code class="inline language-java">String</code></td><td>Text such as <code class="inline language-text">true</code> or <code class="inline language-text">25</code> remains text.</td></tr>
+      <tr><td>True/false settings</td><td><code class="inline language-java">Boolean</code></td><td>Text sources accept <code class="inline language-text">true/false</code>, <code class="inline language-text">yes/no</code>, and <code class="inline language-text">1/0</code>.</td></tr>
+      <tr><td>Ports, pool sizes, and timeouts</td><td><code class="inline language-java">Integer</code></td><td>A malformed winning value fails with the property key and source name.</td></tr>
+      <tr><td>Transport, debug output, encoding, DSN return, pool balancing, and DKIM canonicalization choices</td><td>The matching enum</td><td>A map may contain either the enum value or its supported String form.</td></tr>
+      <tr><td>Extra Jakarta Mail properties and connection-pool clusters</td><td>Read-only maps</td><td>Entries under the wildcard property prefixes are combined by their complete key.</td></tr>
+      </tbody>
+    </table>
+    <p class="wide">
+      If you put an already typed value into a map, make sure it matches the type above. A wrong type now fails while loading the config. The error tells
+      you which key and source caused it, but leaves out the actual value so credentials and private key data do not end up in logs.
+    </p>
+  </section>
+
+  <a href="#config-lifecycle" id="config-lifecycle" class="section-link h2">&sect;</a>
+  <h2>Swap mail settings without changing objects already in use</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>The rule is simple:</strong> new settings create new objects. They never rewrite a
+      <code class="inline language-java">SimpleJavaMail</code> object, builder, Mailer, or Jakarta Mail Session that you already have.
+    </p>
+    <pre class="full-width-example"><code class="language-java">SimpleJavaMailConfig mainConfig = ConfigLoader.builder()
+        .withClasspathResource("main-mail.properties")
+        .load();
+SimpleJavaMail mainMail = SimpleJavaMail.withConfig(mainConfig);
+
+SimpleJavaMailConfig backupConfig = ConfigLoader.builder()
+        .withClasspathResource("backup-mail.properties")
+        .load();
+SimpleJavaMail backupMail = SimpleJavaMail.withConfig(backupConfig);</code></pre>
+    <p class="wide">
+      Both mail setups can now live in the same application without changing each other. This is also how to switch settings safely: create the new config,
+      <code class="inline language-java">SimpleJavaMail</code> object, and Mailer first. Send new work through the replacement, let current work finish on
+      the old Mailer, then close the old one. A builder you already created keeps the settings it started with.
+    </p>
+    <p class="wide">
+      There is one conversion detail worth knowing. Static <code class="inline language-java">EmailConverter</code> methods that create an email builder
+      use the settings from <code class="inline language-java">SimpleJavaMail.fromDefaults()</code>. That includes MIME, EML, and Outlook conversion. If
+      the converted email should use one of your explicitly loaded mail setups, start the conversion with
+      <code class="inline language-java">mail.converter()</code> instead.
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// Uses the shared settings from SimpleJavaMail.fromDefaults()
+Email convertedWithDefaults = EmailConverter
+        .mimeMessageToEmailBuilder(mimeMessage)
+        .buildEmail();</code></pre>
+<pre><code class="language-java">// Uses main-mail.properties from mainMail above
+Email convertedWithMainMail = mainMail.converter()
+        .mimeMessageToEmailBuilder(mimeMessage)
+        .buildEmail();</code></pre>
+    </div>
+  </section>
+
+  <a href="#opportunistic-tls" id="opportunistic-tls" class="section-link h2">&sect;</a>
+  <h2>Move opportunistic TLS to the Mailer builder</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>What breaks:</strong> <code class="inline language-java">TransportStrategy.SMTP.setOpportunisticTLS(...)</code> no longer compiles. Set the
+      option on the Mailer you are building instead.
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// 9.x
+TransportStrategy.SMTP.setOpportunisticTLS(false);
+Mailer mailer = MailerBuilder
+        .withTransportStrategy(TransportStrategy.SMTP)
+        .buildMailer();</code></pre>
+<pre><code class="language-java">// 10.0.0
+Mailer mailer = mail.mailerBuilder()
+        .withTransportStrategy(TransportStrategy.SMTP)
+        .withOpportunisticTLS(false)
+        .buildMailer();</code></pre>
+    </div>
+    <p class="wide">
+      You probably never changed this option. It is an escape hatch for plain SMTP servers that break during STARTTLS negotiation, and it only affects
+      <code class="inline language-java">TransportStrategy.SMTP</code>. It has no effect on mandatory
+      <code class="inline language-java">SMTP_TLS</code>, OAuth2 transport, or implicit TLS with
+      <code class="inline language-java">SMTPS</code>. The property <code class="inline language-properties">simplejavamail.opportunistic.tls</code>
+      still supplies the starting value. A builder call overrides it for that Mailer. If you want the property or the normal default, do not call
+      <code class="inline language-java">withOpportunisticTLS(...)</code> at all.
+    </p>
+    <p class="wide">
+      If you call <code class="inline language-java">TransportStrategy.SMTP.generateProperties()</code> yourself, it now always includes the properties
+      for optional STARTTLS. Disabling optional STARTTLS only takes effect while a Mailer is being built.
+    </p>
+  </section>
+
+  <a href="#direct-session" id="direct-session" class="section-link h2">&sect;</a>
+  <h2>If you create Jakarta Mail Sessions yourself</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>You can skip this section</strong> unless your code calls
+      <code class="inline language-java">MailerImpl.createMailSession(serverConfig, strategy)</code> directly. The method still exists, but it no longer
+      picks up settings previously loaded through the static ConfigLoader.
+    </p>
+    <p class="wide">
+      If you only used the supplied <code class="inline language-java">ServerConfig</code> and
+      <code class="inline language-java">TransportStrategy</code>, nothing changes. If you expected
+      <code class="inline language-properties">simplejavamail.extraproperties.*</code> or the old global opportunistic-TLS setting to appear in the
+      Session, move to the configured Mailer route below. The direct helper now enables optional STARTTLS for plain SMTP and uses only the arguments you
+      pass to it.
+    </p>
+    <pre class="full-width-example"><code class="language-java">Mailer configuredMailer = mail.mailerBuilder()
+        .withSMTPServer("smtp.example.com", 587, "user", "password")
+        .withTransportStrategy(TransportStrategy.SMTP)
+        .withOpportunisticTLS(false)
+        .buildMailer();
+
+Session configuredSession = configuredMailer.getSession();</code></pre>
+    <p class="wide">
+      Use the configured Mailer route when you want all Simple Java Mail settings applied, and close that Mailer normally when you are done. If you really
+      do need a standalone Session from the internal helper, put any extra Jakarta Mail properties on that Session yourself.
+    </p>
+  </section>
+
+  <a href="#spring-context" id="spring-context" class="section-link h2">&sect;</a>
+  <h2>Replace the Spring builder bean</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>What breaks:</strong> If you inject the Spring bean named <code class="inline language-java">defaultMailerBuilder</code>, that injection no
+      longer works. Inject <code class="inline language-java">SimpleJavaMail</code> and ask it for a fresh builder instead. If you only inject the default
+      <code class="inline language-java">Mailer</code>, your code can stay as it is.
+    </p>
+    <table>
+      <thead>
+      <tr><th>Bean</th><th>9.x</th><th>10.0.0</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code class="inline language-java">defaultMailerBuilder</code></td><td><code class="inline language-java">MailerGenericBuilder&lt;?&gt;</code></td><td>Removed</td></tr>
+      <tr><td><code class="inline language-java">simpleJavaMailConfig</code></td><td>Not present</td><td>Read-only <code class="inline language-java">SimpleJavaMailConfig</code> for this Spring context</td></tr>
+      <tr><td><code class="inline language-java">simpleJavaMail</code></td><td>Not present</td><td>The <code class="inline language-java">SimpleJavaMail</code> object you use to get builders in this context</td></tr>
+      <tr><td><code class="inline language-java">defaultMailer</code></td><td><code class="inline language-java">Mailer</code></td><td><code class="inline language-java">Mailer</code>, built from this context's settings and closed with the context</td></tr>
+      </tbody>
+    </table>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// 9.x
+@Autowired
+@Qualifier("defaultMailerBuilder")
+private MailerGenericBuilder&lt;?&gt; builder;</code></pre>
+<pre><code class="language-java">// 10.0.0
+@Autowired
+private SimpleJavaMail mail;
+
+@Bean(destroyMethod = "close")
+Mailer customMailer() {
+    return mail.mailerBuilder()
+            .withProxyBridgePort(7777)
+            .buildMailer();
+}</code></pre>
+    </div>
+    <p class="wide">
+      Spring still starts with <code class="inline language-text">simplejavamail.properties</code> and lets Spring's Environment override it. Profiles,
+      placeholders, environment variables, system properties, and their order are all handled by Spring. In 9.x, Simple Java Mail then read raw
+      environment variables and JVM properties a second time, which could unexpectedly override Spring's result. That second pass is gone. If you relied
+      on it, move the value into Spring's normal property sources.
+    </p>
+    <p class="wide">
+      Each application context now keeps its own config, <code class="inline language-java">SimpleJavaMail</code> object, and default Mailer. Starting a
+      second context no longer changes the settings used by the first one.
+    </p>
+  </section>
+
+  <a href="#embedded-route-flags" id="embedded-route-flags" class="section-link h2">&sect;</a>
+  <h2>Check two embedded-image settings</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>You can skip this section</strong> unless your Spring configuration uses either of the two settings below. If you swapped their values to
+      work around the 9.x bug, put each value under the key it actually describes.
+    </p>
+    <pre class="full-width-example"><code class="language-properties">simplejavamail.embeddedimages.dynamicresolution.outside.base.url=false
+simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath=true</code></pre>
+    <p class="wide">
+      In 9.x, Simple Java Mail accidentally mixed up the internal names for
+      <code class="inline language-properties">simplejavamail.embeddedimages.dynamicresolution.outside.base.url</code> and
+      <code class="inline language-properties">simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath</code>. Regular property-file
+      loading happened to cancel out the mistake, but Spring could apply each value to the other route. In 10.0.0 the URL key controls URL resolution and
+      the classpath key controls classpath resolution, just as their names suggest.
     </p>
   </section>
 
   <a href="#angus-api-boundary" id="angus-api-boundary" class="section-link h2">&sect;</a>
-  <h2>Angus is no longer part of the compile API</h2>
+  <h2>If your own code imports Angus</h2>
 
   <section>
     <p class="wide" style="font-size:smaller">
-      <strong>Impact:</strong> Code that imports <code class="inline language-java">org.eclipse.angus.*</code> only because Angus arrived transitively
-      through Simple Java Mail must declare Angus directly or stop using those implementation classes.
+      <strong>Most users can skip this section.</strong> Your normal Simple Java Mail dependency still includes Angus at runtime. You only need to do
+      something if your own Java source imports <code class="inline language-java">org.eclipse.angus.*</code> classes.
     </p>
     <p class="wide">
-      Angus is still present at runtime in the default setup, but it is no longer a compile dependency or a transitive JPMS requirement of
-      <code class="inline language-text">org.simplejavamail</code>. This keeps provider classes out of the public MIME and cryptography APIs.
+      Angus no longer appears on your compile path through Simple Java Mail and is no longer an automatic JPMS requirement of
+      <code class="inline language-text">org.simplejavamail</code>. If you use Angus APIs directly, either replace those calls with standard Jakarta Mail
+      or Simple Java Mail APIs, or declare Angus as your own dependency:
     </p>
     <div class="wide full-width-example">
 <pre><code class="language-xml">&lt;!-- Only when your own source imports Angus classes directly. --&gt;
@@ -74,90 +499,145 @@
     requires org.eclipse.angus.mail; // only for direct Angus API use
 }</code></pre>
     </div>
-    <p class="wide">
-      If the import was only used to get at envelope or response details, prefer the Simple Java Mail APIs described below instead of adding the
-      implementation dependency back to your source contract.
-    </p>
   </section>
 
   <a href="#provider-neutral-mime" id="provider-neutral-mime" class="section-link h2">&sect;</a>
-  <h2>Converted messages no longer use Angus subtypes</h2>
+  <h2>If you cast converted messages to SMTPMessage</h2>
 
   <section>
     <p class="wide" style="font-size:smaller">
-      <strong>Impact:</strong> Remove casts from a converted <code class="inline language-java">MimeMessage</code> to
-      <code class="inline language-java">org.eclipse.angus.mail.smtp.SMTPMessage</code> or another Angus-specific message class.
+      <strong>You can skip this section</strong> if you only use the <code class="inline language-java">MimeMessage</code> methods returned by
+      <code class="inline language-java">EmailConverter.emailToMimeMessage(...)</code>. If you cast that result to Angus
+      <code class="inline language-java">SMTPMessage</code>, remove the cast.
     </p>
     <p class="wide">
-      <code class="inline language-java">EmailConverter.emailToMimeMessage(...)</code> now returns provider-neutral MIME. Provider-specific submission
-      settings are applied later by the transport adapter, when the message is actually sent. Code that only reads standard Jakarta Mail headers and
-      content can keep using the returned <code class="inline language-java">MimeMessage</code> as before.
+      The method still returns a normal Jakarta Mail <code class="inline language-java">MimeMessage</code>, and standard headers, recipients, and content
+      work as before. The object is no longer an Angus message underneath. If you tested its concrete class or used Angus-only setters, move that work to
+      the code that actually submits the message, where the mail provider is known.
     </p>
   </section>
 
   <a href="#delivery-envelope" id="delivery-envelope" class="section-link h2">&sect;</a>
-  <h2>Bounce and DSN settings stay in the delivery envelope</h2>
+  <h2>If you use bounce addresses or delivery-status notifications</h2>
 
   <section>
     <p class="wide" style="font-size:smaller">
-      <strong>Impact:</strong> Conversion-only code no longer finds a bounce address or DSN request encoded in an Angus message subtype. Sending through
-      the default mailer keeps the same SMTP behavior.
+      <strong>What to check:</strong> If you set a bounce address or request delivery-status notifications, send the original
+      <code class="inline language-java">Email</code> through a Simple Java Mail Mailer. That path keeps the same SMTP behavior as before.
     </p>
     <p class="wide">
-      An SMTP envelope sender and a delivery-status notification request are transport commands, not MIME headers. Version 10 keeps them on the
-      <code class="inline language-java">Email</code> until the selected adapter submits the message. Inspect
+      A bounce address and delivery-status notification (DSN) options are instructions to the SMTP server. They are not part of the message body or
+      headers. Version 10.0.0 keeps them on the <code class="inline language-java">Email</code> until it is sent. If you need to inspect them beforehand, use
       <code class="inline language-java">email.getBounceToRecipient()</code> and
-      <code class="inline language-java">email.getDeliveryStatusNotification()</code> when your application needs those values before sending.
+      <code class="inline language-java">email.getDeliveryStatusNotification()</code>.
     </p>
     <p class="wide">
-      An alternate Jakarta Mail provider can handle ordinary sends through Jakarta Mail's regular Transport API. If the message asks for provider-specific envelope
-      or DSN behavior and no matching adapter supports it, the send fails before submission instead of quietly dropping the request.
+      You only need to change code that converted the <code class="inline language-java">Email</code> first and then sent the resulting
+      <code class="inline language-java">MimeMessage</code> through Jakarta Mail. Keep the original <code class="inline language-java">Email</code> and
+      send that through your Simple Java Mail Mailer instead:
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// 9.x pattern that needs changing
+MimeMessage message =
+        EmailConverter.emailToMimeMessage(email, session);
+Transport.send(message);</code></pre>
+<pre><code class="language-java">// 10.0.0: keep the Email until send time
+mailer.sendMail(email);</code></pre>
+    </div>
+    <p class="wide">
+      If you keep your own Jakarta Mail sending code, read the bounce and DSN options from the <code class="inline language-java">Email</code> and apply
+      them through your mail provider's API yourself. For Angus, that means
+      <a href="#angus-api-boundary">declaring Angus as a compile dependency</a> and doing the following:
+    </p>
+    <pre class="full-width-example"><code class="language-java">MimeMessage converted =
+        EmailConverter.emailToMimeMessage(email, session);
+SMTPMessage message = new SMTPMessage(converted);
+
+Recipient bounceTo = email.getBounceToRecipient();
+if (bounceTo != null) {
+    message.setEnvelopeFrom(bounceTo.getAddress());
+}
+
+DeliveryStatusNotification dsn =
+        email.getDeliveryStatusNotification();
+if (dsn != null) {
+    int notifyOptions = 0;
+    for (DeliveryStatusNotification.NotifyOption option
+            : dsn.getNotifyOptions()) {
+        switch (option) {
+            case SUCCESS:
+                notifyOptions |= SMTPMessage.NOTIFY_SUCCESS;
+                break;
+            case FAILURE:
+                notifyOptions |= SMTPMessage.NOTIFY_FAILURE;
+                break;
+            case DELAY:
+                notifyOptions |= SMTPMessage.NOTIFY_DELAY;
+                break;
+            case NEVER:
+                notifyOptions = SMTPMessage.NOTIFY_NEVER;
+                break;
+        }
+    }
+    if (!dsn.getNotifyOptions().isEmpty()) {
+        message.setNotifyOptions(notifyOptions);
+    }
+    if (dsn.getReturnOption() != null) {
+        message.setReturnOption(dsn.getReturnOption()
+                == DeliveryStatusNotification.ReturnOption.FULL_MESSAGE
+                ? SMTPMessage.RETURN_FULL
+                : SMTPMessage.RETURN_HDRS);
+    }
+}
+
+Transport.send(message);</code></pre>
+    <p class="wide">
+      Other mail providers need their own equivalent. This is the provider-specific work that Simple Java Mail normally handles for you. When you send
+      through a Simple Java Mail Mailer, it now stops before sending if the active provider cannot honor those options. In 9.x they could be silently
+      ignored.
     </p>
   </section>
 
-  <a href="#protection-order" id="protection-order" class="section-link h2">&sect;</a>
-  <h2>Content protection is finalized before DKIM</h2>
+  <a href="#eml-bytes" id="eml-bytes" class="section-link h2">&sect;</a>
+  <h2>If you parse raw EML streams</h2>
 
   <section>
     <p class="wide" style="font-size:smaller">
-      <strong>Impact:</strong> Tests or integrations that compare exact protected MIME bytes should expect the version 10 ordering and finalization rules.
+      <strong>Most applications have nothing to change.</strong> The InputStream overloads of
+      <code class="inline language-java">EmailConverter.emlToEmail(...)</code> and
+      <code class="inline language-java">emlToEmailBuilder(...)</code> now parse the bytes you supplied instead of first turning the whole file into a
+      UTF-8 String and back again.
     </p>
-    <ol class="indent wide">
-      <li>Build the ordinary MIME entity and finalize its headers, encodings, and boundaries.</li>
-      <li>Apply S/MIME or OpenPGP/MIME signing, then encryption when configured.</li>
-      <li>Apply DKIM to the final outgoing representation.</li>
-      <li>Give the stable message and separate delivery envelope to the transport adapter.</li>
-    </ol>
     <p class="wide">
-      S/MIME and OpenPGP/MIME are alternative content-protection formats in 10.0. Configuring both on one email now fails validation. Within either
-      family, signing happens before encryption. DKIM can be combined with either family.
+      Normal EML should produce the same Email. Check this only if you feed it raw non-UTF-8 data, malformed EML, or have tests that expect UTF-8
+      replacement characters. Keeping the original bytes also prevents signed MIME from changing before a security module checks it. Overloads that
+      accept a Java String still treat that String as UTF-8.
     </p>
   </section>
 
-  <a href="#protected-message-storage" id="protected-message-storage" class="section-link h2">&sect;</a>
-  <h2>Large protected messages may use temporary storage</h2>
+  <a href="#finalized-mime" id="finalized-mime" class="section-link h2">&sect;</a>
+  <h2>Check raw MIME tests and size limits</h2>
 
   <section>
     <p class="wide" style="font-size:smaller">
-      <strong>Impact:</strong> Hosts with a locked-down temporary directory should allow the mail process to create temporary files or choose a different
-      in-memory threshold.
+      <strong>You can skip this section</strong> unless you compare exact EML in tests or set
+      <code class="inline language-java">withMaximumEmailSize(...)</code>.
     </p>
     <p class="wide">
-      Finalized MIME must be repeatable so a later transport step cannot change bytes covered by S/MIME, OpenPGP/MIME, or DKIM. Version 10 keeps up to
-      1 MiB in memory by default and spills larger finalized entities to a temporary file. The normal mailer closes and removes that storage after the
-      send attempt.
+      Simple Java Mail now finishes the MIME structure before it signs, measures, logs, or sends a message. That includes headers, encodings, multipart
+      boundaries, Date, and Message-ID. Protected messages retain the exact bytes covered by their signatures. If a test compares a complete EML file,
+      expect to update its expected output after upgrading.
     </p>
-    <pre class="full-width-example"><code class="language-properties"># Byte threshold before finalized MIME uses temporary storage
-org.simplejavamail.mime.finalization.memoryThresholdBytes=1048576</code></pre>
     <p class="wide">
-      Change the threshold only when your application's memory and temporary-storage policy calls for a different balance.
+      A maximum email size is now checked against the serialized MIME message. That includes transfer encodings and any S/MIME, OpenPGP/MIME, or DKIM
+      overhead. A message very close to your limit may now be rejected where 9.x accepted it. MIME logging uses the same serialized representation.
     </p>
   </section>
 
   <section aria-label="Migration sequence">
     <div class="button-group">
-      <a class="button" href="migration-notes-9.2.0.html#navigation">Previous: version 9.2</a>
-      <a class="button" href="security.html#section-security-routes">Review security routes</a>
+      <a class="button" href="migration-notes.html#version-10">All migration notes</a>
+      <a class="button" href="configuration.html#navigation">Current configuration reference</a>
     </div>
   </section>
   {{/inline}}

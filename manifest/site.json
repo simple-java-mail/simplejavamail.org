@@ -3,8 +3,8 @@
   "shortName": "SJM",
   "tagline": "Simple to use. Built for the real world.",
   "url": "https://www.simplejavamail.org",
-  "version": "9.3.2",
-  "releaseDate": "14 August 2026",
+  "version": "10.0.0",
+  "releaseDate": "18 August 2026",
   "javaBaseline": "Java 8+",
   "license": "Apache-2.0",
   "repository": "https://github.com/bbottema/simple-java-mail",
@@ -156,14 +156,14 @@
       "description": "Choose migration guidance for Simple Java Mail releases that change APIs or defaults."
     },
     {
-      "title": "Migrating to 10.0",
+      "title": "Migrating to 10.0.0",
       "section": "Maintain",
       "src": "migration-notes-10.0.0.hbs",
       "url": "/migration-notes-10.0.0.html",
       "out": "migration-notes-10.0.0.html",
       "chrome": "docs",
       "breadcrumbParent": "/migration-notes.html",
-      "description": "Public breaking changes and non-obvious behavior changes when upgrading to Simple Java Mail 10.0."
+      "description": "Public breaking changes and non-obvious behavior changes when upgrading existing Simple Java Mail applications to 10.0.0."
     },
     {
       "title": "Migrating to 9.2",

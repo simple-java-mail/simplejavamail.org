@@ -241,7 +241,7 @@ The hero pairs a restrained editorial statement with a compact SMTP receipt rath
 
 ## Shared content components
 
-- **First-send sample:** one canonical `EmailBuilder` plus `MailerBuilder` example, reused verbatim where appropriate.
+- **First-send sample:** one canonical `SimpleJavaMail` factory with its email and Mailer builders, reused verbatim where appropriate.
 - **Depth sample:** one short configuration progression, never the existing everything-at-once grand example on the homepage.
 - **Capability route:** the six lifecycle stages and their canonical links.
 - **Proof strip:** current version, Java baseline, license, current release date, and the Jakarta Mail API with Angus included by default; sourced from the manifest.

@@ -104,7 +104,7 @@
 				<pre><code>TransportStrategy strategy = TransportStrategy.SMTP;
 // or: TransportStrategy.SMTPS, TransportStrategy.SMTP_TLS, TransportStrategy.SMTP_OAUTH2
 
-MailerBuilder
+SimpleJavaMail.fromDefaults().mailerBuilder()
   .withSMTPServer("host", port, "username", passwordOrOAUTH2Token)
   .withTransportStrategy(strategy);
 </code></pre>
@@ -123,7 +123,8 @@ MailerBuilder
 		<h3>TransportStrategy.SMTP</h3>
 
 		<section>
-			<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTP);</code></pre>
+			<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+    .withTransportStrategy(TransportStrategy.SMTP);</code></pre>
 			<div>
 				<p class="wide">
 					The SMTP legacy strategy is the oldest and simplest strategy, which works with simple username and password. This transport strategy
@@ -149,23 +150,21 @@ MailerBuilder
 		<section>
 			<div class="view">
 				<p>
-					To disable opportunistic TLS and revert back to the legacy SMTP_PLAIN behavior prior to 5.0.0
-					(not recommended), you can turn it off programmatically or by setting the property
+					Plain SMTP attempts an optional STARTTLS upgrade by default. For a server that breaks during STARTTLS negotiation, you can turn that attempt off
+					programmatically or with
 					<code class="inline language-properties">simplejavamail.opportunistic.tls</code>.
+					This escape hatch applies only to <code class="inline language-java">TransportStrategy.SMTP</code>. It does not change mandatory TLS,
+					OAuth2 transport, or SMTPS.
 				</p>
 			</div>
 			<div class="side">
-      <pre><code class="language-java">
-TransportStrategy.SMTP.setOpportunisticTLS(false);
-
-MailerBuilder
-	  .verifyingServerIdentity(false)
-	  .withTransportStrategy(TransportStrategy.SMTP);
+      <pre><code class="language-java">SimpleJavaMail.fromDefaults().mailerBuilder()
+	  .withTransportStrategy(TransportStrategy.SMTP)
+	  .withOpportunisticTLS(false);
 </code></pre>
 
 Or with properties:
-<pre><code class="language-properties small">simplejavamail.defaults.verifyserveridentity=false
-simplejavamail.opportunistic.tls=false
+<pre><code class="language-properties small">simplejavamail.opportunistic.tls=false
 </code></pre>
 			</div>
 		</section>
@@ -178,7 +177,8 @@ simplejavamail.opportunistic.tls=false
 			<p class="wide">
 				SMTP entirely encapsulated by TLS. Commonly known as SMTPS.
 			</p>
-			<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTPS);</code></pre>
+			<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+    .withTransportStrategy(TransportStrategy.SMTPS);</code></pre>
 
 			<p class="wide">
 				Strict certificate validation is the default from 9.2.0 onward. Unless you configure an explicit exception, server certificates must be issued
@@ -197,7 +197,8 @@ simplejavamail.opportunistic.tls=false
 			<p class="wide">
 				Plaintext SMTP with a mandatory, authenticated STARTTLS upgrade.
 			</p>
-			<pre><code>MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);</code></pre>
+			<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+    .withTransportStrategy(TransportStrategy.SMTP_TLS);</code></pre>
 
 			<p class="wide">
 				Strict certificate validation is the default from 9.2.0 onward. Unless you configure an explicit exception, server certificates must be issued
@@ -241,7 +242,7 @@ simplejavamail.opportunistic.tls=false
 				The SMTP username identifies the mailbox and the credential is an OAuth2 access token, not a refresh token, client secret, or authorization
 				code. If your application already has a token whose lifetime covers the Mailer, pass it in the usual password position.
 			</p>
-			<pre class="full-width-example"><code class="language-java">Mailer mailer = MailerBuilder
+			<pre class="full-width-example"><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user@example.com", accessToken)
     .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
     .buildMailer();</code></pre>
@@ -258,7 +259,7 @@ simplejavamail.opportunistic.tls=false
 			<pre class="full-width-example"><code class="language-java">OAuth2AccessTokenProvider accessTokens =
     () -&gt; tokenService.currentAccessToken();
 
-Mailer mailer = MailerBuilder
+Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user@example.com")
     .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
     .withOAuth2AccessTokenProvider(accessTokens)
@@ -275,7 +276,7 @@ Mailer mailer = MailerBuilder
 			<p class="wide">
 				A supplied Jakarta Mail Session can use the provider too;
 				configure that Session for <code class="inline language-properties">mail.smtp.auth.mechanisms=XOAUTH2</code> and then call
-				<code class="inline language-java">MailerBuilder.usingSession(session).withOAuth2AccessTokenProvider(...)</code>.
+				<code class="inline language-java">mail.mailerBuilder(session).withOAuth2AccessTokenProvider(...)</code>.
 			</p>
 			<p class="wide">
 				Spring applications can register the provider as a bean. See <a href="configuration.html#section-spring-support">Spring support</a> for the direct
@@ -294,7 +295,7 @@ Mailer mailer = MailerBuilder
 				</p>
 			</div>
 			<div class="side">
-<pre><code>MailerBuilder
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
 	.withCustomSSLFactoryClass(theClassName) // or:
 	.withCustomSSLFactoryInstance(theInstance) // takes precedence
 	.buildMailer();
@@ -325,7 +326,7 @@ Mailer mailer = MailerBuilder
 				</p>
 			</div>
 			<div class="side">
-				<pre><code>MailerBuilder
+				<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
 	.withSMTPServer("smtp.example.com", 587)
 	.withTransportStrategy(TransportStrategy.SMTP_TLS)
 	// secure default since 9.2.0; shown explicitly here
@@ -333,11 +334,11 @@ Mailer mailer = MailerBuilder
 	.verifyingServerIdentity(true);
 
 // narrow exception when the issuing CA cannot be added to the JVM trust store
-MailerBuilder.withSMTPServer("smtp.internal.example", 587)
+SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.example", 587)
 	.trustingSSLHosts("smtp.internal.example");
 
 // broad compatibility escape hatch; avoid in production
-MailerBuilder.withSMTPServer("smtp.internal.example", 587)
+SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.example", 587)
 	.trustingAllHosts(true);
 </code></pre>
 				Or with property default:
@@ -361,11 +362,11 @@ simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 				to the JVM trust store. Disabling hostname verification is intended only for controlled compatibility or testing scenarios.
 			</p>
 <pre><code>// enabled by default
-MailerBuilder.withSMTPServer("smtp.example.com", 587)
+SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.example.com", 587)
 	.verifyingServerIdentity(true);
 
 // compatibility escape hatch; avoid in production
-MailerBuilder.withSMTPServer("smtp.internal.example", 587)
+SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.example", 587)
 	.verifyingServerIdentity(false);
 </code></pre>
 				Or with property default:
@@ -412,7 +413,7 @@ MailerBuilder.withSMTPServer("smtp.internal.example", 587)
 				This behaviour can only be turned off by turning off all client validations, which also includes checking for email completeness and email-address validations.
 				The scans will still be performed, but issues found will only be logged as warnings.
 			</p>
-<pre><code>MailerBuilder
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
 	.disablingAllClientValidation(true);
 </code></pre>
 		</section>
@@ -661,9 +662,9 @@ Email emailToBeEncrypted = currentEmailBuilder
     .pkcs12Config(myKeyInfo)
     .build();
 
-currentMailerBuilder
+SimpleJavaMail.fromDefaults().mailerBuilder()
     (...)
-    .withEmailDefaults(EmailBuilder.startingBlank()
+    .withEmailDefaults(SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
 		.signWithSmime(signingDefaults)
 		.buildEmailCompletedWithDefaultsAndOverrides()) // retain property defaults too
     .buildMailer();
@@ -724,7 +725,9 @@ details.getSmimeType(); // signed-data, enveloped-data
 details.getSmimeName(); // smime.p7m or smime.p7s
 details.getSmimeMicalg(); // ie. sha-512
 details.getSmimeSignedBy(); // common name from the first signer certificate
-details.getSmimeSignatureValid(); // true, false, or null when no check was performed
+details.getVerificationStatus(); // NOT_SIGNED, VALID, INVALID, or ERROR
+details.getDecryptionStatus(); // NOT_ENCRYPTED, DECRYPTED, KEY_MISSING, or FAILED
+details.getFailureReason(); // safe diagnostic text when processing did not succeed
 </code></pre>
 			</div>
 		</section>
@@ -734,21 +737,35 @@ details.getSmimeSignatureValid(); // true, false, or null when no check was perf
 
 		<section>
 			<p class="wide">
-				<code class="inline language-java">getSmimeSignatureValid()</code> reports cryptographic signature integrity. A value of
-				<code class="inline language-java">true</code> means every signature represented by these details was checked against the signer certificate
-				included with the S/MIME message. A value of <code class="inline language-java">false</code> means at least one signature failed or could not be
-				verified. A <code class="inline language-java">null</code> value means no signature check applied or no check was performed.
+				Use <code class="inline language-java">getVerificationStatus()</code> for the signature result. <code class="inline language-java">VALID</code>
+				means the content matches every signature represented by these details. <code class="inline language-java">INVALID</code> means at least one
+				signature does not match, while <code class="inline language-java">ERROR</code> means the signature could not be processed. A message without a
+				signature reports <code class="inline language-java">NOT_SIGNED</code>.
+			</p>
+			<p class="wide">
+				Decryption is reported separately by <code class="inline language-java">getDecryptionStatus()</code>. When a message contains more than one
+				protected layer, Simple Java Mail keeps the most serious result. Verification uses
+				<code class="inline language-text">ERROR &gt; INVALID &gt; VALID &gt; NOT_SIGNED</code>; decryption uses
+				<code class="inline language-text">FAILED &gt; KEY_MISSING &gt; DECRYPTED &gt; NOT_ENCRYPTED</code>.
 			</p>
 			<div class="wide full-width-example">
 <pre><code class="small">OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
 
-if (!Boolean.TRUE.equals(details.getSmimeSignatureValid())) {
-    // The signature is invalid, could not be checked, or was not checked.
+if (details.getVerificationStatus() != VerificationStatus.VALID) {
+    // The message is unsigned, invalid, or could not be checked.
     // Reject or quarantine the message when integrity is required.
+}
+
+if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
+    byte[] originalEncryptedEml = details.getOriginalProtectedMessage();
 }
 
 // Passing this check does not authenticate the From address.</code></pre>
 			</div>
+			<p class="wide">
+				The older <code class="inline language-java">getSmimeSignatureValid()</code> method is still available when existing code needs its nullable
+				Boolean shape. Its value is derived from the status above, so the two APIs cannot disagree.
+			</p>
 			<p class="wide">
 				The signer certificate is supplied by the message itself. Simple Java Mail does not validate its certificate path, validity period,
 				revocation status or key usage, and it does not compare the certificate identity with the message's <code class="inline language-text">From</code>
@@ -757,9 +774,16 @@ if (!Boolean.TRUE.equals(details.getSmimeSignatureValid())) {
 				own trust policy before accepting that identity.
 			</p>
 			<p class="wide">
-				When cryptographic verification fails, Simple Java Mail still keeps parsed signed content available and records
-				<code class="inline language-java">false</code>. This preserves the lenient conversion introduced for relays that alter signed MIME formatting.
-				Unsupported encrypted S/MIME payloads in Outlook messages are also treated leniently so the surrounding message can still be converted when possible.
+				S/MIME is inspected before the regular multipart parser takes the message apart. When cryptographic verification fails, the clear signed
+				content remains readable and the status records the failure. When a decryption key is missing, the encrypted content remains available
+				instead of being discarded. Unsupported encrypted S/MIME payloads in Outlook messages are also handled leniently so the surrounding message
+				can still be converted when possible.
+			</p>
+			<p class="wide">
+				For a protected top-level message, <code class="inline language-java">getOriginalProtectedMessage()</code> returns a defensive copy of the exact
+				outer EML. Those bytes stay in memory with the converted <code class="inline language-java">Email</code> and are included if you Java-serialize it,
+				so a large protected message costs roughly another full-message byte array while you retain the result. Simple Java Mail does not spill this
+				data to a temporary file. Ordinary unprotected conversion does not keep this extra EML snapshot.
 			</p>
 		</section>
 
@@ -779,7 +803,7 @@ if (!Boolean.TRUE.equals(details.getSmimeSignatureValid())) {
 			</div>
 
 			<div class="wide full-width-example">
-<pre><code class="small">Email nonMergedEmail = EmailBuilder
+<pre><code class="small">Email nonMergedEmail = SimpleJavaMail.fromDefaults().emailBuilder()
                 .copying(mergedEmail)
                 .clearSMIMESignedAttachmentMergingBehavior()
                 .buildEmail();
@@ -986,6 +1010,17 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 				When a verification key is missing, the clear signed content remains readable and the result says
 				<code class="inline language-java">KEY_MISSING</code>. When no decryption key matches, the encrypted message stays intact and its exact protected
 				EML bytes remain available through <code class="inline language-java">getOriginalProtectedMessage()</code>.
+			</p>
+			<p class="wide">
+				Simple Java Mail processes at most two nested OpenPGP/MIME protection wrappers. That covers the normal sign-then-encrypt message. If input
+				contains a third wrapper, processing stops there, the status and failure reason report the nesting limit, and the exact outer protected EML
+				remains available.
+			</p>
+			<p class="wide">
+				Protected MIME is finalized in memory so the bytes checked or produced by cryptography cannot change between writes. Incoming protected EML
+				also stays in memory with the converted <code class="inline language-java">Email</code> and is included if you Java-serialize it. Plan for roughly
+				another full-message byte array while you retain a large protected result. There is no temporary-file spill. Ordinary unprotected conversion
+				does not keep this extra EML snapshot.
 			</p>
 		</section>
 

@@ -138,7 +138,7 @@
         <a href="#option-mailer">
           <header><span class="pooling-path-number">02</span><h3>Use Simple Java Mail's fully managed Connection Pool</h3><b aria-hidden="true">&darr;</b></header>
           <ul>
-            <li><strong>You get</strong> <span>Concurrent, pooled and clustered sends without leaving <code>EmailBuilder</code> and <code>Mailer</code>.</span></li>
+            <li><strong>You get</strong> <span>Concurrent, pooled and clustered sends without leaving <code>SimpleJavaMail</code> and <code>Mailer</code>.</span></li>
             <li><strong>Lifecycle</strong> <span>Simple Java Mail owns work, Session selection, lease release or invalidation, and shutdown through <code>Mailer.close()</code>.</span></li>
             <li><strong>Use</strong> <span><code>simple-java-mail</code> with <code>batch-module</code>, backed by <code>smtp-connection-pool</code>.</span></li>
           </ul>
@@ -281,7 +281,7 @@
       <p><strong>Dependency:</strong> <code>org.simplejavamail:simple-java-mail:{{site.version}}</code></p>
     </div>
     <div class="side">
-<pre><code class="language-java">try (Mailer mailer = MailerBuilder
+<pre><code class="language-java">try (Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
         .withSMTPServer("smtp.example.com", 587, "user", "secret")
         .buildMailer()) {
     mailer.withOpenConnection(sender -> {
@@ -305,13 +305,13 @@
     <div class="view">
       <div class="pooling-option-meta"><span class="pooling-owner">Owner: Simple Java Mail</span><span>Automatic leases</span><span>Clusters</span></div>
       <p>
-        This is the normal choice when you use <code>EmailBuilder</code> and <code>Mailer</code>. The optional batch module sections off the upstream pool
+        This is the normal choice when you use Simple Java Mail's email builder and <code>Mailer</code>. The optional batch module sections off the upstream pool
         dependency and lets the Mailer own message conversion, asynchronous work, selected Session, success release, failure invalidation, and shutdown.
       </p>
       <div class="pooling-benefit">
         <strong>This gives you</strong>
         <p>
-          High-throughput pooled delivery while you stay in Simple Java Mail's fluent <code>EmailBuilder</code> and <code>Mailer</code> model. This is the
+          High-throughput pooled delivery while you stay in Simple Java Mail's fluent email-builder and <code>Mailer</code> model. This is the
           best default when you want connection reuse, concurrent sends, and clusters without turning lease safety, Session selection, or shutdown into
           application code.
         </p>
@@ -319,7 +319,7 @@
       <p><strong>Dependencies:</strong> <code>simple-java-mail:{{site.version}}</code> plus <code>batch-module:{{site.version}}</code></p>
     </div>
     <div class="side">
-<pre><code class="language-java">try (Mailer mailer = MailerBuilder
+<pre><code class="language-java">try (Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
         .withSMTPServer("smtp.example.com", 587, "user", "secret")
         .withConnectionPoolCoreSize(2)
         .withConnectionPoolMaxSize(10)
@@ -339,7 +339,7 @@
   </section>
 
   <a href="#option-batch-facade" id="option-batch-facade" class="section-link h2">&sect;</a>
-  <h2>3. Use batch-module without EmailBuilder or Mailer</h2>
+  <h2>3. Use batch-module without SimpleJavaMail or Mailer</h2>
   <section class="pooling-option">
     <div class="view">
       <div class="pooling-option-meta"><span class="pooling-owner">Owner: BatchTransportExecutor</span><span>Callbacks</span><span>CompletableFuture</span></div>
@@ -352,7 +352,7 @@
         <strong>This gives you</strong>
         <p>
           The same high-throughput clustered pool and automatic lease safety while your application keeps building <code>MimeMessage</code> objects and
-          owning each unit of work. Choose this boundary when callbacks and futures fit, but adopting <code>EmailBuilder</code> and <code>Mailer</code> does not.
+          owning each unit of work. Choose this boundary when callbacks and futures fit, but adopting <code>SimpleJavaMail</code> and <code>Mailer</code> does not.
         </p>
       </div>
       <p><strong>Dependency:</strong> <code>org.simplejavamail:batch-module:{{site.version}}</code>. The main <code>simple-java-mail</code> facade is not required.</p>

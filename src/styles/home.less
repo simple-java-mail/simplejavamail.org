@@ -7,6 +7,7 @@
 .hero-code { position: relative; transform: translateY(0.8rem); }
 .hero-code .hero-version { text-transform: none; }
 .hero-code pre { min-height: 350px; padding: 1.55rem; font-size: 0.78rem; }
+.hero-code .copy-code { top: auto; right: 0.62rem; bottom: 0.62rem; }
 .smtp-receipt { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.65rem; padding: 0.72rem 0.9rem; border-top: 1px solid @line-dark; background: lighten(@ink-deep, 2%); color: #9DADB1; font-family: @font-mono; font-size: 0.65rem; }
 .smtp-receipt code { padding: 0; border: 0; background: none; color: #A7E2B6; }
 .receipt-dot { width: 8px; height: 8px; border-radius: 50%; background: #62BF79; box-shadow: 0 0 0 4px fade(#62BF79, 15%); }
@@ -67,14 +68,14 @@
 .rare-grid > * { padding: clamp(1.6rem, 4vw, 3.2rem); background: @ink-deep; }
 .rare-heading h2, .rare-item h3 { color: @white; }
 .rare-heading > p:not(.eyebrow), .rare-item > p:not(.eyebrow) { color: #9FB0B4; }
-.rare-item { position: relative; min-height: 480px; }
+.rare-item { position: relative; display: flex; flex-direction: column; min-height: 480px; }
 .rare-item .eyebrow { margin-top: @space-2xl; color: #71C7CD; }
 .rare-item > .module-badges { margin-top: @space-sm; }
 .rare-item > .module-badges .module-badge { border-color: fade(@teal, 65%); background: fade(@teal, 12%); color: #9EDDE1; }
 .rare-item > .module-badges + h3 { margin-top: @space-sm; }
 .rare-item h3 { font-size: 2rem; }
 .rare-item > p:not(.eyebrow) { margin-top: @space-md; }
-.rare-item a { position: absolute; right: clamp(1.6rem, 4vw, 3.2rem); bottom: clamp(1.6rem, 4vw, 3.2rem); left: clamp(1.6rem, 4vw, 3.2rem); padding-top: @space-md; border-top: 1px solid @line-dark; color: #9EDDE1; font-family: @font-mono; font-size: 0.68rem; text-transform: uppercase; }
+.rare-item > a { margin-top: auto; padding-top: @space-md; border-top: 1px solid @line-dark; color: #9EDDE1; font-family: @font-mono; font-size: 0.68rem; text-transform: uppercase; }
 .network-glyph { position: relative; width: 100%; height: 90px; }
 .network-glyph i, .network-glyph b { position: absolute; display: block; }
 .cluster-glyph::before { content: ""; position: absolute; top: 42px; right: 12%; left: 12%; height: 1px; background: @teal; }

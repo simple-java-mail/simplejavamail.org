@@ -37,7 +37,7 @@
 	  </div>
 
 	  <div class="side">
-<pre><code>Mailer mailer = MailerBuilder
+<pre><code>Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withTransportModeLoggingOnly()
     .(...)
     .buildMailer();
@@ -90,7 +90,8 @@ currentEmailBuilder.withOverrideReceivers(tester1Recipient, testGroupInboxRecipi
     </div>
 
     <div class="side">
-<pre><code>Mailer mailer = MailerBuilder
+<pre><code>SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+Mailer mailer = mail.mailerBuilder()
     .withSMTPServer("host", 587, "username", "password")
     .withDebugLogging(true)
     .withDebugOutput(SessionDebugOutput.SLF4J)
@@ -101,7 +102,7 @@ mailer.getSession().setDebug(true);
 
 // or
 yourSession.setDebug(true);
-MailerBuilder.usingSession(yourSession);
+mail.mailerBuilder(yourSession);
 </code></pre>
       or:
       <pre><code class="language-properties">simplejavamail.javaxmail.debug=true
@@ -120,8 +121,8 @@ simplejavamail.javaxmail.debug.out=SLF4J
 
 	<div class="wide full-width-example">
 <pre><code class="language-java small">try (PrintStream jakartaMailDebug = new PrintStream(
-        Files.newOutputStream(Path.of("jakarta-mail-debug.log")));
-     Mailer mailer = MailerBuilder
+        Files.newOutputStream(Paths.get("jakarta-mail-debug.log")));
+     Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
         .withSMTPServer("host", 587, "username", "password")
         .withDebugLogging(true)
         .withDebugPrinter(jakartaMailDebug)

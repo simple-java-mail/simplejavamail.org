@@ -33,18 +33,18 @@
     <section class="introduction">
     <div class="view">
       <p>
-        The Java API and configuration files work together. When the same setting appears in more than one place, Java values win, followed by system
-        properties, environment variables, and property files.
+        The Java API and configuration files work together. A configuration snapshot resolves its sources in the order you list them, with later
+        non-blank values winning. Calls on a builder then win over the snapshot values copied into that builder.
       </p>
     </div>
     <div class="side">
       <p>
-        <strong>MailerBuilder</strong> is the main configuration API. Its <a href="https://martinfowler.com/bliki/FluentInterface.html">fluent builder</a>
-        produces a largely immutable <code class="inline language-java">Mailer</code> instance.
+        <strong>SimpleJavaMail</strong> is the application-level entry point. It gives you a fresh email or Mailer builder backed by one immutable
+        configuration snapshot.
       </p>
       <p>
-        <strong>ConfigLoader</strong> keeps these defaults. Load another property source to either add its values to the current set or start again with
-        that source. Each load checks system properties and environment variables again.
+        <strong>ConfigLoader</strong> resolves an ordered set of sources into that snapshot. It has no process-wide registry, so separate factories can
+        safely use different SMTP servers and message defaults in the same JVM.
       </p>
     </div>
     </section>
@@ -76,16 +76,19 @@
   <section>
     <div>
       <p>
-        Everything can be configured through the java API. Specifically the builders are the entry point to creating Mailers and Emails and everything can be configured
-        through them.
+        Start with one <code class="inline language-java">SimpleJavaMail</code> instance. Ask it for a fresh builder whenever you start an independent
+        email or Mailer construction flow. The public builder interfaces contain the complete option reference.
       </p>
     </div>
 
     <div>
-<pre><code class="small">// start with a builder
-MailerBuilder.withSMTPServer("smtp.host.com", 25, "username", "password");
+<pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+// start with a fresh builder
+MailerRegularBuilder&lt;?&gt; mailerBuilder = mail.mailerBuilder()
+  .withSMTPServer("smtp.host.com", 25, "username", "password");
 // or
-MailerBuilder
+mailerBuilder = mail.mailerBuilder()
   .withSMTPServerHost("smtp.host.com")
   .withSMTPServerPort(25)
   .withSMTPServerUsername("username")
@@ -93,27 +96,30 @@ MailerBuilder
 </code></pre>
       <pre><code class="small">
 // you can even leave out some details for an anonymous SMTP server
-MailerBuilder.withSMTPServer("smtp.host.com", 25);
+mail.mailerBuilder().withSMTPServer("smtp.host.com", 25);
 // or
-MailerBuilder
+mail.mailerBuilder()
   .withSMTPServerHost("smtp.host.com")
   .withSMTPServerPort(25);
 
 // adding the transport strategy...
-currentMailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS)
+mailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS)
+
+// narrow escape hatch for broken STARTTLS servers; plain SMTP only
+mailerBuilder.withOpportunisticTLS(false)
 
 // or instead adding anonymous proxy configuration
-currentMailerBuilder.withProxy("proxy.host.com", 1080);
+mailerBuilder.withProxy("proxy.host.com", 1080);
 // or
-currentMailerBuilder
+mailerBuilder
   .withProxyHost("proxy.host.com")
   .withProxyPort(1080);
 
 // or authenticated proxy
-currentMailerBuilder
+mailerBuilder
   .withProxy("proxy.host.com", 1080, "proxy username", "proxy password");
 // or
-currentMailerBuilder
+mailerBuilder
   .withProxyHost("proxy.host.com")
   .withProxyPort(1080)
   .withProxyUsername("proxy username")
@@ -121,13 +127,13 @@ currentMailerBuilder
 </code></pre>
       <pre><code class="small">
 // anonymous smtp + anonymous proxy + default SMTP protocol strategy
-currentMailerBuilder
+mailerBuilder
         .withSMTPServerHost("smtp.host.com").withSMTPServerPort(25)
         .withProxyHost("proxy.host.com").withProxyPort(1080);
 </code></pre>
       <pre><code class="small">
 // configure everything!
-MailerBuilder
+mail.mailerBuilder()
         .withSMTPServer("smtp.host.com", 587, "user@host.com", "password")
         .withTransportStrategy(TransportStrategy.SMTP_TLS)
         .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password")
@@ -136,16 +142,14 @@ MailerBuilder
 </code></pre>
       <pre><code class="small">
 // preconfigured Session?
-MailerBuilder.usingSession(session);
+mail.mailerBuilder(session);
 
 // preconfigured but you need anonymous proxy?
-MailerBuilder
-        .usingSession(session)
+mail.mailerBuilder(session)
         .withProxy("socksproxy.host.com", 1080);
 
 // preconfigured but you need authenticated proxy?
-MailerBuilder
-        .usingSession(session)
+mail.mailerBuilder(session)
         .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password");
 </code></pre>
     </div>
@@ -165,91 +169,91 @@ MailerBuilder
     <div class="wide full-width-example">
       <pre><code class="small">// report missing fields, invalid addresses and CRLF suspicions as warnings,
 // then continue with SMTP handling
-currentMailerBuilder.disablingAllClientValidation(true);
+mailerBuilder.disablingAllClientValidation(true);
 </code></pre>
 		<pre><code class="small">// make the underlying Jakarta Mail Session produce debug output
-currentMailerBuilder
+mailerBuilder
     .withDebugLogging(true)
     .withDebugOutput(SessionDebugOutput.SLF4J); // STDOUT, STDERR or SLF4J
 </code></pre>
       <pre><code class="small">// skip actually sending email, just log it
-currentMailerBuilder.withTransportModeLoggingOnly(true);
+mailerBuilder.withTransportModeLoggingOnly(true);
 </code></pre>
       <pre><code class="small">// custom SSL connection factory (note: breaks setups with authenticated proxy!)
-currentMailerBuilder.withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
-currentMailerBuilder.withCustomSSLFactoryInstance(mySSLFactoryInstance);
+mailerBuilder.withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
+mailerBuilder.withCustomSSLFactoryInstance(mySSLFactoryInstance);
 </code></pre>
       <pre><code class="small">
 // change email validation strategy
-currentMailerBuilder.withEmailValidator(
+mailerBuilder.withEmailValidator(
 	JMail.strictValidator()
 		.requireOnlyTopLevelDomains(TopLevelDomain.DOT_COM)
 		.withRule(email -> email.localPart().startsWith("allowed"))
 )
 
 // restore the default strict JMail address validator:
-currentMailerBuilder.resetEmailValidator();
+mailerBuilder.resetEmailValidator();
 // clear the JMail address policy; keep completeness, encoded-word and CRLF checks:
-currentMailerBuilder.clearEmailValidator();
+mailerBuilder.clearEmailValidator();
 </code></pre>
 <pre><code class="small">
 // set custom properties
-currentMailerBuilder.withProperties(new Properties());
-currentMailerBuilder.withProperties(new HashMap());
-currentMailerBuilder.withProperty("mail.smtp.sendpartial", true);
+mailerBuilder.withProperties(new Properties());
+mailerBuilder.withProperties(new HashMap());
+mailerBuilder.withProperty("mail.smtp.sendpartial", true);
 
 // or directly modify the internal Session instance:
 mailer.getSession().getProperties().setProperty("mail.smtp.sendpartial", true);
 </code></pre>
 <pre><code class="small">
 /* Secure TLS defaults since 9.2.0. These calls are optional. */
-currentMailerBuilder.trustingAllHosts(false);
-currentMailerBuilder.verifyingServerIdentity(true);
+mailerBuilder.trustingAllHosts(false);
+mailerBuilder.verifyingServerIdentity(true);
 
 // preferred for private PKI: add the issuing CA to the JVM trust store
 // narrow compatibility exception if that is not possible:
-currentMailerBuilder.trustingSSLHosts("smtp.internal.example");
+mailerBuilder.trustingSSLHosts("smtp.internal.example");
 // broad compatibility escape hatch; avoid in production:
-currentMailerBuilder.trustingAllHosts(true);
+mailerBuilder.trustingAllHosts(true);
 
 // clear or reset trust exceptions
-currentMailerBuilder.clearTrustedSSLHosts();
-currentMailerBuilder.resetTrustingAllHosts();
+mailerBuilder.clearTrustedSSLHosts();
+mailerBuilder.resetTrustingAllHosts();
 </code></pre>
 <pre><code class="small">
 // compatibility escape hatch; disables hostname verification
-currentMailerBuilder.verifyingServerIdentity(false);
+mailerBuilder.verifyingServerIdentity(false);
 // restore the secure default
-currentMailerBuilder.resetVerifyingServerIdentity();
+mailerBuilder.resetVerifyingServerIdentity();
 </code></pre>
 <pre><code class="small">// pooled-delivery executor defaults
-currentMailerBuilder.withThreadPoolSize(3);
+mailerBuilder.withThreadPoolSize(3);
 // 0: core threads stay alive, !0: threads die after delay (default 1)
-currentMailerBuilder.withThreadPoolKeepAliveTime(5000);
+mailerBuilder.withThreadPoolKeepAliveTime(5000);
 
 // completely replace the thread pool executor with your own
 // this negates all related properties such as pool size and keepAliveTime
-currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
+mailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
 </code></pre>
 		  <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
-currentMailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
+mailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
 </code></pre>
 		  <pre><code class="small">// bind the outgoing SMTP socket to a local/source address
 // the local port is advanced and usually should be omitted
-currentMailerBuilder.withLocalBindAddress("203.0.113.10");
-currentMailerBuilder.withLocalBindAddress("203.0.113.10", 25252);
+mailerBuilder.withLocalBindAddress("203.0.113.10");
+mailerBuilder.withLocalBindAddress("203.0.113.10", 25252);
 </code></pre>
 		  <pre><code class="small">// identify the SMTP client hostname sent in EHLO/HELO
 // useful for corporate relay policy, logging, tracing and diagnostics
-currentMailerBuilder.withSmtpClientHostname("orders-service.prod.example.com");
-currentMailerBuilder.clearSmtpClientHostname();
+mailerBuilder.withSmtpClientHostname("orders-service.prod.example.com");
+mailerBuilder.clearSmtpClientHostname();
 </code></pre>
 		  <pre><code class="small">// configure DKIM once for all emails sent through this mailer
 // individual emails can still provide their own DKIM config
-currentMailerBuilder.withDefaultDkimSigning(defaultDkimConfig);
+mailerBuilder.withDefaultDkimSigning(defaultDkimConfig);
 </code></pre>
 		  <pre><code class="small">// change the default sending logic to your own approach
-currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test connections
+mailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test connections
 </code></pre>
     </div>
   </section>
@@ -277,14 +281,16 @@ currentMailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, 
     </div>
 
     <div class="wide full-width-example">
-<pre><code class="language-java small">Mailer transactionalMailer = MailerBuilder
+<pre><code class="language-java small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+Mailer transactionalMailer = mail.mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
     .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
     .withProxyBridgePort(1081)
     .buildMailer();
 
-Mailer batchMailer = MailerBuilder
+Mailer batchMailer = mail.mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
     .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
@@ -301,51 +307,89 @@ Mailer batchMailer = MailerBuilder
   <section>
     <div class="view">
       <p>
-        Property files can define defaults and overrides. System properties and environment variables can replace those values at deployment time.
+        Use <code class="inline language-java">SimpleJavaMail.fromDefaults()</code> when you want the conventional setup. On its first call, it reads an
+        optional <code class="inline language-properties">simplejavamail.properties</code> resource from the classpath, then environment variables, then
+        JVM system properties. It keeps that immutable snapshot for later calls and never consults Spring.
       </p>
       <p>
-        Simple Java Mail will automatically load properties from <code class="inline language-properties">simplejavamail.properties</code>, if available on the classpath.
-        Alternatively, you can load a classpath resource, a file from the filesystem, an existing stream, or a <code class="inline language-java">Properties</code> object.
-        The <code class="inline language-java">String</code> overload resolves a classpath resource. For a filesystem path, open an <code class="inline language-java">InputStream</code> as shown here.
-        <code class="inline language-java">ConfigLoader</code> reads and closes every supplied stream before returning, including when loading fails.
+        For explicit application-owned configuration, add sources to a new <code class="inline language-java">ConfigLoader</code> from lowest to highest
+        priority and call <code class="inline language-java">load()</code>. A later non-blank value wins. A blank value is treated as absent, so it does
+        not hide a useful value from an earlier source.
       </p>
       <p>
-        Properties are loaded in order of priority from high to low:
+        Only the winning value is parsed. A malformed lower-priority value therefore causes no error when a valid higher-priority source replaces it:
       </p>
-      <ol class="indent">
-        <li>Programmatic values</li>
-        <li>System properties</li>
-        <li>Environment variables</li>
-        <li>Properties from config files</li>
-      </ol>
+<pre><code class="language-text small">Lower priority: simplejavamail.properties
+simplejavamail.smtp.port=not-a-number
+                    ↓ overridden before parsing
+Higher priority: environment variable
+SIMPLEJAVAMAIL_SMTP_PORT=587
+                    ↓ parsed
+Loaded SMTP port: 587</code></pre>
       <p>
-        Use <code class="inline language-java">addProperties=true</code> to add the new source to what is already loaded. Any setting the new source does
-        not contain stays in place. Use <code class="inline language-java">addProperties=false</code> to throw away the loaded defaults before reading the
-        new source. Either way, current system properties and environment variables are read again and take priority over the supplied source.
+        The conventional short form is equivalent to:
+      </p>
+<pre><code class="language-java small">SimpleJavaMailConfig config = ConfigLoader.builder()
+    .withClasspathResource("simplejavamail.properties")
+    .withEnvironmentVariables()
+    .withSystemProperties()
+    .load();
+
+SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
+      <p>
+        Only add environment and system-property sources when you want them. Explicit loaders do not silently read either one. Calls made directly on a
+        Mailer or email builder override the snapshot values copied into that builder.
       </p>
     </div>
 
     <div class="side">
-      From the classpath:
-<pre><code class="small">ConfigLoader.loadProperties(
-    "overrides-on-classpath.properties",
-    /* addProperties = */ true
-);
-</code></pre>
-      From the filesystem:
-<pre><code class="small">ConfigLoader.loadProperties(
-    Files.newInputStream(Path.of("config", "simplejavamail.properties")),
-    /* addProperties = */ false
-);
-</code></pre>
-      From application-provided sources:
-<pre><code class="small">ConfigLoader.loadProperties(usingMyOwnInputStream, addProperties);
-ConfigLoader.loadProperties(usingMyOwnPropertiesObject, addProperties);
-</code></pre>
-      Discard the loaded defaults without loading another property source:
-      <pre><code class="small">ConfigLoader.loadProperties(new Properties(), /* addProperties = */ false);
-</code></pre>
-      Current system properties and environment variables still apply.
+      Compose the sources your application owns:
+<pre><code class="language-java small">SimpleJavaMailConfig config = ConfigLoader.builder()
+    .withClasspathResource("mail-base.properties")
+    .withInputStream(
+        "deployment file",
+        Files.newInputStream(Paths.get(
+            "config", "simplejavamail.properties")))
+    .withProperties("runtime overrides", runtimeOverrides)
+    .withMap("local overrides", localOverrides)
+    .withSource(secretManagerSource)
+    .load();
+
+SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
+      <p>
+        <code class="inline language-java">withInputStream(...)</code> consumes and closes the stream immediately, including when reading fails.
+        Maps, <code class="inline language-java">Properties</code>, and custom sources are sampled when <code class="inline language-java">load()</code>
+        runs. The snapshot detaches their values before returning.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="view">
+      <p>
+        A custom <code class="inline language-java">ConfigSource</code> returns a stable diagnostic name and a map keyed by the canonical
+        <code class="inline language-properties">simplejavamail.*</code> names. Strict sources reject unknown keys. Process environment and system
+        sources are deliberately non-strict because most of their entries belong to other software.
+      </p>
+      <p>
+        Secret lookup, decryption, and refresh policy belong in your application or configuration framework. Return the already decrypted values from
+        the source. Simple Java Mail validates and copies them, but does not add a secret-encryption format of its own.
+      </p>
+    </div>
+    <div class="side">
+<pre><code class="language-java small">ConfigSource secretManagerSource = new ConfigSource() {
+    public String getName() {
+        return "application secret manager";
+    }
+
+    public Map&lt;String, ?&gt; getProperties() {
+        return secretManager.readMailSettings();
+    }
+};</code></pre>
+      <p>
+        Validation errors name the source and property key without printing the configured value. A snapshot's
+        <code class="inline language-java">toString()</code> redacts passwords, key material, and arbitrary Session properties.
+      </p>
     </div>
   </section>
 
@@ -355,13 +399,22 @@ ConfigLoader.loadProperties(usingMyOwnPropertiesObject, addProperties);
   <section>
     <div class="view">
       <p>
-        <code class="inline language-java">ConfigLoader</code> holds one set of defaults for the entire process. Loading another source does not
-        reconfigure an existing <code class="inline language-java">Email</code>, <code class="inline language-java">Mailer</code>, or mail session.
+        A <code class="inline language-java">SimpleJavaMailConfig</code> is a detached, thread-safe snapshot. Changing a source after
+        <code class="inline language-java">load()</code>, or loading another snapshot, does not reconfigure an existing factory, builder,
+        <code class="inline language-java">Email</code>, <code class="inline language-java">Mailer</code>, or mail session.
       </p>
       <p>
-        Load every source for an environment before starting its builders. Then create a fresh builder and build the replacement object. Do not keep an
-        <code class="inline language-java">EmailBuilder</code> or <code class="inline language-java">MailerBuilder</code> around while reloading
-        <code class="inline language-java">ConfigLoader</code>: settings are read while builders and their final objects are created.
+        To change configuration, build a new snapshot and factory, then request fresh builders from it. You can use a prior snapshot as the first source
+        with <code class="inline language-java">withConfig(previous)</code> when the replacement should override only part of it.
+      </p>
+      <p>
+        Inspect resolved values with <code class="inline language-java">hasProperty(...)</code>, the typed getters, and
+        <code class="inline language-java">getPropertySource(...)</code>. <code class="inline language-java">asMap()</code> and the wildcard maps it
+        contains are unmodifiable.
+      </p>
+      <p>
+        Static inbound methods on <code class="inline language-java">EmailConverter</code> use the conventional default snapshot. Use
+        <code class="inline language-java">mail.converter()</code> when parsing should produce builders backed by an explicit factory snapshot.
       </p>
       <p>
         When replacing a <code class="inline language-java">Mailer</code>, let any work already using the old instance finish and then
@@ -370,18 +423,21 @@ ConfigLoader.loadProperties(usingMyOwnPropertiesObject, addProperties);
     </div>
 
     <div class="side">
-<pre><code class="language-java">ConfigLoader.loadProperties(productionProperties, false);
-Mailer productionMailer = MailerBuilder
-    .withSMTPServerPort(587)
-    .buildMailer();
+<pre><code class="language-java">SimpleJavaMailConfig productionConfig = ConfigLoader.builder()
+    .withProperties("production", productionProperties)
+    .load();
+SimpleJavaMail productionMail = SimpleJavaMail.withConfig(productionConfig);
+Mailer productionMailer = productionMail.mailerBuilder().buildMailer();
 
-ConfigLoader.loadProperties(failoverProperties, false);
-Mailer failoverMailer = MailerBuilder
-    .withSMTPServerPort(587)
-    .buildMailer();
+SimpleJavaMailConfig failoverConfig = ConfigLoader.builder()
+    .withProperties("failover", failoverProperties)
+    .load();
+SimpleJavaMail failoverMail = SimpleJavaMail.withConfig(failoverConfig);
+Mailer failoverMailer = failoverMail.mailerBuilder().buildMailer();
 
-// productionMailer still uses its original configuration
-productionMailer.close(); // once no work is using it
+// Existing objects still use productionConfig.
+// Send new work through failoverMailer, let old work finish, then:
+productionMailer.close();
 </code></pre>
     </div>
   </section>
@@ -424,9 +480,18 @@ SIMPLEJAVAMAIL_DEFAULTS_FROM_ADDRESS=sender@example.com
         Most mailer settings have a property equivalent, so each environment can use different values without changing application code.
       </p>
 	  <p>
+		<code class="inline language-properties">simplejavamail.opportunistic.tls</code> only affects the optional STARTTLS upgrade used by plain
+		<code class="inline language-text">SMTP</code>. It does not weaken <code class="inline language-text">SMTP_TLS</code>, OAuth2 transport, or
+		<code class="inline language-text">SMTPS</code>. An explicit <code class="inline language-java">withOpportunisticTLS(...)</code> call wins over the property.
+	  </p>
+	  <p>
 		For <code class="inline language-properties">simplejavamail.dkim.signing.private_key_file_or_data</code>, prefix a path with
 		<code class="inline language-properties">file:</code> or inline Base64-encoded key bytes with
 		<code class="inline language-properties">base64:</code>. Unprefixed values retain their legacy path-or-UTF-8-data behavior.
+	  </p>
+	  <p>
+		The embedded-image flags describe their exact route: <code class="inline language-properties">outside.base.url</code> controls URL resolution and
+		<code class="inline language-properties">outside.base.classpath</code> controls classpath resolution.
 	  </p>
     </div>
 
@@ -598,12 +663,14 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 			initialized with global defaults, by using <code>emailBuilder.buildEmailCompletedWithDefaultsAndOverrides()</code>.
 		</p>
 		<div class="wide">
-<pre><code class="language-java">Email yourServerLevelDefaults = EmailBuilder.startingBlank()
-	/* set your defaults here */
-	.buildEmailCompletedWithDefaultsAndOverrides(); // complete the instance with global defaults
+<pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 
-Mailer adminServer = mailerBuilder
-	(..)
+Email yourServerLevelDefaults = mail.emailBuilder().startingBlank()
+	/* set your defaults here */
+	.buildEmailCompletedWithDefaultsAndOverrides(); // complete it from this factory's snapshot
+
+Mailer adminServer = mail.mailerBuilder()
+	// add SMTP settings
 	.withEmailDefaults(yourServerLevelDefaults)
 	.withEmailOverrides(yourServerLevelOverrides)
 	.buildMailer();
@@ -618,7 +685,7 @@ Mailer adminServer = mailerBuilder
 		<div class="wide">
 			<pre><code class="language-java">// for example: force FROM to be always the same for the
 // specific SMTP adminServer from the previous example:
-Email yourServerLevelOverrides = EmailBuilder.startingBlank()
+Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
     .from("Admin", "admin@yourcompany.com")
     .buildEmail();
 </code></pre>
@@ -633,7 +700,7 @@ Email yourServerLevelOverrides = EmailBuilder.startingBlank()
 		</div>
 
 		<div class="side">
-<pre><code class="language-java">Email email = EmailBuilder.startingBlank()
+<pre><code class="language-java">Email email = mail.emailBuilder().startingBlank()
     .ignoringDefaults()
     .ignoringOverrides()
     // add the email content
@@ -709,38 +776,34 @@ Email yourServerLevelOverrides = EmailBuilder.startingBlank()
 
     <div>
       <p>
-        Load the complete configuration for the selected environment first. Only then create its builder and <code class="inline language-java">Mailer</code>.
+        Build the complete source list for the selected environment, then load one snapshot and create the factory that owns it. The order below goes
+        from broad defaults to the most deployment-specific overrides.
       </p>
-<pre><code>// simplejavamail.properties is automatically loaded
+<pre><code class="language-java">ConfigLoader loader = ConfigLoader.builder()
+    .withClasspathResource("simplejavamail.properties")
+    .withInputStream(
+        "selected environment",
+        Files.newInputStream(Paths.get(
+            "config", "candystore", "simplejavamail.properties")));
 
-// replace previously loaded defaults with this environment's property file;
-// system properties and environment variables still take priority
-Path environmentConfig = Path.of("config", "candystore", "simplejavamail.properties");
-ConfigLoader.loadProperties(Files.newInputStream(environmentConfig), false);
-</code></pre>
-<pre><code>
-// see if we need to do some specific override for some reason
 if (someSpecialCondition) {
-  ConfigLoader.loadProperties("special-override.properties", true);
+    loader.withClasspathResource("special-override.properties");
 }
-</code></pre>
-<pre><code>
-// add values assembled by the application
+
 Properties runtimeOverrides = new Properties();
 runtimeOverrides.setProperty("simplejavamail.smtp.port", "2525");
-ConfigLoader.loadProperties(runtimeOverrides, true);
-</code></pre>
+SimpleJavaMailConfig config = loader
+    .withProperties("runtime overrides", runtimeOverrides)
+    .withEnvironmentVariables()
+    .withSystemProperties()
+    .load();
 
-      <p>
-        Maybe we want to connect slightly different for some reason:
-      </p>
-
-<pre><code>// start a fresh builder after every source for this environment has been loaded
-// override only the port and connection type, leave everything else to config files
-Mailer mailer = MailerBuilder
-                  .withSMTPServerPort(587)
-                  .withTransportStrategy(TransportStrategy.SMTP_TLS)
-                  .buildMailer();
+SimpleJavaMail mail = SimpleJavaMail.withConfig(config);
+Mailer mailer = mail.mailerBuilder()
+    // Direct builder values win over the snapshot.
+    .withSMTPServerPort(587)
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .buildMailer();
 </code></pre>
     </div>
   </section>
@@ -755,41 +818,66 @@ Mailer mailer = MailerBuilder
 		Spring can supply the same Simple Java Mail settings, so each profile can use its own SMTP server, credentials, transport strategy, and defaults.
       </p>
       <p>
-        Import <code class="inline language-java">SimpleJavaMailSpringSupport</code> and the module passes Spring's
-        <code class="inline language-text">simplejavamail.*</code> values to <code class="inline language-java">ConfigLoader</code>. Those values replace matching
-        settings loaded earlier, including values from <code class="inline language-text">simplejavamail.properties</code>.
+        Import <code class="inline language-java">SimpleJavaMailSpringSupport</code>. It loads the conventional
+        <code class="inline language-text">simplejavamail.properties</code> resource as a low-priority source, then resolves all matching values through
+        Spring's <code class="inline language-java">Environment</code>. Spring remains responsible for profiles, placeholders, environment variables,
+        system properties, and their precedence. Simple Java Mail does not read the raw process values again afterwards.
       </p>
-      <p>Here is the Java configuration:</p>
+      <p>
+        Each application context gets an immutable <code class="inline language-java">SimpleJavaMailConfig</code>, a configured
+        <code class="inline language-java">SimpleJavaMail</code> factory, and a default <code class="inline language-java">Mailer</code>. There is no shared
+        builder bean. Inject the factory whenever you need a fresh builder.
+      </p>
+      <p>
+        Separate Spring application contexts keep separate snapshots and factories. Building or closing a Mailer in one context does not change the
+        configuration used by another context in the same JVM.
+      </p>
     </div>
 
     <div class="wide full-width-example">
-      Load Spring support and inject the default mailer:
+      Load Spring support and inject the default Mailer:
       <pre><code class="small">@Component
 @Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {
 
-    @Autowired // or roll your own, as long as SimpleJavaMailSpringSupport is processed first
-    private Mailer mailer;
+    private final Mailer mailer;
 
+    public YourEmailService(Mailer mailer) {
+        this.mailer = mailer;
+    }
 }
 </code></pre>
-      Or inject the builder and customize the mailer:
-      <pre><code class="small">@Configuration
+      Inject the factory when the service builds emails or needs a fresh Mailer builder:
+      <pre><code class="small">@Component
 @Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {
 
-        @Autowired
-        private MailerGenericBuilder mailerGenericBuilder;
+    private final SimpleJavaMail mail;
 
-        @Bean
-        public Mailer customMailer() {
-            return mailerGenericBuilder
-                            .resetThreadPoolSize()
-                            .withThreadPoolKeepAliveTime(5000)
-                            .withProxyBridgePort(7777)
-                            .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
-                            .buildMailer();
-        }
+    public YourEmailService(SimpleJavaMail mail) {
+        this.mail = mail;
+    }
+
+    public Email newStatusEmail() {
+        return mail.emailBuilder().startingBlank()
+                .withSubject("Status")
+                .buildEmail();
+    }
+}</code></pre>
+      Or create an additional lifecycle-managed Mailer from a fresh builder:
+      <pre><code class="small">@Configuration
+@Import(SimpleJavaMailSpringSupport.class)
+public class MailConfiguration {
+
+    @Bean(destroyMethod = "close")
+    public Mailer customMailer(SimpleJavaMail mail) {
+        return mail.mailerBuilder()
+                .resetThreadPoolSize()
+                .withThreadPoolKeepAliveTime(5000)
+                .withProxyBridgePort(7777)
+                .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
+                .buildMailer();
+    }
 }
 </code></pre>
 	  When the default Mailer uses <code class="inline language-java">SMTP_OAUTH2</code>, a single OAuth2 token-provider bean is picked up automatically:
@@ -1015,7 +1103,7 @@ mailer.sendMail(email, /*async = */ true);
 		Defining your own thread pool using an ExecutorService (the direct-sending default is
 		<code class="inline language-java">Executors.newSingleThreadExecutor</code>):
 		<div>
-			<pre><code class="language-java small">currentMailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
+			<pre><code class="language-java small">mailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
 		</div>
 		<p class="wide">
 			See <a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for who shuts down the default and custom executors.
@@ -1165,15 +1253,17 @@ simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
 
 			<div class="wide full-width-example">
 				<p><strong>Failure behavior in a cluster:</strong></p>
-				<pre><code class="language-java small">Mailer primary = MailerBuilder
+				<pre><code class="language-java small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+Mailer primary = mail.mailerBuilder()
     .withSMTPServer("smtp-primary.example.com", 587, "user", "password")
     .withClusterKey(myClusterKey)
     .buildMailer();
-Mailer secondary = MailerBuilder
+Mailer secondary = mail.mailerBuilder()
     .withSMTPServer("smtp-secondary.example.com", 587, "user", "password")
     .withClusterKey(myClusterKey)
     .buildMailer();
-Mailer tertiary = MailerBuilder
+Mailer tertiary = mail.mailerBuilder()
     .withSMTPServer("smtp-tertiary.example.com", 587, "user", "password")
     .withClusterKey(myClusterKey)
     .buildMailer();

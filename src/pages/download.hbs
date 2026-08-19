@@ -31,13 +31,11 @@
       <p>Simple Java Mail chooses and builds the corresponding MIME structure.</p>
       <div class="code-window start-code-window">
         <div class="code-window-bar"><span>FirstSend.java</span><span>Message</span></div>
-        <pre><code class="language-java">Email email = EmailBuilder.startingBlank()
+        <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+Email email = mail.emailBuilder().startingBlank()
     .from("Sender", "sender@example.org")
-    .withRecipients(new RecipientBuilder()
-        .withName("Recipient")
-        .withAddress("recipient@example.net")
-        .withType(TO)
-        .build())
+    .withRecipients(RecipientBuilder.to("Recipient", "recipient@example.net"))
     .withSubject("It works")
     .withPlainText("Your first Simple Java Mail message.")
     .buildEmail();</code></pre>
@@ -50,7 +48,7 @@
       <p>Keep credentials outside the source, and choose the transport strategy that matches your SMTP service.</p>
       <div class="code-window start-code-window">
         <div class="code-window-bar"><span>FirstSend.java</span><span>Delivery</span></div>
-        <pre><code class="language-java">Mailer mailer = MailerBuilder
+        <pre><code class="language-java">Mailer mailer = mail.mailerBuilder()
     .withSMTPServer(
         System.getenv("SMTP_HOST"),
         587,

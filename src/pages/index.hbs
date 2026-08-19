@@ -16,12 +16,11 @@
             <span>FirstSend.java</span>
             <span class="hero-version">v{{site.version}}</span>
           </div>
-          <pre><code class="language-java">Email email = EmailBuilder.startingBlank()
+          <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+Email email = mail.emailBuilder().startingBlank()
     .from("Sender", "sender@example.org")
-    .withRecipients(new RecipientBuilder()
-        .withAddress("recipient@example.net")
-        .withType(TO)
-        .build())
+    .withRecipients(RecipientBuilder.to("Recipient", "recipient@example.net"))
     .withSubject("It works")
     .withPlainText("Your first message.")
     .buildEmail();
@@ -134,7 +133,7 @@ mailer.sendMail(email);</code></pre>
         </header>
 
         <article class="capability-story">
-          <div class="story-index"><span>01</span><code>EmailBuilder</code></div>
+          <div class="story-index"><span>01</span><code>emailBuilder()</code></div>
           <div class="story-copy">
             <h3>Messages and recipient rules</h3>
             <p>Compose plain text, HTML, embedded images, attachments, and calendar content. Then centralize validation, defaults, forced overrides, bounce handling, receipts, and per-recipient S/MIME certificates.</p>
@@ -143,7 +142,7 @@ mailer.sendMail(email);</code></pre>
         </article>
 
         <article class="capability-story">
-          <div class="story-index"><span>02</span><code>MailerBuilder</code></div>
+          <div class="story-index"><span>02</span><code>mailerBuilder()</code></div>
           <div class="story-copy">
             <h3>Security with a usable API</h3>
             <p>Match the transport strategy to your server, authenticate with OAuth2, verify its identity, block header injection, sign with DKIM, and protect content with S/MIME or OpenPGP/MIME.</p>

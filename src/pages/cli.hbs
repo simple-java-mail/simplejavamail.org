@@ -156,8 +156,10 @@
 
   <section>
     <p class="wide">
-      With the provided scripts, anything added to the \etc folder is visible on the classpath. In the current release,
-      you can add your simplejavamail.properties there and it will be picked up.
+      With the provided scripts, anything added to the <code class="inline language-text">etc</code> folder is visible on the classpath. Put
+      <code class="inline language-text">simplejavamail.properties</code> there to use it for a CLI command. The command resolves one immutable
+      configuration snapshot and uses it for both its email and Mailer builders. Environment variables override the file, and JVM system properties
+      override environment variables.
     </p>
 	  <img data-src="../../assets/sjm etc.png"
 	       data-src-webp="../../assets/sjm etc.png.webp"
@@ -189,8 +191,8 @@
       Simple Java Mail's own main jar should be on the classpath of course, as well as all non-optional dependencies,
       the optional cli-module dependency and <em>its</em> dependencies.
     </p>
-    You can add a simplejavamail.properties file to the classpath this way which will automatically be picked for
-    defaults and configuration.
+    Add <code class="inline language-text">simplejavamail.properties</code> to this classpath to use the same conventional file, environment, and system-property
+    resolution as the provided scripts.
   </section>
 
 

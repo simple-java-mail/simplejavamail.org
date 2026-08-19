@@ -81,9 +81,13 @@
         Angus behavior without making the public message, conversion, DKIM, S/MIME, or OpenPGP APIs depend on Angus classes.
       </p>
       <p>
-        You can exclude the adapter for conversion-only use or when supplying another Jakarta Mail provider. No other provider adapter ships with Simple
-        Java Mail today. Ordinary messages can use Jakarta Mail's regular Transport API, but provider-specific envelope or DSN features need a matching adapter
-        and fail clearly when the selected provider cannot supply them. Sending always needs a Jakarta Mail implementation at runtime.
+        Only exclude the adapter when you supply another compatible Jakarta Mail implementation. No other provider adapter ships with Simple Java Mail
+        today. The Jakarta Mail API jar is not enough by itself: MIME and EML conversion also use implementation services from Jakarta Mail and Jakarta
+        Activation. Without an implementation, conversion stops with an error that tells you to restore the default module or add a replacement.
+      </p>
+      <p>
+        Ordinary messages can use Jakarta Mail's regular Transport API with a replacement implementation. Provider-specific envelope or DSN features
+        need a matching adapter and fail clearly when the selected provider cannot supply them.
       </p>
     </div>
     <div class="side">

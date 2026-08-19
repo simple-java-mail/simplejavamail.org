@@ -61,6 +61,22 @@ Email email = EmailBuilder.startingBlank()
     .withPlainText("Hello")
     .buildEmail();</code></pre>
 		<p class="wide">
+			If you are moving straight to 10.0.0 or later, an old call that supplied both a display name and exactly one address has a shorter replacement.
+			The address-only CC below stays explicit on purpose. The shortcuts do not split address lists and they do not replace the full builder when a
+			recipient needs additional metadata.
+		</p>
+		<pre class="full-width-example"><code class="language-java">// Since 10.0.0, for the named single-address case:
+Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
+    .from("me@example.com")
+    .withRecipients(
+        RecipientBuilder.to("Alice", "alice@example.com"),
+        new RecipientBuilder()
+            .withAddress("audit@example.com")
+            .withType(Message.RecipientType.CC)
+            .build())
+    .withPlainText("Hello")
+    .buildEmail();</code></pre>
+		<p class="wide">
 			For several recipients, use <code class="inline language-java">RecipientsBuilder</code>. Each String argument may contain one address or a
 			comma- or semicolon-delimited list; every parsed address becomes a separate <code class="inline language-java">Recipient</code>:
 		</p>

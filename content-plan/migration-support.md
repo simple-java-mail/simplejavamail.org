@@ -31,7 +31,7 @@ The 10.0 page is deliberately narrower than release notes. It covers only public
 - converted MIME is provider-neutral, so code must not cast it to an Angus SMTP message subtype;
 - bounce and DSN settings are delivery-envelope data and no longer appear in conversion-only MIME output;
 - S/MIME or OpenPGP/MIME content protection happens before final DKIM signing, and the two content-protection families cannot be combined on one message;
-- large finalized or protected MIME entities may use temporary storage, including the public threshold setting and cleanup ownership.
+- finalized MIME can affect exact EML fixtures and maximum-size checks.
 
 The page links to OpenPGP documentation but does not repeat the new-feature tutorial. Internal class moves, implementation-only helper removal, and refactoring details do not belong in migration notes.
 

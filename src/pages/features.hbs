@@ -36,13 +36,11 @@
       <a href="why-simple-java-mail.html">Why Simple Java Mail</a>.
     </p>
 
-    <h3>Entry classes</h3>
+    <h3>Entry points</h3>
     <p class="wide">
-      The primary entry classes are
-      <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/email/EmailBuilder.html" target="_blank">
-        EmailBuilder</a></strong> and
-      <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/mailer/MailerBuilder.html" target="_blank">
-        MailerBuilder</a></strong>. Other entry classes are
+      The primary entry point is
+      <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/api/SimpleJavaMail.html" target="_blank">
+        SimpleJavaMail</a></strong>. One configured instance gives you fresh email, Mailer, Session-based Mailer, and conversion builders. Other entry classes are
       <strong><a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/converter/EmailConverter.html" target="_blank">
         EmailConverter</a></strong> and
       <strong><a href="https://javadoc.io/doc/com.sanctionco.jmail/jmail/latest/com.sanctionco.jmail/com/sanctionco/jmail/JMail.html" target="_blank">
@@ -143,25 +141,20 @@
 		  </p>
 	  </div>
 
-	  <div class="side">
-<pre><code class="small">Email email = EmailBuilder.startingBlank()
+	  <div class="wide full-width-example">
+<pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+Email email = mail.emailBuilder().startingBlank()
     .from("Michel Baker", "m.baker@mbakery.com")
-    .withRecipients(new RecipientBuilder()
-        .withName("mom")
-        .withAddress("jean.baker@hotmail.com")
-        .withType(Message.RecipientType.TO)
-        .build())
-    .withRecipients(new RecipientBuilder()
-        .withName("dad")
-        .withAddress("StevenOakly1963@hotmail.com")
-        .withType(Message.RecipientType.TO)
-        .build())
+    .withRecipients(
+        RecipientBuilder.to("mom", "jean.baker@hotmail.com"),
+        RecipientBuilder.to("dad", "StevenOakly1963@hotmail.com"))
     .withSubject("My Bakery is finally open!")
     .withPlainText("Mom, Dad. We did the opening ceremony of our bakery!!!")
 	.withHTMLText("&lt;p&gt;Mom, Dad. We did the opening ceremony of &lt;strong&gt;our bakery&lt;/strong&gt;!!!&lt;/p&gt;")
     .buildEmail();
 
-MailerBuilder
+mail.mailerBuilder()
   .withSMTPServer("server", 25, "username", "password")
   .buildMailer()
   .sendMail(email);
@@ -174,19 +167,17 @@ MailerBuilder
 
   <section>
     <p class="wide">
-      The entry classes for the builders are
-      <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/email/EmailBuilder.html" target="_blank">
-        EmailBuilder</a> and
-      <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/mailer/MailerBuilder.html" target="_blank">
-        MailerBuilder</a>.
+      Start from a configured
+      <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/api/SimpleJavaMail.html" target="_blank">
+        SimpleJavaMail</a> instance. It returns a fresh builder for each flow while keeping one immutable configuration snapshot underneath.
     </p>
     <p class="wide">
-		For <strong>EmailBuilder</strong>, first say what you are creating. <code class="inline language-java">startingBlank()</code> gives you an empty builder;
+		From <code class="inline language-java">mail.emailBuilder()</code>, first say what you are creating. <code class="inline language-java">startingBlank()</code> gives you an empty builder;
 		<code class="inline language-java">copying()</code> and the reply methods begin with another email; and <code class="inline language-java">forwarding()</code>
 		keeps the original message for forwarding. Every starter returns the same populating builder, so content and governance options come afterward.
     </p>
 	<div class="wide full-width-example">
-<pre><code class="language-java">Email email = EmailBuilder.copying(original)
+<pre><code class="language-java">Email email = mail.emailBuilder().copying(original)
     .ignoringDefaults()
     .ignoringOverrides()
     .withSubject("A separate copy")
@@ -200,8 +191,8 @@ MailerBuilder
 		<code class="inline language-java">EmailGovernance</code> instance.
 	</p>
     <p class="wide">
-      For <strong>MailerBuilder</strong>, the first method determines if you get a full builder API or a reduced API because you provided
-      your own custom Session instance.<br/>
+      <code class="inline language-java">mail.mailerBuilder()</code> returns the full Mailer builder API. Pass your own Session to
+      <code class="inline language-java">mail.mailerBuilder(session)</code> for the reduced Session-based API.<br/>
       <strong>If you provide your own session, a lot of properties are presumed to be preconfigured</strong>, such as SMTP server details.
     </p>
   </section>
@@ -217,7 +208,7 @@ MailerBuilder
     </div>
 
     <div class="wide full-width-example">
-<pre><code>Mailer inhouseMailer = MailerBuilder
+<pre><code>Mailer inhouseMailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("server", 25, "username", "password")
     .buildMailer();
 
@@ -225,9 +216,9 @@ inhouseMailer.sendMail(email);
 inhouseMailer.sendMail(anotherEmail);
 </code></pre>
       Or as preconfigured Spring bean:
-      <pre><code>@Bean
-public Mailer inhouseMailer() {
-    return MailerBuilder
+      <pre><code>@Bean(destroyMethod = "close")
+public Mailer inhouseMailer(SimpleJavaMail mail) {
+    return mail.mailerBuilder()
         .withSMTPServer(...)
         .buildMailer();
 }
@@ -253,8 +244,10 @@ public Mailer inhouseMailer() {
       <p class="wide">
         For example, when building an email, add
         <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/src/main/java/org/simplejavamail/api/email/Recipient.java" target="_blank">Recipient</a>
-        objects directly, or use <code class="inline">RecipientsBuilder</code> when a list needs RFC822 parsing, default names, fixed names, mixed recipient types
-        or a group-level S/MIME certificate.
+        objects directly. For one named recipient, <code class="inline">RecipientBuilder.to(...)</code>,
+        <code class="inline">RecipientBuilder.cc(...)</code>, and <code class="inline">RecipientBuilder.bcc(...)</code> return a finished recipient. Use
+        <code class="inline">RecipientsBuilder</code> when a list needs RFC822 parsing,
+        default names, fixed names, mixed recipient types or a group-level S/MIME certificate.
         The email builder itself keeps a small set of <code class="inline">withRecipients(...)</code> entry points.
       </p>
       <p class="wide">
@@ -310,10 +303,14 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
         <p>The email builder only needs a small set of recipient methods:</p>
       </div>
       <div class="side">
-      <pre><code class="small">// EmailPopulatingBuilder
+      <pre><code class="small">// Named single-address shortcuts, each returning one Recipient
+RecipientBuilder.to(String name, String address)
+RecipientBuilder.cc(String name, String address)
+RecipientBuilder.bcc(String name, String address)
+
+// EmailPopulatingBuilder
 .withRecipients(Recipient... recipients)
 .withRecipients(Collection&lt;Recipient&gt; recipients)
-.withRecipients(String name, boolean fixedName, RecipientType recipientType, String... oneOrMoreAddressesEach)
 
 // RecipientsBuilder
 .withRecipientsWithDefaultName(String name, RecipientType recipientType, String... oneOrMoreAddressesEach)
@@ -342,10 +339,11 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
         <code class="inline">RecipientsBuilder</code> lets you apply their shared names and certificates before adding the group to an email.
       </p>
       <p>
-        <code class="inline">RecipientBuilder</code> always creates exactly one recipient: pass one RFC 2822 address to
-        <code class="inline">withAddress(...)</code>, optionally with a display name. For multiple recipients, use
-        <code class="inline">RecipientsBuilder</code>. Its String inputs may be separate addresses or comma- and semicolon-delimited lists, and every parsed
-        address becomes its own recipient. Set the recipient type explicitly to TO, CC or BCC in either builder.
+        <code class="inline">RecipientBuilder</code> always creates exactly one recipient. When you already have a display name and one address, use
+        <code class="inline">RecipientBuilder.to(name, address)</code>, <code class="inline">RecipientBuilder.cc(name, address)</code>, or
+        <code class="inline">RecipientBuilder.bcc(name, address)</code>. These shortcuts return a finished <code class="inline">Recipient</code>. Use the full
+        builder when you need recipient metadata or address interpretation. For multiple recipients, use <code class="inline">RecipientsBuilder</code>. Its
+        String inputs may be separate addresses or comma- and semicolon-delimited lists, and every parsed address becomes its own recipient.
       </p>
       <p>
         Default names and default certificates only fill missing values. Fixed names and fixed certificates override source data for the whole group.
@@ -358,12 +356,8 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
     </div>
 
     <div class="side">
-<pre><code class="small">// Exactly one address
-Recipient alice = new RecipientBuilder()
-    .withName("Alice")
-    .withAddress("alice@example.com")
-    .withType(Message.RecipientType.TO)
-    .build();
+<pre><code class="small">// One named recipient with exactly one address
+Recipient alice = RecipientBuilder.to("Alice", "alice@example.com");
 
 // Separate inputs and delimited lists can be combined
 Collection&lt;Recipient&gt; reviewers = new RecipientsBuilder()
@@ -372,7 +366,7 @@ Collection&lt;Recipient&gt; reviewers = new RecipientsBuilder()
             "carol@example.com;dave@example.com")
     .buildRecipients();
 
-Email email = EmailBuilder.startingBlank()
+Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
     .from("sender@example.com")
     .withRecipients(alice)
     .withRecipients(reviewers)
@@ -387,7 +381,7 @@ Email email = EmailBuilder.startingBlank()
   {{#> components/feature-heading-h3 core=true}}Authentication and OAuth2 support{{/components/feature-heading-h3}}
   <section>
 	  <p class="wide">
-		  You use one of the builder methods on <em>MailerBuilder</em> for defining the server properties like host, port, username and password.
+		  Use <code class="inline language-java">SimpleJavaMail.mailerBuilder()</code> to define server properties such as host, port, username, and password.
 	  </p>
 	  <p class="wide">
 		  Simple Java Mail supports plain SMTP (default, but not recommended), SMTPS (legacy SSL) or TLS (recommended). The last authentication option to join the family
@@ -400,7 +394,7 @@ Email email = EmailBuilder.startingBlank()
 	  </p>
 
 	  <div class="wide full-width-example">
-<pre><code>MailerBuilder
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
   .withSMTPServer("server host", 587, "username", yourPassword)
   .withTransportStrategy(TransportStrategy.SMTP_TLS)
   .buildMailer()
@@ -409,7 +403,7 @@ Email email = EmailBuilder.startingBlank()
 		  <pre><code>OAuth2AccessTokenProvider accessTokens =
     () -&gt; tokenService.currentAccessToken();
 
-MailerBuilder
+SimpleJavaMail.fromDefaults().mailerBuilder()
   .withSMTPServer("server host", 587, "username")
   .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
   .withOAuth2AccessTokenProvider(accessTokens)
@@ -550,8 +544,7 @@ future.whenComplete((unused, failure) -> {
 <pre><code>Email email = ...
 ...
 
-MailerBuilder
-    .usingSession(yourSession)
+SimpleJavaMail.fromDefaults().mailerBuilder(yourSession)
     .buildMailer()
     .sendMail(email);
 </code></pre>
@@ -784,14 +777,15 @@ receipt.getSmtpResponse().ifPresent(response ->
 
     <div class="side">
 <pre><code class="small">Email email = ...;
+SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 
-MailerBuilder.withTransportStrategy(TransportStrategy.SMTP); // default
+mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTP); // default
 // or:
-MailerBuilder.withTransportStrategy(TransportStrategy.SMTPS);
+mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTPS);
 // or:
-MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
+mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTP_TLS);
 // or:
-MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
+mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 </code></pre>
 
 		Or with property default:
@@ -840,15 +834,15 @@ MailerBuilder.withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
     </div>
 
     <div class="side">
-<pre><code>MailerBuilder
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
   .withSMTPServer("smtp.gmail.com", 25, "your user", "your password")
   .withTransportStrategy(TransportStrategy.SMTP_TLS);
 // or:
-MailerBuilder
+SimpleJavaMail.fromDefaults().mailerBuilder()
   .withSMTPServer("smtp.gmail.com", 587, "your user", "your password")
   .withTransportStrategy(TransportStrategy.SMTP_TLS);
 // or:
-MailerBuilder
+SimpleJavaMail.fromDefaults().mailerBuilder()
   .withSMTPServer("smtp.gmail.com", 465, "your user", "your password")
   .withTransportStrategy(TransportStrategy.SMTPS);
 </code></pre>
@@ -1153,7 +1147,7 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 	  </div>
 
 	  <div class="side">
-<pre><code class="language-java small">Mailer mailer = MailerBuilder
+<pre><code class="language-java small">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user", "password")
     .withDebugLogging(true)
     .withDebugOutput(SessionDebugOutput.SLF4J)
@@ -1181,7 +1175,7 @@ simplejavamail.javaxmail.debug.out=SLF4J
 	  </div>
 
 	  <div class="side">
-<pre><code class="language-java small">Mailer mailer = MailerBuilder
+<pre><code class="language-java small">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user", "password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
     .withLocalBindAddress("203.0.113.10")
@@ -1211,7 +1205,7 @@ simplejavamail.smtp.localport=25252
 	  </div>
 
 	  <div class="side">
-<pre><code class="language-java small">Mailer mailer = MailerBuilder
+<pre><code class="language-java small">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user", "password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
     .withSmtpClientHostname("orders-service.prod.example.com")
@@ -1234,7 +1228,7 @@ simplejavamail.smtp.localport=25252
       <p>Easy!</p>
       <p>
         Produce a Calendar event String (manually or by using a library such as <a href="https://github.com/ical4j/ical4j">ical4j</a>) and pass it to
-        the <code class="inline language-java">EmailBuilder</code>.
+		  an <code class="inline language-java">EmailPopulatingBuilder</code> obtained from <code class="inline language-java">mail.emailBuilder()</code>.
       </p>
       <p>
         See the <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/simple-java-mail/src/test/java/demo/FullEmailDemoApp.java#L69">test demo app</a> included in the
@@ -1304,7 +1298,7 @@ Session session = mailer.getSession();
     </div>
 
     <div class="side">
-<pre><code class="language-java small">Email email = EmailBuilder.startingBlank()
+<pre><code class="language-java small">Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
     .from("sender@example.com")
     .withRecipients(new RecipientBuilder()
         .withAddress("recipient@example.com")
@@ -1334,7 +1328,7 @@ Session session = mailer.getSession();
     </div>
 
     <div class="side">
-<pre><code class="language-java small">Email email = EmailBuilder.startingBlank()
+<pre><code class="language-java small">Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
     .from("sender@example.com")
     .withRecipients(new RecipientBuilder()
         .withAddress("receiver@example.com")
@@ -1574,7 +1568,7 @@ String rawHeaders = outlookData.getRawHeaders();
   <section>
     <div>
       <p class="wide">
-        <code class="inline language-java">EmailBuilder</code> can start a reply, reply-all, or forward from an existing
+        <code class="inline language-java">mail.emailBuilder()</code> can start a reply, reply-all, or forward from an existing
         <code class="inline language-java">Email</code> or <code class="inline language-java">MimeMessage</code>. Each starter returns the same
         <code class="inline language-java">EmailPopulatingBuilder</code> used for a new message.
       </p>
@@ -1638,7 +1632,7 @@ String rawHeaders = outlookData.getRawHeaders();
       <pre><code class="language-java">String quoteMarkup =
     "&lt;blockquote class=\"quoted\"&gt;%s&lt;/blockquote&gt;";
 
-Email reply = EmailBuilder
+Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
     .replyingToAll(receivedEmail, quoteMarkup)
     .from("sender@example.com")
     .prependText("Thanks, I'll take care of it.\n\n")
@@ -1690,7 +1684,7 @@ Email reply = EmailBuilder
         </table>
       </div>
 
-      <pre><code class="language-java">Email revised = EmailBuilder.copying(draft)
+      <pre><code class="language-java">Email revised = SimpleJavaMail.fromDefaults().emailBuilder().copying(draft)
     .withPlainText(new File("mail/body.txt"))
     .withHTMLText(new File("mail/body.html"))
     .prependText("Reference: 42\n\n")
@@ -1721,7 +1715,7 @@ Email reply = EmailBuilder
     </div>
 
     <div>
-      <pre><code class="language-java">Email email = EmailBuilder.startingBlank()
+      <pre><code class="language-java">Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
     .from("notices@example.com")
     .withRecipients(customer)
     .withReplyTo("Support", "support@example.com")
@@ -1856,7 +1850,7 @@ mailer.testConnection(true);  // explicitly asynchronous
 		<hr/>
         <div class="wide">
           <p>Send mail using MailGun REST API:</p>
-		    <pre><code>Mailer mailGunMailer = MailerBuilder
+		    <pre><code>Mailer mailGunMailer = SimpleJavaMail.fromDefaults().mailerBuilder()
       .withCustomMailer(new MailGunMailer())
       .(..)
       .buildMailer();
@@ -2000,7 +1994,7 @@ private static String render(
 			The following throws an EmailTooBig exception as the <em>cause</em> in a parent MailerException instance
 		</p>
         <div class="wide">
-		    <pre><code>Mailer mailer = MailerBuilder
+		    <pre><code>Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
       .(..)
       .withMaximumEmailSize(4) // 4 bytes, that's not much
       .buildMailer();

@@ -96,7 +96,6 @@ for (const pre of document.querySelectorAll<HTMLPreElement>('pre')) {
       selection?.addRange(range);
     }
   });
-  pre.classList.add('has-copy-control');
   pre.append(button);
 }
 
