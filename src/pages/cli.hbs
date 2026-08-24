@@ -14,6 +14,9 @@
       The CLI exposes the Simple Java Mail builders as terminal commands. You can build a message, configure a mailer, validate it, test the connection,
       and send without writing a Java entry point.
     </p>
+    <p class="wide">
+      The CLI distribution and <code class="inline language-text">cli-module</code> require Java 17 or newer. The Java libraries remain compatible with Java 8.
+    </p>
 
     <h2>From builder API to CLI commands</h2>
 
@@ -29,6 +32,7 @@
   <section class="toc">
     <ul>
       <li><a href="#section-how-to-use">How to use</a></li>
+      <li><a href="#section-daemon" class="indent">Optional background daemon</a></li>
       <li><a href="#section-usage-help" class="indent">Usage help</a></li>
       <li><a href="#section-at-files" class="indent">@-files</a></li>
       <li><a href="#section-config-properties" class="indent">Configuring properties</a></li>
@@ -74,6 +78,47 @@
   </section>
 
 
+  <a href="#section-daemon" id="section-daemon" class="section-link h3">&sect;</a>
+  <h3>Optional background daemon</h3>
+
+  <section>
+    <p class="wide">
+      Every <code class="inline language-text">sjm send</code>, <code class="inline language-text">connect</code>, and
+      <code class="inline language-text">validate</code> command runs once and exits by default. Add <code class="inline language-text">-d</code>
+      to acquire a per-user daemon. This keeps CLI setup and matching Mailers alive between commands.
+    </p>
+    <pre><code class="language-text">
+      sjm daemon start
+      sjm send -d ...
+      sjm send --daemon=require ...
+      sjm daemon status
+      sjm daemon stop
+    </code></pre>
+    <p class="wide">
+      <code class="inline language-text">-d</code>, bare <code class="inline language-text">--daemon</code>, and
+      <code class="inline language-text">--daemon=acquire</code> use a running daemon or start one. Use
+      <code class="inline language-text">--daemon=require</code> when starting is not allowed, or
+      <code class="inline language-text">--daemon=off</code> for an explicit one-shot command. Named instances are available through
+      <code class="inline language-text">--daemon-instance=work</code> when separate startup configuration or lifecycle is needed.
+    </p>
+    <p class="wide">
+      One daemon can safely retain several Mailers. The complete effective Mailer configuration selects the reusable entry, so different SMTP hosts,
+      credentials, proxy settings, trust material, or pool settings do not share a Mailer. The standalone distribution includes
+      <code class="inline language-text">batch-module</code>, which allows compatible daemon commands to reuse its SMTP connection pool. A custom
+      classpath without that module remains supported, but cannot retain pooled SMTP transports.
+    </p>
+    <p class="wide">
+      The daemon is local to the operating-system user and authenticates every bounded request over a Unix-domain socket or a
+      <code class="inline language-text">127.0.0.1</code> fallback. It is not a durable mail queue and never retries an outcome it cannot prove.
+      The daemon is part of the CLI, so <code class="inline language-text">-d</code> is the normal cross-platform background route. The portable
+      archive includes an optional tested systemd user unit. Homebrew and Chocolatey distribution is tracked separately in
+      <a href="https://github.com/bbottema/simple-java-mail/issues/708">issue #708</a>; Windows does not require a Scheduled Task or Service. See the
+      <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/cli-module/DAEMON.md">daemon operations guide</a> for configuration,
+      pooling, shutdown, exit codes, and package-manager status.
+    </p>
+  </section>
+
+
   <a href="#section-usage-help" id="section-usage-help" class="section-link h3">&sect;</a>
   <h3>Usage Help</h3>
 
@@ -115,8 +160,8 @@
   <section>
     <p class="wide">
       If you run into a character limit in your console, you can also use "argument files" or "@-files", which is
-      supported in <a href="https://picocli.info/#AtFiles">Picocli</a>, the library used under the hood. The file can
-      contain everything that follows <code class="language-text inline">sjm</code>, including the required subcommand:
+      compatible with <a href="https://picocli.info/#AtFiles">Picocli's argument-file format</a>. The UTF-8 file can contain everything that follows
+      <code class="language-text inline">sjm</code>, including the required subcommand and a daemon selector:
     </p>
     <pre><code class="language-text">
       # file /home/foo/args
@@ -130,24 +175,12 @@
       sjm send --email:withSubject "My Subject" --mailer:withSMTPServer host=... --other arguments
     </code></pre>
     <p class="wide">
-      Quoting the Picocli documentation:
+      Double or single quotes preserve spaces, <code class="inline language-text">#</code> starts a comment outside quotes, and argument files may include
+      other argument files within the documented depth and size limits. Relative names resolve from the directory where the client command was invoked.
+      Prefix a literal value that starts with <code class="inline language-text">@</code> with a second at sign, for example
+      <code class="inline language-text">@@example</code>. The existing <code class="inline language-text">picocli.useSimplifiedAtFiles=true</code>
+      mode remains available when every non-comment line should be one argument.
     </p>
-    <blockquote>
-      <p class="wide">
-        This feature is similar to the 'Command Line Argument File' processing supported by gcc, javadoc and javac.
-        The documentation for these tools shows further examples.
-      </p>
-      <p class="wide">
-        From picocli 3.8.1, a simpler argument file format is also supported where every line (except comment lines)
-        is interpreted as a single argument. Arguments containing whitespace do not need to be quoted, but it is not
-        possible to have arguments with embedded newlines.
-      </p>
-      <p class="wide">
-        Set system property <code class="inline language-text">picocli.useSimplifiedAtFiles</code> without a value or with value
-        <code class="inline language-text">"true"</code> (case-insensitive) to enable this simpler argument file format. This simplified
-        format is similar to the argument file format supported by <a href="http://jcommander.org/#__syntax">JCommander</a>.
-      </p>
-    </blockquote>
   </section>
 
 
@@ -159,7 +192,8 @@
       With the provided scripts, anything added to the <code class="inline language-text">etc</code> folder is visible on the classpath. Put
       <code class="inline language-text">simplejavamail.properties</code> there to use it for a CLI command. The command resolves one immutable
       configuration snapshot and uses it for both its email and Mailer builders. Environment variables override the file, and JVM system properties
-      override environment variables.
+      override environment variables. A daemon captures these startup sources once; restart that daemon after changing them. Explicit options on each
+      command still participate in selecting its reusable Mailer.
     </p>
 	  <img data-src="../../assets/sjm etc.png"
 	       data-src-webp="../../assets/sjm etc.png.webp"
@@ -172,8 +206,8 @@
 
   <section>
     <p class="wide">
-      In the current release, log4j2 properties as supported and you can simply edit the provided log4j2.xml in the
-      /etc folder (see above).
+      Log4j2 configuration is supported and you can edit the provided <code class="inline language-text">log4j2.xml</code> in the
+      <code class="inline language-text">etc</code> folder. The daemon uses a separate bounded rolling log that omits raw command values, messages, and credentials.
     </p>
   </section>
 
@@ -184,7 +218,7 @@
   <section>
     <p class="wide">
       If you wish to directly invoke the CLI from the jar or class files, CLI support for Java libraries works
-      just like any other Java static void main invocation:
+      like any other Java static void main invocation on Java 17 or newer:
     </p>
     <pre><code class="language-text">java -cp all;the;jars.jar org.simplejavamail.cli.SimpleJavaMail --help</code></pre>
     <p class="wide">

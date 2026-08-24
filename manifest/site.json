@@ -116,7 +116,7 @@
       "url": "/cli.html",
       "out": "cli.html",
       "chrome": "docs",
-      "description": "Send, validate, and test mail settings from the command line with the same options exposed by the Java builders."
+      "description": "Send, validate, and test mail settings from the Java 17+ command line, optionally reusing Mailers and SMTP pools through a local daemon."
     },
     {
       "title": "MIME and interoperability",

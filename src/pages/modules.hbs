@@ -256,6 +256,7 @@
   <h2 id="cli-module" class="with-back-to-top">CLI support</h2>
   <nav class="module-capability-links" aria-label="CLI module capabilities">
     <a href="cli.html#section-how-to-use"><span>Run</span><strong>Command-line sending</strong><b aria-hidden="true">→</b></a>
+    <a href="cli.html#section-daemon"><span>Reuse</span><strong>Optional local daemon</strong><b aria-hidden="true">→</b></a>
     <a href="cli.html#section-at-files"><span>Reuse</span><strong>Argument files</strong><b aria-hidden="true">→</b></a>
     <a href="cli.html#section-config-properties"><span>Configure</span><strong>Properties from the CLI</strong><b aria-hidden="true">→</b></a>
   </nav>
@@ -264,7 +265,7 @@
 	  <p class="wide">
 		  Normally, you would not need the CLI module on the class path, unless you wish to invoke the
 		  <code class="language-text">static void main</code> method from Java (see also <a href="cli.html#navigation">how to use CLI</a>).
-		  To do so, include the following module:
+		  The CLI module requires Java 17 or newer; other Simple Java Mail library modules retain their Java 8 baseline. To invoke it directly, include:
 	  </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
