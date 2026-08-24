@@ -270,31 +270,33 @@ mailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test co
         active proxy operations.
       </p>
       <p>
-        Concurrent work through one Mailer shares that Mailer's bridge. Separate Mailers each own a bridge, so two authenticated-proxy Mailers that
-        can be active at the same time must use different bridge ports. Otherwise they both try to claim the default port, 1081. Anonymous SOCKS
-        proxies do not use the bridge.
+        Concurrent work through one Mailer shares that Mailer's bridge. By default the bridge asks the operating system for an available loopback port
+        every time it starts. Separate authenticated-proxy Mailers can therefore run at the same time without coordinating ports. Anonymous SOCKS
+        proxies do not use a bridge.
       </p>
       <p>
-        The property <code class="inline language-properties">simplejavamail.proxy.socks5bridge.port</code> sets the shared default. When an application
-        creates more than one authenticated-proxy Mailer, set a distinct port on each builder instead.
+        Simple Java Mail writes the selected port to the effective Session before opening the SMTP connection. The value is available as
+        <code class="inline language-properties">mail.smtp.socks.port</code> or <code class="inline language-properties">mail.smtps.socks.port</code>
+        and can change when a stopped bridge starts again. Use <code class="inline language-java">withProxyBridgePort(...)</code>, or the
+        <code class="inline language-properties">simplejavamail.proxy.socks5bridge.port</code> property, only when you need a fixed positive port.
       </p>
     </div>
 
     <div class="wide full-width-example">
 <pre><code class="language-java small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 
-Mailer transactionalMailer = mail.mailerBuilder()
+Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
+    .buildMailer();
+
+// Only if the local bridge must use a fixed port:
+Mailer fixedPortMailer = mail.mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
     .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
     .withProxyBridgePort(1081)
-    .buildMailer();
-
-Mailer batchMailer = mail.mailerBuilder()
-    .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
-    .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
-    .withProxyBridgePort(1082)
     .buildMailer();
 </code></pre>
     </div>
@@ -519,7 +521,8 @@ simplejavamail.proxy.host=proxy.default.com
 simplejavamail.proxy.port=1080
 simplejavamail.proxy.username=username proxy
 simplejavamail.proxy.password=password proxy
-simplejavamail.proxy.socks5bridge.port=1081
+# 0 lets the operating system select an available loopback bridge port
+simplejavamail.proxy.socks5bridge.port=0
 simplejavamail.defaults.sessiontimeoutmillis=60000
 simplejavamail.defaults.trustallhosts=false
 simplejavamail.defaults.trustedhosts=192.168.1.122;mymailserver.com;ix55432y

@@ -15,8 +15,8 @@
     <p class="wide">
       The main behavior change is that mail settings are read once and stay with that <code class="inline language-java">SimpleJavaMail</code> object.
       Changing a system property later will not silently change builders you create afterwards. Most applications will not notice anything else. Take a
-      closer look if you reload mail settings at runtime, use several mail configurations, inject the Spring builder bean, cast converted messages to
-      Angus classes, send converted MimeMessages yourself, or compare raw MIME in tests.
+      closer look if you reload mail settings at runtime, use several mail configurations, use authenticated SOCKS proxies, inject the Spring builder
+      bean, cast converted messages to Angus classes, send converted MimeMessages yourself, or compare raw MIME in tests.
     </p>
     <p class="wide">
       Your normal dependency remains <code class="inline language-text">org.simplejavamail:simple-java-mail:10.0.0</code>. You do not need to add Angus
@@ -34,6 +34,7 @@
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
       <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
       <li><a href="#opportunistic-tls">Move opportunistic TLS to the Mailer builder</a></li>
+      <li><a href="#proxy-bridge-port">Let authenticated proxy bridges choose a port</a></li>
       <li><a href="#direct-session">If you create Jakarta Mail Sessions yourself</a></li>
       <li><a href="#spring-context">Replace the Spring builder bean</a></li>
       <li><a href="#embedded-route-flags">Check two embedded-image settings</a></li>
@@ -392,6 +393,32 @@ Mailer mailer = mail.mailerBuilder()
       If you call <code class="inline language-java">TransportStrategy.SMTP.generateProperties()</code> yourself, it now always includes the properties
       for optional STARTTLS. Disabling optional STARTTLS only takes effect while a Mailer is being built.
     </p>
+  </section>
+
+  <a href="#proxy-bridge-port" id="proxy-bridge-port" class="section-link h2">&sect;</a>
+  <h2>Let authenticated proxy bridges choose a port</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>What changes:</strong> The local bridge used for authenticated SOCKS proxies no longer defaults to port
+      <code class="inline language-text">1081</code>. It now asks the operating system for an available loopback port. An explicit positive bridge port
+      still stays fixed.
+    </p>
+    <p class="wide">
+      You no longer have to give every authenticated-proxy Mailer its own bridge port. Separate Mailers can run at the same time without fighting over
+      the old default. Simple Java Mail writes the selected port to the effective Session before the SMTP connection opens, and updates it if the bridge
+      later restarts on another port. Anonymous SOCKS proxies are unchanged.
+    </p>
+    <p class="wide">
+      Remove <code class="inline language-java">withProxyBridgePort(...)</code> or
+      <code class="inline language-properties">simplejavamail.proxy.socks5bridge.port</code> when you only set it to avoid collisions. Setting the value
+      to <code class="inline language-text">0</code> also selects automatic allocation. Keep a positive value only when the application really needs a
+      predictable local port:
+    </p>
+    <pre class="full-width-example"><code class="language-java">Mailer mailer = mail.mailerBuilder()
+        .withProxy("proxy.example.com", 1080, "user", "password")
+        .withProxyBridgePort(7777)
+        .buildMailer();</code></pre>
   </section>
 
   <a href="#direct-session" id="direct-session" class="section-link h2">&sect;</a>
