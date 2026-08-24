@@ -29,6 +29,7 @@
     <ul>
       <li><a href="#java-11">Run on Java 11 or newer</a></li>
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
+      <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -150,6 +151,30 @@ Mailer mailer = mail.mailerBuilder()
       <code class="inline language-java">MailerRegularBuilder&lt;?&gt;</code> or
       <code class="inline language-java">MailerFromSessionBuilder&lt;?&gt;</code>. The old shortcuts happened to return internal implementation classes.
       The new entry point returns the public interfaces instead.
+    </p>
+  </section>
+
+  <a href="#mailer-validation" id="mailer-validation" class="section-link h2">&sect;</a>
+  <h2>Update assumptions about Mailer validation</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>What changes:</strong> In 9.x, <code class="inline language-java">mailer.validate(email)</code> only checked the supplied Email. In 10.0 it
+      checks the message that this Mailer would prepare after applying its defaults and overrides.
+    </p>
+    <p class="wide">
+      The default method now runs ordinary validation, builds the complete MIME message, applies configured S/MIME, OpenPGP and DKIM processing, and
+      checks the final encoded-size limit. It does not connect to SMTP and it does not change the supplied Email.
+    </p>
+    <pre class="full-width-example"><code class="language-java">mailer.validate(email);       // complete rehearsal
+mailer.validate(email, true); // same behavior, explicitly
+
+mailer.validate(email, false); // stop after ordinary checks and base MIME construction</code></pre>
+    <p class="wide">
+      The boolean is named <code class="inline language-java">processSecurityAndValidateSize</code>. Passing <code class="inline language-java">false</code>
+      skips signing, encryption and final-size validation. Use <code class="inline language-java">MailerHelper.validate(email)</code> when you specifically
+      need the old raw-Email checks. Both Mailer modes build MIME and therefore need Angus Mail or another compatible Jakarta Mail implementation.
+      The CLI <code class="inline language-text">validate</code> command uses the complete rehearsal and does not connect to SMTP.
     </p>
   </section>
 

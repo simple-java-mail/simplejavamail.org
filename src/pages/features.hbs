@@ -1358,9 +1358,10 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
 			  rather than relying on a single regular expression. See <a href="https://datatracker.ietf.org/doc/html/rfc2822">RFC 2822</a> for one of the relevant specifications.
 		  </p>
 		  <p>
-			  When sending, the mailer applies its defaults and overrides before checking the resulting email. Calling <code>mailer.validate(email)</code>
-			  directly runs the required sender and recipient checks, configured address validation, encoded-word protection and CRLF-injection scan against
-			  the supplied <code>Email</code> as it stands. MIME conversion and the final encoded-size check happen during sending.
+			  Calling <code>mailer.validate(email)</code> checks the message as that Mailer would prepare it for sending. It first applies Mailer defaults and
+			  overrides, then runs the sender, recipient, address, encoded-word and CRLF-injection checks. It also builds the complete MIME message, runs any
+			  configured S/MIME, OpenPGP or DKIM processing, and checks the final encoded size. It does not connect to SMTP or change the supplied
+			  <code>Email</code>.
 		  </p>
 		  <p>
 			  See <a href="https://github.com/RohanNagar/jmail">JMail</a> for more examples and configurations.
@@ -1378,8 +1379,14 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
     .clearEmailValidator() // retain completeness, encoded-word and CRLF checks
     .resetEmailValidator() // restore the default strict JMail address validator
 </code></pre>
-		  <pre><code>// validate the supplied Email as it stands:
-mailer.validate(email); // sender/recipients, addresses and injection-sensitive fields
+		  <pre><code>// complete send preparation rehearsal, without SMTP:
+mailer.validate(email);
+
+// quicker: defaults/overrides, checks and base MIME only:
+mailer.validate(email, false);
+
+// raw Email checks without Mailer defaults or overrides:
+MailerHelper.validate(email);
 
 // or just do the address validation
 JMail.isValid("your_address@domain.com");

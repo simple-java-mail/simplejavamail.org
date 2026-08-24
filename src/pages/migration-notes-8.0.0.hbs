@@ -65,7 +65,7 @@ Email completed = EmailBuilder.copying(draft)
 
 	<section>
 		<p class="wide" style="font-size:smaller">
-			<strong>Impact:</strong> <code class="inline language-java">mailer.validate(email)</code> validates the supplied draft, not the form completed for sending.
+			<strong>8.x and 9.x behavior:</strong> <code class="inline language-java">mailer.validate(email)</code> validates the supplied draft, not the form completed for sending.
 		</p>
 		<pre class="full-width-example"><code class="language-java">Email ready = mailer.getEmailGovernance()
     .produceEmailApplyingDefaultsAndOverrides(draft);
@@ -74,6 +74,10 @@ mailer.validate(ready);</code></pre>
 		<p class="wide">
 			The no-argument <code class="inline language-java">buildEmailCompletedWithDefaultsAndOverrides()</code> applies property defaults. Pass
 			<code class="inline language-java">mailer.getEmailGovernance()</code> when you need that Mailer's programmatic defaults and overrides as well.
+		</p>
+		<p class="wide">
+			In 10.0 and newer, <code class="inline language-java">mailer.validate(draft)</code> applies that Mailer's defaults and overrides itself and rehearses
+			the complete message without connecting to SMTP. See the <a href="migration-notes-10.0.0.html#mailer-validation">10.0 migration notes</a>.
 		</p>
 	</section>
 
