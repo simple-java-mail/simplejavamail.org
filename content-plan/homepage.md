@@ -34,7 +34,7 @@ The right pane contains the canonical short sample. It is a real example, no can
 Visible factual items:
 
 - current release and release date;
-- Java 8+;
+- Java 11+;
 - Apache-2.0;
 - built against the Jakarta Mail API, with Angus included by default;
 - active source and releases on GitHub.

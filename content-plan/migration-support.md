@@ -66,13 +66,13 @@ The site may display only manifest/repository-backed facts:
 
 - current version;
 - release date;
-- Java 8+;
+- Java 11+;
 - Apache-2.0;
 - Maven Central and Javadocs;
 - GitHub source, issues, and releases;
 - Jakarta Mail API with Angus included by default.
 
-No invented support policy, SLA, LTS label, vulnerability promise, or compatibility matrix.
+Do not add an SLA, LTS label, vulnerability-response promise, or compatibility matrix. The only release-line policy currently stated by the project is that 9.x becomes maintenance-only after 10.0.0, with practical backports limited to critical fixes that can preserve its Java 8 and public API contracts.
 
 ## Optional future trust pages
 

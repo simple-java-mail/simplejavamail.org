@@ -27,6 +27,7 @@
 
   <section class="toc">
     <ul>
+      <li><a href="#java-11">Run on Java 11 or newer</a></li>
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
@@ -42,6 +43,21 @@
       <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
       <li><a href="#finalized-mime">Check raw MIME tests and size limits</a></li>
     </ul>
+  </section>
+
+  <a href="#java-11" id="java-11" class="section-link h2">&sect;</a>
+  <h2>Run on Java 11 or newer</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>What breaks:</strong> Simple Java Mail 10 cannot run on Java 8. All library modules now require Java 11 or newer. The standalone CLI requires Java 17 or newer.
+    </p>
+    <p class="wide">
+      Upgrade the application runtime before moving to 10.0.0. If the application must stay on Java 8, keep using the Simple Java Mail 9.x line.
+    </p>
+    <p class="wide">
+      After 10.0.0, 9.x is maintenance-only. New features and routine dependency updates go to 10.x. Critical fixes may be backported when the change can keep the existing Java 8 and public API contracts intact.
+    </p>
   </section>
 
   <a href="#builder-entry" id="builder-entry" class="section-link h2">&sect;</a>

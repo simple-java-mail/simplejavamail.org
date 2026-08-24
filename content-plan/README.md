@@ -58,7 +58,7 @@ Supporting line:
 2. **No starting over:** advanced features use the same builders and `Mailer` API.
 3. **The difficult work is included:** security, recipient rules, pools, clusters, diagnostics, and conversion.
 4. **Uncommon capabilities:** authenticated SOCKS and keyed multi-cluster connection pools are discoverable, explained, and linked to reference material.
-5. **Maturity:** active releases, long public history, Java 8 compatibility, Apache-2.0 licensing, modular artifacts, migrations, tests, and escape hatches.
+5. **Maturity:** active releases, long public history, a documented Java baseline, Apache-2.0 licensing, modular artifacts, migrations, tests, and escape hatches.
 
 ## Tone and language
 
@@ -207,7 +207,7 @@ Teal must pass contrast requirements wherever it carries text. Amber is a signal
 |  Short explanatory line        |  [copy]                          |
 |  [Get started] [See the depth]  |  route: composed -> accepted    |
 +---------------------------------+--------------------------------+
-|  vX.Y.Z     Java 8+     Apache-2.0     Jakarta API, Angus included|
+|  vX.Y.Z     Java 11+    Apache-2.0     Jakarta API, Angus included|
 +------------------------------------------------------------------+
 |  01 Compose -- 02 Configure -- 03 Protect -- 04 Deliver ...      |
 |     one continuous route line connects the six stages             |
