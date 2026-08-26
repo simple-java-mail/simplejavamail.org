@@ -182,7 +182,7 @@ mailer.getEmailGovernance();
     <div class="side">
 <pre><code>
 try {
-   mailer.sendMail(email, false);
+   mailer.sendMailSync(email);
 } catch (MailException e) {
    // handle the exception
 }

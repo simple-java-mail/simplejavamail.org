@@ -42,6 +42,7 @@
       <li><a href="#angus-api-boundary">If your own code imports Angus</a></li>
       <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
       <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
+      <li><a href="#explicit-send-mode">Choose explicit synchronous or asynchronous send methods</a></li>
       <li><a href="#submission-results">If you inspect submission receipts or send failures</a></li>
       <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
       <li><a href="#finalized-mime">Check raw MIME tests and size limits</a></li>
@@ -701,6 +702,31 @@ Transport.send(message);</code></pre>
     </p>
   </section>
 
+  <a href="#explicit-send-mode" id="explicit-send-mode" class="section-link h2">&sect;</a>
+  <h2>Choose explicit synchronous or asynchronous send methods</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>Nothing breaks:</strong> Existing no-mode and boolean send methods remain supported. New methods make blocking, return type, and failure
+      behavior visible without consulting the Mailer's configuration or reading a boolean argument.
+    </p>
+    <pre class="full-width-example"><code class="language-java">mailer.sendMailSync(email);                         // failures are thrown here
+CompletableFuture&lt;Void&gt; send = mailer.sendMailAsync(email);
+
+MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);
+CompletableFuture&lt;MailSubmissionReceipt&gt; receiptFuture =
+        mailer.sendMailAndGetReceiptAsync(email);</code></pre>
+    <p class="wide">
+      Explicit methods ignore the Mailer's configured <code class="inline language-java">async()</code> default. The <code class="inline language-java">Sync</code>
+      methods finish on the calling thread and throw failures directly. The <code class="inline language-java">Async</code> methods return a future and put
+      preparation, scheduling, and submission failures on it. A null Email remains an immediate argument error in both modes.
+    </p>
+    <p class="wide">
+      Keep <code class="inline language-java">sendMail(email)</code>, <code class="inline language-java">sendMailAndGetReceipt(email)</code>, or their boolean
+      overloads when configuration-driven or runtime mode selection is intentional. They delegate to the same explicit implementation paths.
+    </p>
+  </section>
+
   <a href="#submission-results" id="submission-results" class="section-link h2">&sect;</a>
   <h2>If you inspect submission receipts or send failures</h2>
 
@@ -727,9 +753,7 @@ Transport.send(message);</code></pre>
       </tbody>
     </table>
     <pre class="full-width-example"><code class="language-java">try {
-    MailSubmissionReceipt receipt = mailer
-            .sendMailAndGetReceipt(email, false)
-            .get();
+    MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);
     checkpoint(receipt.getEmailId(),
             receipt.getStatus(), receipt.getSubmittedAt());
 } catch (MailSubmissionException failure) {

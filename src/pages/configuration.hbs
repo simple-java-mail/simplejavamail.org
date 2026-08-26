@@ -1093,14 +1093,14 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 			which is less efficient in high-volume scenarios and can reach the SMTP server's connection limit more quickly.
 		</p>
 		<div>
-			<pre><code class="language-java small">Mailer regularMailer = mailerBuilder.(..).buildMailer();
-regularMailer.sendMail(email); // blocks
+			<pre><code class="language-java small">Mailer mailer = mailerBuilder.(..).buildMailer();
 
+mailer.sendMailSync(email); // blocks; failures are thrown here
+CompletableFuture&lt;Void&gt; future = mailer.sendMailAsync(email);
+
+/* Existing default-driven calls remain supported: */
 Mailer defaultAsyncMailer = mailerBuilder.(..).async().buildMailer();
-defaultAsyncMailer.sendMail(email); // doesn't block
-
-/* or be explicit about it: */
-mailer.sendMail(email, /*async = */ true);
+defaultAsyncMailer.sendMail(email); // follows the configured async default
 </code></pre>
 		</div><br/>
 		Defining your own thread pool using an ExecutorService (the direct-sending default is
@@ -1108,6 +1108,11 @@ mailer.sendMail(email, /*async = */ true);
 		<div>
 			<pre><code class="language-java small">mailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
 		</div>
+		<p class="wide">
+			The explicit <code class="inline language-java">Sync</code> and <code class="inline language-java">Async</code> methods ignore the Mailer's
+			configured async default. Use <code class="inline language-java">sendMail(email)</code> or the boolean overload only when selecting the mode from
+			configuration or runtime data is intentional.
+		</p>
 		<p class="wide">
 			See <a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for who shuts down the default and custom executors.
 		</p>
@@ -1273,7 +1278,7 @@ Mailer tertiary = mail.mailerBuilder()
     .buildMailer();
 
 try {
-    primary.sendMail(email, false); // one registered pool is selected for this send
+    primary.sendMailSync(email); // one registered pool is selected for this send
 } catch (MailException failure) {
     // The selected SMTP submission failed.
     // Its connection is discarded, but its server pool stays in the cluster.

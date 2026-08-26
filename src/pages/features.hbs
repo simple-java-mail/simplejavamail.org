@@ -427,21 +427,23 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
   <section>
     <div class="view">
       <p>
-        The default mode is to send emails synchronously, blocking execution until the email was processed completely and the SMTP server sent a
-        successful result.
+        Make the execution mode explicit at the call site. <code class="inline language-java">sendMailSync(...)</code> blocks until the configured send
+        path completes and throws failures directly. <code class="inline language-java">sendMailAsync(...)</code> returns a
+        <code class="inline language-java">CompletableFuture</code> whose completion covers the whole send attempt.
       </p>
       <p>
-        You can also send asynchronously in parallel or batches, or simply send in a fire-and-forget way. If an authenticated proxy is used, the <a
-        href="#section-proxy">proxy bridging server</a> is kept alive until the last email has been sent.</p>
+        Existing no-mode and boolean calls remain supported for configuration-driven or dynamic mode selection. If an authenticated proxy is used, the
+        <a href="#section-proxy">proxy bridging server</a> is kept alive until the last email has been sent.</p>
       <p>
         Depending on the SMTP server (and proxy server if used) this can greatly influence how fast emails are sent.
       </p>
     </div>
 
     <div class="side">
-<pre><code>mailer.sendMail(email, /* async = */ true);
+<pre><code>mailer.sendMailSync(email);
+CompletableFuture&lt;Void&gt; future = mailer.sendMailAsync(email);
 </code></pre>
-      Or configure it when building the mailer:
+      Or keep using the configured default when that is intentional:
       <pre><code>
 Mailer mailer = mailerBuilder
   .(..)
@@ -501,9 +503,10 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
   <section>
     <div class="view">
       <p>
-        Passing <code class="inline language-java">true</code> to <code class="inline language-java">sendMail(...)</code> or
-        <code class="inline language-java">testConnection(...)</code> runs the operation asynchronously. The returned
-		  <em><a href="https://www.baeldung.com/java-completablefuture" target="_blank">CompletableFuture</a></em> covers the whole operation:
+        <code class="inline language-java">sendMailAsync(...)</code> always runs the operation asynchronously. Passing
+        <code class="inline language-java">true</code> to the existing <code class="inline language-java">sendMail(...)</code> or
+        <code class="inline language-java">testConnection(...)</code> overload does the same. The returned
+        <em><a href="https://www.baeldung.com/java-completablefuture" target="_blank">CompletableFuture</a></em> covers the whole operation:
         applying defaults and overrides, validation, scheduling, conversion, connection and transport. A failure at any of those stages completes
         the future exceptionally.
       </p>
@@ -512,13 +515,14 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
         placed on the future instead of escaping from the method call. Clear call errors, such as a null email argument, can still be thrown immediately.
       </p>
       <p>
-		  With <code class="inline language-java">false</code>, the work runs on the calling thread. A successful call returns an
-        already-completed future; a failure is thrown directly.
+        <code class="inline language-java">sendMailSync(...)</code> instead runs the work on the calling thread, returns
+        <code class="inline language-java">void</code> after success, and throws a failure directly. The existing boolean overload with
+        <code class="inline language-java">false</code> retains its completed-future contract.
       </p>
     </div>
 
     <div class="side">
-      <pre><code class="small">CompletableFuture&lt;Void&gt; future = mailer.sendMail(email, true);
+      <pre><code class="small">CompletableFuture&lt;Void&gt; future = mailer.sendMailAsync(email);
 
 future.whenComplete((unused, failure) -> {
     if (failure != null) {
@@ -727,8 +731,9 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
     <div class="view">
       <p>
         When a log, trace, or background job needs a durable submission checkpoint, use
-        <code class="inline language-java">sendMailAndGetReceipt(...)</code>. It follows the same send path as
-        <code class="inline language-java">sendMail(...)</code>, but returns a provider-neutral
+        <code class="inline language-java">sendMailAndGetReceiptSync(...)</code> or
+        <code class="inline language-java">sendMailAndGetReceiptAsync(...)</code>. They follow the same send path as their non-receipt counterparts, but
+        return a provider-neutral
         <code class="inline language-java">MailSubmissionReceipt</code> with the effective Message-ID, timestamp, status and immutable recipient groups.
       </p>
       <p>
@@ -757,9 +762,7 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
 
     <div class="side">
 <pre><code class="language-java small">try {
-    MailSubmissionReceipt receipt = mailer
-        .sendMailAndGetReceipt(email, false)
-        .get();
+    MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);
 
     database.markSubmitted(
         receipt.getEmailId(),

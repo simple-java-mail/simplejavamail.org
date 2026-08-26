@@ -57,7 +57,7 @@ Email email = mail.emailBuilder().startingBlank()
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
     .buildMailer();
 
-mailer.sendMail(email);</code></pre>
+mailer.sendMailSync(email);</code></pre>
       </div>
       <p class="start-note">Port and transport strategy must match the server. See the <a href="/security.html#section-authentication-methods">transport strategy guide</a> before adapting this example.</p>
     </section>
