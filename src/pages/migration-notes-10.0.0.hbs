@@ -166,15 +166,49 @@ Mailer mailer = mail.mailerBuilder()
       The default method now runs ordinary validation, builds the complete MIME message, applies configured S/MIME, OpenPGP and DKIM processing, and
       checks the final encoded-size limit. It does not connect to SMTP and it does not change the supplied Email.
     </p>
-    <pre class="full-width-example"><code class="language-java">mailer.validate(email);       // complete rehearsal
+    <p class="wide">
+      Choose between validation and rehearsal by what your code needs back, not by validation depth or cost:
+    </p>
+    <table>
+      <thead>
+      <tr><th>Caller need</th><th>Use</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Only continue when preparation succeeds, or fail with an exception</td><td><code class="inline language-java">mailer.validate(email)</code></td></tr>
+      <tr><td>Preview or export EML, inspect the effective Email or envelope, diagnose size, or retain the Message-ID</td><td><code class="inline language-java">mailer.rehearse(email)</code></td></tr>
+      </tbody>
+    </table>
+    <p class="wide">
+      Both default calls perform the same preparation. <code class="inline language-java">validate</code> delegates to
+      <code class="inline language-java">rehearse</code> and discards the snapshot; it returns <code class="inline language-java">true</code> after success and
+      never returns <code class="inline language-java">false</code> for invalid input. A successful rehearsal has already validated the Email, so do not call
+      <code class="inline language-java">validate</code> first.
+    </p>
+    <pre class="full-width-example"><code class="language-java">mailer.validate(email);       // only success or an exception matters
 mailer.validate(email, true); // same behavior, explicitly
 
 mailer.validate(email, false); // stop after ordinary checks and base MIME construction</code></pre>
     <p class="wide">
+      Use <code class="inline language-java">rehearse(...)</code> directly when you need the prepared result. The returned
+      <code class="inline language-java">MailRehearsal</code> exposes the effective Email, defensive EML bytes, encoded size, Message-ID, and transport
+      envelope addresses.
+    </p>
+    <pre class="full-width-example"><code class="language-java">MailRehearsal rehearsal = mailer.rehearse(email);
+
+Email effectiveEmail = rehearsal.getEffectiveEmail();
+byte[] eml = rehearsal.getEmlBytes();
+long encodedSize = rehearsal.getEncodedSize();
+String messageId = rehearsal.getEmailId();
+List&lt;String&gt; envelopeRecipients = rehearsal.getEnvelopeRecipients();
+
+MailRehearsal baseMime = mailer.rehearse(email, false);</code></pre>
+    <p class="wide">
       The boolean is named <code class="inline language-java">processSecurityAndValidateSize</code>. Passing <code class="inline language-java">false</code>
-      skips signing, encryption and final-size validation. Use <code class="inline language-java">MailerHelper.validate(email)</code> when you specifically
-      need the old raw-Email checks. Both Mailer modes build MIME and therefore need Angus Mail or another compatible Jakarta Mail implementation.
-      The CLI <code class="inline language-text">validate</code> command uses the complete rehearsal and does not connect to SMTP.
+      skips signing, encryption and final-size validation; all result fields remain available, but the EML and size describe the unsecured base MIME.
+      A rehearsal is a snapshot, so a later send can generate different dates, boundaries, Message-IDs, or cryptographic output. Use
+      <code class="inline language-java">MailerHelper.validate(email)</code> when you specifically need the old raw-Email checks. Both Mailer modes build
+      MIME and therefore need Angus Mail or another compatible Jakarta Mail implementation. The CLI <code class="inline language-text">validate</code>
+      command uses the complete rehearsal and does not connect to SMTP.
     </p>
   </section>
 

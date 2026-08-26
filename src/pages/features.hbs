@@ -1358,10 +1358,22 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
 			  rather than relying on a single regular expression. See <a href="https://datatracker.ietf.org/doc/html/rfc2822">RFC 2822</a> for one of the relevant specifications.
 		  </p>
 		  <p>
-			  Calling <code>mailer.validate(email)</code> checks the message as that Mailer would prepare it for sending. It first applies Mailer defaults and
+			  <strong>Use <code>mailer.validate(email)</code> when you need only a success-or-exception gate</strong>, for example to reject a request or assert in
+			  a test that this Mailer can prepare the message. It first applies Mailer defaults and
 			  overrides, then runs the sender, recipient, address, encoded-word and CRLF-injection checks. It also builds the complete MIME message, runs any
 			  configured S/MIME, OpenPGP or DKIM processing, and checks the final encoded size. It does not connect to SMTP or change the supplied
 			  <code>Email</code>.
+		  </p>
+		  <p>
+			  <strong>Use <code>mailer.rehearse(email)</code> when your code needs the prepared result</strong>, for example to preview or export EML, diagnose size,
+			  or inspect the effective Email or transport envelope. Its immutable <code>MailRehearsal</code> exposes the effective Email,
+			  defensive EML bytes, encoded size, Message-ID, and the envelope sender and recipients that would be given to the transport. It is a snapshot:
+			  a later send prepares the original Email again, so generated dates, boundaries, IDs, and cryptographic output can differ.
+		  </p>
+		  <p>
+			  Choose by the result you need, not by thoroughness: both full calls perform the same preparation. <code>validate</code> delegates to
+			  <code>rehearse</code> and discards the snapshot; it returns <code>true</code> after success and never returns <code>false</code> for invalid input.
+			  A successful rehearsal has already validated the Email, so do not call <code>validate</code> first.
 		  </p>
 		  <p>
 			  See <a href="https://github.com/RohanNagar/jmail">JMail</a> for more examples and configurations.
@@ -1379,11 +1391,17 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
     .clearEmailValidator() // retain completeness, encoded-word and CRLF checks
     .resetEmailValidator() // restore the default strict JMail address validator
 </code></pre>
-		  <pre><code>// complete send preparation rehearsal, without SMTP:
+		  <pre><code>// inspect complete send preparation, without SMTP:
+MailRehearsal rehearsal = mailer.rehearse(email);
+byte[] eml = rehearsal.getEmlBytes();
+long encodedSize = rehearsal.getEncodedSize();
+List&lt;String&gt; envelopeRecipients = rehearsal.getEnvelopeRecipients();
+
+// use this only when no prepared details are needed:
 mailer.validate(email);
 
 // quicker: defaults/overrides, checks and base MIME only:
-mailer.validate(email, false);
+MailRehearsal baseMime = mailer.rehearse(email, false);
 
 // raw Email checks without Mailer defaults or overrides:
 MailerHelper.validate(email);
