@@ -14,19 +14,89 @@ import { spawnSync } from 'node:child_process';
 import Handlebars from 'handlebars';
 import less from 'gulp-less';
 import autoprefixer from 'gulp-autoprefixer';
+import { loadJournalEntries, renderJournalFeed } from './scripts/journal-content.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(ROOT, 'src');
 const DIST = path.join(ROOT, 'dist');
 const MANIFEST = path.join(ROOT, 'manifest');
+const JOURNAL_ROOT = path.join(SRC, 'journal');
+const JOURNAL_ENTRY_TEMPLATE = path.join(SRC, 'templates', 'journal-entry.hbs');
 const SITE_BASE = 'https://www.simplejavamail.org';
+let previewJournalDrafts = process.env.JOURNAL_INCLUDE_DRAFTS === 'true';
 
 function readJSON(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-function readSite() {
-  return readJSON(path.join(MANIFEST, 'site.json'));
+function readSite({ includeDrafts = previewJournalDrafts } = {}) {
+  const site = readJSON(path.join(MANIFEST, 'site.json'));
+  if (!site.journal?.author || !site.journal?.indexUrl || !site.journal?.feedUrl) {
+    throw new Error('[journal] site.json must define journal.author, journal.indexUrl, and journal.feedUrl');
+  }
+
+  const entries = loadJournalEntries({
+    directory: JOURNAL_ROOT,
+    defaultAuthor: site.journal.author,
+    includeDrafts,
+    urlPrefix: site.journal.urlPrefix,
+  }).map((entry) => ({
+    ...entry,
+    schema: journalEntrySchema(site, entry),
+  }));
+  const journalPages = entries.map((entry) => ({
+    title: entry.title,
+    url: entry.url,
+    out: entry.out,
+    chrome: 'journal',
+    style: 'journal',
+    description: entry.description,
+    breadcrumbParent: site.journal.indexUrl,
+    generated: 'journal-entry',
+    ogType: 'article',
+    author: entry.author,
+    publishedIso: entry.publishedIso,
+    updatedIso: entry.updatedIso,
+    draft: entry.draft,
+    journalEntry: entry,
+  }));
+
+  return {
+    ...site,
+    journal: { ...site.journal, entries },
+    pages: [...site.pages, ...journalPages],
+  };
+}
+
+function journalEntrySchema(site, entry) {
+  const absoluteUrl = new URL(entry.url, site.url).toString();
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: entry.title,
+    description: entry.description,
+    datePublished: entry.publishedIso,
+    dateModified: entry.updatedIso || entry.publishedIso,
+    author: { '@type': 'Person', name: entry.author },
+    publisher: { '@type': 'Organization', name: site.name, url: site.url },
+    mainEntityOfPage: absoluteUrl,
+    isPartOf: new URL(site.journal.indexUrl, site.url).toString(),
+  };
+}
+
+function journalCollectionSchema(site) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: site.journal.title,
+    description: site.journal.description,
+    url: new URL(site.journal.indexUrl, site.url).toString(),
+    hasPart: site.journal.entries.filter((entry) => !entry.draft).map((entry) => ({
+      '@type': 'TechArticle',
+      headline: entry.title,
+      url: new URL(entry.url, site.url).toString(),
+    })),
+  };
 }
 
 function* walk(dir) {
@@ -74,7 +144,7 @@ function setupHandlebars(site) {
     return href === current || currentPage?.breadcrumbParent === href ? 'is-active' : '';
   });
   hb.registerHelper('pageForUrl', (url) => pagesByUrl.get(url));
-  hb.registerHelper('json', (value) => JSON.stringify(value));
+  hb.registerHelper('json', (value) => JSON.stringify(value).replace(/</g, '\\u003c'));
 
   hb.registerPartial('html-head-block', '');
   hb.registerPartial('header-block', '');
@@ -103,31 +173,40 @@ async function clean() {
 }
 
 function html(done) {
-  const site = readSite();
-  const nav = readJSON(path.join(MANIFEST, 'nav.json'));
-  const hb = setupHandlebars(site);
+  try {
+    const site = readSite();
+    const nav = readJSON(path.join(MANIFEST, 'nav.json'));
+    const hb = setupHandlebars(site);
 
-  for (const page of site.pages) {
-    const sourcePath = path.join(SRC, 'pages', page.src);
-    if (!fs.existsSync(sourcePath)) {
-      done(new Error(`[manifest] Missing page source: ${page.src}`));
-      return;
+    for (const page of site.pages) {
+      const sourcePath = page.generated === 'journal-entry'
+        ? JOURNAL_ENTRY_TEMPLATE
+        : path.join(SRC, 'pages', page.src);
+      if (!fs.existsSync(sourcePath)) {
+        done(new Error(`[manifest] Missing page source: ${page.src || sourcePath}`));
+        return;
+      }
+      const template = hb.compile(fs.readFileSync(sourcePath, 'utf8'));
+      const rendered = template({
+        site,
+        nav,
+        page,
+        entry: page.journalEntry,
+        currentUrl: page.url,
+        styleHrefs: styleHrefs(page),
+        journalEntries: site.journal.entries,
+        journalCollectionSchema: journalCollectionSchema(site),
+        docsGroups: site.docsGroups.map((group) => ({
+          ...group,
+          pages: group.urls.map((url) => pagesByUrl(site, url)).filter(Boolean),
+        })),
+      });
+      writeDist(page.out, rendered);
     }
-    const template = hb.compile(fs.readFileSync(sourcePath, 'utf8'));
-    const rendered = template({
-      site,
-      nav,
-      page,
-      currentUrl: page.url,
-      styleHrefs: styleHrefs(page),
-      docsGroups: site.docsGroups.map((group) => ({
-        ...group,
-        pages: group.urls.map((url) => pagesByUrl(site, url)).filter(Boolean),
-      })),
-    });
-    writeDist(page.out, rendered);
+    done();
+  } catch (error) {
+    done(error);
   }
-  done();
 }
 
 function pagesByUrl(site, url) {
@@ -146,6 +225,7 @@ function styles(done) {
     path.join(SRC, 'styles', 'main.less'),
     path.join(SRC, 'styles', 'home.less'),
     path.join(SRC, 'styles', 'compare.less'),
+    path.join(SRC, 'styles', 'journal.less'),
     path.join(SRC, 'styles', 'pooling.less'),
     path.join(SRC, 'styles', 'start.less'),
   ])
@@ -187,11 +267,28 @@ function staticFiles() {
 function sitemap(done) {
   const site = readSite();
   const urls = site.pages
-    .filter((page) => !page.internal)
+    .filter((page) => !page.internal && !page.draft)
     .map((page) => `  <url><loc>${SITE_BASE}${page.url === '/' ? '/' : page.url}</loc></url>`)
     .join('\n');
   writeDist('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
   done();
+}
+
+function journalFeed(done) {
+  try {
+    const site = readSite({ includeDrafts: false });
+    writeDist('journal/feed.xml', renderJournalFeed({
+      siteUrl: site.url,
+      indexUrl: site.journal.indexUrl,
+      feedUrl: site.journal.feedUrl,
+      title: `${site.journal.title} | ${site.name}`,
+      description: site.journal.description,
+      entries: site.journal.entries,
+    }));
+    done();
+  } catch (error) {
+    done(error);
+  }
 }
 
 function searchIndex(done) {
@@ -202,34 +299,38 @@ function searchIndex(done) {
 }
 
 function checkManifest(done) {
-  const site = readSite();
-  const sources = new Set(site.pages.map((page) => page.src));
-  const outputs = new Set();
-  const urls = new Set();
-  const errors = [];
+  try {
+    const site = readSite({ includeDrafts: true });
+    const sources = new Set(site.pages.filter((page) => page.src).map((page) => page.src));
+    const outputs = new Set();
+    const urls = new Set();
+    const errors = [];
 
-  for (const page of site.pages) {
-    if (outputs.has(page.out)) errors.push(`duplicate output ${page.out}`);
-    if (urls.has(page.url)) errors.push(`duplicate URL ${page.url}`);
-    outputs.add(page.out);
-    urls.add(page.url);
-  }
-  for (const page of site.pages) {
-    if (page.breadcrumbParent === page.url) errors.push(`page cannot be its own breadcrumb parent: ${page.url}`);
-    if (page.breadcrumbParent && !urls.has(page.breadcrumbParent)) {
-      errors.push(`breadcrumb parent references missing URL ${page.breadcrumbParent}`);
+    for (const page of site.pages) {
+      if (outputs.has(page.out)) errors.push(`duplicate output ${page.out}`);
+      if (urls.has(page.url)) errors.push(`duplicate URL ${page.url}`);
+      outputs.add(page.out);
+      urls.add(page.url);
     }
-  }
-  for (const file of fs.readdirSync(path.join(SRC, 'pages'))) {
-    if (file.endsWith('.hbs') && !sources.has(file)) errors.push(`unregistered page ${file}`);
-  }
-  for (const group of site.docsGroups) {
-    for (const url of group.urls) {
-      if (!urls.has(url)) errors.push(`docs navigation references missing URL ${url}`);
+    for (const page of site.pages) {
+      if (page.breadcrumbParent === page.url) errors.push(`page cannot be its own breadcrumb parent: ${page.url}`);
+      if (page.breadcrumbParent && !urls.has(page.breadcrumbParent)) {
+        errors.push(`breadcrumb parent references missing URL ${page.breadcrumbParent}`);
+      }
     }
-  }
+    for (const file of fs.readdirSync(path.join(SRC, 'pages'))) {
+      if (file.endsWith('.hbs') && !sources.has(file)) errors.push(`unregistered page ${file}`);
+    }
+    for (const group of site.docsGroups) {
+      for (const url of group.urls) {
+        if (!urls.has(url)) errors.push(`docs navigation references missing URL ${url}`);
+      }
+    }
 
-  done(errors.length ? new Error(`[manifest] ${errors.join('; ')}`) : undefined);
+    done(errors.length ? new Error(`[manifest] ${errors.join('; ')}`) : undefined);
+  } catch (error) {
+    done(error);
+  }
 }
 
 function serve(done) {
@@ -261,13 +362,18 @@ function watchFiles() {
   gulp.watch([path.join(SRC, '**/*'), path.join(MANIFEST, '*.json')], gulp.series(build));
 }
 
-const compile = gulp.parallel(html, styles, scripts, assets, legacyLibraries, staticFiles, sitemap);
+function enableJournalDrafts(done) {
+  previewJournalDrafts = true;
+  done();
+}
+
+const compile = gulp.parallel(html, styles, scripts, assets, legacyLibraries, staticFiles, sitemap, journalFeed);
 const build = gulp.series(clean, checkManifest, compile, searchIndex);
 
 gulp.task('clean', clean);
 gulp.task('check', checkManifest);
 gulp.task('build', build);
-gulp.task('dev', gulp.series(build, gulp.parallel(watchFiles, serve)));
+gulp.task('dev', gulp.series(enableJournalDrafts, build, gulp.parallel(watchFiles, serve)));
 gulp.task('default', build);
 
 export { clean, checkManifest as check, build };

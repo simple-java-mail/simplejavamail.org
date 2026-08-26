@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en" class="language-java">
+  <head>
+    {{> head}}
+    <script type="application/ld+json">{{{json entry.schema}}}</script>
+  </head>
+  <body class="marketing-page journal-article-page">
+    <a class="skip-link" href="#journal-article">Skip to article</a>
+    {{> site-header}}
+
+    <main id="main-content" data-pagefind-body>
+      <header class="journal-article-hero">
+        <div class="shell journal-article-hero-inner">
+          <a class="journal-back-link" href="{{site.journal.indexUrl}}"><span aria-hidden="true">←</span> Engineering Journal</a>
+          <p class="eyebrow">{{entry.category}}</p>
+          <h1>{{entry.title}}</h1>
+          <p class="journal-article-lede">{{entry.description}}</p>
+          <p class="journal-byline">By <strong>{{entry.author}}</strong></p>
+        </div>
+      </header>
+
+      <div class="shell journal-article-grid">
+        <aside class="journal-record-rail" aria-label="Article record" data-pagefind-ignore>
+          <dl>
+            <div>
+              <dt>Published</dt>
+              <dd><time datetime="{{entry.publishedIso}}">{{entry.publishedLabel}}</time></dd>
+            </div>
+            {{#if entry.updatedIso}}
+              <div>
+                <dt>Last revisited</dt>
+                <dd><time datetime="{{entry.updatedIso}}">{{entry.updatedLabel}}</time></dd>
+              </div>
+            {{/if}}
+            {{#if entry.appliesTo}}
+              <div>
+                <dt>Applies to</dt>
+                <dd>
+                  <ul>
+                    {{#each entry.appliesTo}}<li>{{this}}</li>{{/each}}
+                  </ul>
+                </dd>
+              </div>
+            {{/if}}
+          </dl>
+
+          {{#if entry.headings}}
+            <nav class="journal-entry-toc" aria-label="In this entry">
+              <span>In this entry</span>
+              <ol>
+                {{#each entry.headings}}
+                  <li class="journal-toc-depth-{{depth}}"><a href="#{{id}}">{{text}}</a></li>
+                {{/each}}
+              </ol>
+            </nav>
+          {{/if}}
+        </aside>
+
+        <article id="journal-article" class="journal-prose">
+          {{{entry.html}}}
+        </article>
+      </div>
+
+      <nav class="shell journal-entry-navigation" aria-label="Journal navigation" data-pagefind-ignore>
+        {{#if entry.older}}
+          <a href="{{entry.older.url}}">
+            <span>Older entry · {{entry.older.category}}</span>
+            <strong><b aria-hidden="true">←</b> {{entry.older.title}}</strong>
+          </a>
+        {{else}}
+          <a href="{{site.journal.indexUrl}}">
+            <span>Journal index</span>
+            <strong><b aria-hidden="true">←</b> All entries</strong>
+          </a>
+        {{/if}}
+        {{#if entry.newer}}
+          <a href="{{entry.newer.url}}">
+            <span>Newer entry · {{entry.newer.category}}</span>
+            <strong>{{entry.newer.title}} <b aria-hidden="true">→</b></strong>
+          </a>
+        {{/if}}
+      </nav>
+    </main>
+
+    {{> footer}}
+    <script src="/assets/lib/prism.js"></script>
+    <script>window.Prism && window.Prism.highlightAll();</script>
+    <script type="module" src="/scripts/site.js"></script>
+  </body>
+</html>

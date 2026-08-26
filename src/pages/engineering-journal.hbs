@@ -1,0 +1,32 @@
+{{#> marketing}}
+  {{#*inline "html-head-block"}}
+    <script type="application/ld+json">{{{json journalCollectionSchema}}}</script>
+  {{/inline}}
+
+  {{#*inline "body-block"}}
+    <section class="journal-index">
+      <div class="shell journal-index-inner">
+        <header class="journal-index-header">
+          <h1>Engineering Journal</h1>
+          <a class="journal-feed-link" href="{{site.journal.feedUrl}}">RSS</a>
+        </header>
+
+        <div class="journal-entry-list">
+          {{#each journalEntries}}
+            <article class="journal-entry-row">
+              <div class="journal-entry-row-copy">
+                <h2><a href="{{url}}">{{title}}</a></h2>
+                <p>{{description}}</p>
+                <p class="journal-entry-row-meta">
+                  <time datetime="{{publishedIso}}">{{publishedLabel}}</time>
+                  <span aria-hidden="true">·</span>
+                  <span>{{category}}</span>
+                </p>
+              </div>
+            </article>
+          {{/each}}
+        </div>
+      </div>
+    </section>
+  {{/inline}}
+{{/marketing}}

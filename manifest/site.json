@@ -14,6 +14,14 @@
   "javadocs": "https://javadoc.io/doc/org.simplejavamail/simple-java-mail/latest/index.html",
   "mavenCentral": "https://central.sonatype.com/artifact/org.simplejavamail/simple-java-mail",
   "foundationUrl": "https://eclipse-ee4j.github.io/angus-mail/",
+  "journal": {
+    "title": "Engineering Journal",
+    "description": "Whole-system email design, project archaeology, and maintainer perspectives from the development of Simple Java Mail.",
+    "author": "Benny Bottema",
+    "indexUrl": "/engineering-journal.html",
+    "urlPrefix": "/journal/",
+    "feedUrl": "/journal/feed.xml"
+  },
   "pages": [
     {
       "title": "Home",
@@ -43,6 +51,15 @@
       "chrome": "marketing",
       "style": "home",
       "description": "Find the Simple Java Mail APIs and settings for correct MIME, secure sending, high throughput, batches, application integration, and delivery diagnostics."
+    },
+    {
+      "title": "Engineering Journal",
+      "src": "engineering-journal.hbs",
+      "url": "/engineering-journal.html",
+      "out": "engineering-journal.html",
+      "chrome": "marketing",
+      "style": "journal",
+      "description": "Whole-system email design, project archaeology, and maintainer perspectives from the development of Simple Java Mail."
     },
     {
       "title": "Documentation",
