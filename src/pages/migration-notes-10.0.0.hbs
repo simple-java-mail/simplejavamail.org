@@ -42,6 +42,7 @@
       <li><a href="#angus-api-boundary">If your own code imports Angus</a></li>
       <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
       <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
+      <li><a href="#submission-results">If you inspect submission receipts or send failures</a></li>
       <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
       <li><a href="#finalized-mime">Check raw MIME tests and size limits</a></li>
     </ul>
@@ -697,6 +698,61 @@ Transport.send(message);</code></pre>
       Other mail providers need their own equivalent. This is the provider-specific work that Simple Java Mail normally handles for you. When you send
       through a Simple Java Mail Mailer, it now stops before sending if the active provider cannot honor those options. In 9.x they could be silently
       ignored.
+    </p>
+  </section>
+
+  <a href="#submission-results" id="submission-results" class="section-link h2">&sect;</a>
+  <h2>If you inspect submission receipts or send failures</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>What changes:</strong> A receipt is no longer just an Angus SMTP response. It now reports provider-neutral acceptance status and recipient
+      facts. A failed or partial submission throws <code class="inline language-java">MailSubmissionException</code> with that same receipt and the
+      original Jakarta Mail exception as its cause.
+    </p>
+    <p class="wide">
+      <code class="inline language-java">MailSubmissionReceipt</code> still exposes the effective Message-ID, timestamp and optional
+      <code class="inline language-java">SmtpServerResponse</code>. It now also exposes immutable accepted, valid-unsent and invalid recipient lists and
+      one of these statuses:
+    </p>
+    <table>
+      <thead>
+      <tr><th>Status</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code class="inline language-java">ACCEPTED</code></td><td>Every submitted envelope recipient is known accepted for SMTP submission.</td></tr>
+      <tr><td><code class="inline language-java">PARTIALLY_ACCEPTED</code></td><td>At least one recipient was accepted, but the attempt did not complete as a clean success for every recipient. Provider-supplied unsent or invalid groups identify the remainder when available; the call fails.</td></tr>
+      <tr><td><code class="inline language-java">REJECTED</code></td><td>The transport reports that no recipient was accepted; the call fails.</td></tr>
+      <tr><td><code class="inline language-java">UNKNOWN</code></td><td>The send path cannot determine acceptance. This may be a successful opaque custom send or an ambiguous failure.</td></tr>
+      </tbody>
+    </table>
+    <pre class="full-width-example"><code class="language-java">try {
+    MailSubmissionReceipt receipt = mailer
+            .sendMailAndGetReceipt(email, false)
+            .get();
+    checkpoint(receipt.getEmailId(),
+            receipt.getStatus(), receipt.getSubmittedAt());
+} catch (MailSubmissionException failure) {
+    MailSubmissionReceipt outcome = failure.getSubmissionReceipt();
+
+    audit(outcome.getAcceptedRecipients(),
+            outcome.getValidUnsentRecipients(),
+            outcome.getInvalidRecipients(),
+            failure.getCause());
+
+    if (outcome.getStatus() == MailSubmissionStatus.UNKNOWN) {
+        markForReconciliation();
+    }
+}</code></pre>
+    <p class="wide">
+      Asynchronous sends complete their future exceptionally with <code class="inline language-java">MailSubmissionException</code>.
+      <code class="inline language-java">withOpenConnection</code> throws it directly. Pooled and non-pooled sends use the same result model.
+    </p>
+    <p class="wide">
+      <code class="inline language-java">UNKNOWN</code> does not mean rejected: the connection may have failed after the server accepted some or all
+      recipients. Do not automatically retry an unknown outcome unless duplicate submission is prevented or acceptable. Retrying a whole
+      <code class="inline language-java">PARTIALLY_ACCEPTED</code> envelope can likewise duplicate mail for recipients already accepted. No status proves
+      final mailbox delivery; DSNs, bounces and provider webhooks remain separate.
     </p>
   </section>
 

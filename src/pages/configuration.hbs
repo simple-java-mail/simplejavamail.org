@@ -1161,8 +1161,9 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 			or clustered load balancing, use <a href="#section-reusing-connections">pooled connections</a>.
 		</p>
 		<p>
-			Use <code class="inline language-java">sender.sendMailAndGetReceipt(next)</code> instead when the checkpoint needs the SMTP submission response
-			that was returned by the server.
+			Use <code class="inline language-java">sender.sendMailAndGetReceipt(next)</code> instead when the checkpoint needs provider-neutral submission
+			status, accepted or unsent recipient groups, and any SMTP response exposed by the provider. A failed or partial submission throws
+			<code class="inline language-java">MailSubmissionException</code> with the same facts, so mark the queue item only after inspecting that outcome.
 		</p>
 	</div>
   </section>

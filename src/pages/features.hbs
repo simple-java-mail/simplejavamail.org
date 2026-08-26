@@ -726,18 +726,28 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
   <section>
     <div class="view">
       <p>
-        When a log, trace, or background job needs the SMTP server's response for a submitted message, use
+        When a log, trace, or background job needs a durable submission checkpoint, use
         <code class="inline language-java">sendMailAndGetReceipt(...)</code>. It follows the same send path as
-        <code class="inline language-java">sendMail(...)</code>, but returns a <code class="inline language-java">MailSubmissionReceipt</code>.
+        <code class="inline language-java">sendMail(...)</code>, but returns a provider-neutral
+        <code class="inline language-java">MailSubmissionReceipt</code> with the effective Message-ID, timestamp, status and immutable recipient groups.
       </p>
       <p>
-        With the built-in Angus SMTP transport, the receipt contains the return code and final SMTP response, such as a
-        <code class="inline language-text">250 ... queued as ...</code> response. Logging-only transport mode and custom mailers still return a receipt after
-        successful processing, but without an SMTP response.
+        <code class="inline language-java">ACCEPTED</code> means every submitted envelope recipient was accepted. Failed or partial sends throw
+        <code class="inline language-java">MailSubmissionException</code>; its receipt distinguishes
+        <code class="inline language-java">PARTIALLY_ACCEPTED</code>, <code class="inline language-java">REJECTED</code>, and
+        <code class="inline language-java">UNKNOWN</code>, lists accepted, valid-unsent and invalid recipients, and retains the original Jakarta Mail
+        exception as its cause. Asynchronous sends complete their future with the same exception.
       </p>
       <p>
-        This confirms submission acceptance by the SMTP server, not final recipient mailbox delivery. Use Delivery Status Notification, bounces, read
-        receipts or provider-specific tracking when you need final delivery signals.
+        The provider response is separate and optional. Angus normally supplies the return code and final SMTP response, such as
+        <code class="inline language-text">250 ... queued as ...</code>; another Jakarta Mail provider can report acceptance without one. Logging-only
+        mode and custom mailers return <code class="inline language-java">UNKNOWN</code> after successful processing because Simple Java Mail cannot
+        observe their server interaction.
+      </p>
+      <p>
+        An unknown failure may have happened after the server accepted some or all recipients. Do not automatically retry it unless duplicate submission
+        is acceptable or prevented. A partial failure also needs recipient-aware recovery. Even <code class="inline language-java">ACCEPTED</code> confirms
+        SMTP submission, not final mailbox delivery; use Delivery Status Notification, bounces, read receipts or provider-specific tracking for that.
       </p>
       <p>
         The open-connection example uses the Mailer's built-in SMTP transport. It cannot be combined with a
@@ -746,19 +756,30 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
     </div>
 
     <div class="side">
-<pre><code class="language-java small">MailSubmissionReceipt receipt = mailer
-    .sendMailAndGetReceipt(email, false)
-    .get();
+<pre><code class="language-java small">try {
+    MailSubmissionReceipt receipt = mailer
+        .sendMailAndGetReceipt(email, false)
+        .get();
 
-receipt.getSmtpResponse().ifPresent(response ->
-    System.out.printf("SMTP accepted %s: %d %s%n",
+    database.markSubmitted(
         receipt.getEmailId(),
-        response.getReturnCode(),
-        response.getResponse()));
+        receipt.getStatus(),
+        receipt.getSubmittedAt());
+} catch (MailSubmissionException failure) {
+    MailSubmissionReceipt outcome =
+        failure.getSubmissionReceipt();
+
+    database.markSubmissionFailure(
+        outcome.getStatus(),
+        outcome.getAcceptedRecipients(),
+        outcome.getValidUnsentRecipients(),
+        outcome.getInvalidRecipients(),
+        failure.getCause());
+}
 </code></pre>
 <pre><code class="language-java small">mailer.withOpenConnection(sender -> {
     MailSubmissionReceipt receipt = sender.sendMailAndGetReceipt(email);
-    database.markSubmitted(email, receipt.getSmtpResponse().orElse(null));
+    database.markSubmitted(email, receipt.getStatus());
 });
 </code></pre>
     </div>
