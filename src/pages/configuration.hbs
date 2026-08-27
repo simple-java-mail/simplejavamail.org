@@ -61,6 +61,7 @@
       <li><a href="#section-config-mailer">Mailer level email defaults and overrides</a></li>
       <li><a href="#section-combine-config">Combining everything for multiple environments</a></li>
       <li><a href="#section-spring-support">Spring support</a></li>
+	  <li><a href="#section-mail-send-observer">Terminal mail-send observer</a></li>
       <li><a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
       <li><a href="#section-batch-and-clustering">Batch and clustering support</a></li>
 	  <li><a href="#section-not-reusing-connections" class="indent">How direct connections work</a></li>
@@ -958,6 +959,38 @@ simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RA
 simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.maxsize=8
 simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.loadbalancing.strategy=ROUND_ROBIN
 </code></pre>
+    </div>
+  </section>
+
+
+  <a href="#section-mail-send-observer" id="section-mail-send-observer" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Configure a terminal mail-send observer{{/components/feature-heading-h2}}
+
+  <section>
+    <div class="view">
+      <p>
+        Use <code class="inline language-java">withMailSendObserver(...)</code> for one cross-cutting callback after every reached email attempt. Calling it
+        again on the same builder replaces the previous observer. The built Mailer keeps that observer for ordinary, receipt-returning, simple-batch, and
+        <code class="inline language-java">withOpenConnection</code> sends.
+      </p>
+      <p>
+        The callback is a runtime Java integration, so there is no property, environment variable, CLI option, or configuration-diagnostics entry for it.
+        Keep the observer thread-safe and non-blocking because asynchronous sends can invoke it concurrently on their worker threads.
+      </p>
+      <p>
+        See <a href="features.html#section-mail-send-observer">Observing completed mail sends</a> for lambda and named-observer examples, timestamp and thread
+        semantics, logging-only behavior, and the distinction between a whole mail-send outcome and an SMTP submission receipt.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer(
+        "smtp.example.org", 587,
+        "user", "password")
+    .withMailSendObserver(
+        this::recordMailSendOutcome)
+    .buildMailer();</code></pre>
     </div>
   </section>
 

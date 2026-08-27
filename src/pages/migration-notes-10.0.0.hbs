@@ -43,6 +43,7 @@
       <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
       <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
       <li><a href="#explicit-send-mode">Choose explicit synchronous or asynchronous send methods</a></li>
+	  <li><a href="#mail-send-observer">Observe terminal outcomes across a Mailer</a></li>
       <li><a href="#submission-results">If you inspect submission receipts or send failures</a></li>
       <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
       <li><a href="#finalized-mime">Check raw MIME tests and size limits</a></li>
@@ -724,6 +725,38 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; receiptFuture =
     <p class="wide">
       Keep <code class="inline language-java">sendMail(email)</code>, <code class="inline language-java">sendMailAndGetReceipt(email)</code>, or their boolean
       overloads when configuration-driven or runtime mode selection is intentional. They delegate to the same explicit implementation paths.
+    </p>
+  </section>
+
+  <a href="#mail-send-observer" id="mail-send-observer" class="section-link h2">&sect;</a>
+  <h2>Observe terminal outcomes across a Mailer</h2>
+
+  <section>
+    <p class="wide" style="font-size:smaller">
+      <strong>Nothing breaks:</strong> this is an additive Java-only callback for audit, metrics, and completed-email progress across every send path of one
+      Mailer. Existing per-future completion handlers continue to work.
+    </p>
+<pre class="full-width-example"><code class="language-java">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 587, "user", "password")
+    .withMailSendObserver(this::recordMailSendOutcome)
+    .buildMailer();
+
+private void recordMailSendOutcome(MailSendOutcome outcome) {
+    audit.record(
+        outcome.getEffectiveMessageId(),
+        outcome.isSuccessful(),
+        Duration.between(outcome.getRequestedAt(), outcome.getCompletedAt()));
+}</code></pre>
+    <p class="wide">
+      The callback runs once at the terminal boundary of each reached email, before a synchronous call returns or throws and before an asynchronous future
+      completes. Accepted asynchronous work notifies on its worker thread; preparation and scheduling failures notify on the caller thread. Observer code
+      must be thread-safe, quick, and non-blocking. Its runtime exceptions are logged and ignored.
+    </p>
+    <p class="wide">
+      <code class="inline language-java">MailSendOutcome</code> describes the whole attempt and carries preparation, queue, execution, logging-mode,
+      Message-ID, success, and exact failure facts. Its optional <code class="inline language-java">MailSubmissionReceipt</code> remains the narrower SMTP
+      submission result. This observer is terminal progress, not transport lifecycle instrumentation. See the
+      <a href="features.html#section-mail-send-observer">complete observer guide and streaming demo</a>.
     </p>
   </section>
 

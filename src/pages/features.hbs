@@ -92,6 +92,7 @@
 		<li><a href="#authentication" class="indent">Authentication and OAuth2 support</a></li>
 		<li><a href="#section-sending-asynchronously" class="indent">Asynchronous sending, simple batches and clustering</a></li>
 		<li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
+		<li><a href="#section-mail-send-observer" class="indent">Observing completed mail sends</a></li>
 		<li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
 		<li><a href="#section-custom-session">Sending with your own Session instance</a></li>
 		<li><a href="#section-custom-id">Setting a custom message ID on sent email</a></li>
@@ -530,6 +531,113 @@ future.whenComplete((unused, failure) -> {
     }
 });
 </code></pre>
+    </div>
+  </section>
+
+
+  <a href="#section-mail-send-observer" id="section-mail-send-observer" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Observing completed mail sends{{/components/feature-heading-h3}}
+
+  <section>
+    <div class="view">
+      <p>
+        Configure one <code class="inline language-java">MailSendObserver</code> when audit, metrics, or progress code should see every completed email
+        handled by a reusable Mailer. The builder keeps its usual <code class="inline language-java">with...</code> vocabulary; the
+        <code class="inline language-java">onMailSendCompleted(...)</code> method is the callback Simple Java Mail invokes. Configuring another observer
+        replaces the previous one.
+      </p>
+      <p>
+        The observer receives one terminal <code class="inline language-java">MailSendOutcome</code> for each reached email. It covers the complete Simple
+        Java Mail attempt, including preparation and asynchronous queue time. Its optional <code class="inline language-java">MailSubmissionReceipt</code>
+        is narrower: it contains SMTP submission facts only. Preparation and scheduling failures therefore have no receipt; a
+        <code class="inline language-java">MailSubmissionException</code> outcome contains that exception's exact receipt.
+      </p>
+      <p>
+        This is a stream of completed-email progress, not a stream of queued, connecting, leased, or other transport lifecycle events. It does not expose
+        the Email, rendered content, connection, pool, proxy, or executor.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer(
+        "smtp.example.org", 587,
+        "user", "password")
+    .withMailSendObserver(
+        this::recordMailSendOutcome)
+    .buildMailer();
+
+private void recordMailSendOutcome(
+        MailSendOutcome outcome) {
+    Duration totalTime = Duration.between(
+        outcome.getRequestedAt(),
+        outcome.getCompletedAt());
+
+    audit.record(
+        outcome.getEffectiveMessageId(),
+        outcome.isSuccessful(),
+        totalTime);
+
+    outcome.getSubmissionReceipt()
+        .ifPresent(receipt -> metrics
+            .recordSubmissionStatus(
+                receipt.getStatus()));
+
+    outcome.getFailure()
+        .ifPresent(failure -> metrics
+            .recordFailure(failure.getClass()));
+}</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="wide full-width-example">
+      <p>
+        A named observer makes the configuration method and callback roles explicit:
+      </p>
+<pre><code class="language-java small">final class MetricsMailSendObserver implements MailSendObserver {
+
+    @Override
+    public void onMailSendCompleted(MailSendOutcome outcome) {
+        Duration sendTime = outcome.getStartedAt()
+            .map(startedAt -> Duration.between(
+                startedAt, outcome.getCompletedAt()))
+            .orElse(Duration.ZERO);
+
+        metrics.recordMailSend(
+            outcome.isSuccessful(),
+            outcome.isLoggingOnly(),
+            sendTime);
+    }
+}
+
+Mailer mailer = mail.mailerBuilder()
+    .withMailSendObserver(new MetricsMailSendObserver())
+    .buildMailer();</code></pre>
+      <p>
+        <code class="inline language-java">requestedAt</code> records when the individual attempt begins,
+        <code class="inline language-java">readyAt</code> when preparation finishes,
+        <code class="inline language-java">startedAt</code> when execution begins, and
+        <code class="inline language-java">completedAt</code> when the terminal result exists. Ready-to-start is executor queue time; start-to-completion is
+        send execution time. A preparation failure has neither ready nor started time. A scheduling failure has a ready time but no started time.
+      </p>
+      <p>
+        Synchronous callbacks run before the call returns or throws. Accepted asynchronous work calls the observer on its worker thread before the future
+        completes; preparation or scheduling failures call it on the caller thread. Different sends may notify concurrently, so observers must be
+        thread-safe, quick, and non-blocking. A runtime exception from observer code is logged and ignored without changing the send result or cleanup.
+      </p>
+      <p>
+        <code class="inline language-java">isLoggingOnly()</code> reports the Mailer's configured mode, not server acceptance. A successful logging-only
+        attempt still has an <code class="inline language-java">UNKNOWN</code> submission receipt because no SMTP server was contacted. Message-ID getters
+        return only real initial or effective Message-ID values; missing IDs remain <code class="inline language-java">null</code> rather than receiving a
+        synthetic correlation value.
+      </p>
+      <p>
+        The manually runnable
+        <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/simple-java-mail/src/test/java/demo/MailSendObserverDemoApp.java">MailSendObserverDemoApp</a>
+        sends several emails asynchronously and prints each terminal outcome immediately with its Message-ID, queue, send and total time, completion count,
+        status, and callback thread. Enable <code class="inline language-java">DemoAppBase</code> logging-only mode to try the stream without an SMTP server.
+      </p>
     </div>
   </section>
 
