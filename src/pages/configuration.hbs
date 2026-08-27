@@ -666,6 +666,11 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 			global defaults loaded from a property file for example. However, before using it as defaults Email reference, you can still have your defaults
 			initialized with global defaults, by using <code>emailBuilder.buildEmailCompletedWithDefaultsAndOverrides()</code>.
 		</p>
+		<p class="wide">
+			<a href="features.html#section-exact-eml">Exact EML</a> is deliberately outside this message-governance layer. Its supplied bytes are already final,
+			so Mailer defaults, overrides, configured content validation, and security transformations cannot change them. Put any required visible headers in the
+			EML before building the exact Email, and configure only its SMTP envelope on the exact builder.
+		</p>
 		<div class="wide">
 <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 

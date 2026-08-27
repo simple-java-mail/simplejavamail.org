@@ -30,6 +30,7 @@
       <li><a href="#java-11">Run on Java 11 or newer</a></li>
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
       <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
+	  <li><a href="#exact-eml">Submit finalized EML without rebuilding it</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -213,6 +214,56 @@ MailRehearsal baseMime = mailer.rehearse(email, false);</code></pre>
       MIME and therefore need Angus Mail or another compatible Jakarta Mail implementation. The CLI <code class="inline language-text">validate</code>
       command uses the complete rehearsal and does not connect to SMTP.
     </p>
+  </section>
+
+  <a href="#exact-eml" id="exact-eml" class="section-link h2">&sect;</a>
+  <h2>Submit finalized EML without rebuilding it</h2>
+
+  <section>
+	<p class="wide" style="font-size:smaller">
+	  <strong>Nothing breaks:</strong> ordinary EML conversion keeps producing an editable Email and a freshly built MIME representation. Exact EML is an
+	  additive path for an already-final wire message whose bytes must not change.
+	</p>
+	<div class="wide full-width-example">
+<pre><code class="language-java">byte[] eml = Files.readAllBytes(Path.of("ready-to-send.eml"));
+
+Email email = mail.emailBuilder()
+        .startingFromExactEml(eml)
+        .withEnvelopeRecipients("actual-recipient@example.org")
+        .withEnvelopeSender("bounces@example.org") // optional
+        .buildEmail();
+
+MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);</code></pre>
+	</div>
+	<p class="wide">
+	  The result remains the canonical <code class="inline language-java">Email</code>; all getters expose its parsed fields and every existing send method
+	  accepts it. The copied input bytes remain authoritative for conversion, rehearsal, logging-only mode, custom mailers, ordinary and receipt-returning
+	  sends, asynchronous execution, simple batches, open connections, and pooling. Copying it through the ordinary builder intentionally creates a
+	  composed email and gives up exact-byte preservation.
+	</p>
+	<p class="wide">
+	  Exact mode bypasses defaults, overrides, composed-content validation, resource resolution, MIME rebuilding, and Simple Java Mail's signing and
+	  encryption steps. Supply at least one explicit SMTP-envelope recipient; visible <code class="inline language-text">To</code>,
+	  <code class="inline language-text">Cc</code>, and <code class="inline language-text">Bcc</code> headers do not determine delivery. The optional envelope
+	  sender and DSN settings remain available because they are transport data.
+	</p>
+	<p class="wide">
+	  Input must be non-empty, parseable, use canonical CRLF line endings, and end in CRLF. Every byte is retained—including header folding and order,
+	  boundaries, transfer encodings, <code class="inline language-text">Bcc</code>, <code class="inline language-text">Resent-Bcc</code>, and
+	  <code class="inline language-text">Content-Length</code>—so provide an already safe outbound message. A missing Message-ID stays missing. Full
+	  rehearsal and sending check the supplied byte length against the configured maximum.
+	</p>
+	<p class="wide">
+	  The bundled Angus adapter supports exact submission. A replacement transport adapter must opt into
+	  <code class="inline language-java">ContentRequirement.PRESERVE_ALL_BYTES</code> or the attempt fails before submission. The InputStream starter
+	  consumes its stream immediately but does not close it. The old boolean <code class="inline language-java">PreparedMail</code> API remains as a
+	  deprecated compatibility shim; new adapters should use the three-valued content requirement.
+	</p>
+<pre class="full-width-example"><code class="language-text">sjm send --email:startingFromExactEml ready-to-send.eml --email:withEnvelopeRecipients actual-recipient@example.org --mailer:withSMTPServer smtp.example.org 587 user password</code></pre>
+	<p class="wide">
+	  The CLI reads the first argument as a file; relative paths resolve from the invoking client's working directory even when a daemon handles the
+	  request. Continue with the <a href="features.html#section-exact-eml">exact EML guide and demo</a> for the complete behavior and examples.
+	</p>
   </section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>

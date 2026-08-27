@@ -113,6 +113,7 @@
 		<li><a href="#section-return-receipt">Configure delivery / read receipt</a></li>
 		<li><a href="#section-delivery-status-notification">Configure Delivery Status Notification</a></li>
 		<li><a href="#section-email-validation">Validating Email Addresses</a></li>
+		<li><a href="#section-exact-eml">Submitting finalized EML without rebuilding</a></li>
 		<li><a href="#section-converting">Converting between email formats</a></li>
 		<li><a href="#section-bouncing-emails">Setting custom recipient for bouncing emails</a></li>
 		<li><a href="#section-reply-forward">Replying to and forwarding emails</a></li>
@@ -1503,6 +1504,11 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
 			  a later send prepares the original Email again, so generated dates, boundaries, IDs, and cryptographic output can differ.
 		  </p>
 		  <p>
+			  <a href="#section-exact-eml">Exact EML</a> follows the same validate-versus-rehearse choice but not the composed-message transformation rules.
+			  Validation checks its explicit envelope and parseable canonical EML; full validation also checks the supplied byte length. Rehearsal returns those
+			  same authoritative bytes, so a later exact send does not generate a different MIME representation.
+		  </p>
+		  <p>
 			  Choose by the result you need, not by thoroughness: both full calls perform the same preparation. <code>validate</code> delegates to
 			  <code>rehearse</code> and discards the snapshot; it returns <code>true</code> after success and never returns <code>false</code> for invalid input.
 			  A successful rehearsal has already validated the Email, so do not call <code>validate</code> first.
@@ -1570,6 +1576,81 @@ JMail.strictValidator()
   </section>
 
 
+  <a href="#section-exact-eml" id="section-exact-eml" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Submit finalized EML without rebuilding{{/components/feature-heading-h2}}
+
+  <section>
+	  <div class="view">
+		  <p>
+			  Ordinary EML conversion gives you an editable <code class="inline language-java">Email</code> and later builds a fresh MIME message. Use exact
+			  EML instead when the existing wire representation is already final—for example, when relaying an archived message or submitting output already
+			  protected by DKIM, S/MIME, or OpenPGP/MIME.
+		  </p>
+		  <p>
+			  The result is still the canonical <code class="inline language-java">Email</code> type. All getters expose a parsed view and every existing Mailer
+			  send API accepts it, but conversion, rehearsal, and sending use the copied input bytes as the authoritative source. Copying it through the ordinary
+			  email builder intentionally returns to composed-email behavior.
+		  </p>
+		  <p>
+			  SMTP-envelope recipients are mandatory and independent of visible <code class="inline language-text">To</code>,
+			  <code class="inline language-text">Cc</code>, and <code class="inline language-text">Bcc</code> headers. Add an envelope sender only when it should
+			  differ from the provider default. DSN notify and return options are also available because they belong to the envelope rather than the MIME bytes.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">byte[] eml = Files.readAllBytes(
+    Path.of("ready-to-send.eml"));
+
+Email email = mail.emailBuilder()
+    .startingFromExactEml(eml)
+    .withEnvelopeRecipients(
+        "actual-recipient@example.org")
+    .withEnvelopeSender(
+        "bounces@example.org") // optional
+    .buildEmail();
+
+MailSubmissionReceipt receipt =
+    mailer.sendMailAndGetReceiptSync(email);</code></pre>
+	  </div>
+  </section>
+
+  <section>
+	  <div class="wide">
+		  <table>
+			  <thead>
+			  <tr><th>Your intent</th><th>Use</th></tr>
+			  </thead>
+			  <tbody>
+			  <tr><td>Inspect and edit parsed fields, apply defaults or overrides, resolve resources, or add message protection</td><td>Ordinary <a href="#section-converting">EML conversion</a></td></tr>
+			  <tr><td>Submit an already-final wire representation without changing its header block, MIME structure, or protected bytes</td><td><code class="inline language-java">startingFromExactEml(...)</code></td></tr>
+			  </tbody>
+		  </table>
+		  <p>
+			  Exact mode bypasses Mailer defaults, overrides, composed-content validation, dynamic embedded-image resolution, MIME rebuilding, and Simple Java
+			  Mail's signing and encryption steps. It retains every supplied byte, including header order and folding, boundaries, transfer encodings,
+			  <code class="inline language-text">Bcc</code>, <code class="inline language-text">Resent-Bcc</code>, and
+			  <code class="inline language-text">Content-Length</code>. Supply an already safe outbound representation.
+		  </p>
+		  <p>
+			  Input must be non-empty, parseable by Jakarta Mail, use canonical CRLF line endings, and end in CRLF. A missing Message-ID stays missing. The
+			  configured maximum message size applies to the supplied byte length. The bundled Angus adapter supports full-byte preservation; a replacement
+			  transport adapter must opt in explicitly or the send fails before submission. A <a href="#section-custom-mailer">CustomMailer</a> receives its
+			  usual <code class="inline language-java">Email</code> and a byte-preserving <code class="inline language-java">MimeMessage</code>.
+		  </p>
+		  <p>
+			  The byte-array starter is also available from the CLI, where its argument is read from a file. Relative paths use the invoking client's working
+			  directory, including when a local daemon handles the command.
+		  </p>
+<pre><code class="language-text">sjm send --email:startingFromExactEml ready-to-send.eml --email:withEnvelopeRecipients actual-recipient@example.org --mailer:withSMTPServer smtp.example.org 587 user password</code></pre>
+		  <p>
+			  See the manually runnable <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/simple-java-mail/src/test/java/demo/ExactEmlSendDemoApp.java">exact EML demo</a>
+			  for the complete file-to-receipt flow.
+		  </p>
+	  </div>
+  </section>
+
+
   <a href="#section-converting" id="section-converting" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 outlook=true smime=true openpgp=true}}Converting between Email, MimeMessage, EML and Outlook .msg{{/components/feature-heading-h2}}
 
@@ -1593,6 +1674,10 @@ JMail.strictValidator()
         and <code class="inline language-text">Resent-*</code>, along with obsolete structural metadata, are omitted.
         See the <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/core-module/src/main/java/org/simplejavamail/api/internal/general/HeadersToIgnoreWhenParsingExternalEmails.java">complete filtered-header list</a>.
       </p>
+	  <p>
+		  If those original bytes must remain authoritative rather than editable, use <a href="#section-exact-eml">exact EML submission</a> instead of
+		  converting and resending the parsed result.
+	  </p>
       <p>
         You can even build a mass Outlook .msg to <a href="https://en.wikipedia.org/wiki/Email#Filename_extensions">EML</a> converter if you like!
       </p>
@@ -1998,6 +2083,11 @@ mailer.testConnection(true);  // explicitly asynchronous
 			<code class="inline language-java">withOpenConnection(...)</code> is unavailable in this setup; keep any connection reuse inside the CustomMailer
 			implementation.
 		</p>
+		<p class="wide">
+			For <a href="#section-exact-eml">exact EML</a>, the method signature is unchanged: the CustomMailer receives the canonical
+			<code class="inline language-java">Email</code> and a <code class="inline language-java">MimeMessage</code> backed by the authoritative input bytes.
+			The CustomMailer must preserve that representation when handing it to its own service.
+		</p>
 
 		<hr/>
 		<p class="wide">
@@ -2149,6 +2239,10 @@ private static String render(
     <hr/>
 		<p class="wide">
 			The following throws an EmailTooBig exception as the <em>cause</em> in a parent MailerException instance
+		</p>
+		<p class="wide">
+			For <a href="#section-exact-eml">exact EML</a>, the measured size is the supplied wire-byte length; Simple Java Mail does not rebuild the
+			message merely to measure it.
 		</p>
         <div class="wide">
 		    <pre><code>Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
