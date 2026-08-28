@@ -11,7 +11,6 @@ const articleData = z.object({
   date: dateValue,
   author: nonBlankText.optional(),
   updated: dateValue.optional(),
-  appliesTo: z.union([nonBlankText, z.array(nonBlankText).min(1)]).optional(),
   draft: z.boolean().optional(),
 });
 

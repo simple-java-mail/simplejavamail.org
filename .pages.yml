@@ -41,7 +41,7 @@ content:
       fields: [title, date, category, draft]
       primary: title
       sort: [date, title, category]
-      search: [title, description, category, appliesTo]
+      search: [title, description, category]
       default:
         sort: date
         order: desc
@@ -88,12 +88,6 @@ content:
         required: true
         default: Maintainer practice
         description: A short editorial grouping such as System design or Maintainer practice.
-
-      - name: appliesTo
-        label: Applies to
-        type: string
-        list: true
-        description: Optional versions or modules for which the discussion is particularly relevant.
 
       - name: author
         label: Author

@@ -31,16 +31,6 @@
                 <dd><time datetime="{{updatedIso}}">{{updatedLabel}}</time></dd>
               </div>
             {{/if}}
-            {{#if appliesTo}}
-              <div>
-                <dt>Applies to</dt>
-                <dd>
-                  <ul>
-                    {{#each (asArray appliesTo)}}<li>{{this}}</li>{{/each}}
-                  </ul>
-                </dd>
-              </div>
-            {{/if}}
           </dl>
 
           {{#if (journalHeadings content)}}

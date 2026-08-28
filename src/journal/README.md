@@ -19,8 +19,6 @@ title: "What belongs in Simple Java Mail?"
 description: "How a mature library decides when to expand, when to stabilize, and where application responsibility begins."
 date: "2026-08-26"
 category: "Maintainer practice"
-appliesTo:
-  - "Simple Java Mail 10.x"
 draft: true
 ---
 ```
@@ -36,7 +34,6 @@ Optional fields:
 
 - `author`, which defaults to the journal author in `src/_data/site.json`
 - `updated`, formatted as `YYYY-MM-DD`
-- `appliesTo`, as one value or a YAML list
 - `draft`, which defaults to `false`
 
 The page template provides the article title, so begin the Markdown body with prose or an `##` heading. Any Markdown construct that produces an `h1` fails the build. Headings from `h2` through `h6` receive permalinks; second- and third-level headings are also added to the article navigation automatically.

@@ -43,7 +43,6 @@ export default function (eleventyConfig) {
   eleventyConfig.addFilter("navItemForUrl", navItemForUrl);
   eleventyConfig.addFilter("json", (value) => JSON.stringify(value).replace(/</g, "\\u003c"));
   eleventyConfig.addFilter("newestFirst", (value) => [...(value || [])].reverse());
-  eleventyConfig.addFilter("asArray", (value) => value === undefined || value === null ? [] : Array.isArray(value) ? value : [value]);
   eleventyConfig.addFilter("isoDate", isoDate);
   eleventyConfig.addFilter("formatDate", formatDate);
   eleventyConfig.addFilter("rssDate", rssDate);
