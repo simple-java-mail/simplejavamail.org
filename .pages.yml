@@ -1,0 +1,118 @@
+media:
+  - name: journal_images
+    label: Journal images
+    input: src/assets/journal
+    output: /assets/journal
+    extensions: [png, jpg, jpeg, webp, avif, gif]
+    rename: safe
+    commit:
+      identity: user
+      templates:
+        create: "docs(journal): add image {filename}"
+        update: "docs(journal): update image {filename}"
+        delete: "docs(journal): remove image {filename}"
+        rename: "docs(journal): rename image {oldFilename} to {newFilename}"
+
+settings:
+  content:
+    merge: true
+  commit:
+    identity: user
+    templates:
+      create: "docs(journal): add {filename}"
+      update: "docs(journal): update {filename}"
+      delete: "docs(journal): remove {filename}"
+      rename: "docs(journal): rename {oldFilename} to {newFilename}"
+
+content:
+  - name: journal
+    label: Engineering Journal
+    type: collection
+    path: src/journal
+    format: yaml-frontmatter
+    subfolders: false
+    exclude:
+      - README.md
+      - article-template.md
+    filename:
+      template: "{primary}.md"
+      field: create
+    view:
+      fields: [title, date, category, draft]
+      primary: title
+      sort: [date, title, category]
+      search: [title, description, category, appliesTo]
+      default:
+        sort: date
+        order: desc
+    operations:
+      create: true
+      rename: false
+      delete: false
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+        description: The article title. It also provides the default lowercase, kebab-case filename.
+        options:
+          maxlength: 160
+
+      - name: description
+        label: Description
+        type: text
+        required: true
+        description: One concrete sentence summarizing the question, position, or whole-system approach.
+        options:
+          maxlength: 320
+
+      - name: date
+        label: Publication date
+        type: date
+        required: true
+        description: New articles default to today's date.
+        options:
+          format: yyyy-MM-dd
+
+      - name: updated
+        label: Last updated
+        type: date
+        default: ""
+        description: Leave empty until an already-published article changes materially.
+        options:
+          format: yyyy-MM-dd
+
+      - name: category
+        label: Category
+        type: string
+        required: true
+        default: Maintainer practice
+        description: A short editorial grouping such as System design or Maintainer practice.
+
+      - name: appliesTo
+        label: Applies to
+        type: string
+        list: true
+        description: Optional versions or modules for which the discussion is particularly relevant.
+
+      - name: author
+        label: Author
+        type: string
+        description: Leave empty to use the site's default journal author.
+
+      - name: draft
+        label: Draft
+        type: boolean
+        default: true
+        description: Drafts are available in local development and excluded from production output.
+
+      - name: body
+        label: Article
+        type: rich-text
+        required: true
+        description: Start with the article itself; the title is rendered from the metadata above.
+        options:
+          format: markdown
+          switcher: true
+          media: journal_images
+          rename: safe
