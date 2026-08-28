@@ -34,9 +34,7 @@ content:
     exclude:
       - README.md
       - article-template.md
-    filename:
-      template: "{primary}.md"
-      field: create
+    filename: "{primary}.md"
     view:
       fields: [title, date, category, draft]
       primary: title
