@@ -13,7 +13,7 @@
       <ul>
         {{#each nav.primary}}
           <li class="{{#if submenu}}nav-has-submenu{{/if}}">
-            <a href="{{href}}" class="{{activeClass href @root.currentUrl}}"{{#if submenu}} aria-haspopup="true"{{/if}}>
+            <a href="{{href}}" class="{{activeClass href @root.page.url}}"{{#if submenu}} aria-haspopup="true"{{/if}}>
               {{label}}{{#if submenu}}<span class="nav-submenu-caret" aria-hidden="true"></span>{{/if}}
             </a>
             {{#if submenu}}
@@ -27,18 +27,18 @@
                     <li><a href="{{href}}">{{label}}</a></li>
                   {{/each}}
                 {{else}}
-                  {{#each @root.docsGroups}}
+                  {{#each @root.nav.docsGroups}}
                     {{#unless (eq label "Maintain")}}
-                      {{#each pages}}
+                      {{#each items}}
                         {{#if @first}}
-                          <li><a href="{{url}}" class="{{activeClass url @root.currentUrl}}">{{../label}}</a></li>
+                          <li><a href="{{this.url}}" class="{{activeClass this.url @root.page.url}}">{{../label}}</a></li>
                         {{/if}}
                       {{/each}}
                     {{/unless}}
                   {{/each}}
                 {{/if}}
                 {{#each submenu.trailingItems}}
-                  <li><a href="{{href}}" class="{{activeClass href @root.currentUrl}}">{{label}}</a></li>
+                  <li><a href="{{href}}" class="{{activeClass href @root.page.url}}">{{label}}</a></li>
                 {{/each}}
               </ul>
             {{/if}}
@@ -49,7 +49,7 @@
 
     <div id="header-actions" class="header-actions">
       <a class="header-utility" href="{{nav.utility.href}}">{{nav.utility.label}}</a>
-      <a class="header-cta {{activeClass nav.cta.href currentUrl}}" href="{{nav.cta.href}}">{{nav.cta.label}}<span class="cta-arrow" aria-hidden="true">→</span></a>
+      <a class="header-cta {{activeClass nav.cta.href page.url}}" href="{{nav.cta.href}}">{{nav.cta.label}}<span class="cta-arrow" aria-hidden="true">→</span></a>
     </div>
   </div>
 </header>

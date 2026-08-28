@@ -1,0 +1,25 @@
+{
+  "name": "Simple Java Mail",
+  "shortName": "SJM",
+  "tagline": "Simple to use. Built for the real world.",
+  "url": "https://www.simplejavamail.org",
+  "version": "10.0.0",
+  "releaseDate": "18 August 2026",
+  "javaBaseline": "Java 11+",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/bbottema/simple-java-mail",
+  "websiteRepository": "https://github.com/simple-java-mail/simplejavamail.org",
+  "releases": "https://github.com/bbottema/simple-java-mail/releases",
+  "issues": "https://github.com/bbottema/simple-java-mail/issues",
+  "javadocs": "https://javadoc.io/doc/org.simplejavamail/simple-java-mail/latest/index.html",
+  "mavenCentral": "https://central.sonatype.com/artifact/org.simplejavamail/simple-java-mail",
+  "foundationUrl": "https://eclipse-ee4j.github.io/angus-mail/",
+  "journal": {
+    "title": "Engineering Journal",
+    "description": "Whole-system email design, project archaeology, and maintainer perspectives from the development of Simple Java Mail.",
+    "author": "Benny Bottema",
+    "indexUrl": "/engineering-journal.html",
+    "urlPrefix": "/journal/",
+    "feedUrl": "/journal/feed.xml"
+  }
+}

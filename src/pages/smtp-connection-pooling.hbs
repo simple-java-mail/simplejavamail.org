@@ -1,14 +1,14 @@
-{{#> layouts/base head-sub-title="SMTP connection pooling and batch orchestration" page-title="SMTP connection pooling and batch orchestration" }}
-
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Compare six ways to reuse SMTP connections through Simple Java Mail, batch-module, direct pooling, Jakarta Mail, Spring, or Camel.">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="modules" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/smtp-connection-pooling.html"
+tags:
+  - "publicPage"
+title: "SMTP connection pooling and batch orchestration"
+navTitle: "Pool orchestration"
+section: "Build and configure"
+style: "pooling"
+description: "Reuse SMTP connections without giving up the API or framework that already owns delivery. See how Simple Java Mail, batch-module, direct pooling, Jakarta Mail, Spring, and Camel share one physical-pool foundation."
+---
   <a href="#layers" id="layers" class="section-link h2">&sect;</a>
   <h2 id="pooling-layers-title">One application, six delivery paths</h2>
   <section>
@@ -580,5 +580,3 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
       batch-module Javadocs remain the complete API references.
     </p>
   </section>
-	{{/inline}}
-{{/layouts/base}}

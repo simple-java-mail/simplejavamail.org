@@ -1,0 +1,34 @@
+---
+layout: false
+permalink: /journal/feed.xml
+eleventyExcludeFromCollections: true
+---
+{%- macro cdata(value) -%}<![CDATA[{{ value | replace("]]>", "]]]]><![CDATA[>") | safe }}]]>{%- endmacro -%}
+{%- set entries = collections.publishedJournal | reverse -%}
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>{{ site.journal.title | escape }} | {{ site.name | escape }}</title>
+    <link>{{ site.journal.indexUrl | htmlBaseUrl(site.url) | escape }}</link>
+    <atom:link href="{{ site.journal.feedUrl | htmlBaseUrl(site.url) | escape }}" rel="self" type="application/rss+xml"/>
+    <description>{{ site.journal.description | escape }}</description>
+    <language>en</language>
+    {% if entries.length %}
+      {% set newest = entries[0] %}
+      {% if newest.data.updated %}<lastBuildDate>{{ newest.data.updated | rssDate }}</lastBuildDate>{% else %}<lastBuildDate>{{ newest.date | rssDate }}</lastBuildDate>{% endif %}
+    {% endif %}
+    {% for entry in entries %}
+      {% set absoluteUrl = entry.url | htmlBaseUrl(site.url) %}
+      {% set absoluteContent = entry.content | renderTransforms(entry.data.page, site.url) %}
+    <item>
+      <title>{{ entry.data.title | escape }}</title>
+      <link>{{ absoluteUrl | escape }}</link>
+      <guid isPermaLink="true">{{ absoluteUrl | escape }}</guid>
+      <pubDate>{{ entry.date | rssDate }}</pubDate>
+      <category>{{ entry.data.category | escape }}</category>
+      <description>{{ cdata(entry.data.description) }}</description>
+      <content:encoded>{{ cdata(absoluteContent) }}</content:encoded>
+    </item>
+    {% endfor %}
+  </channel>
+</rss>

@@ -62,7 +62,7 @@ A short factual paragraph names Benny Bottema and notes that the library was fir
 
 ## Shared trust strip
 
-The site may display only manifest/repository-backed facts:
+The site may display only global-data or repository-backed facts:
 
 - current version;
 - release date;

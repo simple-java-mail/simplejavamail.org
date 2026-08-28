@@ -4,19 +4,19 @@
 {{#if (eq page.url "/")}}
   <title>Simple Java Mail: Build, secure, and send email from Java</title>
 {{else}}
-  <title>{{page.title}} | Simple Java Mail</title>
+  <title>{{title}} | Simple Java Mail</title>
 {{/if}}
-<meta name="description" content="{{page.description}}">
+<meta name="description" content="{{description}}">
 <link rel="canonical" href="{{site.url}}{{page.url}}">
 <meta property="og:site_name" content="Simple Java Mail">
-<meta property="og:type" content="{{#if page.ogType}}{{page.ogType}}{{else}}website{{/if}}">
-<meta property="og:title" content="{{#if (eq page.url "/")}}Simple Java Mail: Build, secure, and send email from Java{{else}}{{page.title}} | Simple Java Mail{{/if}}">
-<meta property="og:description" content="{{page.description}}">
+<meta property="og:type" content="{{#if ogType}}{{ogType}}{{else}}website{{/if}}">
+<meta property="og:title" content="{{#if (eq page.url "/")}}Simple Java Mail: Build, secure, and send email from Java{{else}}{{title}} | Simple Java Mail{{/if}}">
+<meta property="og:description" content="{{description}}">
 <meta property="og:url" content="{{site.url}}{{page.url}}">
-{{#if page.author}}<meta name="author" content="{{page.author}}">{{/if}}
-{{#if page.publishedIso}}<meta property="article:published_time" content="{{page.publishedIso}}">{{/if}}
-{{#if page.updatedIso}}<meta property="article:modified_time" content="{{page.updatedIso}}">{{/if}}
-{{#if page.draft}}<meta name="robots" content="noindex, nofollow">{{/if}}
+{{#if author}}<meta name="author" content="{{author}}">{{/if}}
+{{#if publishedIso}}<meta property="article:published_time" content="{{publishedIso}}">{{/if}}
+{{#if updatedIso}}<meta property="article:modified_time" content="{{updatedIso}}">{{/if}}
+{{#if draft}}<meta name="robots" content="noindex, nofollow">{{/if}}
 <meta name="twitter:card" content="summary">
 <link rel="alternate" type="application/rss+xml" title="{{site.journal.title}} | {{site.name}}" href="{{site.journal.feedUrl}}">
 <link rel="icon" href="/assets/sjm-favicon.png" type="image/png">
@@ -24,7 +24,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-{{#each styleHrefs}}<link rel="stylesheet" href="{{this}}">{{/each}}
+<link rel="stylesheet" href="/assets/main.css">
+{{#if style}}<link rel="stylesheet" href="/assets/{{style}}.css">{{/if}}
 <link rel="stylesheet" href="/pagefind/pagefind-component-ui.css">
 <script type="application/ld+json">
 {
@@ -38,3 +39,5 @@
   "version": "{{site.version}}"
 }
 </script>
+{{#if schema}}<script type="application/ld+json">{{{json schema}}}</script>{{/if}}
+{{#if (eq page.url site.journal.indexUrl)}}<script type="application/ld+json">{{{json (journalCollectionSchema site collections.journal)}}}</script>{{/if}}

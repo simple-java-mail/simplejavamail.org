@@ -1,14 +1,12 @@
-{{#> layouts/base head-sub-title="Configuration" page-title="Configuring Simple Java Mail" }}
-
-	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Simple Java Mail can be configured through Java, properties or system properties, with defaults and overrides, Spring profiles, and server clustering.">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="configuration" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/configuration.html"
+tags:
+  - "publicPage"
+title: "Configuration"
+section: "Build and configure"
+description: "Configure mailers in Java, property files, environment variables, or Spring, including defaults, overrides, pools, and clusters."
+---
     <section class="doc-overview" aria-labelledby="configuration-overview-title">
       <header>
         <p class="eyebrow">Configuration at a glance</p>
@@ -827,8 +825,13 @@ Mailer mailer = mail.mailerBuilder()
 		Spring can supply the same Simple Java Mail settings, so each profile can use its own SMTP server, credentials, transport strategy, and defaults.
       </p>
       <p>
-        Import <code class="inline language-java">SimpleJavaMailSpringSupport</code>. It loads the conventional
-        <code class="inline language-text">simplejavamail.properties</code> resource as a low-priority source, then resolves all matching values through
+        For Spring Boot 2.7 or 3.x, add <code class="inline language-text">simple-java-mail-spring-boot-starter</code>. Boot discovers the integration and
+        creates the default beans without an annotation. Applications that already depend directly on <code class="inline language-text">spring-module</code>
+        receive the same auto-configuration; the starter is the recommended dependency because it also supplies Spring Boot's standard starter dependencies.
+      </p>
+      <p>
+        Plain Spring applications import <code class="inline language-java">SimpleJavaMailSpringSupport</code>. Both routes load the conventional
+        <code class="inline language-text">simplejavamail.properties</code> resource as a low-priority source, then resolve all matching values through
         Spring's <code class="inline language-java">Environment</code>. Spring remains responsible for profiles, placeholders, environment variables,
         system properties, and their precedence. Simple Java Mail does not read the raw process values again afterwards.
       </p>
@@ -841,12 +844,24 @@ Mailer mailer = mail.mailerBuilder()
         Separate Spring application contexts keep separate snapshots and factories. Building or closing a Mailer in one context does not change the
         configuration used by another context in the same JVM.
       </p>
+      <p>
+        The context also starts when no SMTP settings are present. In that case the fallback host is <code class="inline language-text">localhost</code>;
+        sending still requires an SMTP server there. Set <code class="inline language-properties">simplejavamail.smtp.host</code> before sending anywhere
+        without a local development SMTP service.
+      </p>
     </div>
 
     <div class="wide full-width-example">
-      Load Spring support and inject the default Mailer:
+      Add the Spring Boot starter with Maven:
+      <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;simple-java-mail-spring-boot-starter&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+      Or with Gradle:
+      <pre><code class="language-groovy">implementation("org.simplejavamail:simple-java-mail-spring-boot-starter:{{site.version}}")</code></pre>
+      Then inject the default Mailer directly; Boot needs no <code class="inline language-java">@Import</code>:
       <pre><code class="small">@Component
-@Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {
 
     private final Mailer mailer;
@@ -858,7 +873,6 @@ public class YourEmailService {
 </code></pre>
       Inject the factory when the service builds emails or needs a fresh Mailer builder:
       <pre><code class="small">@Component
-@Import(SimpleJavaMailSpringSupport.class)
 public class YourEmailService {
 
     private final SimpleJavaMail mail;
@@ -873,9 +887,8 @@ public class YourEmailService {
                 .buildEmail();
     }
 }</code></pre>
-      Or create an additional lifecycle-managed Mailer from a fresh builder:
+      Or replace the default <code class="inline language-java">Mailer</code> with one built from a fresh builder:
       <pre><code class="small">@Configuration
-@Import(SimpleJavaMailSpringSupport.class)
 public class MailConfiguration {
 
     @Bean(destroyMethod = "close")
@@ -889,6 +902,11 @@ public class MailConfiguration {
     }
 }
 </code></pre>
+	  In plain Spring, activate the same bean path explicitly:
+	  <pre><code class="small">@Configuration
+@Import(SimpleJavaMailSpringSupport.class)
+class SimpleJavaMailConfiguration {
+}</code></pre>
 	  When the default Mailer uses <code class="inline language-java">SMTP_OAUTH2</code>, a single OAuth2 token-provider bean is picked up automatically:
 	  <pre><code class="small">@Bean
 OAuth2AccessTokenProvider smtpAccessTokens(TokenService tokenService) {
@@ -896,6 +914,17 @@ OAuth2AccessTokenProvider smtpAccessTokens(TokenService tokenService) {
 }</code></pre>
 	  If the application has more than one <code class="inline language-java">OAuth2AccessTokenProvider</code> bean, mark the one for SMTP with
 	  <code class="inline language-java">@Primary</code> or use normal Spring bean disambiguation.
+      <p>
+        Boot backs off independently for <code class="inline language-java">SimpleJavaMailConfig</code>, <code class="inline language-java">SimpleJavaMail</code>,
+        and <code class="inline language-java">Mailer</code>. A replacement config feeds the two remaining defaults; a replacement factory feeds the default
+        Mailer; and a replacement Mailer leaves the injectable config and factory available. Spring closes the Mailer it creates. Your replacement Mailer
+        follows the destroy method declared or inferred by its own bean definition. Use <code class="inline language-java">@Bean(destroyMethod = "")</code>
+        only when the application deliberately owns shutdown elsewhere.
+      </p>
+      <p>
+        To disable all three defaults, use Spring Boot's standard exclusion:
+      </p>
+      <pre><code class="language-properties">spring.autoconfigure.exclude=org.simplejavamail.springsupport.SimpleJavaMailAutoConfiguration</code></pre>
     </div>
   </section>
 
@@ -1369,6 +1398,3 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 			at all time!
 		</p>
 	</section>
-    {{/inline}}
-
-{{/layouts/base}}

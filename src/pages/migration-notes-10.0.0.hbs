@@ -1,10 +1,13 @@
-{{#> layouts/base head-sub-title="Migrating to 10.0.0" page-title="Migrating to Simple Java Mail 10.0.0" }}
-
-  {{#*inline "html-head-block"}}
-    <meta name="Description" content="Public breaking changes and non-obvious behavior changes when upgrading an existing Simple Java Mail application to 10.0.0.">
-  {{/inline}}
-
-  {{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/migration-notes-10.0.0.html"
+tags:
+  - "publicPage"
+title: "Migrating to 10.0.0"
+section: "Maintain"
+description: "Public breaking changes and non-obvious behavior changes when upgrading existing Simple Java Mail applications to 10.0.0."
+breadcrumbParent: "/migration-notes.html"
+---
   <section class="introduction">
     <p class="wide">
       Upgrading will mostly mean following a few compiler errors. If you used <code class="inline language-java">EmailBuilder</code>,
@@ -38,7 +41,7 @@
       <li><a href="#opportunistic-tls">Move opportunistic TLS to the Mailer builder</a></li>
       <li><a href="#proxy-bridge-port">Let authenticated proxy bridges choose a port</a></li>
       <li><a href="#direct-session">If you create Jakarta Mail Sessions yourself</a></li>
-      <li><a href="#spring-context">Replace the Spring builder bean</a></li>
+      <li><a href="#spring-context">Review Spring auto-configuration and beans</a></li>
       <li><a href="#embedded-route-flags">Check two embedded-image settings</a></li>
       <li><a href="#angus-api-boundary">If your own code imports Angus</a></li>
       <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
@@ -564,13 +567,26 @@ Session configuredSession = configuredMailer.getSession();</code></pre>
   </section>
 
   <a href="#spring-context" id="spring-context" class="section-link h2">&sect;</a>
-  <h2>Replace the Spring builder bean</h2>
+  <h2>Review Spring auto-configuration and beans</h2>
 
   <section>
     <p class="wide" style="font-size:smaller">
       <strong>What breaks:</strong> If you inject the Spring bean named <code class="inline language-java">defaultMailerBuilder</code>, that injection no
       longer works. Inject <code class="inline language-java">SimpleJavaMail</code> and ask it for a fresh builder instead. If you only inject the default
       <code class="inline language-java">Mailer</code>, your code can stay as it is.
+    </p>
+    <p class="wide">
+      Spring Boot now discovers Simple Java Mail automatically whenever <code class="inline language-text">spring-module</code> is present. Prefer the new
+      dependency-only starter in Boot 2.7 and 3.x applications; it brings in <code class="inline language-text">spring-module</code> and needs no annotation:
+    </p>
+    <pre class="full-width-example"><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;simple-java-mail-spring-boot-starter&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+    <p class="wide">
+      An existing <code class="inline language-java">@Import(SimpleJavaMailSpringSupport.class)</code> is still safe and produces one bean of each type.
+      Keep that import in plain Spring; Boot applications may remove it.
     </p>
     <table>
       <thead>
@@ -609,6 +625,19 @@ Mailer customMailer() {
       Each application context now keeps its own config, <code class="inline language-java">SimpleJavaMail</code> object, and default Mailer. Starting a
       second context no longer changes the settings used by the first one.
     </p>
+    <p class="wide">
+      Boot backs off separately when the application provides its own <code class="inline language-java">SimpleJavaMailConfig</code>,
+      <code class="inline language-java">SimpleJavaMail</code>, or <code class="inline language-java">Mailer</code>. Its own Mailer is closed with the context;
+      a replacement Mailer follows the lifecycle declared or inferred by your bean. Use
+      <code class="inline language-java">@Bean(destroyMethod = "")</code> only when the application deliberately owns shutdown elsewhere.
+    </p>
+    <p class="wide">
+      With no SMTP host configured, Boot still creates all three beans and uses <code class="inline language-text">localhost</code> as the fallback host.
+      That lets an application start before mail is configured, but a send still needs a local SMTP server. Set
+      <code class="inline language-properties">simplejavamail.smtp.host</code> in every environment that sends elsewhere. To opt out completely, use the
+      normal Boot exclusion:
+    </p>
+    <pre class="full-width-example"><code class="language-properties">spring.autoconfigure.exclude=org.simplejavamail.springsupport.SimpleJavaMailAutoConfiguration</code></pre>
   </section>
 
   <a href="#embedded-route-flags" id="embedded-route-flags" class="section-link h2">&sect;</a>
@@ -906,6 +935,3 @@ private void recordMailSendOutcome(MailSendOutcome outcome) {
       <a class="button" href="configuration.html#navigation">Current configuration reference</a>
     </div>
   </section>
-  {{/inline}}
-
-{{/layouts/base}}

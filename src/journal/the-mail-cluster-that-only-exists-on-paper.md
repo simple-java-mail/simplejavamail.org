@@ -1,7 +1,7 @@
 ---
 title: "The mail cluster that only exists on paper"
 description: "A deliberately unfinished walk through an imaginary mail system, mostly to see what breaks before anything is real."
-published: "2026-08-26"
+date: "2026-08-26"
 category: "System design"
 draft: true
 ---

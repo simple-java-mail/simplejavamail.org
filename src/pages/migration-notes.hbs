@@ -1,6 +1,12 @@
-{{#> layouts/base head-sub-title="Migration notes" page-title="Migration notes" }}
-
-  {{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/migration-notes.html"
+tags:
+  - "publicPage"
+title: "Migration notes"
+section: "Maintain"
+description: "Choose migration guidance for Simple Java Mail releases that change APIs or defaults."
+---
     <section class="introduction">
       <p class="wide">Some releases need a quick migration check because an API or default changed. Choose your target version below, and follow the older guides in order if your application is several major versions behind.</p>
     </section>
@@ -64,6 +70,3 @@
       <p class="wide">Use <a href="https://github.com/bbottema/simple-java-mail/releases">GitHub Releases</a> and the repository's
         <a href="https://github.com/bbottema/simple-java-mail/blob/master/RELEASE_HISTORY.md">complete release history</a> for changes that do not require dedicated migration guidance.</p>
     </section>
-  {{/inline}}
-
-{{/layouts/base}}

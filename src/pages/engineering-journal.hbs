@@ -1,9 +1,12 @@
-{{#> marketing}}
-  {{#*inline "html-head-block"}}
-    <script type="application/ld+json">{{{json journalCollectionSchema}}}</script>
-  {{/inline}}
-
-  {{#*inline "body-block"}}
+---
+layout: "layouts/marketing.hbs"
+permalink: "/engineering-journal.html"
+tags:
+  - "publicPage"
+title: "Engineering Journal"
+style: "journal"
+description: "Whole-system email design, project archaeology, and maintainer perspectives from the development of Simple Java Mail."
+---
     <section class="journal-index">
       <div class="shell journal-index-inner">
         <header class="journal-index-header">
@@ -12,15 +15,15 @@
         </header>
 
         <div class="journal-entry-list">
-          {{#each journalEntries}}
+          {{#each (newestFirst collections.journal)}}
             <article class="journal-entry-row">
               <div class="journal-entry-row-copy">
-                <h2><a href="{{url}}">{{title}}</a></h2>
-                <p>{{description}}</p>
+                <h2><a href="{{this.url}}">{{data.title}}</a></h2>
+                <p>{{data.description}}</p>
                 <p class="journal-entry-row-meta">
-                  <time datetime="{{publishedIso}}">{{publishedLabel}}</time>
+                  <time datetime="{{isoDate date}}">{{formatDate date}}</time>
                   <span aria-hidden="true">·</span>
-                  <span>{{category}}</span>
+                  <span>{{data.category}}</span>
                 </p>
               </div>
             </article>
@@ -28,5 +31,3 @@
         </div>
       </div>
     </section>
-  {{/inline}}
-{{/marketing}}

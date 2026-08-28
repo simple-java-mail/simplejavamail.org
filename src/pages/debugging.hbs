@@ -1,14 +1,12 @@
-{{#> layouts/base head-sub-title="Logging & Debugging" page-title="Logging & Debugging Simple Java Mail" }}
-
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Information on how to debug issues while sending emails with Simple Java Mail">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="debugging" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/debugging.html"
+tags:
+  - "publicPage"
+title: "Diagnostics"
+section: "Protect and operate"
+description: "Test SMTP connections, inspect the settings in use, route debug output, understand failures, and read server replies."
+---
   <section class="toc">
     <ul>
 		<li><a href="#section-debug-mode">Logging emails instead of sending</a></li>
@@ -305,6 +303,3 @@ try {
 </code></pre>
     </div>
   </section>
-    {{/inline}}
-
-{{/layouts/base}}

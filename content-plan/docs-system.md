@@ -100,14 +100,14 @@ Pagefind indexes visible reference prose and headings. It excludes global naviga
 
 - Existing `.html` routes remain canonical for this release.
 - Existing IDs are preserved as the visible heading ID or an invisible compatibility anchor immediately before the renamed section.
-- The link checker validates both the generated manifest and all internal fragments.
+- The link checker validates generated pages and all internal fragments.
 - Migration pages remain directly addressable even when omitted from primary navigation.
 
 ## Metadata and structured data
 
 - Docs hub: `TechArticle`/collection-style metadata only where schema remains valid.
 - Reference pages: unique title/description/canonical URL.
-- Breadcrumb structured data can be generated from the manifest.
+- Breadcrumb structured data can be generated from Eleventy's navigation data.
 - Version-specific pages include the version in title and description.
 
 ## Rationale

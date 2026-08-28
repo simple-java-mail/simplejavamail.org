@@ -1,14 +1,12 @@
-{{#> layouts/base head-sub-title="CLI" page-title="Simple Java Mail CLI" }}
-
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Explanation of how Simple Java Mail works from the CLI (command line)">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="cli" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/cli.html"
+tags:
+  - "publicPage"
+title: "Command-line interface"
+section: "Integrate and understand"
+description: "Send, validate, and test mail settings from the Java 17+ command line, optionally reusing Mailers and SMTP pools through a local daemon."
+---
   <section class="introduction">
     <p class="wide">
       The CLI exposes the Simple Java Mail builders as terminal commands. You can build a message, configure a mailer, validate it, test the connection,
@@ -272,6 +270,3 @@
     </code></pre>
     <pre><code class="language-text">mvn exec:java</code></pre>
   </section>
-    {{/inline}}
-
-{{/layouts/base}}

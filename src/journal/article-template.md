@@ -1,7 +1,7 @@
 ---
 title: "Replace this with the article title"
 description: "Summarize the question, position, or whole-system approach in one concrete sentence."
-published: "2026-08-26"
+date: "2026-08-26"
 category: "Maintainer practice"
 appliesTo:
   - "Simple Java Mail 10.x"

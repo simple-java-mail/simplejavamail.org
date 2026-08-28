@@ -248,7 +248,7 @@ The hero pairs a restrained editorial statement with a compact SMTP receipt rath
 - **First-send sample:** one canonical `SimpleJavaMail` factory with its email and Mailer builders, reused verbatim where appropriate.
 - **Depth sample:** one short configuration progression, never the existing everything-at-once grand example on the homepage.
 - **Capability route:** the six lifecycle stages and their canonical links.
-- **Proof strip:** current version, Java baseline, license, current release date, and the Jakarta Mail API with Angus included by default; sourced from the manifest.
+- **Proof strip:** current version, Java baseline, license, current release date, and the Jakarta Mail API with Angus included by default; sourced from Eleventy's global site data.
 - **Requirement callout:** task, built-in mechanism, optional module if any, and reference link.
 - **Code tabs:** Java builder, properties, Spring only when all three genuinely apply.
 - **Next step:** every reference page ends with one adjacent task and one route back to the docs hub.
@@ -270,7 +270,7 @@ The relaunch does not invent support SLAs, compatibility promises, a vulnerabili
 
 - Pagefind indexes reference content locally; no third-party hosted search.
 - Each page has a unique title, description, canonical URL, and Open Graph metadata.
-- Organization/software structured data uses current factual values from the manifest.
+- Organization/software structured data uses current factual values from Eleventy's global site data.
 - Navigation, mobile menus, docs sidebars, copy buttons, and code tabs work with keyboard and assistive technology.
 - Focus is always visible. Color never carries state alone. Reduced motion is respected.
 - The favicon is a real SVG asset and the social image is explicit rather than an empty placeholder.

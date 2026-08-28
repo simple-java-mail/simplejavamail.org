@@ -1,14 +1,12 @@
-{{#> layouts/base head-sub-title="Security" page-title="Secure Java email with TLS, OAuth2, DKIM, S/MIME, and OpenPGP" }}
-
-	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Configure TLS, OAuth2, CRLF protection, DKIM signing, and S/MIME or OpenPGP/MIME signing and encryption in Simple Java Mail.">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="security" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/security.html"
+tags:
+  - "publicPage"
+title: "Security"
+section: "Protect and operate"
+description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/MIME, and protection against header injection."
+---
 		<section class="doc-overview" aria-labelledby="security-overview-title">
 			<header>
 				<p class="eyebrow">Security at a glance</p>
@@ -1023,7 +1021,3 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 				does not keep this extra EML snapshot.
 			</p>
 		</section>
-
-	{{/inline}}
-
-{{/layouts/base}}

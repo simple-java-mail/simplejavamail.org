@@ -147,7 +147,9 @@
 .journal-prose p { margin: 0 0 1.35rem; }
 .journal-prose h2,
 .journal-prose h3,
-.journal-prose h4 { position: relative; scroll-margin-top: calc(@header-h + @space-lg); }
+.journal-prose h4,
+.journal-prose h5,
+.journal-prose h6 { position: relative; scroll-margin-top: calc(@header-h + @space-lg); }
 .journal-prose h2 { margin: @space-2xl 0 @space-lg; font-size: clamp(2rem, 4vw, 3rem); }
 .journal-prose h3 { margin: @space-xl 0 @space-md; font-size: clamp(1.4rem, 2.4vw, 1.85rem); }
 .journal-prose h4 { margin: @space-xl 0 @space-sm; font-size: 1.18rem; }
@@ -167,6 +169,8 @@
 .journal-prose h2:hover .journal-heading-anchor,
 .journal-prose h3:hover .journal-heading-anchor,
 .journal-prose h4:hover .journal-heading-anchor,
+.journal-prose h5:hover .journal-heading-anchor,
+.journal-prose h6:hover .journal-heading-anchor,
 .journal-heading-anchor:focus { opacity: 1; }
 
 .journal-prose ul,
@@ -223,7 +227,7 @@
   .journal-record-rail { position: static; display: block; }
   .journal-record-rail dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .journal-record-rail dl > div { border-right: 1px solid @line; }
-  .journal-entry-toc { grid-column: 1 / -1; border-top: 1px solid @line; }
+  .journal-entry-toc { grid-column: -1; border-top: 1px solid @line; }
   .journal-entry-toc ol { columns: 2; column-gap: @space-lg; }
   .journal-entry-toc li { break-inside: avoid; }
 }

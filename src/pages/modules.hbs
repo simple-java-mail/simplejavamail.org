@@ -1,14 +1,12 @@
-{{#> layouts/base head-sub-title="Modules" page-title="Simple Java Mail Modules" }}
-
-	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Understand the default Angus provider adapter and choose optional modules for pools, proxies, DKIM, S/MIME, OpenPGP, Outlook, CLI, Spring, OSGi, or Karaf.">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="modules" }}
-	{{/inline}}
-
-  {{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/modules.html"
+tags:
+  - "publicPage"
+title: "Modules"
+section: "Build and configure"
+description: "Understand the default Angus provider adapter and choose optional modules for batching, authenticated SOCKS, DKIM, S/MIME, OpenPGP, Outlook, CLI, Spring, OSGi, or Karaf."
+---
   <section>
     <p class="wide">
       Core already covers well-formed MIME, reusable configuration and message rules, TLS and OAuth2, diagnostics, conversion, and simple batches.
@@ -296,16 +294,28 @@
 
   <section>
 	  <p>
-		  Add this library for Spring support:
+		  Spring Boot 2.7 and 3.x applications should add the dependency-only starter. It brings in <code class="inline language-text">spring-module</code>,
+          activates auto-configuration, and uses the Boot dependency versions selected by the application:
+	  </p>
+	  <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+	&lt;artifactId&gt;simple-java-mail-spring-boot-starter&lt;/artifactId&gt;
+	&lt;version&gt;{{site.version}}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+	  <p>
+		  For plain Spring, depend directly on <code class="inline language-text">spring-module</code> and import
+		  <code class="inline language-java">SimpleJavaMailSpringSupport</code>:
 	  </p>
 	  <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
     &lt;artifactId&gt;spring-module&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
 	  <p>
 		  The module integrates with the Spring libraries supplied by your application. It expects
 		  <code class="inline language-text">spring-core</code>, <code class="inline language-text">spring-context</code>, and
-		  <code class="inline language-text">spring-beans</code> to be available at runtime; Spring and Spring Boot applications normally provide these already.
+		  <code class="inline language-text">spring-beans</code> to be available at runtime. A Boot application that already has <code class="inline language-text">spring-module</code>
+          also discovers auto-configuration automatically, so switching to the starter is optional.
 	  </p>
   </section>
 
@@ -324,6 +334,3 @@
     &lt;artifactId&gt;karaf-module&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
   </section>
-  {{/inline}}
-
-{{/layouts/base}}

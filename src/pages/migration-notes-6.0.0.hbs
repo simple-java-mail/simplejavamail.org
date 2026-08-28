@@ -1,14 +1,14 @@
-{{#> layouts/base head-sub-title="Migrating to 6.0.0" page-title="Migrating to Simple Java Mail 6.0.0" }}
-
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Migration notes for users upgrading to Simple Java Mail 6.0.0 and above">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="features" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/migration-notes-6.0.0.html"
+tags:
+  - "publicPage"
+title: "Migrating to 6.0"
+section: "Maintain"
+description: "Historical migration guidance for Simple Java Mail 6.0."
+breadcrumbParent: "/migration-notes.html"
+mimeStructureDemo: true
+---
 	<section class="toc">
 		<ul>
 			<li><a href="#modules">A modular library</a></li>
@@ -146,9 +146,3 @@
 			<tr><td><strong>default local proxy bridge:</strong></td><td>1081</td></tr>
 		</table>
 	</section>
-	{{/inline}}
-
-    {{#*inline "scripts-block"}}
-        {{> components/mimemessage--structure-demo-script }}
-    {{/inline}}
-{{/layouts/base}}

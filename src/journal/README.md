@@ -17,7 +17,7 @@ Every article starts with YAML front matter:
 ---
 title: "What belongs in Simple Java Mail?"
 description: "How a mature library decides when to expand, when to stabilize, and where application responsibility begins."
-published: "2026-08-26"
+date: "2026-08-26"
 category: "Maintainer practice"
 appliesTo:
   - "Simple Java Mail 10.x"
@@ -29,17 +29,17 @@ Required fields:
 
 - `title`
 - `description`
-- `published`, formatted as `YYYY-MM-DD`
+- `date`, formatted as `YYYY-MM-DD`
 - `category`
 
 Optional fields:
 
-- `author`, which defaults to the journal author in `manifest/site.json`
+- `author`, which defaults to the journal author in `src/_data/site.json`
 - `updated`, formatted as `YYYY-MM-DD`
 - `appliesTo`, as one value or a YAML list
 - `draft`, which defaults to `false`
 
-The page template provides the article title, so begin the Markdown body with prose or an `##` heading. An `#` heading fails the build. Second- and third-level headings are added to the article navigation automatically.
+The page template provides the article title, so begin the Markdown body with prose or an `##` heading. Any Markdown construct that produces an `h1` fails the build. Headings from `h2` through `h6` receive permalinks; second- and third-level headings are also added to the article navigation automatically.
 
 Fenced code blocks, tables, blockquotes, lists, links, and raw HTML are supported. Raw HTML is trusted and is not sanitized, so only use content maintained in this repository. Put journal images in `src/assets/journal/` and reference them with an absolute site path such as `/assets/journal/example.png`.
 
