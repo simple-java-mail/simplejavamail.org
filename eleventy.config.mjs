@@ -106,7 +106,12 @@ export default function (eleventyConfig) {
     runPagefind(directories.output);
   });
 
-  eleventyConfig.setServerOptions({ port: 3000, watch: ["dist/**/*.js"] });
+  eleventyConfig.setServerOptions({
+    port: 3000,
+    domDiff: false,
+    headers: { "Cache-Control": "no-store" },
+    watch: ["dist/scripts/**/*.js", "dist/pages/scripts/**/*.js"],
+  });
 
   return {
     dir: { input: "src", includes: "_includes", data: "_data", output: "dist" },
