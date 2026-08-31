@@ -1,14 +1,13 @@
-{{#> layouts/base head-sub-title="Migrating to 5.0.0" page-title="Migrating to Simple Java Mail 5.0.0" }}
-
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Migration notes for users upgrading to Simple Java Mail 5.0.0 up to 6.0.0">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="features" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/migration-notes-5.0.0.html"
+tags:
+  - "publicPage"
+title: "Migrating to 5.0"
+section: "Maintain"
+description: "Historical migration guidance for Simple Java Mail 5.0."
+breadcrumbParent: "/migration-notes.html"
+---
   <section class="toc">
     <ul>
       <li><a href="#section-builders">Builders all the way down</a></li>
@@ -198,5 +197,4 @@ simplejavamail.transportstrategy=SMTP_TLS</code></pre>
 &lt;/dependency&gt;</code></pre>
     </div>
   </section>
-    {{/inline}}
-{{/layouts/base}}
+

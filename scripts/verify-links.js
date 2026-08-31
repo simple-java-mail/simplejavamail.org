@@ -57,10 +57,13 @@ async function main() {
 }
 
 function runBuild() {
-	const gulpBinary = path.join(rootDir, "node_modules", "gulp", "bin", "gulp.js");
-	const result = spawnSync(process.execPath, [gulpBinary, "build"], {
+	const npmCli = process.env.npm_execpath;
+	const command = npmCli ? process.execPath : "npm";
+	const args = npmCli ? [npmCli, "run", "build", "--silent"] : ["run", "build", "--silent"];
+	const result = spawnSync(command, args, {
 		cwd: rootDir,
-		stdio: "inherit"
+		stdio: "inherit",
+		shell: !npmCli && process.platform === "win32"
 	});
 
 	if (result.error) {

@@ -40,5 +40,46 @@
   "cta": {
     "label": "Get started",
     "href": "/download.html"
-  }
+  },
+  "docsGroups": [
+    {
+      "label": "Start",
+      "items": [
+        { "title": "Documentation", "url": "/docs.html" },
+        { "title": "Get started", "url": "/download.html" },
+        { "title": "Why Simple Java Mail", "url": "/why-simple-java-mail.html" }
+      ]
+    },
+    {
+      "label": "Build and configure",
+      "items": [
+        { "title": "Capabilities", "url": "/features.html" },
+        { "title": "Configuration", "url": "/configuration.html" },
+        { "title": "Pool orchestration", "url": "/smtp-connection-pooling.html" },
+        { "title": "Modules", "url": "/modules.html" }
+      ]
+    },
+    {
+      "label": "Protect and operate",
+      "items": [
+        { "title": "Security", "url": "/security.html" },
+        { "title": "Diagnostics", "url": "/debugging.html" }
+      ]
+    },
+    {
+      "label": "Integrate and understand",
+      "items": [
+        { "title": "Command-line interface", "url": "/cli.html" },
+        { "title": "MIME and interoperability", "url": "/rfc-compliant.html" },
+        { "title": "Compare approaches", "url": "/feature-matrix.html" }
+      ]
+    },
+    {
+      "label": "Maintain",
+      "items": [
+        { "title": "Migration notes", "url": "/migration-notes.html" },
+        { "title": "Help and contribute", "url": "/contact.html" }
+      ]
+    }
+  ]
 }

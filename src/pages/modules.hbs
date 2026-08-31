@@ -1,14 +1,12 @@
-{{#> layouts/base head-sub-title="Modules" page-title="Simple Java Mail Modules" }}
-
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="List of all Simple Java Mail modules and what 3rd party dependencies they bring">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="modules" }}
-	{{/inline}}
-
-  {{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/modules.html"
+tags:
+  - "publicPage"
+title: "Modules"
+section: "Build and configure"
+description: "Choose only the extra modules you need: batching, authenticated SOCKS, DKIM, S/MIME, Outlook, CLI, Spring, OSGi, or Karaf."
+---
   <section>
     <p class="wide">
       Core already covers well-formed MIME, reusable configuration and message rules, TLS and OAuth2, diagnostics, conversion, and simple batches.
@@ -247,6 +245,4 @@
     &lt;artifactId&gt;karaf-module&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
   </section>
-  {{/inline}}
 
-{{/layouts/base}}

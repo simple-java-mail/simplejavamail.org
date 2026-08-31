@@ -14,10 +14,10 @@
       <main id="main-content" class="docs-content" data-pagefind-body>
         {{> breadcrumbs}}
         <header class="doc-hero">
-          {{#if page.section}}<p class="eyebrow">{{page.section}}</p>{{/if}}
-          <h1>{{page.title}}</h1>
-          <p class="doc-lede">{{page.description}}</p>
-          {{#if page.showOpenSourceBadges}}
+          {{#if section}}<p class="eyebrow">{{section}}</p>{{/if}}
+          <h1>{{title}}</h1>
+          <p class="doc-lede">{{description}}</p>
+          {{#if showOpenSourceBadges}}
             <div class="doc-hero-support">
               <div class="start-fact-row doc-hero-facts" aria-label="Project details">
                 <span>Open source</span>
@@ -29,7 +29,7 @@
         </header>
 
         <article class="legacy-doc-content">
-          {{#> body-block}}{{/body-block}}
+          {{{content}}}
         </article>
 
         <nav class="doc-next" aria-label="Documentation next steps">
@@ -51,6 +51,7 @@
     <script src="/pages/scripts/lazy-img-loader.js"></script>
     <script type="module" src="/scripts/site.js"></script>
     <script type="module" src="/pagefind/pagefind-component-ui.js"></script>
-    {{#> scripts-block}}{{/scripts-block}}
+    {{#if mimeStructureDemo}}{{> components/mimemessage--structure-demo-script}}{{/if}}
   </body>
 </html>
+

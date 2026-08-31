@@ -1,5 +1,13 @@
-{{#> layouts/base}}
-  {{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/rfc-compliant.html"
+tags:
+  - "publicPage"
+title: "MIME and interoperability"
+section: "Integrate and understand"
+description: "Understand why MIME structure matters, what malformed nesting looks like in mail clients, and how Simple Java Mail builds the message tree."
+mimeStructureDemo: true
+---
   <section class="toc">
     <ul>
       <li><a href="#section-why">Why the MIME tree matters</a></li>
@@ -146,9 +154,4 @@
   </section>
 
   {{> components/mimemessage--structure-demo }}
-  {{/inline}}
 
-  {{#*inline "scripts-block"}}
-    {{> components/mimemessage--structure-demo-script }}
-  {{/inline}}
-{{/layouts/base}}

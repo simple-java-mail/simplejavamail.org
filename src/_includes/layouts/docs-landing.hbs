@@ -2,7 +2,6 @@
 <html lang="en" class="language-java">
   <head>
     {{> head}}
-    {{#> html-head-block}}{{/html-head-block}}
   </head>
   <body class="docs-page docs-landing-page">
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -13,7 +12,7 @@
       {{> docs-sidebar}}
 
       <main id="main-content" class="docs-content docs-landing-content" data-pagefind-body>
-        {{#> body-block}}{{/body-block}}
+        {{{content}}}
       </main>
     </div>
 
@@ -22,6 +21,6 @@
     <script>window.Prism && window.Prism.highlightAll();</script>
     <script type="module" src="/scripts/site.js"></script>
     <script type="module" src="/pagefind/pagefind-component-ui.js"></script>
-    {{#> scripts-block}}{{/scripts-block}}
   </body>
 </html>
+

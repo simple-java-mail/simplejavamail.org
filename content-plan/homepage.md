@@ -125,5 +125,5 @@ The current site leads with personality and a large example but makes readers wo
 - Keep the hero below roughly 720px on a typical laptop viewport.
 - Do not put the grand example on the homepage.
 - Do not turn the lifecycle into generic feature cards.
-- Version and release date must be manifest-driven.
+- Version and release date must come from Eleventy's global site data.
 - The acceptance receipt must be clearly illustrative, not a claim that delivery to the recipient is guaranteed.

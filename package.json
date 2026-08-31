@@ -5,10 +5,18 @@
   "private": true,
   "scripts": {
     "start": "npm run dev",
-    "build": "gulp --gulpfile gulpfile.mjs build",
-    "dev": "gulp --gulpfile gulpfile.mjs dev",
-    "clean": "gulp --gulpfile gulpfile.mjs clean",
-    "check": "tsc -p tsconfig.json --noEmit && gulp --gulpfile gulpfile.mjs check",
+    "build": "rimraf dist && concurrently --kill-others-on-fail \"eleventy --config=eleventy.config.mjs\" \"tsc -p tsconfig.json\" && pagefind --site dist",
+    "build:site": "eleventy --config=eleventy.config.mjs",
+    "build:scripts": "tsc -p tsconfig.json",
+    "build:search": "pagefind --site dist",
+    "dev": "rimraf dist && concurrently --kill-others \"eleventy --config=eleventy.config.mjs --serve\" \"tsc -p tsconfig.json --watch --preserveWatchOutput\"",
+    "dev:site": "eleventy --config=eleventy.config.mjs --serve",
+    "dev:scripts": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "clean": "rimraf dist",
+    "check": "concurrently --kill-others-on-fail \"eleventy --config=eleventy.config.mjs --dryrun\" \"tsc -p tsconfig.json --noEmit\" \"node --test tests/eleventy-helpers.test.mjs\"",
+    "check:templates": "eleventy --config=eleventy.config.mjs --dryrun",
+    "check:scripts": "tsc -p tsconfig.json --noEmit",
+    "check:helpers": "node --test tests/eleventy-helpers.test.mjs",
     "verifyLinks": "node scripts/verify-links.js all",
     "verifyLinks:internal": "node scripts/verify-links.js internal",
     "verifyLinks:external": "node scripts/verify-links.js external"
@@ -21,11 +29,15 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "gulp": "^5.0.1",
-    "gulp-autoprefixer": "^10.0.0",
-    "gulp-less": "^5.0.0",
+    "@11ty/eleventy": "^3.1.6",
+    "@11ty/eleventy-plugin-handlebars": "^1.0.0",
+    "autoprefixer": "^10.5.4",
+    "concurrently": "^9.2.4",
     "handlebars": "^4.7.9",
+    "less": "^4.9.0",
     "pagefind": "^1.5.2",
+    "postcss": "^8.5.26",
+    "rimraf": "^6.1.3",
     "typescript": "^6.0.3"
   },
   "keywords": [

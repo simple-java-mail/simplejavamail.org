@@ -1,5 +1,12 @@
-{{#> marketing}}
-  {{#*inline "body-block"}}
+---
+layout: "layouts/marketing.hbs"
+permalink: "/feature-matrix.html"
+tags:
+  - "publicPage"
+title: "Compare approaches"
+style: "compare"
+description: "Compare Simple Java Mail with Jakarta Mail, Spring Mail, and Apache Commons Email by what each one handles for you."
+---
     <div id="navigation" class="compatibility-anchor" aria-hidden="true"></div>
     <section class="page-hero compare-hero">
       <div class="shell narrow-shell">
@@ -105,5 +112,4 @@
     <section id="scope" class="scope-band">
       <div class="shell scope-grid"><p class="eyebrow">Scope matters</p><h2>Simple Java Mail focuses on outbound application email.</h2><p>Jakarta Mail also covers IMAP and POP3, so use it directly for mailbox access. Simple Java Mail builds on it to compose, secure, and send outbound messages.</p></div>
     </section>
-  {{/inline}}
-{{/marketing}}
+

@@ -1,5 +1,13 @@
-{{#> layouts/base}}
-  {{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/download.html"
+tags:
+  - "publicPage"
+title: "Get started"
+section: "Start"
+style: "start"
+description: "Install Simple Java Mail from Maven Central, send a first email, verify the SMTP connection, and choose optional modules."
+---
     <div class="start-fact-row" aria-label="Release details">
       <span>{{site.javaBaseline}}</span>
       <span>{{site.license}}</span>
@@ -107,5 +115,4 @@ mailer.sendMail(email);</code></pre>
         <a href="/security.html#navigation"><span>Protect</span><strong>Secure transport and content</strong><small>TLS, OAuth2, DKIM, S/MIME</small></a>
       </div>
     </section>
-  {{/inline}}
-{{/layouts/base}}
+

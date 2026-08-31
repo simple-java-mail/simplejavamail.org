@@ -1,14 +1,12 @@
-{{#> layouts/base head-sub-title="Configuration" page-title="Configuring Simple Java Mail" }}
-
-	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Simple Java Mail can be configured through Java, properties or system properties, with defaults and overrides, Spring profiles, and server clustering.">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="configuration" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/configuration.html"
+tags:
+  - "publicPage"
+title: "Configuration"
+section: "Build and configure"
+description: "Configure mailers in Java, property files, environment variables, or Spring, including defaults, overrides, pools, and clusters."
+---
     <section class="doc-overview" aria-labelledby="configuration-overview-title">
       <header>
         <p class="eyebrow">Configuration at a glance</p>
@@ -1232,6 +1230,4 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 			at all time!
 		</p>
 	</section>
-    {{/inline}}
 
-{{/layouts/base}}

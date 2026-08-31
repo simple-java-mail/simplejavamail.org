@@ -1,14 +1,13 @@
-{{#> layouts/base head-sub-title="Migrating to 8.0.0" page-title="Migrating to Simple Java Mail 8.0.0" }}
-
-	{{#*inline "html-head-block"}}
-<meta name="Description" content="Migration notes for the email-governance, validation, conversion, DKIM, S/MIME, and parser changes introduced in Simple Java Mail 8.0.0">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="features" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/migration-notes-8.0.0.html"
+tags:
+  - "publicPage"
+title: "Migrating to 8.0"
+section: "Maintain"
+description: "Migration guidance for the email-governance, validation, conversion, DKIM, S/MIME, and parser changes introduced in Simple Java Mail 8.0."
+breadcrumbParent: "/migration-notes.html"
+---
 	<section class="toc">
 		<ul>
 			<li><a href="#governance-at-send-time">Defaults and overrides move to send time</a></li>
@@ -279,6 +278,4 @@ simplejavamail.dkim.signing.signing_domain=example.com</code></pre>
 			<a class="button" href="migration-notes-9.0.0.html#navigation">Next: version 9</a>
 		</div>
 	</section>
-	{{/inline}}
 
-{{/layouts/base}}

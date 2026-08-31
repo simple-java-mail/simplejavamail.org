@@ -8,7 +8,7 @@ phases:
             - npm ci --no-audit --no-fund
     build:
         commands:
-            - npx gulp build
+            - npm run build
 artifacts:
     files:
         - '**/*'

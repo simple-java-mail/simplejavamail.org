@@ -1,14 +1,13 @@
-{{#> layouts/base head-sub-title="Migrating to 9.2.0" page-title="Migrating to Simple Java Mail 9.2.0" }}
-
-	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Migration notes for the builder governance API, asynchronous failure handling, email serialization, stricter TLS certificate trust, configuration precedence, embedded-image containment, DKIM validation, and S/MIME signature status changes in Simple Java Mail 9.2.0">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="security" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/migration-notes-9.2.0.html"
+tags:
+  - "publicPage"
+title: "Migrating to 9.2"
+section: "Maintain"
+description: "Migration guidance for builder API changes, asynchronous failures, serialized email snapshots, configuration precedence, TLS trust, embedded-image containment, DKIM validation, and S/MIME status in Simple Java Mail 9.2."
+breadcrumbParent: "/migration-notes.html"
+---
 	<section class="toc">
 		<ul>
 			<li><a href="#email-governance-builder">Governance options now follow the email starter</a></li>
@@ -312,6 +311,4 @@ if (!Boolean.TRUE.equals(details.getSmimeSignatureValid())) {
 			<a class="button" href="migration-notes-9.0.0.html#navigation">Previous: version 9</a>
 		</div>
 	</section>
-	{{/inline}}
 
-{{/layouts/base}}

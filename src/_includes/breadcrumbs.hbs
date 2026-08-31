@@ -1,15 +1,16 @@
 <nav class="breadcrumbs" aria-label="Breadcrumb">
   <a href="/">Home</a>
   <span aria-hidden="true">/</span>
-  {{#unless (eq currentUrl "/docs.html")}}
+  {{#unless (eq page.url "/docs.html")}}
     <a href="/docs.html">Docs</a>
     <span aria-hidden="true">/</span>
   {{/unless}}
-  {{#if page.breadcrumbParent}}
-    {{#with (pageForUrl page.breadcrumbParent)}}
-      <a href="{{url}}">{{title}}</a>
+  {{#if breadcrumbParent}}
+    {{#with (navItemForUrl nav.docsGroups breadcrumbParent)}}
+      <a href="{{this.url}}">{{title}}</a>
       <span aria-hidden="true">/</span>
     {{/with}}
   {{/if}}
-  <span aria-current="page">{{page.title}}</span>
+  <span aria-current="page">{{title}}</span>
 </nav>
+

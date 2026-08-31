@@ -1,14 +1,12 @@
-{{#> layouts/base head-sub-title="Security" page-title="Simple Java Mail Security settings" }}
-
-	{{#*inline "html-head-block"}}
-		<meta name="Description" content="Summary of all security related settings in Simple Java Mail">
-	{{/inline}}
-
-	{{#*inline "header-block"}}
-		{{> includes/header topic="security" }}
-	{{/inline}}
-
-	{{#*inline "body-block"}}
+---
+layout: "layouts/base.hbs"
+permalink: "/security.html"
+tags:
+  - "publicPage"
+title: "Security"
+section: "Protect and operate"
+description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, and protection against header injection."
+---
 		<section class="doc-overview" aria-labelledby="security-overview-title">
 			<header>
 				<p class="eyebrow">Security at a glance</p>
@@ -799,6 +797,3 @@ mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENC
 			</div>
 		</section>
 
-	{{/inline}}
-
-{{/layouts/base}}

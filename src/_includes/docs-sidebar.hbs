@@ -8,12 +8,12 @@
       <pagefind-searchbox placeholder="Search docs" show-sub-results></pagefind-searchbox>
     </div>
     <nav class="docs-nav" aria-label="Documentation">
-      {{#each docsGroups}}
+      {{#each nav.docsGroups}}
         <section class="docs-nav-group">
           <h2>{{label}}</h2>
           <ul>
-            {{#each pages}}
-              <li><a href="{{url}}" class="{{docsActiveClass url @root.currentUrl}}">{{#if navTitle}}{{navTitle}}{{else}}{{title}}{{/if}}</a></li>
+            {{#each items}}
+              <li><a href="{{this.url}}" class="{{docsActiveClass this.url @root.page.url @root.breadcrumbParent}}">{{title}}</a></li>
             {{/each}}
           </ul>
         </section>
@@ -21,3 +21,4 @@
     </nav>
   </div>
 </aside>
+

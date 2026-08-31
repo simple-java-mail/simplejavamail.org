@@ -17,7 +17,7 @@ This page belongs to the **Start** group and uses the standard docs shell, bread
 
 ### Hero: Get started
 
-State Maven Central availability, current version, Java baseline, and license. Keep the version manifest-driven.
+State Maven Central availability, current version, Java baseline, and license. Keep the version driven by global site data.
 
 ### 1. Add the dependency
 

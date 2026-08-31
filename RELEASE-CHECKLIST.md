@@ -1,14 +1,14 @@
 # Website release update list
 
-The current Simple Java Mail release is centralized in `manifest/site.json`. For an ordinary library release, update that manifest rather than editing the rendered mentions separately.
+The current Simple Java Mail release is centralized in Eleventy's global data file, `src/_data/site.json`. For an ordinary library release, update that file rather than editing the rendered mentions separately.
 
 ## Every library release
 
-- [ ] Update `version` in `manifest/site.json`.
-- [ ] Update `releaseDate` in `manifest/site.json`.
+- [ ] Update `version` in `src/_data/site.json`.
+- [ ] Update `releaseDate` in `src/_data/site.json`.
 - [ ] Confirm `javaBaseline` still matches the supported Java baseline.
 - [ ] Search for an accidentally hard-coded copy of the previous release:
-  `rg -n "<previous-version>" src manifest content-plan`
+  `rg -n "<previous-version>" src content-plan`
 - [ ] Run `npm run check`.
 - [ ] Run `npm run verifyLinks:internal`.
 - [ ] Run `npm run build` and confirm Pagefind indexes all public pages.
@@ -17,7 +17,7 @@ The current Simple Java Mail release is centralized in `manifest/site.json`. For
 
 ## Pages generated from `site.version`
 
-Updating `manifest/site.json` changes all of these automatically:
+Updating `src/_data/site.json` changes all of these automatically:
 
 - Homepage hero release label.
 - Homepage “Current release” fact and release date.
@@ -35,8 +35,8 @@ The homepage release date is generated from `site.releaseDate`.
 | --- | --- |
 | `src/pages/index.hbs` | Hero label, release fact, and Maven coordinate |
 | `src/pages/download.hbs` | Maven and Gradle dependencies |
-| `src/partials/footer.hbs` | Site-wide footer version |
-| `src/partials/head.hbs` | Site-wide JSON-LD software version |
+| `src/_includes/footer.hbs` | Site-wide footer version |
+| `src/_includes/head.hbs` | Site-wide JSON-LD software version |
 
 ## Update only when the release requires it
 
