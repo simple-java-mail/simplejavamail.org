@@ -82,6 +82,7 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
 
   <section class="toc">
     <ul>
+		<li><a href="#section-extension-points">Integration and extension points</a></li>
 		<li><a href="#section-basic-usage">Basic usage</a></li>
 		<li><a href="#section-builder-api" class="indent">About the fluent API with the Builder pattern</a></li>
 		<li><a href="#section-reusable-mailer" class="indent">Configure once, reuse many times</a></li>
@@ -122,6 +123,71 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
 		<li><a href="#section-rendered-templates">Use content rendered by your template system</a></li>
 		<li><a href="#section-maximum-emailsize">Limit the maximum email size</a></li>
     </ul>
+  </section>
+
+  <a href="#section-extension-points" id="section-extension-points" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Integration and extension points{{/components/feature-heading-h2}}
+
+  <section class="extension-point-overview">
+    <p class="wide">
+      Stay with the high-level API for the parts it already handles, then take control at the boundary your application actually needs. These hooks range
+      from replacing one policy around the Mailer to owning the final submission operation; using one does not require abandoning the rest of the pipeline.
+    </p>
+
+    <dl class="extension-boundary-map">
+      <div>
+        <dt><span>Mailer runtime</span><strong>Replace policy and execution services.</strong></dt>
+        <dd>
+          <p>Supply your own address validator, executor service, or terminal send observer while normal message preparation and submission remain in place.</p>
+          <nav class="extension-boundary-links" aria-label="Mailer runtime extension documentation">
+            <a href="#section-email-validation">Validation policy</a>
+            <a href="configuration.html#section-batch-and-clustering">Executor service</a>
+            <a href="#section-mail-send-observer">Send observer</a>
+          </nav>
+        </dd>
+      </div>
+      <div>
+        <dt><span>Jakarta Session</span><strong>Bring your own or add what is missing.</strong></dt>
+        <dd>
+          <p>Supply a preconfigured Session, including its Authenticator and provider selection, or add raw Jakarta Mail properties to the managed Session. The built Mailer also exposes the Session for integrations that need the Jakarta object itself.</p>
+          <nav class="extension-boundary-links" aria-label="Jakarta Session extension documentation">
+            <a href="#section-custom-session">Supply a Session</a>
+            <a href="#section-custom-properties">Add raw properties</a>
+            <a href="#section-session-access">Access the managed Session</a>
+          </nav>
+        </dd>
+      </div>
+      <div>
+        <dt><span>Message boundary</span><strong>Work directly with MIME and EML.</strong></dt>
+        <dd>
+          <p>Convert between Email, MimeMessage, and EML for inspection, storage, interoperability, or further processing without giving up the higher-level message model.</p>
+          <nav class="extension-boundary-links" aria-label="MIME and EML extension documentation">
+            <a href="#section-converting">Convert message formats</a>
+            <a href="#section-exact-eml">Submit finalized EML</a>
+          </nav>
+        </dd>
+      </div>
+      <div>
+        <dt><span>Connection setup</span><strong>Control sockets and live credentials.</strong></dt>
+        <dd>
+          <p>Provide an SSLSocketFactory for a managed Session or a thread-safe OAuth2 token provider that supplies current credentials whenever a physical connection opens.</p>
+          <nav class="extension-boundary-links" aria-label="Connection extension documentation">
+            <a href="security.html#section-custom-ssl-factory">SSL socket factory</a>
+            <a href="#authentication">OAuth2 token provider</a>
+          </nav>
+        </dd>
+      </div>
+      <div>
+        <dt><span>Submission boundary</span><strong>Replace the provider bridge or the whole send operation.</strong></dt>
+        <dd>
+          <p>A MailTransportAdapter keeps Simple Java Mail's transport lifecycle while adapting final submission to another Jakarta Mail provider. A CustomMailer instead owns connection testing and sending itself.</p>
+          <nav class="extension-boundary-links" aria-label="Submission extension documentation">
+            <a href="modules.html#mail-transport-adapter-spi">Transport adapter SPI</a>
+            <a href="#section-custom-mailer">Custom sending logic</a>
+          </nav>
+        </dd>
+      </div>
+    </dl>
   </section>
 
   <a href="#section-basic-usage" id="section-basic-usage" class="section-link h2">&sect;</a>
@@ -1391,9 +1457,8 @@ currentEmailBuilder
   <section>
     <div class="view">
       <p>
-        For emergencies, you can also get a hold of the internal Session instance itself. <strong>You should never need this however</strong> and if
-        you do it means Simple Java Mail failed to simplify the configuration process for you. <strong>Please let us know how we can help alleviate
-        this need</strong>.
+        A built Mailer exposes the Jakarta Mail Session it actually uses. This is useful for integrations that need a Session API or property that is not
+        represented directly by the Mailer builder. Prefer configuring it before the Mailer begins concurrent work: the same Session is shared by its sends.
       </p>
     </div>
 

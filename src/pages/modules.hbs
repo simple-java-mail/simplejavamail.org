@@ -66,6 +66,7 @@ description: "Understand the default Angus provider adapter and choose optional 
     <a href="features.html#section-bouncing-emails"><span>Envelope</span><strong>Bounce address handling</strong><b aria-hidden="true">→</b></a>
     <a href="features.html#section-delivery-status-notification"><span>Request</span><strong>Delivery status notifications</strong><b aria-hidden="true">→</b></a>
     <a href="features.html#section-submission-receipts"><span>Inspect</span><strong>Enhanced SMTP responses</strong><b aria-hidden="true">→</b></a>
+    <a href="#mail-transport-adapter-spi"><span>Replace</span><strong>Another Jakarta Mail provider</strong><b aria-hidden="true">→</b></a>
   </nav>
 
   <section>
@@ -97,6 +98,39 @@ description: "Understand the default Angus provider adapter and choose optional 
         You do not need a direct Angus dependency for normal sending. Add <code>org.eclipse.angus:angus-mail</code> as a compile dependency only when
         your own source imports <code>org.eclipse.angus.*</code>. A modular application must also require <code>org.eclipse.angus.mail</code>. The
         adapter still supplies Angus at runtime, but deliberately does not make its implementation classes part of your application's compile API.
+      </p>
+    </div>
+  </section>
+
+  <a href="#mail-transport-adapter-spi" id="mail-transport-adapter-spi" class="section-link h3">&sect;</a>
+  <h3>Integrating another Jakarta Mail provider</h3>
+
+  <section>
+    <p>
+      Adding another compatible Jakarta Mail implementation changes the provider behind the Session; it does not require replacing the whole Mailer.
+      For ordinary content without provider-specific envelope options, Simple Java Mail can submit through Jakarta Mail's regular
+      <code class="inline language-java">Transport.sendMessage(...)</code> API.
+    </p>
+    <p>
+      Implement the public <code class="inline language-java">MailTransportAdapter</code> SPI when the provider must also handle envelope sender or DSN
+      options, preserve finalized or protected message bytes, or expose its final SMTP response. The adapter receives an already connected Transport and
+      the prepared mail, then returns a provider-neutral <code class="inline language-java">MailTransportResult</code>. Simple Java Mail continues to own
+      transport acquisition, connection reuse, pooling, and result translation.
+    </p>
+    <p>
+      An adapter implements <code class="inline language-java">supports(Transport)</code>, optionally declares which content-preservation requirements it
+      supports, and performs the final submission in <code class="inline language-java">sendMessage(Transport, PreparedMail)</code>.
+    </p>
+    <div class="wide full-width-example">
+      <p>Register the implementation through the standard Java service-provider mechanism:</p>
+<pre><code class="language-text small"># META-INF/services/org.simplejavamail.api.mailer.spi.MailTransportAdapter
+com.example.ExampleMailTransportAdapter</code></pre>
+      <p>Or, on the module path:</p>
+<pre><code class="language-java small">provides org.simplejavamail.api.mailer.spi.MailTransportAdapter
+    with com.example.ExampleMailTransportAdapter;</code></pre>
+      <p>
+        Simple Java Mail selects exactly one adapter whose <code class="inline language-java">supports(...)</code> method matches the concrete Transport.
+        Multiple matches fail instead of depending on classpath order.
       </p>
     </div>
   </section>

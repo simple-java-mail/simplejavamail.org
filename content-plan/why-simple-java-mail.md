@@ -32,34 +32,18 @@ Pair one realistic rich-message example with the responsibilities that applicati
 
 The Jakarta side stays short and representative. It must not be a contrived worst-case wall of code.
 
-### It keeps helping when email gets difficult
+### SJM keeps helping when email gets difficult
 
-Walk through the six main jobs:
+Walk through the six main jobs. Each card ends with no more than four direct documentation links that make its promise concrete:
 
-- Compose content and recipients.
-- Configure a reusable mailer.
-- Apply security and recipient rules once.
-- Choose a delivery mode appropriate to the workload.
-- Inspect and diagnose behavior.
-- Drop down to Jakarta Mail or custom sending logic when required.
+- Compose content and recipients: basic usage, attachments, embedded images, and replies or forwards.
+- Configure a reusable mailer: Java configuration, properties, defaults and overrides, and Spring.
+- Apply security and recipient rules once: TLS and OAuth2, DKIM, S/MIME, and OpenPGP/MIME.
+- Choose a delivery mode appropriate to the workload: asynchronous or simple batch sending, authenticated SOCKS, connection pooling, and SMTP clusters.
+- Inspect and diagnose behavior: connection settings, operational settings, connection tests, and message validation or rehearsal.
+- Drop down to Jakarta Mail or custom sending logic when required: custom Sessions, raw properties, MimeMessage conversion, and CustomMailer.
 
 This is the page's central argument.
-
-### Complexity is opt-in
-
-Show four quiet reference rows for connecting, protecting, setting defaults, and scaling. API names use the normal light documentation treatment rather than dark badges.
-
-The simple case remains readable. Advanced settings stay with the mailer instead of spreading through every place that sends an email.
-
-### Where the library is unusually deep
-
-Use a light two-column reference register with enough detail to explain each subject. It should read like documentation, not a feature billboard:
-
-- recipient rules: defaults, overrides, validation, bounce and receipt addresses;
-- content security: DKIM plus S/MIME or OpenPGP/MIME signing and encryption, including per-recipient S/MIME certificates and multi-recipient OpenPGP encryption;
-- pools and clusters: open connections, keyed clusters, multiple servers, load balancing;
-- network constraints: local binding, custom TLS, trusted-host policy, and authenticated SOCKS;
-- message conversion: Email/MimeMessage/EML/Outlook conversion and custom sending callbacks.
 
 ### Built on Jakarta Mail, with escape hatches
 
@@ -98,8 +82,6 @@ Probably not the fit:
 - `origin`
 - `what-the-boundary-removes`
 - `beyond-composition`
-- `complexity-is-opt-in`
-- `unusual-depth`
 - `jakarta-mail-escape-hatches`
 - `fit`
 
