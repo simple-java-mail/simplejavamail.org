@@ -54,50 +54,95 @@ showOpenSourceBadges: true
 
     <section id="beyond-composition" class="start-prose-section start-wide-section">
       <p class="eyebrow">The same mailer, all the way through</p>
-      <h2>It keeps helping when email gets difficult.</h2>
+      <h2>SJM keeps helping when email gets difficult.</h2>
       <p class="start-section-intro">A friendly message builder only gets you so far. Simple Java Mail also handles reusable configuration, security, delivery choices, and troubleshooting through the same mailer API.</p>
       <ol class="start-stage-list">
-        <li><span>01</span><div><strong>Compose</strong><p>Declare content and recipients; the library chooses and builds the MIME structure.</p></div></li>
-        <li><span>02</span><div><strong>Configure</strong><p>Keep server settings, defaults, overrides, and validation on a reusable mailer.</p></div></li>
-        <li><span>03</span><div><strong>Protect</strong><p>Add transport verification, OAuth2, DKIM, or S/MIME at the appropriate layer.</p></div></li>
-        <li><span>04</span><div><strong>Deliver</strong><p>Use a single send, async results, an open connection, pools, or keyed clusters.</p></div></li>
-        <li><span>05</span><div><strong>Diagnose</strong><p>Test connections, inspect the final settings, route debug output, and read server replies.</p></div></li>
-        <li><span>06</span><div><strong>Extend</strong><p>Supply a Session, raw properties, generated MimeMessage, or custom sending operation.</p></div></li>
+        <li>
+          <span>01</span>
+          <div>
+            <strong>Compose</strong>
+            <p>Declare content and recipients; the library chooses and builds the MIME structure.</p>
+            <ul class="start-stage-links">
+              <li><a href="/features.html#section-basic-usage">Basic usage</a></li>
+              <li><a href="/features.html#section-attachments">Add attachments</a></li>
+              <li><a href="/features.html#section-embedding">Embed images</a></li>
+              <li><a href="/features.html#section-reply-forward">Reply, reply-all, and forward</a></li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <span>02</span>
+          <div>
+            <strong>Configure</strong>
+            <p>Keep server settings, defaults, overrides, and validation on a reusable mailer.</p>
+            <ul class="start-stage-links">
+              <li><a href="/configuration.html#section-programmatic-api-common">Build a Mailer in Java</a></li>
+              <li><a href="/configuration.html#section-config-properties">Configure with properties</a></li>
+              <li><a href="/configuration.html#section-config-mailer">Set defaults and overrides</a></li>
+              <li><a href="/configuration.html#section-spring-support">Use Spring configuration</a></li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <span>03</span>
+          <div>
+            <strong>Protect</strong>
+            <p>Add transport verification, OAuth2, DKIM, or S/MIME at the appropriate layer.</p>
+            <ul class="start-stage-links">
+              <li><a href="/security.html#section-authentication-methods">TLS and OAuth2</a></li>
+              <li><a href="/security.html#section-sending-dkim">DKIM domain signing</a></li>
+              <li><a href="/security.html#section-sending-smime">S/MIME content protection</a></li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <span>04</span>
+          <div>
+            <strong>Deliver</strong>
+            <p>Use a single send, async work, an authenticated proxy, pooled connections, or keyed clusters.</p>
+            <ul class="start-stage-links">
+              <li><a href="/features.html#section-sending-asynchronously">Send asynchronously or in simple batches</a></li>
+              <li><a href="/features.html#section-proxy">Send through an authenticated SOCKS proxy</a></li>
+              <li><a href="/configuration.html#section-reusing-connections">Reuse pooled connections</a></li>
+              <li><a href="/configuration.html#section-clustering">Route through multiple SMTP clusters</a></li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <span>05</span>
+          <div>
+            <strong>Diagnose</strong>
+            <p>Test connections, inspect the final settings, route debug output, and read server replies.</p>
+            <ul class="start-stage-links">
+              <li><a href="/configuration.html#section-programmatic-api-common">Configure the server and timeouts</a></li>
+              <li><a href="/configuration.html#section-programmatic-api-other">Configure debug output and client identity</a></li>
+              <li><a href="/features.html#section-connection-test">Test the SMTP connection</a></li>
+              <li><a href="/features.html#section-email-validation">Validate the final message</a></li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <span>06</span>
+          <div>
+            <strong>Extend</strong>
+            <p>Supply a Session, raw properties, generated MimeMessage, or custom sending operation.</p>
+            <ul class="start-stage-links">
+              <li><a href="/features.html#section-custom-session">Use your own Session</a></li>
+              <li><a href="/features.html#section-custom-properties">Set raw Session properties</a></li>
+              <li><a href="/features.html#section-converting">Convert to or from MimeMessage</a></li>
+              <li><a href="/features.html#section-custom-mailer">Plug in custom sending logic</a></li>
+            </ul>
+          </div>
+        </li>
       </ol>
-    </section>
-
-    <section id="complexity-is-opt-in" class="start-prose-section start-wide-section">
-      <p class="eyebrow">Add complexity only when needed</p>
-      <h2>New requirements stay with the mailer.</h2>
-      <p class="start-section-intro">The first send stays readable. Later, configure signing, validation, proxies, pools, or clusters once instead of repeating them for every message.</p>
-      <div class="start-requirement-list" role="list">
-        <div role="listitem"><span>Connect</span><code>withSMTPServer(host, port)</code><small>Anonymous or locally trusted SMTP</small></div>
-        <div role="listitem"><span>Protect</span><code>withTransportStrategy(SMTP_TLS)</code><small>Credentials, timeouts, verified transport</small></div>
-        <div role="listitem"><span>Defaults</span><code>withEmailDefaults(defaults)</code><small>Validation, overrides, default signing</small></div>
-        <div role="listitem"><span>Scale</span><code>withClusterKey(workload)</code><small>Async work, pooled connections, routing</small></div>
-      </div>
-    </section>
-
-    <section id="unusual-depth" class="start-prose-section start-wide-section">
-      <p class="eyebrow">Where the library goes deeper</p>
-      <h2>Advanced features use the API you already know.</h2>
-      <p class="start-section-intro">These are not separate integrations bolted onto the side. They are part of the same message and mailer model.</p>
-      <div class="start-feature-grid">
-        <a href="/configuration.html#section-config-mailer"><span>01 · Message rules</span><strong>Recipient defaults</strong><p>Set defaults and overrides, validate addresses, choose bounce and receipt addresses, and attach an S/MIME certificate per recipient.</p></a>
-        <a href="/security.html#section-sending-dkim"><span>02 · Content security</span><strong>DKIM and S/MIME</strong><p>Configure default signing or encryption without manually rebuilding the message content.</p></a>
-        <a href="/configuration.html#section-clustering"><span>03 · Delivery</span><strong>Pools and clusters</strong><p>Reuse an open connection, send through a pool, or give different workloads their own SMTP clusters and server sets.</p></a>
-        <a href="/features.html#section-proxy"><span>04 · Networking</span><strong>Authenticated SOCKS</strong><p>Use local binding, custom TLS behavior, trusted-host rules, client identity, and proxy credentials.</p></a>
-        <a href="/features.html#section-converting"><span>05 · Interoperability</span><strong>Message conversion</strong><p>Move between Email, MimeMessage, EML, and Outlook MSG while retaining relevant S/MIME metadata.</p></a>
-        <a href="/debugging.html#navigation"><span>06 · Operations</span><strong>Troubleshooting</strong><p>Test connections, inspect final settings, route debug output, and read SMTP acceptance replies.</p></a>
-      </div>
     </section>
 
     <section id="jakarta-mail-escape-hatches" class="start-prose-section">
       <p class="eyebrow">Direct control remains available</p>
       <h2>Jakarta Mail is still there when you need it.</h2>
       <p>Angus Mail implements Jakarta Mail underneath. Simple Java Mail focuses on sending; it does not replace Jakarta Mail's IMAP or POP support.</p>
-      <p>When you need lower-level control, supply a Jakarta <code>Session</code>, set raw properties, inspect the generated <code>MimeMessage</code>, or keep the <code>Email</code> builder while providing your own send operation.</p>
-      <a class="text-link" href="/features.html#section-custom-mailer">Explore the extension points <span aria-hidden="true">→</span></a>
+      <p>When you need lower-level control, bring your own <code>Session</code>, add raw properties to the managed Session or access it directly, supply an <code>SSLSocketFactory</code>, provide live OAuth2 tokens, convert between <code>Email</code>, <code>MimeMessage</code>, and EML, or replace the complete send operation with a <code>CustomMailer</code>.</p>
+      <a class="text-link" href="/features.html#section-extension-points">Explore the extension points <span aria-hidden="true">→</span></a>
     </section>
 
     <section id="fit" class="start-prose-section start-wide-section">
@@ -138,4 +183,3 @@ showOpenSourceBadges: true
         </div>
       </div>
     </section>
-

@@ -66,10 +66,15 @@ Clearly label which features are part of the main dependency and which require a
 
 ### Extend delivery
 
-- custom sending logic for REST/provider delivery;
-- custom SSL factory;
-- direct Jakarta Mail properties and Session;
-- lifecycle callbacks/async completion where available.
+Open with one boundary map rather than sending readers to a single custom-sending section. It covers the extension points available in the current release:
+
+- replacement address validator and executor service;
+- supplied Jakarta Mail `Session`, raw Session properties, and access to the managed Session;
+- conversion between `Email`, `MimeMessage`, and EML;
+- custom SSL socket factory and refresh-aware OAuth2 token provider;
+- `CustomMailer` for applications that own connection testing and sending.
+
+Do not imply that using one hook requires replacing the complete pipeline. Link each boundary to its existing detailed section.
 
 ### Use content rendered by your template system
 

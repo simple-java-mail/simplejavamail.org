@@ -11,7 +11,7 @@ description: "Compare Simple Java Mail with Jakarta Mail, Spring Mail, and Apach
     <section class="page-hero compare-hero">
       <div class="shell narrow-shell">
         <p class="eyebrow">Compare approaches</p>
-        <h1>Compare what each library handles,<br><em>and what it leaves to you.</em></h1>
+        <h1>Compare Java email libraries<br><em>and what they solve.</em></h1>
         <p class="hero-lede">Jakarta Mail, Spring Mail, Commons Email, and Simple Java Mail can all send a message. The real difference is what you still have to build, configure, secure, and maintain yourself.</p>
       </div>
     </section>
@@ -20,7 +20,7 @@ description: "Compare Simple Java Mail with Jakarta Mail, Spring Mail, and Apach
       <div class="shell">
         <header class="section-heading split-heading"><div><p class="eyebrow">At a glance</p><h2>Four libraries, four different jobs</h2></div><p>The difference is not only how high-level the API is. It is also which email problems the library already solves.</p></header>
         <div class="profile-list">
-          <article class="profile-low"><small class="profile-status">Low-level SMTP toolkit</small><h3>Jakarta Mail / Angus Mail</h3><p>The standard MIME and mail-protocol API. It gives you the parts; your code decides how to assemble, configure, and reuse them.</p><a href="#responsibility-matrix">Compare</a></article>
+          <article class="profile-low"><small class="profile-status">Low-level SMTP toolkit</small><h3>Jakarta Mail / Angus Mail</h3><p><span>The standard low-level foundational SDK for MIME messages and SMTP transport.</span><span class="profile-contrast">Does <em>not</em> support DKIM, S/MIME, connection pooling, or batch delivery out of the box.</span></p><a href="#responsibility-matrix">Compare</a></article>
           <article class="profile-basic"><small class="profile-status">Rudimentary support</small><h3>Spring Mail</h3><p>Spring's <code>JavaMailSender</code>, <code>MailException</code>, and <code>MimeMessageHelper</code>. It fits naturally when the rest of the application already uses those APIs.</p><a href="#responsibility-matrix">Compare</a></article>
           <article class="profile-caution"><small class="profile-status">Maintenance mode</small><h3>Apache Commons Email</h3><p>A handful of message classes that save some Jakarta Mail boilerplate. Useful for basic messages, but most of the harder work is still yours.</p><a href="#responsibility-matrix">Compare</a></article>
           <article class="profile-primary"><small class="profile-status">Complete SMTP solution</small><h3>Simple Java Mail</h3><p>Builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.</p><a href="/why-simple-java-mail.html">Why Simple Java Mail <span aria-hidden="true">→</span></a></article>
@@ -49,7 +49,7 @@ description: "Compare Simple Java Mail with Jakarta Mail, Spring Mail, and Apach
               <tr><th>Code and external configuration</th><td data-state="helper">Java and Session properties</td><td data-state="built"><code>spring.mail.*</code> and Java configuration</td><td data-state="owned">Java setters; your application loads the settings</td><td data-state="built">Builders, property files, environment variables, and profile overrides</td></tr>
               <tr><th>Spring application integration</th><td data-state="owned">You wire the Session and transport into Spring</td><td data-state="built"><code>JavaMailSender</code>, Boot auto-configuration, JNDI Session, <code>MailException</code></td><td data-state="owned">You configure and inject the library yourself</td><td data-state="built">Optional Spring module, injectable <code>Mailer</code>, <code>simplejavamail.*</code> binding</td></tr>
               <tr><th>Diagnostics and settings inspection</th><td data-state="helper">Protocol debug stream and direct objects</td><td data-state="helper">Spring logging plus Jakarta tools</td><td data-state="helper">Exceptions and Jakarta Mail debug output</td><td data-state="built">Connection tests, readable settings, routed debug output, validation, receipts</td></tr>
-              <tr><th>Low-level escape hatch</th><td data-state="built">The API itself</td><td data-state="built">Direct Jakarta objects and properties</td><td data-state="helper">Access to the mail Session and generated MimeMessage</td><td data-state="built">Custom Session, properties, MimeMessage, and send operation</td></tr>
+              <tr><th>Low-level escape hatch</th><td data-state="built">The API itself</td><td data-state="built">Direct Jakarta objects and properties</td><td data-state="helper">Access to the mail Session and generated MimeMessage</td><td data-state="built">Custom Session, properties, MIME conversion, SSL factory, OAuth2 token provider, or send operation</td></tr>
             </tbody>
           </table>
         </div>
@@ -112,4 +112,3 @@ description: "Compare Simple Java Mail with Jakarta Mail, Spring Mail, and Apach
     <section id="scope" class="scope-band">
       <div class="shell scope-grid"><p class="eyebrow">Scope matters</p><h2>Simple Java Mail focuses on outbound application email.</h2><p>Jakarta Mail also covers IMAP and POP3, so use it directly for mailbox access. Simple Java Mail builds on it to compose, secure, and send outbound messages.</p></div>
     </section>
-

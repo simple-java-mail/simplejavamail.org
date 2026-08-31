@@ -312,6 +312,20 @@ pre.has-copy-control { padding-top: 2.9rem; }
 .doc-card-meta .module-badges { position: relative; z-index: 2; justify-content: flex-end; }
 .doc-card-link > strong { margin-top: @space-lg; color: @ink; font-size: 1.35rem; }
 .doc-card-link > p { margin: auto 0 0; color: @steel; font-size: 0.84rem; line-height: 1.55; }
+.extension-point-overview > p { color: @steel; font-size: 1.02rem; }
+.extension-boundary-map { max-width: none; margin: @space-xl 0 0; }
+.extension-boundary-map > div { display: grid; grid-template-columns: minmax(185px, 0.68fr) minmax(0, 1.32fr); border: 1px solid @line; border-top: 0; background: @white; }
+.extension-boundary-map > div:first-child { border-top: 1px solid @line; }
+.extension-boundary-map dt { position: relative; margin: 0; padding: @space-lg; border-right: 1px solid @line; }
+.extension-boundary-map dt::before { position: absolute; top: @space-lg; bottom: @space-lg; left: -1px; width: 3px; background: @teal; content: ""; }
+.extension-boundary-map dt > span { display: block; margin-bottom: @space-sm; color: @teal-deep; font-family: @font-mono; font-size: 0.6rem; font-weight: 600; letter-spacing: @tracking-label; text-transform: uppercase; }
+.extension-boundary-map dt > strong { display: block; color: @ink; font-size: 1rem; line-height: 1.42; }
+.extension-boundary-map dd { min-width: 0; margin: 0; padding: @space-lg; }
+.legacy-doc-content .extension-boundary-map dd > p { max-width: none; margin: 0; color: @steel; font-size: 0.84rem; line-height: 1.58; }
+.extension-boundary-links { display: flex; flex-wrap: wrap; gap: 0.45rem @space-md; margin-top: @space-md; }
+.extension-boundary-links a { color: @teal-deep; font-family: @font-mono; font-size: 0.66rem; font-weight: 600; text-decoration-color: fade(@teal, 45%); text-underline-offset: 0.16em; }
+.extension-boundary-links a:hover { color: @ink; text-decoration-color: @ink; }
+.extension-boundary-links a:focus-visible { .focus-ring(); }
 .legacy-doc-content .section-link { display: block; float: left; width: 1.6rem; margin: @space-2xl 0 0 -2rem; scroll-margin-top: @space-xl; color: @teal; font-family: @font-mono; font-size: 0; text-decoration: none; }
 .legacy-doc-content .section-link::before { content: "#"; font-size: 0.9rem; }
 .legacy-doc-content .section-link.h3 { margin-top: @space-xl; }
@@ -402,6 +416,10 @@ pre.has-copy-control { padding-top: 2.9rem; }
   .docs-sidebar.is-open .docs-navigation-body { display: block; }
   .legacy-doc-content .toc ul { columns: 1; }
   .doc-card-grid { grid-template-columns: minmax(0, 1fr); }
+  .extension-boundary-map > div { grid-template-columns: minmax(0, 1fr); }
+  .extension-boundary-map dt { padding: @space-md; border-right: 0; border-bottom: 1px solid @line; }
+  .extension-boundary-map dt::before { top: @space-md; bottom: @space-md; }
+  .extension-boundary-map dd { padding: @space-md; }
   .legacy-doc-content .section-link { margin-left: 0; margin-right: 0.45rem; }
   .doc-next { grid-template-columns: 1fr; }
   .site-footer-grid { grid-template-columns: 1fr 1fr; }
