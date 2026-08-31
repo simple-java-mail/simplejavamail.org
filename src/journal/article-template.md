@@ -1,9 +1,11 @@
 ---
 title: "Replace this with the article title"
 description: "Summarize the question, position, or whole-system approach in one concrete sentence."
-date: "2026-08-26"
+date: "YYYY-MM-DD"
 category: "Maintainer practice"
 draft: true
+typora-root-url: ..
+typora-copy-images-to: ../assets/journal
 ---
 
 Open with the situation or tension that made this entry worth writing. The title and description already appear above the article, so the first paragraph can begin the story directly.

@@ -12,6 +12,7 @@ import site from "./src/_data/site.json" with { type: "json" };
 import {
   collectionSchema,
   createMarkdownLibrary,
+  enforceJournalTodoPolicy,
   formatDate,
   hasMarkdownHeading,
   hardenExternalLinks,
@@ -71,10 +72,11 @@ export default function (eleventyConfig) {
     if (!isJournalArticleFilename(filename)) {
       throw new Error(`[journal] Article filenames must use lowercase kebab-case: ${filename}`);
     }
-    if (hasMarkdownHeading(markdown, content, 1)) {
+    if (!data.draft && hasMarkdownHeading(markdown, content, 1)) {
       throw new Error(`[journal] Use the front matter title instead of an H1 heading in ${filename}`);
     }
     if (!content.trim()) throw new Error(`[journal] Article body is empty in ${filename}`);
+    enforceJournalTodoPolicy(markdown, content, filename, data.draft);
     if (data.draft && process.env.ELEVENTY_RUN_MODE === "build") return false;
   });
 

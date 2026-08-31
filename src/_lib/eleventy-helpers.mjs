@@ -30,6 +30,46 @@ export function hasMarkdownHeading(markdown, content, level) {
   return markdown.parse(String(content), {}).some((token) => token.type === "heading_open" && token.tag === `h${level}`);
 }
 
+const journalTodoPattern = /<!--\s*TODO(?:\s*\([^)]*\))?\s*:/i;
+
+function lineOffset(value, index) {
+  return String(value).slice(0, index).split("\n").length - 1;
+}
+
+export function findUnresolvedJournalTodo(markdown, content) {
+  const tokens = markdown.parse(String(content), {});
+
+  for (const token of tokens) {
+    if (token.type === "html_block") {
+      const match = journalTodoPattern.exec(token.content);
+      if (match) return { line: (token.map?.[0] || 0) + lineOffset(token.content, match.index) + 1 };
+    }
+
+    if (token.type !== "inline") continue;
+    let cursor = 0;
+    for (const child of token.children || []) {
+      if (child.type !== "html_inline") continue;
+      const childStart = token.content.indexOf(child.content, cursor);
+      const match = journalTodoPattern.exec(child.content);
+      if (match) {
+        const start = childStart < 0 ? cursor : childStart;
+        return { line: (token.map?.[0] || 0) + lineOffset(token.content, start + match.index) + 1 };
+      }
+      if (childStart >= 0) cursor = childStart + child.content.length;
+    }
+  }
+
+  return null;
+}
+
+export function enforceJournalTodoPolicy(markdown, content, filename, draft) {
+  if (draft) return;
+  const unresolvedTodo = findUnresolvedJournalTodo(markdown, content);
+  if (unresolvedTodo) {
+    throw new Error(`[journal] Resolve TODO marker in ${filename}:${unresolvedTodo.line} before publishing`);
+  }
+}
+
 export function isoDate(value) {
   if (!value) return null;
   const normalized = value instanceof Date ? value.toISOString().slice(0, 10) : String(value).trim();

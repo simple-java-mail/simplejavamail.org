@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createMarkdownLibrary,
+  enforceJournalTodoPolicy,
+  findUnresolvedJournalTodo,
   hasMarkdownHeading,
   journalArticleUrl,
   rssDate,
@@ -13,6 +15,28 @@ test("Markdown heading policy recognizes headings rather than code", () => {
   assert.equal(hasMarkdownHeading(markdown, "# ATX title", 1), true);
   assert.equal(hasMarkdownHeading(markdown, "Setext title\n============", 1), true);
   assert.equal(hasMarkdownHeading(markdown, "```shell\n# a shell comment\n```", 1), false);
+});
+
+test("journal TODO policy recognizes HTML comments rather than examples", () => {
+  const markdown = createMarkdownLibrary();
+  assert.deepEqual(
+    findUnresolvedJournalTodo(markdown, "Opening paragraph.\n\n<!-- TODO: verify the date -->\n\nContinue."),
+    { line: 3 },
+  );
+  assert.deepEqual(
+    findUnresolvedJournalTodo(markdown, "First line\nsecond line <!-- TODO(publication): add the source -->"),
+    { line: 2 },
+  );
+  assert.equal(findUnresolvedJournalTodo(markdown, "<!-- A normal explanatory comment -->"), null);
+  assert.equal(findUnresolvedJournalTodo(markdown, "`<!-- TODO: inline example -->`"), null);
+  assert.equal(findUnresolvedJournalTodo(markdown, "```markdown\n<!-- TODO: fenced example -->\n```"), null);
+
+  const unresolved = "Opening paragraph.\n\n<!-- TODO: verify the date -->";
+  assert.doesNotThrow(() => enforceJournalTodoPolicy(markdown, unresolved, "draft-entry.md", true));
+  assert.throws(
+    () => enforceJournalTodoPolicy(markdown, unresolved, "published-entry.md", false),
+    /Resolve TODO marker in published-entry\.md:3 before publishing/,
+  );
 });
 
 test("journal headings receive descriptive permalinks at every supported depth", () => {

@@ -4,6 +4,8 @@ description: "A deliberately unfinished walk through an imaginary mail system, m
 date: "2026-08-26"
 category: "System design"
 draft: true
+typora-root-url: ..
+typora-copy-images-to: ../assets/journal
 ---
 
 I keep sketching the same imaginary mail system whenever I need to think through a new feature. It belongs to a company with too many applications, several kinds of transactional mail, a few enormous mailing lists, and at least one old system nobody is willing to switch off.
