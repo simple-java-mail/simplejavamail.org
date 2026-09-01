@@ -59,6 +59,11 @@ description: "Configure mailers in Java, property files, environment variables, 
       <li><a href="#section-config-mailer">Mailer level email defaults and overrides</a></li>
       <li><a href="#section-combine-config">Combining everything for multiple environments</a></li>
       <li><a href="#section-spring-support">Spring support</a></li>
+	  <li><a href="#section-spring-paths" class="indent">Choose an integration path</a></li>
+	  <li><a href="#section-spring-installation" class="indent">Install and inject the Spring beans</a></li>
+	  <li><a href="#section-spring-beans" class="indent">Customize Spring-managed beans</a></li>
+	  <li><a href="#section-spring-oauth2" class="indent">Provide OAuth2 access tokens</a></li>
+	  <li><a href="#section-spring-profiles" class="indent">Configure profiles and dynamic properties</a></li>
 	  <li><a href="#section-mail-send-observer">Terminal mail-send observer</a></li>
       <li><a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
       <li><a href="#section-batch-and-clustering">Batch and clustering support</a></li>
@@ -613,8 +618,12 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 	<section>
 		<div class="view">
 			<p>
-				Spring Boot users can use the same canonical property names. A few generated metadata aliases exist for IDE compatibility where Spring's
-				relaxed binding cannot represent the original name cleanly.
+				The Spring module includes configuration metadata for every supported <code class="inline language-properties">simplejavamail.*</code> setting,
+				giving compatible IDEs completion and type hints in <code class="inline language-text">application.properties</code> and YAML files. This metadata
+				is editor assistance only: values are still resolved from Spring's <code class="inline language-java">Environment</code> when the application context
+				starts. Dynamic namespaces such as <code class="inline language-properties">extraproperties.*</code> and connection-pool cluster names are recognized,
+				but their application-defined child keys cannot be predicted. A few generated metadata aliases exist where Spring's relaxed binding cannot
+				represent the original name cleanly.
 			</p>
 		</div>
 
@@ -820,26 +829,63 @@ Mailer mailer = mail.mailerBuilder()
   <a href="#section-spring-support" id="section-spring-support" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 spring=true}}Spring support{{/components/feature-heading-h2}}
 
+  <a href="#section-spring-paths" id="section-spring-paths" class="section-link h3">&sect;</a>
+  <h3>Choose a Spring integration path</h3>
+
   <section>
-    <div class="view">
+    <div class="wide">
       <p>
 		Spring can supply the same Simple Java Mail settings, so each profile can use its own SMTP server, credentials, transport strategy, and defaults.
       </p>
       <p>
-        For Spring Boot 2.7 or 3.x, add <code class="inline language-text">simple-java-mail-spring-boot-starter</code>. Boot discovers the integration and
-        creates the default beans without an annotation. Applications that already depend directly on <code class="inline language-text">spring-module</code>
-        receive the same auto-configuration; the starter is the recommended dependency because it also supplies Spring Boot's standard starter dependencies.
+		Spring integration itself lives in <code class="inline language-text">spring-module</code>. The Spring Boot starter is a dependency-only convenience
+		that brings in that module and Spring Boot's standard starter dependencies.
+      </p>
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable Spring integration paths">
+        <table>
+          <thead>
+          <tr>
+            <th>Application path</th>
+            <th>Dependency</th>
+            <th>Activation</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>Spring Boot 2.7 or 3.x &mdash; recommended</td>
+            <td><code class="inline language-text">simple-java-mail-spring-boot-starter</code>, which brings in <code class="inline language-text">spring-module</code></td>
+            <td>Automatic</td>
+          </tr>
+          <tr>
+            <td>Spring Boot already using the module directly</td>
+            <td><code class="inline language-text">spring-module</code></td>
+            <td>Automatic</td>
+          </tr>
+          <tr>
+            <td>Plain Spring</td>
+            <td><code class="inline language-text">spring-module</code></td>
+            <td><code class="inline language-java">@Import(SimpleJavaMailSpringSupport.class)</code></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+		Every route exposes the same context-local <code class="inline language-java">SimpleJavaMailConfig</code>,
+		<code class="inline language-java">SimpleJavaMail</code>, and default <code class="inline language-java">Mailer</code> beans. There is no shared builder
+		bean; inject the factory whenever you need a fresh builder.
       </p>
       <p>
-        Plain Spring applications import <code class="inline language-java">SimpleJavaMailSpringSupport</code>. Both routes load the conventional
+		The <code class="inline language-properties">spring.mail.*</code> namespace and <code class="inline language-java">JavaMailSender</code> belong to Spring
+		Mail, not this integration. Configure Simple Java Mail through <code class="inline language-properties">simplejavamail.*</code>.
+      </p>
+    </div>
+
+    <div class="view">
+      <p>
+        All three routes load the conventional
         <code class="inline language-text">simplejavamail.properties</code> resource as a low-priority source, then resolve all matching values through
         Spring's <code class="inline language-java">Environment</code>. Spring remains responsible for profiles, placeholders, environment variables,
         system properties, and their precedence. Simple Java Mail does not read the raw process values again afterwards.
-      </p>
-      <p>
-        Each application context gets an immutable <code class="inline language-java">SimpleJavaMailConfig</code>, a configured
-        <code class="inline language-java">SimpleJavaMail</code> factory, and a default <code class="inline language-java">Mailer</code>. There is no shared
-        builder bean. Inject the factory whenever you need a fresh builder.
       </p>
       <p>
         Separate Spring application contexts keep separate snapshots and factories. Building or closing a Mailer in one context does not change the
@@ -851,7 +897,12 @@ Mailer mailer = mail.mailerBuilder()
         without a local development SMTP service.
       </p>
     </div>
+  </section>
 
+  <a href="#section-spring-installation" id="section-spring-installation" class="section-link h3">&sect;</a>
+  <h3>Install and inject the Spring beans</h3>
+
+  <section>
     <div class="wide full-width-example">
       Add the Spring Boot starter with Maven:
       <pre><code class="language-xml">&lt;dependency&gt;
@@ -861,6 +912,11 @@ Mailer mailer = mail.mailerBuilder()
 &lt;/dependency&gt;</code></pre>
       Or with Gradle:
       <pre><code class="language-groovy">implementation("org.simplejavamail:simple-java-mail-spring-boot-starter:{{site.version}}")</code></pre>
+	  In plain Spring, activate the same bean path explicitly:
+	  <pre><code class="small">@Configuration
+@Import(SimpleJavaMailSpringSupport.class)
+class SimpleJavaMailConfiguration {
+}</code></pre>
       Then inject the default Mailer directly; Boot needs no <code class="inline language-java">@Import</code>:
       <pre><code class="small">@Component
 public class YourEmailService {
@@ -888,7 +944,15 @@ public class YourEmailService {
                 .buildEmail();
     }
 }</code></pre>
-      Or replace the default <code class="inline language-java">Mailer</code> with one built from a fresh builder:
+    </div>
+  </section>
+
+  <a href="#section-spring-beans" id="section-spring-beans" class="section-link h3">&sect;</a>
+  <h3>Customize Spring-managed beans</h3>
+
+  <section>
+    <div class="wide full-width-example">
+      Replace the default <code class="inline language-java">Mailer</code> with one built from a fresh builder:
       <pre><code class="small">@Configuration
 public class MailConfiguration {
 
@@ -903,18 +967,6 @@ public class MailConfiguration {
     }
 }
 </code></pre>
-	  In plain Spring, activate the same bean path explicitly:
-	  <pre><code class="small">@Configuration
-@Import(SimpleJavaMailSpringSupport.class)
-class SimpleJavaMailConfiguration {
-}</code></pre>
-	  When the default Mailer uses <code class="inline language-java">SMTP_OAUTH2</code>, a single OAuth2 token-provider bean is picked up automatically:
-	  <pre><code class="small">@Bean
-OAuth2AccessTokenProvider smtpAccessTokens(TokenService tokenService) {
-    return tokenService::currentAccessToken;
-}</code></pre>
-	  If the application has more than one <code class="inline language-java">OAuth2AccessTokenProvider</code> bean, mark the one for SMTP with
-	  <code class="inline language-java">@Primary</code> or use normal Spring bean disambiguation.
       <p>
         Boot backs off independently for <code class="inline language-java">SimpleJavaMailConfig</code>, <code class="inline language-java">SimpleJavaMail</code>,
         and <code class="inline language-java">Mailer</code>. A replacement config feeds the two remaining defaults; a replacement factory feeds the default
@@ -929,8 +981,23 @@ OAuth2AccessTokenProvider smtpAccessTokens(TokenService tokenService) {
     </div>
   </section>
 
+	<a href="#section-spring-oauth2" id="section-spring-oauth2" class="section-link h3">&sect;</a>
+	<h3>Provide OAuth2 access tokens through Spring</h3>
+
 	<section>
 		<div class="wide full-width-example">
+			<p>
+				When the default Mailer uses <code class="inline language-java">SMTP_OAUTH2</code>, a single
+				<code class="inline language-java">OAuth2AccessTokenProvider</code> bean is picked up automatically:
+			</p>
+			<pre><code class="small">@Bean
+OAuth2AccessTokenProvider smtpAccessTokens(TokenService tokenService) {
+    return tokenService::currentAccessToken;
+}</code></pre>
+			<p>
+				If the application has more than one <code class="inline language-java">OAuth2AccessTokenProvider</code> bean, mark the one for SMTP with
+				<code class="inline language-java">@Primary</code> or use normal Spring bean disambiguation.
+			</p>
 			<p>
 				Applications using Spring Security OAuth2 Client can adapt its
 				<a href="https://docs.spring.io/spring-security/reference/servlet/oauth2/client/core.html">OAuth2AuthorizedClientManager</a>. The manager obtains
@@ -959,10 +1026,14 @@ OAuth2AccessTokenProvider smtpAccessTokens(
 			</p>
 		</div>
 	</section>
+
+	<a href="#section-spring-profiles" id="section-spring-profiles" class="section-link h3">&sect;</a>
+	<h3>Configure profiles and dynamic properties</h3>
+
   <section>
 
     <div class="wide">
-      Spring profiles can then provide different values, for example <code>default</code> and <code>production</code>:
+      Spring profiles can provide different values, for example <code>default</code> and <code>production</code>:
       <pre><code class="language-properties small">#application.properties
 simplejavamail.javaxmail.debug=true
 simplejavamail.smtp.host=smtp.host
