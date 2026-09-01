@@ -15,7 +15,7 @@ eleventyExcludeFromCollections: true
     <language>en</language>
     {% if entries.length %}
       {% set newest = entries[0] %}
-      {% if newest.data.updated %}<lastBuildDate>{{ newest.data.updated | rssDate }}</lastBuildDate>{% else %}<lastBuildDate>{{ newest.date | rssDate }}</lastBuildDate>{% endif %}
+      {% if newest.data.updated %}<lastBuildDate>{{ newest.data.updated | journalRssDate }}</lastBuildDate>{% else %}<lastBuildDate>{{ newest.date | journalRssDate }}</lastBuildDate>{% endif %}
     {% endif %}
     {% for entry in entries %}
       {% set absoluteUrl = entry.url | htmlBaseUrl(site.url) %}
@@ -24,7 +24,7 @@ eleventyExcludeFromCollections: true
       <title>{{ entry.data.title | escape }}</title>
       <link>{{ absoluteUrl | escape }}</link>
       <guid isPermaLink="true">{{ absoluteUrl | escape }}</guid>
-      <pubDate>{{ entry.date | rssDate }}</pubDate>
+      <pubDate>{{ entry.date | journalRssDate }}</pubDate>
       <category>{{ entry.data.category | escape }}</category>
       <description>{{ cdata(entry.data.description) }}</description>
       <content:encoded>{{ cdata(absoluteContent) }}</content:encoded>

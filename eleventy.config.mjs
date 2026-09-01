@@ -46,7 +46,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addFilter("newestFirst", (value) => [...(value || [])].reverse());
   eleventyConfig.addFilter("isoDate", isoDate);
   eleventyConfig.addFilter("formatDate", formatDate);
-  eleventyConfig.addFilter("rssDate", rssDate);
+  eleventyConfig.addFilter("journalRssDate", rssDate);
   eleventyConfig.addFilter("journalHeadings", headingsFromHtml);
   eleventyConfig.addFilter("journalNeighbor", journalNeighbor);
   eleventyConfig.addFilter("journalCollectionSchema", collectionSchema);
