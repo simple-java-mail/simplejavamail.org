@@ -289,9 +289,10 @@ public Mailer inhouseMailer(SimpleJavaMail mail) {
         .buildMailer();
 }
 </code></pre>
-      Or inject the auto-configured default after adding the <a href="configuration.html#section-spring-support">Spring Boot starter</a>:
+      Or inject the auto-configured default after adding the <a href="/spring.html">Spring Boot starter</a>:
       <pre><code>@Autowired Mailer mailer; // configured through Spring's normal property sources</code></pre>
-      Plain Spring uses the same bean through <code class="inline language-java">@Import(SimpleJavaMailSpringSupport.class)</code>.
+      <a href="/spring.html#section-spring-installation">Plain Spring</a> uses the same bean through
+      <code class="inline language-java">@Import(SimpleJavaMailSpringSupport.class)</code>.
     </div>
   </section>
 
@@ -2275,7 +2276,8 @@ private static String render(
     </p>
     <p class="wide">
       Using Spring? Inject the application-configured renderer and Simple Java Mail's <code class="inline language-java">Mailer</code> into the service
-      that composes the message. Simple Java Mail Spring Support can supply the <code class="inline language-java">Mailer</code>; it does not discover or
+      that composes the message. <a href="/spring.html">Simple Java Mail's Spring integration</a> can supply the
+      <code class="inline language-java">Mailer</code>; it does not discover or
       configure template engines.
     </p>
     <p class="wide">

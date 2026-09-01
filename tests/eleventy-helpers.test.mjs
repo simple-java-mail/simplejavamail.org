@@ -6,6 +6,7 @@ import {
   findUnresolvedJournalTodo,
   hasMarkdownHeading,
   journalArticleUrl,
+  navItemForUrl,
   rssDate,
   validateSiteData,
 } from "../src/_lib/eleventy-helpers.mjs";
@@ -75,6 +76,38 @@ test("site data validation checks navigation and breadcrumb relationships", () =
   assert.throws(
     () => validateSiteData(site, navigation, [...pages, { url: "/orphan.html", data: { layout: "layouts/base.hbs", breadcrumbParent: "/missing.html" } }]),
     /breadcrumb parent references missing page \/missing\.html/,
+  );
+});
+
+test("documentation navigation supports always-visible child pages", () => {
+  const groups = [{
+    label: "Build and configure",
+    items: [{
+      title: "Configuration",
+      url: "/configuration.html",
+      children: [{ title: "Spring integration", url: "/spring.html" }],
+    }],
+  }];
+  const site = {
+    url: "https://www.simplejavamail.org",
+    journal: {
+      author: "Maintainer",
+      indexUrl: "/engineering-journal.html",
+      urlPrefix: "/journal/",
+      feedUrl: "/journal/feed.xml",
+    },
+  };
+  const pages = [
+    { url: "/engineering-journal.html", data: { layout: "layouts/marketing.hbs" } },
+    { url: "/configuration.html", data: { layout: "layouts/base.hbs" } },
+    { url: "/spring.html", data: { layout: "layouts/base.hbs", breadcrumbParent: "/configuration.html" } },
+  ];
+
+  assert.equal(navItemForUrl(groups, "/spring.html")?.title, "Spring integration");
+  assert.doesNotThrow(() => validateSiteData(site, { docsGroups: groups }, pages));
+  assert.throws(
+    () => validateSiteData(site, { docsGroups: groups }, pages.filter((page) => page.url !== "/spring.html")),
+    /documentation navigation references missing page \/spring\.html/,
   );
 });
 

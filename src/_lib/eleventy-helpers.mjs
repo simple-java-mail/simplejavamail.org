@@ -131,12 +131,37 @@ export function headingsFromHtml(content) {
   return headings;
 }
 
+function findNavItem(items, url) {
+  for (const item of items || []) {
+    if (item.url === url) return item;
+    const child = findNavItem(item.children, url);
+    if (child) return child;
+  }
+  return null;
+}
+
 export function navItemForUrl(groups, url) {
   for (const group of groups || []) {
-    const item = (group.items || []).find((candidate) => candidate.url === url);
+    const item = findNavItem(group.items, url);
     if (item) return item;
   }
   return null;
+}
+
+function validateDocumentationItems(items, pageUrls, docsUrls, errors) {
+  for (const item of items || []) {
+    if (typeof item.title !== "string" || !item.title.trim()) {
+      errors.push(`documentation navigation item for ${item.url || "an unknown URL"} needs a title`);
+    }
+    if (typeof item.url !== "string" || !item.url.startsWith("/")) {
+      errors.push(`documentation navigation item ${item.title || "without a title"} needs a root-relative URL`);
+    } else {
+      if (docsUrls.has(item.url)) errors.push(`duplicate documentation navigation URL ${item.url}`);
+      docsUrls.add(item.url);
+      if (!pageUrls.has(item.url)) errors.push(`documentation navigation references missing page ${item.url}`);
+    }
+    validateDocumentationItems(item.children, pageUrls, docsUrls, errors);
+  }
 }
 
 export function validateSiteData(siteData, navigation, pages) {
@@ -160,16 +185,7 @@ export function validateSiteData(siteData, navigation, pages) {
 
   const docsUrls = new Set();
   for (const group of navigation?.docsGroups || []) {
-    for (const item of group.items || []) {
-      if (typeof item.title !== "string" || !item.title.trim()) errors.push(`documentation navigation item for ${item.url || "an unknown URL"} needs a title`);
-      if (typeof item.url !== "string" || !item.url.startsWith("/")) {
-        errors.push(`documentation navigation item ${item.title || "without a title"} needs a root-relative URL`);
-        continue;
-      }
-      if (docsUrls.has(item.url)) errors.push(`duplicate documentation navigation URL ${item.url}`);
-      docsUrls.add(item.url);
-      if (!pageUrls.has(item.url)) errors.push(`documentation navigation references missing page ${item.url}`);
-    }
+    validateDocumentationItems(group.items, pageUrls, docsUrls, errors);
   }
 
   if (journal?.indexUrl && !pageUrls.has(journal.indexUrl)) errors.push(`journal index references missing page ${journal.indexUrl}`);

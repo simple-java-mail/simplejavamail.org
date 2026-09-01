@@ -577,7 +577,8 @@ Session configuredSession = configuredMailer.getSession();</code></pre>
     </p>
     <p class="wide">
       Spring Boot now discovers Simple Java Mail automatically whenever <code class="inline language-text">spring-module</code> is present. Prefer the new
-      dependency-only starter in Boot 2.7 and 3.x applications; it brings in <code class="inline language-text">spring-module</code> and needs no annotation:
+      dependency-only starter in Boot 2.7 and 3.x applications; it brings in <code class="inline language-text">spring-module</code> and needs no annotation.
+      The application continues to supply its chosen Boot, Spring Framework, and SLF4J generation:
     </p>
     <pre class="full-width-example"><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
@@ -638,6 +639,10 @@ Mailer customMailer() {
       normal Boot exclusion:
     </p>
     <pre class="full-width-example"><code class="language-properties">spring.autoconfigure.exclude=org.simplejavamail.springsupport.SimpleJavaMailAutoConfiguration</code></pre>
+    <p class="wide">
+      For the current dependency choices, compatibility matrix, bean examples, and profile behavior, continue with the
+      <a href="/spring.html">Spring integration guide</a>.
+    </p>
   </section>
 
   <a href="#embedded-route-flags" id="embedded-route-flags" class="section-link h2">&sect;</a>

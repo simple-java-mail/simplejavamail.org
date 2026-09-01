@@ -321,15 +321,16 @@ com.example.ExampleMailTransportAdapter</code></pre>
 
   <h2 id="spring-module" class="with-back-to-top">Spring support</h2>
   <nav class="module-capability-links" aria-label="Spring module capabilities">
-    <a href="configuration.html#section-spring-support"><span>Inject</span><strong>Spring-managed Mailer</strong><b aria-hidden="true">→</b></a>
-    <a href="configuration.html#section-config-properties"><span>Configure</span><strong>Environment and profiles</strong><b aria-hidden="true">→</b></a>
-    <a href="security.html#section-transport-strategy-oauth2"><span>Authenticate</span><strong>OAuth2 provider bean</strong><b aria-hidden="true">→</b></a>
+    <a href="/spring.html"><span>Inject</span><strong>Spring-managed Mailer</strong><b aria-hidden="true">→</b></a>
+    <a href="/spring.html#section-spring-profiles"><span>Configure</span><strong>Environment and profiles</strong><b aria-hidden="true">→</b></a>
+    <a href="/spring.html#section-spring-oauth2"><span>Authenticate</span><strong>OAuth2 provider bean</strong><b aria-hidden="true">→</b></a>
   </nav>
 
   <section>
 	  <p>
 		  Spring Boot 2.7 and 3.x applications should add the dependency-only starter. It brings in <code class="inline language-text">spring-module</code>,
-          activates auto-configuration, and uses the Boot dependency versions selected by the application:
+          activates auto-configuration, and uses the Boot dependency versions selected by the application. Boot, Spring Framework, and SLF4J are
+          deliberately provided by the application rather than pulled in by this starter:
 	  </p>
 	  <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;

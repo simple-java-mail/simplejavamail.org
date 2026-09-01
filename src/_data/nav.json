@@ -55,7 +55,13 @@
       "label": "Build and configure",
       "items": [
         { "title": "Capabilities", "url": "/features.html" },
-        { "title": "Configuration", "url": "/configuration.html" },
+        {
+          "title": "Configuration",
+          "url": "/configuration.html",
+          "children": [
+            { "title": "Spring integration", "url": "/spring.html" }
+          ]
+        },
         { "title": "Pool orchestration", "url": "/smtp-connection-pooling.html" },
         { "title": "Modules", "url": "/modules.html" }
       ]
