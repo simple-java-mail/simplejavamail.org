@@ -16,13 +16,28 @@ And now it was my turn.
 
 ## Down the MIME dungeon
 
-The email bug ended up on my plate. `new MimeMessage(...)` this, `new MimeMultipart("alternative")` that, with `MimeBodyPart`s, `DataHandler`s and hand-written `Content-ID` headers scattered between them. I couldn't match any of it to what in my mind was a simple object tree: email → body, plus optional attachments and inline images. Boy was I wrong.
+The email bug ended up on my plate. `new MimeMessage(...)` this, `new MimeMultipart("alternative")` that, with `MimeBodyPart`s, `DataHandler`s and hand-written `Content-ID` headers scattered between them. And it's recursive! I couldn't match any of it to what in my mind was a simple object tree: email → body, plus optional attachments and inline images. Boy was I wrong.
 
-So as the RFCs popped up, I rose to the challenge and went deeper and deeper. Each RFC was another step down into the dungeon, the JavaMail API my map and other people's code samples my candle. I studied the `MimeMessage` structure thoroughly... err, well... actually no. That's a complete lie. I was never an academic and the MIME standards have always confounded me, even to this day. What I did instead was scour the internet for tutorials, examples and blog posts until I connected enough dots to see that every combination of content needed its own nesting: plain text and HTML as alternatives, inline images related to the body, and attachments wrapped around the whole thing. I identified [five main configurations](/rfc-compliant.html#section-explore-multipart). So I wrote a utility class that figured out the right structure. Lo and behold, emails started rendering consistently across Outlook, Thunderbird and the assorted webmail clients we'd been fighting with.
+So as the RFCs popped up, I rose to the challenge and went deeper and deeper. Each RFC was another step down into the dungeon, the JavaMail API my map and other people's code samples my candle. I studied the `MimeMessage` structure thoroughly... err, well... actually no. That's a complete lie. I was never an academic and the MIME standards have always confounded me, even to this day. What I did instead was scour the internet for tutorials, examples and blog posts until I connected enough dots to see that every combination of content needed its own nesting: plain text and HTML as alternatives, inline images related to the body, and attachments wrapped around the whole thing. I identified [eight main configurations](/rfc-compliant.html#section-explore-multipart), and wrote a utility class that figured out the right structure. Lo and behold, emails started rendering consistently across Outlook, Thunderbird and the assorted webmail clients we'd been fighting with.
+
+That idea is still visible in the code [today](https://github.com/bbottema/simple-java-mail/blob/982007485db7a5397e7c2782bfc296c530636a14/modules/simple-java-mail/src/main/java/org/simplejavamail/converter/internal/mimemessage/MimeMessageProducerHelper.java):
+
+```java
+private static final List<SpecializedMimeMessageProducer> mimeMessageProducers = Arrays.asList(
+	new MimeMessageProducerSimple(),
+	new MimeMessageProducerAlternative(),
+	new MimeMessageProducerRelated(),
+	new MimeMessageProducerMixed(),
+	new MimeMessageProducerMixedRelated(),
+	new MimeMessageProducerMixedAlternative(),
+	new MimeMessageProducerRelatedAlternative(),
+	new MimeMessageProducerMixedRelatedAlternative()
+);
+```
 
 ## Why turn it into a library?
 
-Considering the countless of Sun JavaMail articles out there, I knew I wasn't the only one with this issue, yet the structure I had discovered seemed to be missing from all of them. Even Sun's own documentation was bare bones; they had no cookbook, no holistic tutorials, no guides that I was aware of that dealt with this top-down view of how all these pieces were supposed to fit together. Or perhaps it was out there, buried under the same low-level terminology you already needed to understand before you could find it.
+Considering the countless Sun JavaMail articles out there, I knew I wasn't the only one with this issue, yet the structure I had discovered seemed to be missing from all of them. Even Sun's own documentation was bare bones; they had no cookbook, no holistic tutorials, no guides that I was aware of that dealt with this top-down view of how all these pieces were supposed to fit together. Or perhaps it was out there, buried under the same low-level terminology you already needed to understand before you could find it.
 
 So, I thought, "let's share this epiphany with the world," and while I was at it: "Why burden anyone with thinking in MIME structures at all? Just tell the API what kind of email you want to send, and let it figure out the appropriate `MimeMessage` structure".
 
