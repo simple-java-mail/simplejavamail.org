@@ -65,8 +65,10 @@ pre code { color: inherit; background: none; border: 0; padding: 0; font-size: i
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
+  opacity: 0.22;
+  transition: opacity 120ms ease;
 }
-.copy-code:hover { border-color: @teal; color: @white; }
+pre:hover > .copy-code, pre:focus-within > .copy-code, .copy-code:active { border-color: @teal; color: @white; opacity: 1; }
 
 .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #83939B; }
 .token.punctuation { color: #BFCBCD; }
