@@ -12,6 +12,7 @@ description: "Test SMTP connections, inspect the settings in use, route debug ou
 		<li><a href="#section-debug-mode">Logging emails instead of sending</a></li>
 		<li><a href="#section-override-receivers">Override envelope-level receivers</a></li>
 		<li><a href="#section-debug-logging">Enable Jakarta Mail debug logging</a></li>
+		<li><a href="#section-config-diagnostics">Trace loaded configuration values</a></li>
 		<li><a href="#section-inspect-mailer-email">Inspect a mailer or an email</a></li>
 		<li><a href="#section-mailexception">Catching exceptions</a></li>
 		<li><a href="#section-logging">Logging output</a></li>
@@ -130,6 +131,134 @@ simplejavamail.javaxmail.debug.out=SLF4J
 }
 </code></pre>
 	</div>
+  </section>
+
+
+  <a href="#section-config-diagnostics" id="section-config-diagnostics" class="section-link h2">&sect;</a>
+  <h2>Trace loaded configuration values</h2>
+
+  <section>
+    <div class="view">
+      <p>
+        When a factory picks up an unexpected SMTP host, timeout, proxy, or email default, inspect the configuration snapshot it captured. The diagnostic
+        report shows every configured value that won and the source that supplied it. Passwords, keys, certificates, and suspicious extra Jakarta Mail
+        properties are shown as <code class="inline language-text">&lt;redacted&gt;</code>.
+      </p>
+      <p>
+        With Spring, the source is the underlying Spring <code class="inline language-java">PropertySource</code>, such as a profile-specific properties
+        file, system properties, or environment variables. Spring placeholders are resolved normally, while the report names the source that declared the
+        <code class="inline language-properties">simplejavamail.*</code> property. See the
+        <a href="/configuration.html#section-config-properties">configuration precedence</a> and
+        <a href="/spring.html#section-spring-profiles">Spring profile</a> guides for the corresponding loading rules.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+LOGGER.info(
+    "Resolved Simple Java Mail configuration:\n{}",
+    mail.getConfig().getDiagnostics());
+</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="view">
+      <p>
+        <code class="inline language-java">mail.getConfig().getDiagnostics()</code> describes the immutable factory snapshot used by both Email and Mailer
+        builders. It does not include values supplied later to a builder, generated runtime defaults, settings hidden inside a caller-owned Jakarta Mail
+        <code class="inline language-java">Session</code>, or live pool and transport state.
+      </p>
+      <p>
+        After building a Mailer, use <code class="inline language-java">mailer.getOperationalConfig()</code> for its effective operational settings. Use
+        the factory diagnostics when the question is where a property-backed value came from. The regular
+        <code class="inline language-java">SimpleJavaMailConfig</code> getters and <code class="inline language-java">asMap()</code> return real values,
+        including credentials, so do not log those directly.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java small">ConfigDiagnostics diagnostics =
+    mail.getConfig().getDiagnostics();
+
+for (ConfigDiagnosticGroup group : diagnostics.getGroups()) {
+    System.out.println(group.getDisplayName());
+
+    for (ConfigPropertyDiagnostic property
+            : diagnostics.getProperties(group)) {
+        System.out.printf(
+            "  %s = %s (source: %s)%n",
+            property.getPropertyName(),
+            property.getDisplayValue(),
+            property.getSourceName());
+    }
+}</code></pre>
+    </div>
+  </section>
+
+
+  <a href="#section-config-diagnostics-demo" id="section-config-diagnostics-demo" class="section-link h3">&sect;</a>
+  <h3>Mixed-source example</h3>
+
+  <section>
+    <div class="view">
+      <p>
+        The runnable
+        <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/simple-java-mail/src/test/java/demo/ConfigDiagnosticsDemoApp.java">ConfigDiagnosticsDemoApp</a>
+        builds a realistic source hierarchy from fake, in-memory properties and prints the resulting report. It does not build a Mailer or connect to an
+        SMTP server. The output shown here is abridged; each <code class="inline language-text">...</code> only replaces more entries from the demo.
+      </p>
+      <ul class="indent">
+        <li>
+          The SMTP host comes from the profile-specific file, while the SMTP port and cluster maximum come from command-line arguments. Winners are tracked
+          per property, not per group.
+        </li>
+        <li>
+          Values such as <code class="inline language-text">02525</code> and <code class="inline language-text">01</code> are shown as the parsed numbers
+          <code class="inline language-text">2525</code> and <code class="inline language-text">1</code>.
+        </li>
+        <li>
+          Passwords, private keys, and the OAuth token are redacted. The ordinary <code class="inline language-properties">mail.smtp.auth</code> property
+          stays visible.
+        </li>
+        <li>
+          A final source supplies blank SMTP username and proxy host values, so the earlier non-blank values remain. Control characters in the remote source
+          name and default subject are escaped for logging.
+        </li>
+      </ul>
+    </div>
+
+    <div class="wide full-width-example">
+      <strong>Abridged demo output</strong>
+<pre><code class="language-text small">SMTP connection:
+  simplejavamail.defaults.sessiontimeoutmillis = 45000 (source: remote config\nstore)
+  simplejavamail.smtp.host = smtp.eu-west.example.org (source: application-production.properties)
+  simplejavamail.smtp.password = &lt;redacted&gt; (source: systemEnvironment)
+  simplejavamail.smtp.port = 2525 (source: commandLineArgs)
+  simplejavamail.smtp.username = notifications-prod (source: application-production.properties)
+  ...
+Proxy:
+  simplejavamail.proxy.host = proxy.production.example.org (source: application-production.properties)
+  simplejavamail.proxy.password = &lt;redacted&gt; (source: application-production.properties)
+Diagnostics and validation:
+  simplejavamail.javaxmail.debug = true (source: systemEnvironment)
+Execution and pooling:
+  simplejavamail.defaults.connectionpool.clusters.primary.coresize = 1 (source: application.properties)
+  simplejavamail.defaults.connectionpool.clusters.primary.maxsize = 12 (source: commandLineArgs)
+  simplejavamail.defaults.poolsize = 4 (source: classpath simplejavamail.properties)
+  ...
+Email defaults:
+  simplejavamail.defaults.subject = Nightly status\r\n(production) (source: application-production.properties)
+  ...
+Message security:
+  simplejavamail.dkim.signing.private_key_file_or_data = &lt;redacted&gt; (source: application.properties)
+  simplejavamail.smime.signing.key_password = &lt;redacted&gt; (source: systemProperties)
+Jakarta Mail properties:
+  simplejavamail.extraproperties.mail.smtp.auth = true (source: application.properties)
+  simplejavamail.extraproperties.mail.smtp.oauth2.access-token = &lt;redacted&gt; (source: application-production.properties)
+  simplejavamail.extraproperties.mail.smtp.timeout = 9000 (source: commandLineArgs)</code></pre>
+    </div>
   </section>
 
 
