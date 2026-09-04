@@ -1,0 +1,70 @@
+---
+pagination:
+  data: googleCodeProjects
+  size: 1
+  alias: googleCodeProject
+permalink: "{{googleCodeProject.permalink}}"
+eleventyExcludeFromCollections: true
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="robots" content="noindex, follow">
+    <title>{{googleCodeProject.name}} | Recovered Google Code project</title>
+    <meta name="description" content="Recovered Google Code project: {{googleCodeProject.summary}}">
+    <link rel="icon" href="/assets/sjm-favicon.png" type="image/png">
+    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="stylesheet" href="/assets/journal.css">
+  </head>
+  <body class="google-code-source-page">
+    <a class="skip-link" href="#main-content">Skip to project</a>
+    <header class="gca-source-masthead">
+      <a href="/engineering-journal.html">Simple Java Mail Engineering Journal</a>
+      <span>Recovered source</span>
+    </header>
+
+    <main id="main-content" class="gca-source-main" data-pagefind-ignore>
+      <article class="gca-issue gca-project-page" data-archived-source data-source-label="Recovered Google Code project" data-source-title="{{googleCodeProject.name}}">
+        <div class="gca-project-strip">
+          <strong>Google Code</strong>
+          <span>{{googleCodeProject.name}}</span>
+          <span aria-hidden="true">›</span>
+          <span>Project home</span>
+        </div>
+
+        <header class="gca-issue-heading">
+          <p>code.google.com/p/{{googleCodeProject.project}}</p>
+          <h1>{{googleCodeProject.name}}</h1>
+          {{#if googleCodeProject.summary}}<p class="gca-project-summary">{{googleCodeProject.summary}}</p>{{/if}}
+        </header>
+
+        <div class="gca-project-layout">
+          <section class="gca-project-description" aria-label="Project description">
+            {{{googleCodeProject googleCodeProject.description}}}
+          </section>
+
+          <aside class="gca-issue-meta" aria-label="Project metadata">
+            <dl>
+              {{#if googleCodeProject.created}}<div><dt>Created</dt><dd><time datetime="{{googleCodeProject.created.iso}}">{{googleCodeProject.created.label}}</time></dd></div>{{/if}}
+              <div><dt>Stars</dt><dd>{{googleCodeProject.stars}}</dd></div>
+              <div><dt>License</dt><dd>{{googleCodeProject.licenseLabel}}</dd></div>
+              <div><dt>Repository</dt><dd>{{upper googleCodeProject.repoType}}</dd></div>
+            </dl>
+            {{#if googleCodeProject.labels.length}}
+              <h2>Labels</h2>
+              <ul>{{#each googleCodeProject.labels}}<li>{{this}}</li>{{/each}}</ul>
+            {{/if}}
+          </aside>
+        </div>
+
+        <footer class="gca-provenance">
+          <p>Rendered from the Google Code Archive project snapshot copied on {{googleCodeProject.snapshotDate}}.</p>
+          <a href="{{googleCodeProject.rawUrl}}">Raw archived JSON</a>
+        </footer>
+      </article>
+    </main>
+  </body>
+</html>

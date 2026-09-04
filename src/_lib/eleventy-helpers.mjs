@@ -16,6 +16,13 @@ function journalHeadingPermalink(slug, options, state, index) {
 
 export function createMarkdownLibrary() {
   const markdown = new MarkdownIt({ html: true, linkify: false, typographer: false });
+  const defaultFenceRenderer = markdown.renderer.rules.fence;
+  markdown.renderer.rules.fence = (tokens, index, options, env, renderer) => {
+    const token = tokens[index];
+    const language = token.info.trim().split(/\s+/u, 1)[0];
+    if (language !== "mermaid") return defaultFenceRenderer(tokens, index, options, env, renderer);
+    return `<figure class="journal-diagram" data-pagefind-ignore><pre class="mermaid">${markdown.utils.escapeHtml(token.content)}</pre></figure>\n`;
+  };
   markdown.use(markdownItAnchor, {
     level: [2, 3, 4, 5, 6],
     slugify: slugifyHeading,
@@ -83,7 +90,6 @@ export function formatDate(value) {
   const normalized = isoDate(value);
   if (!normalized) return "";
   return new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
     month: "long",
     year: "numeric",
     timeZone: "UTC",
@@ -207,8 +213,39 @@ export function journalArticleUrl(siteData, slug) {
   return `${prefix}${slug}.html`;
 }
 
+export function orderJournalEntries(collection, newestGroupsFirst = false) {
+  const groups = new Map();
+
+  for (const [index, entry] of (collection || []).entries()) {
+    const seriesTitle = entry.data?.series?.title;
+    const key = seriesTitle ? `series:${seriesTitle}` : `entry:${entry.url}`;
+    if (!groups.has(key)) groups.set(key, { entries: [], firstIndex: index });
+    groups.get(key).entries.push(entry);
+  }
+
+  const orderedGroups = [...groups.values()].map((group) => {
+    const firstPart = group.entries.find((entry) => entry.data?.series?.part === 1);
+    const datedEntry = firstPart || group.entries[0];
+    return {
+      ...group,
+      published: isoDate(datedEntry.data?.date ?? datedEntry.date) || "",
+    };
+  }).sort((left, right) => {
+    const byDate = left.published.localeCompare(right.published);
+    if (byDate) return newestGroupsFirst ? -byDate : byDate;
+    return left.firstIndex - right.firstIndex;
+  });
+
+  return orderedGroups.flatMap((group) => [...group.entries].sort((left, right) => {
+    const leftPart = left.data?.series?.part;
+    const rightPart = right.data?.series?.part;
+    if (leftPart && rightPart) return newestGroupsFirst ? rightPart - leftPart : leftPart - rightPart;
+    return 0;
+  }));
+}
+
 export function journalNeighbor(collection, currentUrl, direction) {
-  const entries = collection || [];
+  const entries = orderJournalEntries(collection);
   const index = entries.findIndex((entry) => entry.url === currentUrl);
   if (index < 0) return null;
   const candidate = direction === "older" ? entries[index - 1] : entries[index + 1];

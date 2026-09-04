@@ -4,6 +4,13 @@ import { formatDate, isoDate, isJournalArticleFilename, journalArticleUrl } from
 
 const nonBlankText = z.string().trim().min(1);
 const dateValue = z.union([z.date(), z.string()]).refine((value) => Boolean(isoDate(value)), "must use a real YYYY-MM-DD date");
+const articleSeries = z.object({
+  title: nonBlankText,
+  part: z.number().int().positive(),
+  total: z.number().int().positive(),
+}).refine(({ part, total }) => part <= total, {
+  message: "part must not be greater than total",
+});
 const articleData = z.object({
   title: nonBlankText,
   description: nonBlankText,
@@ -12,6 +19,9 @@ const articleData = z.object({
   author: nonBlankText.optional(),
   updated: dateValue.optional(),
   draft: z.boolean().optional(),
+  "ai-banner": nonBlankText.optional(),
+  mermaid: z.boolean().optional(),
+  series: articleSeries.optional(),
 });
 
 export default {

@@ -21,9 +21,16 @@ import {
   isJournalArticleFilename,
   journalNeighbor,
   navItemForUrl,
+  orderJournalEntries,
   rssDate,
   validateSiteData,
 } from "./src/_lib/eleventy-helpers.mjs";
+import {
+  createGoogleCodeCommentLibrary,
+  createGoogleCodeProjectLibrary,
+  decodeGoogleCodeEntities,
+} from "./src/_lib/google-code-archive.mjs";
+import { createSourceForgeMarkupLibrary, decodeSourceForgeEntities } from "./src/_lib/sourceforge-archive.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const articlePath = /[\\/]src[\\/]journal[\\/][^\\/]+\.md$/i;
@@ -37,20 +44,33 @@ function runPagefind(outputDirectory) {
 }
 
 export default function (eleventyConfig) {
+  const googleCodeComments = createGoogleCodeCommentLibrary();
+  const googleCodeProjects = createGoogleCodeProjectLibrary();
+  const sourceForgeMarkup = createSourceForgeMarkupLibrary();
+
   eleventyConfig.addFilter("eq", (left, right) => left === right);
   eleventyConfig.addFilter("year", () => new Date().getFullYear());
   eleventyConfig.addFilter("activeClass", (href, current) => href === current ? "is-active" : "");
   eleventyConfig.addFilter("docsActiveClass", (href, current, breadcrumbParent) => href === current || href === breadcrumbParent ? "is-active" : "");
   eleventyConfig.addFilter("navItemForUrl", navItemForUrl);
   eleventyConfig.addFilter("json", (value) => JSON.stringify(value).replace(/</g, "\\u003c"));
-  eleventyConfig.addFilter("newestFirst", (value) => [...(value || [])].reverse());
+  eleventyConfig.addFilter("journalOldestFirst", (value) => orderJournalEntries(value));
   eleventyConfig.addFilter("isoDate", isoDate);
   eleventyConfig.addFilter("formatDate", formatDate);
   eleventyConfig.addFilter("journalRssDate", rssDate);
+  eleventyConfig.addFilter("capitalize", (value) => {
+    const text = String(value ?? "");
+    return text ? `${text[0].toUpperCase()}${text.slice(1)}` : text;
+  });
+  eleventyConfig.addFilter("join", (values, separator) => (values || []).join(separator));
+  eleventyConfig.addFilter("upper", (value) => String(value ?? "").toUpperCase());
   eleventyConfig.addFilter("journalHeadings", headingsFromHtml);
   eleventyConfig.addFilter("journalNeighbor", journalNeighbor);
   eleventyConfig.addFilter("journalCollectionSchema", collectionSchema);
   eleventyConfig.addFilter("absoluteUrl", (url, base) => new URL(url, base).toString());
+  eleventyConfig.addFilter("googleCodeComment", (value) => googleCodeComments.render(decodeGoogleCodeEntities(value || "")));
+  eleventyConfig.addFilter("googleCodeProject", (value) => googleCodeProjects.render(decodeGoogleCodeEntities(value || "")));
+  eleventyConfig.addFilter("sourceForgeMarkup", (value) => sourceForgeMarkup.render(decodeSourceForgeEntities(value || "")));
 
   const markdown = createMarkdownLibrary();
   eleventyConfig.setLibrary("md", markdown);
@@ -62,9 +82,9 @@ export default function (eleventyConfig) {
     validateSiteData(site, nav, pages);
     return pages;
   });
-  eleventyConfig.addCollection("publishedJournal", (collectionApi) => collectionApi
+  eleventyConfig.addCollection("publishedJournal", (collectionApi) => orderJournalEntries(collectionApi
     .getFilteredByTag("journal")
-    .filter((entry) => !entry.data.draft));
+    .filter((entry) => !entry.data.draft), true));
 
   eleventyConfig.addPreprocessor("journal-policy", "md", function (data, content) {
     if (!articlePath.test(this.inputPath)) return;
@@ -94,6 +114,7 @@ export default function (eleventyConfig) {
 
   eleventyConfig.addPassthroughCopy({ "src/assets": "assets" });
   eleventyConfig.addPassthroughCopy({ "src/lib": "assets/lib" });
+  eleventyConfig.addPassthroughCopy({ "node_modules/mermaid/dist/mermaid.min.js": "assets/lib/mermaid.min.js" });
   eleventyConfig.addPassthroughCopy({ "src/static": "." });
   eleventyConfig.ignores.add("src/journal/README.md");
   eleventyConfig.ignores.add("src/journal/article-template.md");

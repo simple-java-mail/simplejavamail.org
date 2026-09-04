@@ -1,0 +1,31 @@
+{
+  "project": "vesijama",
+  "snapshotDate": "2 September 2026",
+  "rawUrl": "https://storage.googleapis.com/google-code-archive/v2/code.google.com/vesijama/project.json",
+  "payload": {
+    "domain": "code.google.com",
+    "name": "vesijama",
+    "summary": "depricated - A very easy Java mailing API for sending simple to complex emails (JavaMail smtp wrapper)",
+    "description": "The Vesijama project has been deprecated and is now the working title for the Simple Java Mail project.\n\n  * [Simple Java Mail Project](http://code.google.com/p/simple-java-mail/).",
+    "stars": 5,
+    "license": "asf20",
+    "contentLicense": "",
+    "labels": [
+      "java",
+      "mail",
+      "javax.mail",
+      "email",
+      "mailing",
+      "mailingframework",
+      "javamail",
+      "smtp"
+    ],
+    "creationTime": 0,
+    "repoType": "svn",
+    "subrepos": [],
+    "hasSource": true,
+    "ancestorRepo": "",
+    "logoName": "",
+    "movedTo": "https://github.com/bbottema/simple-java-mail"
+  }
+}

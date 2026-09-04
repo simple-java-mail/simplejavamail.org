@@ -1,0 +1,146 @@
+{
+  "slug": "msgparser-project",
+  "kind": "project",
+  "project": "msgparser",
+  "permalink": "/sources/sourceforge/msgparser/project.html",
+  "originalUrl": "https://sourceforge.net/projects/msgparser/",
+  "snapshotDate": "2 September 2026",
+  "capturedFrom": "https://sourceforge.net/rest/p/msgparser",
+  "payload": {
+    "shortname": "msgparser",
+    "name": "msgparser",
+    "_id": "50e5aaf3e88f3d248f63cf8c",
+    "url": "https://sourceforge.net/p/msgparser/",
+    "private": false,
+    "short_description": "msgparser is a small open source Java library that parses Outlook .msg files and provides their content using Java objects.\r\n\r\nNOTE: this project is no longer maintained and superseded by https://github.com/bbottema/outlook-message-parser\r\n",
+    "creation_date": "2007-06-25",
+    "summary": "",
+    "external_homepage": "http://auxilii.com/msgparser/",
+    "video_url": null,
+    "socialnetworks": [
+      {
+        "accounturl": "",
+        "socialnetwork": "Twitter"
+      },
+      {
+        "accounturl": null,
+        "socialnetwork": "Facebook"
+      }
+    ],
+    "status": "active",
+    "moved_to_url": "",
+    "preferred_support_tool": "_url",
+    "preferred_support_url": "https://github.com/bbottema/outlook-message-parser",
+    "developers": [
+      {
+        "username": "roman_k",
+        "name": "Roman Kurmanowytsch",
+        "url": "https://sourceforge.net/u/roman_k/"
+      }
+    ],
+    "tools": [
+      {
+        "name": "files-sf",
+        "mount_point": "files",
+        "url": "https://sourceforge.net/p/msgparser/files/",
+        "mount_label": "Files"
+      },
+      {
+        "name": "summary",
+        "mount_point": "summary",
+        "url": "https://sourceforge.net/p/msgparser/summary/",
+        "mount_label": "Summary",
+        "sourceforge_group_id": 199524
+      },
+      {
+        "name": "support",
+        "mount_point": "support",
+        "url": "https://sourceforge.net/p/msgparser/support/",
+        "mount_label": "Support"
+      },
+      {
+        "name": "reviews",
+        "mount_point": "reviews",
+        "url": "https://sourceforge.net/p/msgparser/reviews/",
+        "mount_label": "Reviews"
+      },
+      {
+        "name": "activity",
+        "mount_point": "activity",
+        "url": "https://sourceforge.net/p/msgparser/activity/",
+        "mount_label": "Activity",
+        "api_url": "https://sourceforge.net/rest/p/msgparser/activity/"
+      }
+    ],
+    "labels": [],
+    "categories": {
+      "audience": [
+        {
+          "id": 3,
+          "shortname": "developers",
+          "fullname": "Developers",
+          "fullpath": "Intended Audience :: by End-User Class :: Developers"
+        }
+      ],
+      "developmentstatus": [
+        {
+          "id": 11,
+          "shortname": "5-production-stable",
+          "fullname": "5 - Production/Stable",
+          "fullpath": "Development Status :: 5 - Production/Stable"
+        }
+      ],
+      "environment": [
+        {
+          "id": 238,
+          "shortname": "non-interactive-daemon",
+          "fullname": "Non-interactive (Daemon)",
+          "fullpath": "User Interface :: Non-interactive (Daemon)"
+        }
+      ],
+      "language": [
+        {
+          "id": 198,
+          "shortname": "java",
+          "fullname": "Java",
+          "fullpath": "Programming Language :: Java"
+        }
+      ],
+      "license": [
+        {
+          "id": 679,
+          "shortname": "gnu-general-public-license-version-3.0-gplv3",
+          "fullname": "GNU General Public License version 3.0 (GPLv3)",
+          "fullpath": "License :: OSI-Approved Open Source :: GNU General Public License version 3.0 (GPLv3)"
+        }
+      ],
+      "translation": [
+        {
+          "id": 275,
+          "shortname": "english",
+          "fullname": "English",
+          "fullpath": "Translations :: English"
+        }
+      ],
+      "os": [
+        {
+          "id": 235,
+          "shortname": "os-independent",
+          "fullname": "OS Independent",
+          "fullpath": "Operating System :: OS Independent"
+        }
+      ],
+      "database": [],
+      "topic": [
+        {
+          "id": 28,
+          "shortname": "email",
+          "fullname": "Email",
+          "fullpath": "Topic :: Communications :: Email"
+        }
+      ]
+    },
+    "icon_url": null,
+    "screenshots": []
+  }
+}

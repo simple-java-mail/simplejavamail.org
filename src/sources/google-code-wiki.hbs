@@ -1,0 +1,53 @@
+---
+pagination:
+  data: googleCodeWikis
+  size: 1
+  alias: googleCodeWiki
+permalink: "{{googleCodeWiki.permalink}}"
+eleventyExcludeFromCollections: true
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="robots" content="noindex, follow">
+    <title>{{googleCodeWiki.title}} | Recovered {{googleCodeWiki.project}} wiki</title>
+    <meta name="description" content="Recovered Google Code wiki page for {{googleCodeWiki.project}}.">
+    <link rel="icon" href="/assets/sjm-favicon.png" type="image/png">
+    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="stylesheet" href="/assets/journal.css">
+  </head>
+  <body class="google-code-source-page">
+    <a class="skip-link" href="#main-content">Skip to wiki page</a>
+    <header class="gca-source-masthead">
+      <a href="/engineering-journal.html">Simple Java Mail Engineering Journal</a>
+      <span>Recovered source</span>
+    </header>
+
+    <main id="main-content" class="gca-source-main" data-pagefind-ignore>
+      <article class="gca-issue gca-wiki-page" data-archived-source data-source-label="Recovered Google Code wiki" data-source-title="{{googleCodeWiki.project}} · {{googleCodeWiki.title}}">
+        <div class="gca-project-strip">
+          <strong>Google Code</strong>
+          <span>{{googleCodeWiki.project}}</span>
+          <span aria-hidden="true">›</span>
+          <span>Wiki</span>
+        </div>
+
+        <header class="gca-issue-heading">
+          <p>{{googleCodeWiki.project}} · wiki page</p>
+          <h1>{{googleCodeWiki.title}}</h1>
+          <p class="gca-wiki-byline">Updated {{googleCodeWiki.updated}} by {{googleCodeWiki.author}}</p>
+        </header>
+
+        <div class="gca-wiki-body">{{{googleCodeWiki.contentHtml}}}</div>
+
+        <footer class="gca-provenance">
+          <p>Recovered from a Wayback Machine capture dated {{googleCodeWiki.snapshotDate}}.</p>
+          <a href="{{googleCodeWiki.snapshotUrl}}">View the original capture</a>
+        </footer>
+      </article>
+    </main>
+  </body>
+</html>

@@ -11,7 +11,15 @@
       <header class="journal-article-hero">
         <div class="shell journal-article-hero-inner">
           <a class="journal-back-link" href="{{site.journal.indexUrl}}"><span aria-hidden="true">←</span> Engineering Journal</a>
-          <p class="eyebrow">{{category}}</p>
+          {{#if series}}
+            <p class="journal-series-label">
+              <span>{{series.title}}</span>
+              <span aria-hidden="true">·</span>
+              <span class="journal-series-part">Part {{series.part}} of {{series.total}}</span>
+            </p>
+          {{else}}
+            <p class="eyebrow">{{category}}</p>
+          {{/if}}
           <h1>{{title}}</h1>
           <p class="journal-article-lede">{{description}}</p>
           <p class="journal-byline">By <strong>{{author}}</strong></p>
@@ -46,34 +54,44 @@
         </aside>
 
         <article id="journal-article" class="journal-prose">
+          {{> components/journal-entry-navigation
+            className="journal-entry-navigation journal-entry-navigation--top"
+            label="Article navigation before entry"
+          }}
+          <aside
+            class="journal-writing-note {{#if ai-banner}}journal-writing-note--ai{{else}}journal-writing-note--without-ai{{/if}}"
+            aria-label="Article authorship disclosure"
+            data-pagefind-ignore
+          >
+            <strong class="journal-writing-note-label">
+              {{#if ai-banner}}AI-assisted{{else}}Written without AI{{/if}}
+            </strong>
+            <p>
+              {{#if ai-banner}}
+                {{ai-banner}}
+              {{else}}
+                No AI was used to write this article (except for fixing typos).
+              {{/if}}
+            </p>
+          </aside>
           {{{content}}}
         </article>
       </div>
 
-      <nav class="shell journal-entry-navigation" aria-label="Journal navigation" data-pagefind-ignore>
-        {{#with (journalNeighbor collections.journal page.url "older")}}
-          <a href="{{this.url}}">
-            <span>Older entry · {{category}}</span>
-            <strong><b aria-hidden="true">←</b> {{title}}</strong>
-          </a>
-        {{else}}
-          <a href="{{site.journal.indexUrl}}">
-            <span>Journal index</span>
-            <strong><b aria-hidden="true">←</b> All entries</strong>
-          </a>
-        {{/with}}
-        {{#with (journalNeighbor collections.journal page.url "newer")}}
-          <a href="{{this.url}}">
-            <span>Newer entry · {{category}}</span>
-            <strong>{{title}} <b aria-hidden="true">→</b></strong>
-          </a>
-        {{/with}}
-      </nav>
+      {{> components/journal-entry-navigation
+        className="shell journal-entry-navigation journal-entry-navigation--bottom"
+        label="Article navigation after entry"
+      }}
     </main>
 
+    {{> components/archived-source-dialog}}
     {{> footer}}
     <script src="/assets/lib/prism.js"></script>
     <script>window.Prism && window.Prism.highlightAll();</script>
+    {{#if mermaid}}
+      <script src="/assets/lib/mermaid.min.js"></script>
+      <script type="module" src="/scripts/mermaid.js"></script>
+    {{/if}}
     <script type="module" src="/scripts/site.js"></script>
   </body>
 </html>

@@ -1,0 +1,97 @@
+---
+pagination:
+  data: googleCodeIssues
+  size: 1
+  alias: googleCodeIssue
+permalink: "/sources/google-code/{{googleCodeIssue.project}}/issue-{{googleCodeIssue.id}}.html"
+eleventyExcludeFromCollections: true
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="robots" content="noindex, follow">
+    <title>{{googleCodeIssue.project}} issue #{{googleCodeIssue.id}} | Recovered Google Code source</title>
+    <meta name="description" content="Recovered Google Code issue: {{googleCodeIssue.summary}}">
+    <link rel="icon" href="/assets/sjm-favicon.png" type="image/png">
+    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="stylesheet" href="/assets/journal.css">
+  </head>
+  <body class="google-code-source-page">
+    <a class="skip-link" href="#main-content">Skip to issue</a>
+    <header class="gca-source-masthead">
+      <a href="/engineering-journal.html">Simple Java Mail Engineering Journal</a>
+      <span>Recovered source</span>
+    </header>
+
+    <main id="main-content" class="gca-source-main" data-pagefind-ignore>
+      <article class="gca-issue" data-archived-source data-google-code-issue data-source-label="Recovered Google Code issue" data-source-title="{{googleCodeIssue.project}} issue #{{googleCodeIssue.id}}">
+        <div class="gca-project-strip">
+          <strong>Google Code</strong>
+          <span>{{googleCodeIssue.project}}</span>
+          <span aria-hidden="true">›</span>
+          <span>Issues</span>
+        </div>
+
+        <header class="gca-issue-heading">
+          <p>{{googleCodeIssue.project}} · issue #{{googleCodeIssue.id}}</p>
+          <h1>{{googleCodeIssue.summary}}</h1>
+        </header>
+
+        <div class="gca-issue-layout">
+          <section class="gca-comments" aria-label="Issue discussion">
+            {{#each googleCodeIssue.comments}}
+              <article id="comment-{{id}}" class="gca-comment" data-google-code-comment>
+                <header class="gca-comment-heading">
+                  <a href="#comment-{{id}}">{{#if (eq id 0)}}Original report{{else}}Comment #{{id}}{{/if}}</a>
+                  <span>Posted <time datetime="{{posted.iso}}">{{posted.label}}</time> by <i>{{identity}}</i></span>
+                </header>
+                <div class="gca-comment-body">
+                  {{#if content}}
+                    {{{googleCodeComment content}}}
+                  {{else}}
+                    <p><em>(No comment was entered for this change.)</em></p>
+                  {{/if}}
+                </div>
+                {{#if attachments.length}}
+                  <div class="gca-attachments">
+                    <strong>Attachments</strong>
+                    <ul>
+                      {{#each attachments}}
+                        <li>
+                          {{#if available}}<a href="{{this.url}}">{{fileName}}</a>{{else}}<span>{{fileName}}</span>{{/if}}
+                          <span>({{fileSize}} bytes{{#unless available}}; file not preserved by the archive{{/unless}})</span>
+                        </li>
+                      {{/each}}
+                    </ul>
+                  </div>
+                {{/if}}
+              </article>
+            {{/each}}
+          </section>
+
+          <aside class="gca-issue-meta" aria-label="Issue metadata">
+            <dl>
+              <div><dt>Status</dt><dd>{{googleCodeIssue.status}}</dd></div>
+              <div><dt>Comments</dt><dd>{{googleCodeIssue.comments.length}}</dd></div>
+              <div><dt>Stars</dt><dd>{{googleCodeIssue.stars}}</dd></div>
+            </dl>
+            {{#if googleCodeIssue.labels.length}}
+              <h2>Labels</h2>
+              <ul>
+                {{#each googleCodeIssue.labels}}<li>{{this}}</li>{{/each}}
+              </ul>
+            {{/if}}
+          </aside>
+        </div>
+
+        <footer class="gca-provenance">
+          <p>Rendered from a machine-readable Google Code Archive snapshot copied on {{googleCodeIssue.snapshotDate}}.</p>
+          <a href="{{googleCodeIssue.rawUrl}}">Raw archived JSON</a>
+        </footer>
+      </article>
+    </main>
+  </body>
+</html>

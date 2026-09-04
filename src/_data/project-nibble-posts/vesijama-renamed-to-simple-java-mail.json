@@ -1,0 +1,44 @@
+{
+  "slug": "vesijama-renamed-to-simple-java-mail",
+  "originalUrl": "http://blog.projectnibble.org/2011/03/18/vesijama-renamed-to-simple-java-mail/",
+  "snapshotUrl": "https://web.archive.org/web/20110609031403/http://blog.projectnibble.org/2011/03/18/vesijama-renamed-to-simple-java-mail/",
+  "snapshotDate": "9 June 2011",
+  "author": "Benny Bottema",
+  "comments": [
+    {
+      "author": "Dave",
+      "byAuthor": false,
+      "contentHtml": "<p>Hey, do you think you’ll be pushing this to the central Maven repo?</p>",
+      "date": "March 21, 2011 at 11:32 pm",
+      "depth": 1,
+      "id": 1673
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>If you tell me how, I will. That Nexus Sonatype drives me crazy (but I admit that was some time ago).</p>",
+      "date": "March 21, 2011 at 11:44 pm",
+      "depth": 2,
+      "id": 1674
+    },
+    {
+      "author": "Lucas McCallister",
+      "byAuthor": false,
+      "contentHtml": "<p>I’ve been looking this over, and I think your code (with some slight modifications to get it to work with Max 5) might just fix a problem that’s been plaguing my own project, Vidarr. I’m not really a programmer by any stretch, but I think I know enough to get it working. I’ll experiment with it when I have some free time.  </p>\n<p>If it ends up working, would it be acceptable to you if I distribute it with my project? I use the GPLv2 license. The FSF doesn’t see Apache 2 as compatible under GPLv2, but it doesn’t matter so much to me as long as you’re cool with it.  I’d bundle the info/license stuff for Simple Java Mail with my project, of course.</p>",
+      "date": "April 12, 2011 at 5:40 am",
+      "depth": 1,
+      "id": 2221
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Sure, go ahead! (just include a link to this project)</p>",
+      "date": "April 12, 2011 at 1:30 pm",
+      "depth": 2,
+      "id": 2238
+    }
+  ],
+  "contentHtml": "<p>Very Simple Java Mail is no more. Long live Simple Java Mail!</p>\n<p>Vesijama has been renamed to Simple Java Mail and the name Vesijama has been degraded to a working title. The reason: the title didn’t reflect the intention nor the function of the project and people complained about the outlandish name.</p>\n<p>And so the project moved altogether to a new space at Google code: <a href=\"https://web.archive.org/web/20110609031403/http://code.google.com/p/simple-java-mail/\">Simple Java Mail</a>.</p>\n<p>For now the library jars have been renamed manually, but in the future the name will be incorporated in the sourcecode itself as well.</p>\n<p>Happy mailing!</p>",
+  "date": "March 18th, 2011",
+  "title": "Vesijama renamed to Simple Java Mail"
+}

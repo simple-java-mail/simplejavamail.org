@@ -1,0 +1,308 @@
+{
+  "slug": "vesijama-very-simple-java-mail",
+  "originalUrl": "http://blog.projectnibble.org/2009/04/27/vesijama-very-simple-java-mail/",
+  "snapshotUrl": "https://web.archive.org/web/20150531075139/http://blog.projectnibble.org/2009/04/27/vesijama-very-simple-java-mail/comment-page-1/",
+  "snapshotDate": "31 May 2015",
+  "author": "Benny Bottema",
+  "comments": [
+    {
+      "author": "javadoc",
+      "byAuthor": false,
+      "contentHtml": "<p>nice. on problem i have with this is:  applemail.<br>\nas soon as you use embedded images, die displays them inline as well as attached (so doubled). any idea?</p>",
+      "date": "July 13, 2009 at 17:58",
+      "depth": 1,
+      "id": 623
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Although I am not familiar with Apple mail, I have seen this behavior before. It was a ‘feature’ provided by the email client (web based) that always attached embedded images. Are you sure this is not intended behavior with Apple mail?</p>",
+      "date": "July 13, 2009 at 19:44",
+      "depth": 1,
+      "id": 627
+    },
+    {
+      "author": "Rich",
+      "byAuthor": false,
+      "contentHtml": "<p>Hi Benny,</p>\n<p>Thanks for open sourcing this – it looks like a great little API. Not sure if there’s a support mailing list or forum…?</p>\n<p>After following the example on your googlecode page I’m having a bit of trouble embedding images. I can see them appearing as attachments, and I’m referencing them in my email html using src=”cid:xxx” however when I inspect the html that arrives in my inbox I just see an empty  tag. Any ideas?</p>\n<p>Cheers.</p>",
+      "date": "October 4, 2009 at 11:48",
+      "depth": 2,
+      "id": 763
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Hello Rich,</p>\n<p>There’s no mailing list or forum… yet. I may put up one in the future, if there’s enough demand.</p>\n<p>Regarding your issue with the embedded issue, I can take a look at your code if you would send a sample code to ‘b dot bottema at projectnibble dot org’. Also, is the problem consistent with other mail viewers?</p>",
+      "date": "October 4, 2009 at 14:06",
+      "depth": 1,
+      "id": 764
+    },
+    {
+      "author": "you.rock",
+      "byAuthor": false,
+      "contentHtml": "<p>Cheers for this!!! Nice work.</p>",
+      "date": "October 16, 2009 at 00:10",
+      "depth": 1,
+      "id": 780
+    },
+    {
+      "author": "Casual Observer",
+      "byAuthor": false,
+      "contentHtml": "<p>Any advantages over the Apache Commons Email library?<br>\n<a href=\"https://web.archive.org/web/20150531075139/http://commons.apache.org/email/\" rel=\"nofollow\">http://commons.apache.org/email/</a></p>",
+      "date": "December 5, 2009 at 02:42",
+      "depth": 1,
+      "id": 968
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>I think it is easier to use!</p>\n<p>If you don’t mind, I’ll just put a quote here from the <a href=\"https://web.archive.org/web/20150531075139/http://code.google.com/p/vesijama/wiki/Manual\" rel=\"nofollow\">Vesijama wiki</a>.</p>\n<blockquote><p><strong>Alternatives</strong><br>\nThere are some alternatives around, such as the Spring mailing framework or the Apache Commons Mail. However, Spring works a bit awkward with anonymous subclasses and stuff (and you need Spring in your dependencies), while Apache Commons Mail isn’t as simple as it could be.</p></blockquote>",
+      "date": "December 5, 2009 at 10:00",
+      "depth": 2,
+      "id": 970
+    },
+    {
+      "author": "Jordan",
+      "byAuthor": false,
+      "contentHtml": "<p>It worked perfectly right away and is exactly what should have been built into JavaMail.  Thanks!</p>",
+      "date": "December 9, 2009 at 16:59",
+      "depth": 1,
+      "id": 974
+    },
+    {
+      "author": "Frederica Segler",
+      "byAuthor": false,
+      "contentHtml": "<p>Hi mate, when browsing at your blog i see some kind of weird codes all over the page, in case it’s important I just thought I’d let you know it says this with all sorts of other stuff after it: Message : Exception of type ‘System.Web.HttpUnhandledException’ was thrown.</p>",
+      "date": "July 8, 2010 at 00:02",
+      "depth": 1,
+      "id": 1205
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>hmm, I don’t see this. Maybe the server hosting my blog was acting up.</p>",
+      "date": "July 8, 2010 at 11:02",
+      "depth": 2,
+      "id": 1206
+    },
+    {
+      "author": "Nikhil",
+      "byAuthor": false,
+      "contentHtml": "<p>Using the required jars I run the above code.. But it gives me following error.<br>\nException in thread “main” org.codemonkey.vesijama.MailException: Generic error: 530 5.7.0 Must issue a STARTTLS command first. c16sm4320791rvn.13</p>\n<p>Can you please help me how to get out of this..</p>",
+      "date": "July 12, 2010 at 10:43",
+      "depth": 1,
+      "id": 1215
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Can you put up your files somewhere for me to download (including used jars)? I’ll take a look when I get some time.</p>",
+      "date": "July 12, 2010 at 10:55",
+      "depth": 2,
+      "id": 1216
+    },
+    {
+      "author": "Davin",
+      "byAuthor": false,
+      "contentHtml": "<p>Ever thought about posting your excellent library to a maven repository?  Thanks for it!</p>",
+      "date": "July 14, 2010 at 06:24",
+      "depth": 1,
+      "id": 1221
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Anyone can do that since it’s open source. But I’m going to go ahead and put it in Maven.</p>\n<p>The maven scene has changed though, can’t upload diectly to maven central repo anymore: gotta go through Sonatype Forge now. It’ll take a couple of days to get it done.</p>",
+      "date": "July 14, 2010 at 11:28",
+      "depth": 2,
+      "id": 1222
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Maybe I’m not getting it, but to get Vesijama as artifact in Maven central it needs to be ‘deployed’ to Sonatype repo. To do that the entire project needs to be configured in Maven (to get the jar generated correctly). That’s a bit beyond the scope of this project.</p>\n<p>When I get some more spare time maybe I’ll get it fixed, but right now I don’t have the time.</p>",
+      "date": "July 14, 2010 at 14:53",
+      "depth": 2,
+      "id": 1223
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Alright, I finally got it in!</p>\n<p><a href=\"https://web.archive.org/web/20150531075139/http://blog.projectnibble.org/2011/08/13/simple-java-mail-1-9-is-now-available-in-maven-central/\" rel=\"nofollow\">http://blog.projectnibble.org/2011/08/13/simple-java-mail-1-9-is-now-available-in-maven-central/</a></p>",
+      "date": "August 13, 2011 at 11:02",
+      "depth": 2,
+      "id": 3141
+    },
+    {
+      "author": "canistel",
+      "byAuthor": false,
+      "contentHtml": "<p>Works flawlessly for me; thanks for a very useful library. </p>\n<p>My one criticism of it would be the name, as I had to change the filename of the .jar… there is no way I’m installing a file on my client’s computer with a name like “vesijama”   :)</p>",
+      "date": "August 10, 2010 at 16:36",
+      "depth": 1,
+      "id": 1305
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>So what did you name it? I’m very curious!</p>",
+      "date": "August 10, 2010 at 17:57",
+      "depth": 2,
+      "id": 1307
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>You may be delighted to know the entire Project has been renamed to Simple Java Mail. Vesijama is no longer used.</p>",
+      "date": "March 22, 2011 at 09:39",
+      "depth": 2,
+      "id": 1675
+    },
+    {
+      "author": "Vick",
+      "byAuthor": false,
+      "contentHtml": "<p>Is this available on Maven?</p>",
+      "date": "January 14, 2011 at 20:17",
+      "depth": 1,
+      "id": 1614
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Actually I tried to get it in Maven. However, since repo modification has been closed to the general public to be replaced by official manager applications, the process to get something in has become rather painful. There were three supported managers at the time of which I was trying Sonatype and gave up due to the bureaucratic procedure.</p>",
+      "date": "January 15, 2011 at 11:32",
+      "depth": 2,
+      "id": 1615
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>It is now available on Maven</p>\n<p><a href=\"https://web.archive.org/web/20150531075139/http://blog.projectnibble.org/2011/08/13/simple-java-mail-1-9-is-now-available-in-maven-central/\" rel=\"nofollow\">http://blog.projectnibble.org/2011/08/13/simple-java-mail-1-9-is-now-available-in-maven-central/</a></p>",
+      "date": "August 13, 2011 at 11:06",
+      "depth": 2,
+      "id": 3142
+    },
+    {
+      "author": "vib",
+      "byAuthor": false,
+      "contentHtml": "<p>Will it support ICalendar events as well ? If want to send out an meeting request in text/html format .</p>",
+      "date": "January 26, 2011 at 17:58",
+      "depth": 1,
+      "id": 1618
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Good question! I’ll have to take a closer look when I have the time. It shouldn’t be too hard by the looks of it (<a href=\"https://web.archive.org/web/20150531075139/http://stackoverflow.com/questions/1121715/how-to-send-an-ical-meeting-request-using-java-mail-and-recieve-the-response\" rel=\"nofollow\">http://stackoverflow.com/questions/1121715/how-to-send-an-ical-meeting-request-using-java-mail-and-recieve-the-response</a>).</p>",
+      "date": "January 26, 2011 at 21:21",
+      "depth": 2,
+      "id": 1619
+    },
+    {
+      "author": "Pete",
+      "byAuthor": false,
+      "contentHtml": "<p>Mr. Bottema,<br>\nThanks for making mail in java easier, especially for us noobs.  I’ve installed the library jars and unfortunately when I try to run your code the servers – I’ve tried my google and comcast accounts – apparently refuse to connect.  I’m using Eclipse and my JRE is up to date.  The code I’m using is<br>\nimport javax.mail.Message.RecipientType;<br>\nimport org.codemonkey.simplejavamail.Email;<br>\nimport org.codemonkey.simplejavamail.MailException;<br>\nimport org.codemonkey.simplejavamail.Mailer;<br>\nimport org.codemonkey.simplejavamail.TransportStrategy;</p>\n<p>public class googleEmail {</p>\n<p>\t/**<br>\n\t * @param args<br>\n\t */<br>\n\tpublic static void main(String[] args) {</p>\n<p>\t\tfinal Email email = new Email();<br>\n\t\temail.setFromAddress(“lollypop”, “pmhiltz@gmail.com”);<br>\n\t\temail.setSubject(“hey”);<br>\n\t\temail.addRecipient(“C. Cane”, “pmhiltz@gmail.com”, RecipientType.TO);<br>\n\t\temail.setText(“We should meet up! ;)”);<br>\n\t\temail.setTextHTML(“<b>We should meet up!</b>“); </p>\n<p>\t\tnew Mailer(“smtp.comcast.net”, 465, “renshipete@comcast.net”, “password”, TransportStrategy.SMTP_SSL).sendMail(email);<br>\n\t}// end of main</p>\n<p>}// end of class</p>\n<p>and the first part of the returned error is</p>\n<p>2011-04-15 10:37:45,777 DEBUG Mailer – starting mail session (host: smtp.comcast.net, port: 465, username: <a href=\"https://web.archive.org/web/20150531075139/mailto:renshipete@comcast.net\">renshipete@comcast.net</a>, authenticate: true, transport: SMTP_SSL)<br>\n2011-04-15 10:37:47,386 ERROR Mailer – Could not connect to SMTP host: smtp.comcast.net, port: 465<br>\njavax.mail.MessagingException: Could not connect to SMTP host: smtp.comcast.net, port: 465;<br>\n  nested exception is:<br>\n\tjava.net.ConnectException: Connection refused: connect<br>\n\tat com.sun.mail.smtp.SMTPTransport.openServer(SMTPTransport.java:1934)<br>\n\tat com.sun.mail.smtp.SMTPTransport.protocolConnect(SMTPTransport.java:638)<br>\n\tat javax.mail.Service.connect(Service.java:317)<br>\n\tat javax.mail.Service.connect(Service.java:176)<br>\n\tat javax.mail.Service.connect(Service.java:125)<br>\n\tat org.codemonkey.simplejavamail.Mailer.sendMail(Mailer.java:224)<br>\n\tat googleEmail.main(googleEmail.java:29)<br>\nCaused by: java.net.ConnectException: Connection refused: connect<br>\n\tat java.net.PlainSocketImpl.socketConnect(Native Method)<br>\n\tat java.net.PlainSocketImpl.doConnect(Unknown Source)<br>\n\tat java.net.PlainSocketImpl.connectToAddress(Unknown Source)<br>\n\tat java.net.PlainSocketImpl.connect(Unknown Source)<br>\n\tat java.net.SocksSocketImpl.connect(Unknown Source)<br>\n\tat java.net.Socket.connect(Unknown Source)<br>\n\tat com.sun.net.ssl.internal.ssl.SSLSocketImpl.connect(Unknown Source)<br>\n\tat com.sun.net.ssl.internal.ssl.BaseSSLSocketImpl.connect(Unknown Source)<br>\n\tat com.sun.mail.util.SocketFetcher.createSocket(SocketFetcher.java:288)<br>\n\tat com.sun.mail.util.SocketFetcher.getSocket(SocketFetcher.java:231)<br>\n\tat com.sun.mail.smtp.SMTPTransport.openServer(SMTPTransport.java:1900)<br>\n\t… 6 more</p>\n<p>I suspect it is something in a configuration but am clueless.  Have you seen this type of error before and can you make any suggestions?</p>\n<p>Thanks,</p>\n<p>Pete</p>",
+      "date": "April 15, 2011 at 15:49",
+      "depth": 1,
+      "id": 2411
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Hello Pete,</p>\n<p>One thing you can do first is set mailer.setDebug(true);, which will output much more info.</p>\n<p>Seeing you get a connection refused and not some authentication problem or ssl handshake message, I think your connection is being blocked by either your firewall, your ISP or maybe you are behind a proxy?</p>\n<p>Also, have you tried the SMTP_TLS strategy to connect to Google’s smtp on port 587?</p>",
+      "date": "April 15, 2011 at 17:18",
+      "depth": 2,
+      "id": 2417
+    },
+    {
+      "author": "Pete",
+      "byAuthor": false,
+      "contentHtml": "<p>Benny,</p>\n<p>Thanks.  SMTP_LTS did not work, but it could have been a combination of things.  It seems there are number of ways to do this, and they might conflict, and with the unknowns you pointed out, I really can’t say if I’ve truly tried it.  I will try this from a different network connection and see if that fixes it.  If you believe the fundamental code is ok, then it probably is that.<br>\nThanks Again!!</p>\n<p>Pete</p>",
+      "date": "April 15, 2011 at 19:42",
+      "depth": 1,
+      "id": 2423
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Well, I took your code as example and it worked for me when I use my own gmail account to send the mail. It must be a port problem because of a firewall, ISP or proxy or something.</p>",
+      "date": "August 20, 2011 at 11:57",
+      "depth": 2,
+      "id": 3355
+    },
+    {
+      "author": "Tom Vicker",
+      "byAuthor": false,
+      "contentHtml": "<p>Hi Benny,</p>\n<p>I just have a few questions hopefully you can answer:</p>\n<p>1) I looked at the Mailer class at <a href=\"https://web.archive.org/web/20150531075139/http://code.google.com/p/simple-java-mail/source/browse/tags/vesijama%20v1.1/src/org/codemonkey/vesijama/Mailer.java\" rel=\"nofollow\">http://code.google.com/p/simple-java-mail/source/browse/tags/vesijama%20v1.1/src/org/codemonkey/vesijama/Mailer.java</a> and I did not see a constructor that takes a TransportStrategy. Is that code old ? If so, can you update ?</p>\n<p>2) I am a bit confused between SSL and TLS. After reading SSLNOTES.txt file in the javamail-1.4.4 distribution it appears these are mutually exclusive (i.e. you can encrypt without using user, password, etc or visa versa). Do you know whether this is true ? If yes, can vesijama support it both ways ?</p>\n<p>3) Is your jar compatible with the recently released javamail 1.4.4 ? </p>\n<p>Thanks!</p>\n<p>Tom Vicker</p>",
+      "date": "July 28, 2011 at 16:46",
+      "depth": 1,
+      "id": 3065
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Hello Tom!</p>\n<p>1) The javadoc you reference is from the vesijama 1.1 tag, while the latest release is 1.8. It’s true I haven’t managed the tags properly, but the trunk reflects what is in the 1.8 release, which would be the following: <a href=\"https://web.archive.org/web/20150531075139/http://code.google.com/p/simple-java-mail/source/browse/trunk/src/main/java/org/codemonkey/simplejavamail/Mailer.java\" rel=\"nofollow\">http://code.google.com/p/simple-java-mail/source/browse/trunk/src/main/java/org/codemonkey/simplejavamail/Mailer.java</a>. You’ll notice these constructors do accept a TransportStrategy</p>\n<p>2) I’m not sure I understand your question. Vesijama supports both SSL and TLS. Depending on the server implementation, both may be applicable (gMail allows both for example, on different ports), but you will need only one. Just choose one. Btw, <a href=\"https://web.archive.org/web/20150531075139/http://luxsci.com/blog/ssl-versus-tls-whats-the-difference.html\" rel=\"nofollow\">TLS actually *is* SSL</a>, just a later version.</p>\n<p>3) I have not tested this yet, but I will over the weekend (or you may report your results when you get the chance).</p>\n<p>Let me know if you need to know more. Meanwhile, grab the latest release <a href=\"https://web.archive.org/web/20150531075139/http://code.google.com/p/simple-java-mail/downloads/detail?name=simple-java-mail-v1.8.jar\" rel=\"nofollow\">here</a>.</p>",
+      "date": "July 28, 2011 at 17:05",
+      "depth": 2,
+      "id": 3066
+    },
+    {
+      "author": "Tom Vicker",
+      "byAuthor": false,
+      "contentHtml": "<p>Thanks Benny! That was a great article about SSL and TLS and really helped me understand better. I was wondering if it was possible to send encrypted emails without requiring to authenticate to the SMTP server with user, password. Our software is distributed to 200+ clients. Their environments vary a lot and it woudn’t surprise me if one client did not need to authenticate to their SMTP server, but still desires to have their emails encrypted. If this is possible, then we would want to support that flexibility. Here is a sentence from that article you provided: “TLS allows both secure and insecure connections over the same port, whereas SSL requires a designated secure-only port.” It seems that an insecure connection over a port would mean no user/password is required, but I don’t know. If true, however, then I would think you could use TLS without providing a user and password as long as you were connecting to an insecure port. Then the Mailer class could have a constructor (I presume) that could use TransportStrategy.SMTP_TLS without needing user and password. I guess I could pass null or empty values in these fields also. Thanks again.</p>",
+      "date": "July 28, 2011 at 18:04",
+      "depth": 1,
+      "id": 3067
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>I have just tested with JavaMail 1.4.4 and succesfully sent mails using gmail’s smtp server, using SSL and TLS.</p>",
+      "date": "July 28, 2011 at 20:03",
+      "depth": 1,
+      "id": 3068
+    },
+    {
+      "author": "Chet",
+      "byAuthor": false,
+      "contentHtml": "<p>Hello Benny,</p>\n<p>I tried using this tool for email….but not with much luck.<br>\nI tried Gmail as well as my company SMTP host.</p>\n<p>The application is behind a firewall and I need a proxy to reach the internet. I remember seeing on the site that proxy was in the roadmap. Has it been worked out or planned.</p>\n<p>Let me know the way around.</p>\n<p>Thanks,<br>\nChet</p>",
+      "date": "May 31, 2012 at 15:17",
+      "depth": 1,
+      "id": 4063
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Hello Chet.</p>\n<p>In case of a firewall you can do two things:</p>\n<ul>\n<li>Use a different port which is not closed by the firewal (provided the STMP server accepts connections on this port)</li>\n<li>Configure your firewall to open the ports of your SMTP server</li>\n</ul>\n<p>In case of a proxy, you’re out of luck currently. It is on the roadmap, but unfortunately, I can’t spare my resources to implement this feature.</p>\n<p>Btw, Vesijama was renamed to <a href=\"https://web.archive.org/web/20150531075139/http://blog.projectnibble.org/2011/03/18/vesijama-renamed-to-simple-java-mail/\" rel=\"nofollow\">Simple Java Mail</a>.</p>",
+      "date": "May 31, 2012 at 15:40",
+      "depth": 2,
+      "id": 4064
+    },
+    {
+      "author": "Ahmed",
+      "byAuthor": false,
+      "contentHtml": "<p>Hi Benny,</p>\n<p>Is there an example using the default mailer constructor “Mailer(session)” ?</p>\n<p>I want to see how the session is created.</p>\n<p>I am getting a null pointer using it:<br>\n [A] java.lang.NullPointerException<br>\n[A] \tat org.codemonkey.simplejavamail.Mailer.logSession(Mailer.java:255)<br>\n[A] \tat org.codemonkey.simplejavamail.Mailer.sendMail(Mailer.java:233)<br>\n…</p>\n<p>Thanks,<br>\n–</p>",
+      "date": "June 18, 2012 at 16:36",
+      "depth": 1,
+      "id": 4234
+    },
+    {
+      "author": "Benny Bottema",
+      "byAuthor": true,
+      "contentHtml": "<p>Can you show me how you created the Session? You should never get a <code>NullPointerException </code>to begin with, but a graceful message telling you you miss an argument or property. I want to fix that anyway.</p>\n<p>To answer your question, a Session object is the conventional standard way of creating a mail session with JavaMail. You can find numerous examples on the internet on how to send mails using JavaMail which surely includes configuring a Session object. In Simple Java Mail it was added for compatibility reasons: you can use your old Session objects with this library as well.</p>",
+      "date": "June 20, 2012 at 08:37",
+      "depth": 2,
+      "id": 4246
+    },
+    {
+      "author": "Rodrigo",
+      "byAuthor": false,
+      "contentHtml": "<p>I am getting the exact same problem. I submitted an issue explaining the problem in the Google Code project:<br>\n<a href=\"https://web.archive.org/web/20150531075139/http://code.google.com/p/simple-java-mail/issues/detail?id=7\" rel=\"nofollow\">http://code.google.com/p/simple-java-mail/issues/detail?id=7</a></p>",
+      "date": "September 19, 2012 at 20:57",
+      "depth": 2,
+      "id": 4302
+    }
+  ],
+  "contentHtml": "<p><strong>Here’s the story about why I wrote a mail API wrapper in Java and made it Open Source. It is called Vesijama, Very Simple Java Mail.</strong></p>\n<p>—</p>\n<p><strong>Vesijama has been renamed and moved to <a href=\"https://web.archive.org/web/20150531075139/http://blog.projectnibble.org/2011/03/18/vesijama-renamed-to-simple-java-mail/\">Simple Java Mail</a>!</strong></p>\n<p><span id=\"more-67\"></span></p>\n<h2>Prologue</h2>\n<p>So I was looking into sending some emails from my little Java webapp, right. I thought: <q>easy, java has built in mail support called <a href=\"https://web.archive.org/web/20150531075139/http://java.sun.com/products/javamail/\">JavaMail</a></q>. Well, I was in for an unpleasant surprise when I found out I was merely handed the sand grains to build my castle. I can’t just say to Java’s mailing library <q>Hey, here’s what I want to send, and here are the addresses I need it sent to</q>, no. I can say however <q>I want you to formulate a mixed multipart message with the following attributes and these addresses encoded into special objects and oh yeah, define some mimemessage bodyparts for these attachments and use the following headers and put everything in a very specific nested structure dot dot dot</q>.</p>\n<p>You actually need to research the RFC for mail structures to do it properly! In case you’re interested (which you’re not), check out this <a href=\"https://web.archive.org/web/20150531075139/http://www.lesnikowski.com/mail/rfc.aspx\">page of useful email rfc’s</a>. The rfc’s <a href=\"https://web.archive.org/web/20150531075139/http://www.lesnikowski.com/mail/Rfc/rfc822.txt\">822</a>, <a href=\"https://web.archive.org/web/20150531075139/http://www.lesnikowski.com/mail/Rfc/rfc2047.txt\">2047</a> and <a href=\"https://web.archive.org/web/20150531075139/http://www.lesnikowski.com/mail/Rfc/rfc2045.txt\">2045</a> are referenced in Java’s <a href=\"https://web.archive.org/web/20150531075139/http://java.sun.com/products/javamail/javadocs/javax/mail/internet/MimePart.html\">MimePart</a> alone. That’s just stupid, I can’t think of anything else where the JDK is forcing developers to work on such a low level where you need to deal with rfc’s.</p>\n<p>An example of the JavaMail madness can be found on a <a href=\"https://web.archive.org/web/20150531075139/http://www.velocityreviews.com/forums/showthread.php?p=3850368\">thread at velocityreviews.com</a>, where someone asks for a simple tutorial to learn how to simply send emails using JavaMail. Here’s the answer of one of the members:</p>\n<blockquote style=\"font-size:8pt\"><p>First, you need to read and understand the relevant RFCs governing Internet<br>\nemail, if you don’t already understand this. I’d recommend starting with:</p>\n<p>RFC 2821 – Simple Mail Transfer (SMTP)<br>\nRFC 2822 – Format of Internet Messages<br>\nRFC 1939 – Post Office Protocol (POP3)<br>\nRFC 2060 – Internet Mail Access Protocol (IMAP)</p>\n<p>then moving on to MIME:</p>\n<p>RFCs 2045 – 2049 – Multipurpose Internet Mail Extensions (MIME)</p>\n<p>Once you understand this, you should be able to figure out JavaMail using<br>\nthe tutorial at http://java.sun.com/developer/onlineTraining/JavaMail/contents.html,<br>\n(which is, incidentally, the first hit returned from a Google search on the<br>\nterm “javamail tutorial”), along with the JavaDoc that is shipped along<br>\nwith the JavaMail libraries. If you have any specific questions about how<br>\nJavaMail is to be used, please post them to the news group and you’ll be<br>\npretty sure to get an answer.</p>\n<p>Cheers!</p></blockquote>\n<p>With all his good intentions, this guy doesn’t realize he’s completely scaring the mail novice away; people looking for a way to send emails shouldn’t be required to be RFC educated email engineers. I just now realize that maybe JavaMail wasn’t meant to be used by Joe sixpack, but rather by third-party library vendors. Also, realize that JavaMail is much more than just smtp client API. Still, when I began writing Vesijama there weren’t a whole lot of third-party options, let alone one as simple to use as Vesijama.</p>\n<p>Don’t get me wrong though: it’s not that the JavaMail API is so bad, it’s great actually. It allows for very finegrained configuration for pop3, smtp and everything mail related. It’s just that you don’t want regular Java developers to deal with API on such a low level: it takes a lot of time getting it right and the risk of a faulty implementation is very high, as the result will often work in <i>some</i> email (web) clients and subtle mistakes with significant consequences will go unnoticed.</p>\n<h2>Enter Vesijama, the Very Simple Java Mail library</h2>\n<p>To spare other developers the same fate, I decided to write a proper wrapper around the JavaMail smtp API so no Java developer needs to be bothered by this stuff and just keep pluggin’ on an abstract business logic level. You know, just send the damn mails.</p>\n<p>It took me quite a while to get it right since email clients, especially web clients, are very sensitive to incorrect nested structures. I’m happy to say I’ve succesfully used this when I was working for a commercial company, which means it has been professionally tested with a broad range of email (web) clients.</p>\n<p>Enter Vesijama. It´s been a while since I wrote this little framework, I´ve only recently had the time to properly prepare the code for an Open Source release. At the time of writing the library I didn’t know about <a href=\"https://web.archive.org/web/20150531075139/http://static.springframework.org/spring/docs/2.0.x/reference/mail.html\">Spring’s mailing facility</a> or <a href=\"https://web.archive.org/web/20150531075139/http://commons.apache.org/email/userguide.html\">Apache’s Commons Mail</a> libraries, but in hindsight I think there’s a place for Vesijama since in my completely biased opinion it is by far the easiest to use framework. Look it up over at <a href=\"https://web.archive.org/web/20150531075139/http://code.google.com/p/vesijama/\"><strong>Vesjiama at Google Code</strong></a>.</p>\n<p>Here’s the one and only code example from the Vesijama project page:</p>\n<pre data-language=\"java\"><code>final Email email = new Email();\n\nemail.setFromAddress(\"lollypop\", \"lolly.pop@somemail.com\");\nemail.setSubject(\"hey\");\nemail.addRecipient(\"C. Cane\", \"candycane@candyshop.org\", RecipientType.TO);\nemail.addRecipient(\"C. Bo\", \"chocobo@candyshop.org\", RecipientType.BCC);\nemail.setText(\"We should meet up! ;)\");\nemail.setTextHTML(\"&lt;img src=\"cid:wink1\"&gt;&lt;b&gt;We should meet up!&lt;/b&gt;&lt;img src=\"cid:wink2\"&gt;\");\n\n// embed images and include downloadable attachments\nemail.addEmbeddedImage(\"wink1\", imageByteArray, \"image/png\");\nemail.addEmbeddedImage(\"wink2\", imageDatesource);\nemail.addAttachment(\"invitation\", pdfByteArray, \"application/pdf\");\nemail.addAttachment(\"dresscode\", odfDatasource);\n\nnew Mailer(\"smtp.host.com\", 25, \"username\", \"password\").sendMail(email);</code></pre>\n<p>Oh wow, is that it? Well, I just imagine masses of people gazing with open mouths thinking that, but that’ll never happen because nobody realizes how much effort went in the rfc research. And the very few lines that make up the mail structure don’t look very impressive either… the thing is it has to be just right; mail clients aren’t very forgiving. It often amazes me how many thousands of lines of rfc text results in miniscule implementations, but luckily in this case at least if you do it right, it works in all email clients that properly handle emails according the rfc’s.</p>\n<p>Anyway, the library suited me and now it’s yours too. Enjoy.</p>",
+  "date": "April 27, 2009",
+  "title": "Vesijama, the Very Simple Java Mail library"
+}

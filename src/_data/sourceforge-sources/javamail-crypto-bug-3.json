@@ -1,0 +1,47 @@
+{
+  "slug": "javamail-crypto-bug-3",
+  "kind": "ticket",
+  "project": "javamail-crypto",
+  "tracker": "Bugs",
+  "permalink": "/sources/sourceforge/javamail-crypto/bugs/3.html",
+  "originalUrl": "https://sourceforge.net/p/javamail-crypto/bugs/3/",
+  "snapshotDate": "2 September 2026",
+  "authorNames": {
+    "ibeaumont": "Ian Beaumont"
+  },
+  "capturedFrom": "https://sourceforge.net/rest/p/javamail-crypto/bugs/3/",
+  "payload": {
+    "ticket": {
+      "votes_up": 0,
+      "votes_down": 0,
+      "_id": "516f0cc5e88f3d7787ac5fac",
+      "mod_date": "2005-07-27 15:03:32",
+      "labels": [],
+      "related_artifacts": [],
+      "discussion_thread": {
+        "_id": "31424005",
+        "discussion_id": "516f0cc2e88f3d7787ac5f94",
+        "subject": "",
+        "limit": 10,
+        "page": null,
+        "posts": []
+      },
+      "discussion_thread_url": "https://sourceforge.net/rest/p/javamail-crypto/bugs/_discuss/thread/31424005/",
+      "created_date": "2005-07-27 15:03:32",
+      "ticket_num": 3,
+      "summary": "S/MIME provider doesn't copy MIME headers correctly",
+      "description": "The bouncycastle provide for S/MIME doesn't copy the\r\nheaders correctly from the original MIME message.\r\n\r\nIn SMIMEEncryptionUtils it does\r\nwhile \\(hdrEnum.hasMoreElements\\(\\)\\) \\{\r\nHeader current = \\(Header\\) hdrEnum.nextElement\\(\\);\r\nencryptedMessage.setHeader\\(current.getName\\(\\),\r\ncurrent.getValue\\(\\)\\);\r\n\\}\r\n\r\n\\(it does this in two places\\)\r\n\r\nI believe it should be using addHeader instead of\r\nsetHeader as when their are multiple headers of the\r\nsame name they are overwritten and not copied correctly.\r\n\r\nAn example of where this happens is when the original\r\nmessage is going to be sent to multiple recipients -\r\nthere will be multiple \"To:\" headers. \r\n",
+      "reported_by": "ibeaumont",
+      "assigned_to": null,
+      "reported_by_id": "502c024dbfc09e4b6679468b",
+      "assigned_to_id": null,
+      "status": "open",
+      "private": false,
+      "discussion_disabled": false,
+      "attachments": [],
+      "custom_fields": {
+        "_priority": "5"
+      }
+    }
+  }
+}

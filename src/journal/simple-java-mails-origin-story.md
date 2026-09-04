@@ -44,7 +44,7 @@ So, I thought, "let's share this epiphany with the world," and while I was at it
 
 And so, on April 26th, 2009, I posted the first release to Google Code. It was named... Vesijama. WHAT!?
 
-Yeah, I even wrote a blog post about it, [still available](https://web.archive.org/web/20091119045617/http://blog.projectnibble.org/2009/04/27/vesijama-very-simple-java-mail) in the Internet Archive's Wayback Machine. Vesijama, or **Ve**ry **Si**mple **Ja**va **Ma**il... I thought I was being clever, but as one of my blog readers [pointed out](https://web.archive.org/web/20150531075139/http://blog.projectnibble.org/2009/04/27/vesijama-very-simple-java-mail/comment-page-1/#comment-1305): "there is no way I’m installing a file on my client’s computer with a name like “vesijama” :)". Ouch. In March 2011, the project was renamed to Simple Java Mail. A name with its own problems, but it was appropriate at the time.
+Yeah, I even wrote a blog post about it, [still available](/sources/project-nibble/vesijama-very-simple-java-mail.html) in the Internet Archive's Wayback Machine. Vesijama, or **Ve**ry **Si**mple **Ja**va **Ma**il... I thought I was being clever, but as one of my blog readers [pointed out](/sources/project-nibble/vesijama-very-simple-java-mail.html#comment-1305): "there is no way I’m installing a file on my client’s computer with a name like “vesijama” :)". Ouch. In March 2011, the project was renamed to Simple Java Mail. A name with its own problems, but it was appropriate at the time.
 
 ![A 2010 blog comment praising the library but criticizing the Vesijama filename](/assets/journal/user-indicates-vesijama-is-bad.png)
 

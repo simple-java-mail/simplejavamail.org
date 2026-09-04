@@ -1,0 +1,19 @@
+<nav class="{{className}}" aria-label="{{label}}" data-pagefind-ignore>
+  {{#with (journalNeighbor collections.journal page.url "older")}}
+    <a class="journal-entry-previous" href="{{this.url}}">
+      <span>Previous article · {{category}}</span>
+      <strong><b aria-hidden="true">←</b> {{title}}</strong>
+    </a>
+  {{else}}
+    <a class="journal-entry-previous" href="{{site.journal.indexUrl}}">
+      <span>Journal index</span>
+      <strong><b aria-hidden="true">←</b> All entries</strong>
+    </a>
+  {{/with}}
+  {{#with (journalNeighbor collections.journal page.url "newer")}}
+    <a class="journal-entry-next" href="{{this.url}}">
+      <span>Next article · {{category}}</span>
+      <strong>{{title}} <b aria-hidden="true">→</b></strong>
+    </a>
+  {{/with}}
+</nav>

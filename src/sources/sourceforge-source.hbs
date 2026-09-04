@@ -1,0 +1,133 @@
+---
+pagination:
+  data: sourceForgeSources
+  size: 1
+  alias: sourceForgeSource
+permalink: "{{sourceForgeSource.permalink}}"
+eleventyExcludeFromCollections: true
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="robots" content="noindex, follow">
+    <title>{{sourceForgeSource.title}} | Recovered SourceForge source</title>
+    <meta name="description" content="Recovered SourceForge {{sourceForgeSource.kindLabel}} for {{sourceForgeSource.projectName}}.">
+    <link rel="icon" href="/assets/sjm-favicon.png" type="image/png">
+    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="stylesheet" href="/assets/journal.css">
+  </head>
+  <body class="sourceforge-source-page">
+    <a class="skip-link" href="#main-content">Skip to recovered source</a>
+    <header class="sfa-source-masthead">
+      <a href="/engineering-journal.html">Simple Java Mail Engineering Journal</a>
+      <span>Recovered source</span>
+    </header>
+
+    <main id="main-content" class="sfa-source-main" data-pagefind-ignore>
+      <article class="sfa-source sfa-kind-{{sourceForgeSource.kind}}" data-archived-source data-source-label="Recovered SourceForge {{sourceForgeSource.kindLabel}}" data-source-title="{{sourceForgeSource.title}}">
+        <header class="sfa-site-header">
+          <div class="sfa-wordmark" aria-label="SourceForge.net"><span>source</span><strong>forge</strong><small>.net</small></div>
+          <div>
+            <p>{{sourceForgeSource.projectName}}</p>
+            <small>{{sourceForgeSource.project}}</small>
+          </div>
+        </header>
+        <nav class="sfa-project-tabs" aria-label="Historic project sections">
+          {{#each sourceForgeSource.tabs}}
+            <span{{#if (eq ../sourceForgeSource.kind "discussion")}}{{#if (eq this "Discussion")}} class="is-current"{{/if}}{{else if (eq ../sourceForgeSource.kind "ticket")}}{{#if (eq this "Tickets")}} class="is-current"{{/if}}{{else if (eq ../sourceForgeSource.kind "mail")}}{{#if (eq this "Mailing Lists")}} class="is-current"{{/if}}{{else if (eq ../sourceForgeSource.kind "project")}}{{#if (eq this "Summary")}} class="is-current"{{/if}}{{/if}}>{{this}}</span>
+          {{/each}}
+        </nav>
+
+        {{#if (eq sourceForgeSource.kind "project")}}
+          <div class="sfa-project-heading">
+            <div>
+              <p>SourceForge project</p>
+              <h1>{{sourceForgeSource.title}}</h1>
+              <p>{{sourceForgeSource.summary}}</p>
+            </div>
+            <span class="sfa-project-status">{{capitalize sourceForgeSource.payload.status}}</span>
+          </div>
+          <div class="sfa-project-layout">
+            <section>
+              <h2>About this project</h2>
+              <div class="sfa-markup">{{{sourceForgeMarkup sourceForgeSource.summary}}}</div>
+            </section>
+            <aside class="sfa-meta" aria-label="Project metadata">
+              <h2>Project information</h2>
+              <dl>
+                <div><dt>Registered</dt><dd>{{sourceForgeSource.registered}}</dd></div>
+                {{#if sourceForgeSource.developmentStatus.length}}<div><dt>Status</dt><dd>{{join sourceForgeSource.developmentStatus ", "}}</dd></div>{{/if}}
+                {{#if sourceForgeSource.licenses.length}}<div><dt>License</dt><dd>{{join sourceForgeSource.licenses ", "}}</dd></div>{{/if}}
+              </dl>
+              {{#if sourceForgeSource.developers.length}}
+                <h2>Developers</h2>
+                <ul>{{#each sourceForgeSource.developers}}<li><a href="{{this.url}}">{{name}}</a> <small>({{username}})</small></li>{{/each}}</ul>
+              {{/if}}
+            </aside>
+          </div>
+
+        {{else if (eq sourceForgeSource.kind "discussion")}}
+          <header class="sfa-content-heading">
+            <p>Discussion</p>
+            <h1>{{sourceForgeSource.title}}</h1>
+            <p>{{sourceForgeSource.posts.length}} posts · {{sourceForgeSource.created.label}} to {{sourceForgeSource.updated.label}}</p>
+          </header>
+          <section class="sfa-discussion" aria-label="Discussion thread">
+            {{#each sourceForgeSource.posts}}
+              <article id="{{slug}}" class="sfa-post" style="--post-depth: {{depth}}">
+                <header>
+                  <a href="#{{slug}}">{{authorName}}</a>
+                  <span>{{author}} · <time datetime="{{posted.iso}}">{{posted.label}}</time></span>
+                </header>
+                <div class="sfa-markup">{{{sourceForgeMarkup text}}}</div>
+              </article>
+            {{/each}}
+          </section>
+
+        {{else if (eq sourceForgeSource.kind "ticket")}}
+          <header id="ticket-{{sourceForgeSource.payload.ticket.ticket_num}}" class="sfa-content-heading sfa-citation-block">
+            <p>Bug #{{sourceForgeSource.payload.ticket.ticket_num}}</p>
+            <h1>{{sourceForgeSource.payload.ticket.summary}}</h1>
+          </header>
+          <div class="sfa-ticket-layout">
+            <section>
+              <h2>Description</h2>
+              <div class="sfa-markup">{{{sourceForgeMarkup sourceForgeSource.payload.ticket.description}}}</div>
+            </section>
+            <aside class="sfa-meta" aria-label="Ticket metadata">
+              <h2>Ticket information</h2>
+              <dl>
+                <div><dt>Status</dt><dd>{{capitalize sourceForgeSource.payload.ticket.status}}</dd></div>
+                <div><dt>Reported by</dt><dd>{{sourceForgeSource.reporterName}}</dd></div>
+                <div><dt>Created</dt><dd><time datetime="{{sourceForgeSource.created.iso}}">{{sourceForgeSource.created.label}}</time></dd></div>
+              </dl>
+            </aside>
+          </div>
+
+        {{else if (eq sourceForgeSource.kind "mail")}}
+          <header id="message-{{sourceForgeSource.payload.id}}" class="sfa-content-heading sfa-citation-block">
+            <p>{{sourceForgeSource.list}} mailing list</p>
+            <h1>{{sourceForgeSource.payload.title}}</h1>
+          </header>
+          <dl class="sfa-mail-headers">
+            <div><dt>From</dt><dd>{{sourceForgeSource.payload.author}} &lt;{{sourceForgeSource.payload.address}}&gt;</dd></div>
+            <div><dt>Date</dt><dd><time datetime="{{sourceForgeSource.posted.iso}}">{{sourceForgeSource.posted.label}}</time></dd></div>
+            <div><dt>Subject</dt><dd>{{sourceForgeSource.payload.title}}</dd></div>
+          </dl>
+          <pre class="sfa-mail-body">{{sourceForgeSource.payload.body}}</pre>
+          {{#if sourceForgeSource.payload.attachment}}
+            <p class="sfa-attachment"><strong>Attachment:</strong> <a href="{{sourceForgeSource.payload.attachment.url}}">{{sourceForgeSource.payload.attachment.name}}</a></p>
+          {{/if}}
+        {{/if}}
+
+        <footer class="sfa-provenance">
+          <p>Recovered from SourceForge on {{sourceForgeSource.snapshotDate}}.</p>
+          <a href="{{sourceForgeSource.originalUrl}}">View the current archive page</a>
+        </footer>
+      </article>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,161 @@
+{
+  "slug": "dkim-javamail-project",
+  "kind": "project",
+  "project": "dkim-javamail",
+  "permalink": "/sources/sourceforge/dkim-javamail/project.html",
+  "originalUrl": "https://sourceforge.net/projects/dkim-javamail/",
+  "snapshotDate": "2 September 2026",
+  "capturedFrom": "https://sourceforge.net/rest/p/dkim-javamail",
+  "payload": {
+    "shortname": "dkim-javamail",
+    "name": "DKIM for JavaMail",
+    "_id": "515b36975fcbc94850cde153",
+    "url": "https://sourceforge.net/p/dkim-javamail/",
+    "private": false,
+    "short_description": "DKIM for JavaMail is a small JAR that can be easily implemented in existing Java projects using JavaMail for sending DKIM signed emails.",
+    "creation_date": "2008-11-30",
+    "summary": "",
+    "external_homepage": "http://dkim-javamail.sourceforge.net",
+    "video_url": "",
+    "socialnetworks": [],
+    "status": "active",
+    "moved_to_url": "",
+    "preferred_support_tool": "",
+    "preferred_support_url": "",
+    "developers": [
+      {
+        "username": "usrflo",
+        "name": "Florian Sager",
+        "url": "https://sourceforge.net/u/usrflo/"
+      }
+    ],
+    "tools": [
+      {
+        "name": "summary",
+        "mount_point": "summary",
+        "url": "https://sourceforge.net/p/dkim-javamail/summary/",
+        "mount_label": "Summary",
+        "sourceforge_group_id": 246725
+      },
+      {
+        "name": "files-sf",
+        "mount_point": "files",
+        "url": "https://sourceforge.net/p/dkim-javamail/files/",
+        "mount_label": "Files"
+      },
+      {
+        "name": "support",
+        "mount_point": "support",
+        "url": "https://sourceforge.net/p/dkim-javamail/support/",
+        "mount_label": "Support"
+      },
+      {
+        "name": "reviews",
+        "mount_point": "reviews",
+        "url": "https://sourceforge.net/p/dkim-javamail/reviews/",
+        "mount_label": "Reviews"
+      },
+      {
+        "name": "discussion",
+        "mount_point": "discussion",
+        "url": "https://sourceforge.net/p/dkim-javamail/discussion/",
+        "mount_label": "Discussion",
+        "api_url": "https://sourceforge.net/rest/p/dkim-javamail/discussion/"
+      },
+      {
+        "name": "activity",
+        "mount_point": "activity",
+        "url": "https://sourceforge.net/p/dkim-javamail/activity/",
+        "mount_label": "Activity",
+        "api_url": "https://sourceforge.net/rest/p/dkim-javamail/activity/"
+      },
+      {
+        "name": "mailman",
+        "mount_point": "mailman",
+        "url": "https://sourceforge.net/p/dkim-javamail/mailman/",
+        "mount_label": "Mailing Lists"
+      }
+    ],
+    "labels": [],
+    "categories": {
+      "audience": [
+        {
+          "id": 363,
+          "shortname": "information-technology",
+          "fullname": "Information Technology",
+          "fullpath": "Intended Audience :: by Industry or Sector :: Information Technology"
+        },
+        {
+          "id": 3,
+          "shortname": "developers",
+          "fullname": "Developers",
+          "fullpath": "Intended Audience :: by End-User Class :: Developers"
+        }
+      ],
+      "developmentstatus": [
+        {
+          "id": 11,
+          "shortname": "5-production-stable",
+          "fullname": "5 - Production/Stable",
+          "fullpath": "Development Status :: 5 - Production/Stable"
+        }
+      ],
+      "environment": [],
+      "language": [
+        {
+          "id": 198,
+          "shortname": "java",
+          "fullname": "Java",
+          "fullpath": "Programming Language :: Java"
+        }
+      ],
+      "license": [
+        {
+          "id": 401,
+          "shortname": "apache-license-v2.0",
+          "fullname": "Apache License V2.0",
+          "fullpath": "License :: OSI-Approved Open Source :: Apache License V2.0"
+        }
+      ],
+      "translation": [
+        {
+          "id": 275,
+          "shortname": "english",
+          "fullname": "English",
+          "fullpath": "Translations :: English"
+        }
+      ],
+      "os": [
+        {
+          "id": 235,
+          "shortname": "os-independent",
+          "fullname": "OS Independent",
+          "fullpath": "Operating System :: OS Independent"
+        }
+      ],
+      "database": [],
+      "topic": [
+        {
+          "id": 31,
+          "shortname": "email-clients",
+          "fullname": "Email Clients",
+          "fullpath": "Topic :: Communications :: Email :: Email Clients"
+        },
+        {
+          "id": 32,
+          "shortname": "mail-transfer-agents",
+          "fullname": "Mail Transfer Agents",
+          "fullpath": "Topic :: Communications :: Email :: Mail Transfer Agents"
+        },
+        {
+          "id": 44,
+          "shortname": "cryptography",
+          "fullname": "Cryptography",
+          "fullpath": "Topic :: Security :: Cryptography"
+        }
+      ]
+    },
+    "icon_url": null,
+    "screenshots": []
+  }
+}

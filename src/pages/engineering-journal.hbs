@@ -15,9 +15,16 @@ description: "Whole-system email design, project archaeology, and maintainer per
         </header>
 
         <div class="journal-entry-list">
-          {{#each (newestFirst collections.journal)}}
+          {{#each (journalOldestFirst collections.journal)}}
             <article class="journal-entry-row">
               <div class="journal-entry-row-copy">
+                {{#if data.series}}
+                  <p class="journal-series-label journal-series-label--index">
+                    <span>{{data.series.title}}</span>
+                    <span aria-hidden="true">·</span>
+                    <span class="journal-series-part">Part {{data.series.part}} of {{data.series.total}}</span>
+                  </p>
+                {{/if}}
                 <h2><a href="{{this.url}}">{{data.title}}</a></h2>
                 <p>{{data.description}}</p>
                 <p class="journal-entry-row-meta">

@@ -1,0 +1,69 @@
+---
+pagination:
+  data: projectNibblePosts
+  size: 1
+  alias: projectNibblePost
+permalink: "/sources/project-nibble/{{projectNibblePost.slug}}.html"
+eleventyExcludeFromCollections: true
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="robots" content="noindex, follow">
+    <title>{{projectNibblePost.title}} | Recovered Project Nibble source</title>
+    <meta name="description" content="Recovered post from Benny's old Project Nibble blog.">
+    <link rel="icon" href="/assets/sjm-favicon.png" type="image/png">
+    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="stylesheet" href="/assets/journal.css">
+  </head>
+  <body class="project-nibble-source-page">
+    <a class="skip-link" href="#main-content">Skip to post</a>
+    <header class="pnb-source-masthead">
+      <a href="/engineering-journal.html">Simple Java Mail Engineering Journal</a>
+      <span>Recovered source</span>
+    </header>
+
+    <main id="main-content" class="pnb-source-main" data-pagefind-ignore>
+      <article class="pnb-post" data-archived-source data-source-label="Benny's Blog" data-source-title="{{projectNibblePost.title}}">
+        <header class="pnb-blog-header">
+          <p class="pnb-blog-name">Benny's Blog</p>
+          <p>House Of Code</p>
+        </header>
+
+        <div class="pnb-post-page">
+          <article class="pnb-entry">
+            <header>
+              <h1>{{projectNibblePost.title}}</h1>
+              <time>{{projectNibblePost.date}}</time>
+            </header>
+            <div class="pnb-entry-content">
+              {{{projectNibblePost.contentHtml}}}
+            </div>
+            <footer class="pnb-entry-meta">
+              <p>This entry was posted on {{projectNibblePost.date}} by {{projectNibblePost.author}}. This copy was recovered from a Wayback Machine snapshot captured on {{projectNibblePost.snapshotDate}}.</p>
+              <a href="{{projectNibblePost.snapshotUrl}}">View the original capture</a>
+            </footer>
+          </article>
+
+          {{#if projectNibblePost.comments.length}}
+            <section class="pnb-comments" aria-labelledby="pnb-comments-heading">
+              <h2 id="pnb-comments-heading">{{projectNibblePost.comments.length}} {{#if (eq projectNibblePost.comments.length 1)}}Response{{else}}Responses{{/if}} to “{{projectNibblePost.title}}”</h2>
+              {{#each projectNibblePost.comments}}
+                <article id="comment-{{id}}" class="pnb-comment pnb-comment-depth-{{depth}}{{#if byAuthor}} is-author{{/if}}" data-archive-comment>
+                  <header>
+                    <a class="pnb-comment-author" href="#comment-{{id}}">{{author}} <i>says:</i></a>
+                    <time>{{date}}</time>
+                  </header>
+                  <div class="pnb-comment-body">{{{contentHtml}}}</div>
+                </article>
+              {{/each}}
+            </section>
+          {{/if}}
+        </div>
+      </article>
+    </main>
+  </body>
+</html>

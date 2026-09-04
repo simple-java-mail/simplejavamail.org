@@ -1,0 +1,62 @@
+{
+  "slug": "dkim-javamail-crlf-canonicalisation",
+  "kind": "discussion",
+  "project": "dkim-javamail",
+  "forum": "Open Discussion",
+  "permalink": "/sources/sourceforge/dkim-javamail/discussion/body-end-of-line-normalization-missing.html",
+  "originalUrl": "https://sourceforge.net/p/dkim-javamail/discussion/893011/thread/b46737da/",
+  "snapshotDate": "2 September 2026",
+  "authorNames": {
+    "ofrias": "ofrias",
+    "eey38": "JRM",
+    "usrflo": "Florian Sager"
+  },
+  "capturedFrom": "https://sourceforge.net/rest/p/dkim-javamail/discussion/893011/thread/b46737da/",
+  "payload": {
+    "topic": {
+      "_id": "b46737da",
+      "discussion_id": "515b369c5fcbc94850cde181",
+      "subject": "Body end of line normalization missing",
+      "limit": 25,
+      "page": 0,
+      "posts": [
+        {
+          "slug": "229d",
+          "text": "Hello.\r\n\r\nBefore calculating the signature, the body end of lines must be normalized to MIME canonical CRLF line terminator.\r\nMore information:&nbsp; http://java.sun.com/products/javamail/FAQ.html\\#repres\r\nIf you don't do that, the signature verification fails when sending emails from Linux.\r\n\r\n\r\nSo replace this code:\r\n\r\n// process body\r\nString body;\r\ntry \\{\r\n&nbsp;&nbsp;&nbsp; body = this.bodyCanonicalization.canonicalizeBody\\(message.getEncodedBody\\(\\)\\);\r\n\\} catch \\(IOException ioe\\) \\{\r\n&nbsp;&nbsp;&nbsp; throw new DKIMSignerException\\(&quot;The body canonicalization failed&quot;, ioe\\);\r\n\\}\r\n\r\n\r\nBy this one:\r\n\r\n// process body\r\nString body;\r\nbody = message.getEncodedBody\\(\\);\r\nByteArrayOutputStream baos = new ByteArrayOutputStream\\(\\);\r\nCRLFOutputStream crlfos = new CRLFOutputStream\\(baos\\);\r\ntry \\{\r\n&nbsp;&nbsp;&nbsp; crlfos.write\\(body.getBytes\\(\\)\\);\r\n\\} catch \\(IOException e\\) \\{\r\n&nbsp;&nbsp;&nbsp; throw new DKIMSignerException\\(&quot;The body conversion to MIME canonical CRLF line terminator failed&quot;, e\\);\r\n\\}\r\nbody = baos.toString\\(\\);\r\n\r\ntry \\{\r\n&nbsp;&nbsp;&nbsp; body = this.bodyCanonicalization.canonicalizeBody\\(body\\);\r\n\\} catch \\(IOException ioe\\) \\{\r\n&nbsp;&nbsp;&nbsp; throw new DKIMSignerException\\(&quot;The body canonicalization failed&quot;, ioe\\);\r\n\\}\r\n\r\n\r\n\r\nOscar.",
+          "subject": "Body end of line normalization missing",
+          "author": "ofrias",
+          "author_icon_url": "https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png",
+          "timestamp": "2009-02-03 10:45:52",
+          "last_edited": null,
+          "attachments": [],
+          "is_meta": false
+        },
+        {
+          "slug": "229d/fcba",
+          "text": "Thks Oscar for that help \\!\\!\r\n\r\n\r\n",
+          "subject": "Body end of line normalization missing",
+          "author": "eey38",
+          "author_icon_url": "https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png",
+          "timestamp": "2009-04-03 08:22:41",
+          "last_edited": null,
+          "attachments": [],
+          "is_meta": false
+        },
+        {
+          "slug": "229d/4ee2",
+          "text": "Hi Oscar,\r\n\r\nI added this bugfix to DKIM for Javamail 1.1\r\n\r\nRegards,\r\nusrflo\r\n",
+          "subject": "Body end of line normalization missing",
+          "author": "usrflo",
+          "author_icon_url": "https://a.fsdn.com/con/images/sandiego/icons/default-avatar.png",
+          "timestamp": "2009-04-13 14:30:03",
+          "last_edited": null,
+          "attachments": [],
+          "is_meta": false
+        }
+      ]
+    },
+    "count": 3,
+    "page": 0,
+    "limit": 25
+  }
+}

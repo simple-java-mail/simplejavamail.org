@@ -1,0 +1,31 @@
+{
+  "project": "simple-java-mail",
+  "snapshotDate": "2 September 2026",
+  "rawUrl": "https://storage.googleapis.com/google-code-archive/v2/code.google.com/simple-java-mail/project.json",
+  "payload": {
+    "domain": "code.google.com",
+    "name": "simple-java-mail",
+    "summary": "A very simple Java mailing API for sending simple to complex emails (JavaMail smtp wrapper)",
+    "description": "# Simple Java Mail #\n\nSimple Java Mail aims to be the simplest to use lightweight mailing framework for Java, while being able to send complex emails including attachments and embedded images. Just send your emails without dealing with RFC's.\n\nThe Simple Java Mail framework essentially is a wrapper around the JavaMail smtp mailing API that allows users to define emails on a high abstraction level without having to deal with mumbo jumbo such a 'multipart' and 'mimemessage'.\n\n### [Simple Java Mail one-page manual](http://code.google.com/p/simple-java-mail/wiki/Manual) ###\n\n\n---\n\n\n### Latest Progress ###\n\nSimple Java Mail is now available in Maven Central!\n\n```\n<dependency>\r\n    <groupId>org.codemonkey.simplejavamail</groupId>\r\n    <artifactId>simple-java-mail</artifactId>\r\n    <version>2.1</version>\r\n</dependency>\r\n```\n\nv2.1\n\n  * fixed character encoding for reply-to, from, to, body text and headers (to UTF-8)\n  * fixed bug where Recipient was not public resulting in uncompilable code when calling email.getRecipients()\n\nv2.0\n\n  * added support for adding open headers, such as 'X-Priority: 2'\n\n\nv1.9.1\n\n  * updated for Maven support\n\n\nv1.9\n\n  * added support for JavaMail's reply-to address\n  * made port optional as to support port defaulting based on protocol\n  * added transport strategy default in the createSession method\n  * tightened up thrown exceptions (MailException instead of RuntimeException)\n  * added and fixed [JavaDoc](http://simple-java-mail.googlecode.com/svn/trunk/javadoc/users/index.html)\n\n\nv1.8\n\n  * Added support for TLS (tested with gmail)\n\n\nv1.7\n\nAdded support for SSL! (tested with gmail)\n\n  * improved argument validation when creating a Mailer without preconfigured Session instance\n\nknown possible issue: SSL self-signed certificates might not work (yet). Please let me know by e-mail or create a new issue\n\n\nv1.6\n\nCompleted migration to Java Simple Mail project.\n\n  * removed all Vesijama references\n  * updated TestMail demonstration class for clarification\n  * updated readme.txt for test run instructions\n  * included log4j.properties",
+    "stars": 25,
+    "license": "asf20",
+    "contentLicense": "",
+    "labels": [
+      "java",
+      "mail",
+      "javax.mail",
+      "email",
+      "mailing",
+      "mailingframework",
+      "javamail",
+      "smtp"
+    ],
+    "creationTime": 1300271267000,
+    "repoType": "svn",
+    "subrepos": [],
+    "hasSource": true,
+    "ancestorRepo": "",
+    "logoName": "",
+    "movedTo": "https://github.com/bbottema/simple-java-mail"
+  }
+}

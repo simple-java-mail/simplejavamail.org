@@ -1,0 +1,188 @@
+{
+  "slug": "javamail-crypto-project",
+  "kind": "project",
+  "project": "javamail-crypto",
+  "permalink": "/sources/sourceforge/javamail-crypto/project.html",
+  "originalUrl": "https://sourceforge.net/projects/javamail-crypto/",
+  "snapshotDate": "2 September 2026",
+  "capturedFrom": "https://sourceforge.net/rest/p/javamail-crypto",
+  "payload": {
+    "shortname": "javamail-crypto",
+    "name": "JavaMail Cryptography API",
+    "_id": "516f0cc1e88f3d7787ac5f62",
+    "url": "https://sourceforge.net/p/javamail-crypto/",
+    "private": false,
+    "short_description": "A standard API for accessing OpenPGP and S/MIME email in JavaMail.",
+    "creation_date": "2003-09-02",
+    "summary": "",
+    "external_homepage": "http://javamail-crypto.sourceforge.net",
+    "video_url": "",
+    "socialnetworks": [],
+    "status": "active",
+    "moved_to_url": "",
+    "preferred_support_tool": "",
+    "preferred_support_url": "",
+    "developers": [
+      {
+        "username": "akp",
+        "name": "allen petersen",
+        "url": "https://sourceforge.net/u/akp/"
+      },
+      {
+        "username": "liaoli",
+        "name": "Lijun Liao",
+        "url": "https://sourceforge.net/u/liaoli/"
+      }
+    ],
+    "tools": [
+      {
+        "name": "mailman",
+        "mount_point": "mailman",
+        "url": "https://sourceforge.net/p/javamail-crypto/mailman/",
+        "mount_label": "Mailing Lists"
+      },
+      {
+        "name": "files-sf",
+        "mount_point": "files",
+        "url": "https://sourceforge.net/p/javamail-crypto/files/",
+        "mount_label": "Files"
+      },
+      {
+        "name": "tickets",
+        "mount_point": "bugs",
+        "url": "https://sourceforge.net/p/javamail-crypto/bugs/",
+        "mount_label": "Bugs",
+        "api_url": "https://sourceforge.net/rest/p/javamail-crypto/bugs/"
+      },
+      {
+        "name": "support",
+        "mount_point": "support",
+        "url": "https://sourceforge.net/p/javamail-crypto/support/",
+        "mount_label": "Support"
+      },
+      {
+        "name": "summary",
+        "mount_point": "summary",
+        "url": "https://sourceforge.net/p/javamail-crypto/summary/",
+        "mount_label": "Summary",
+        "sourceforge_group_id": 89276
+      },
+      {
+        "name": "reviews",
+        "mount_point": "reviews",
+        "url": "https://sourceforge.net/p/javamail-crypto/reviews/",
+        "mount_label": "Reviews"
+      },
+      {
+        "name": "tickets",
+        "mount_point": "feature-requests",
+        "url": "https://sourceforge.net/p/javamail-crypto/feature-requests/",
+        "mount_label": "Feature Requests",
+        "api_url": "https://sourceforge.net/rest/p/javamail-crypto/feature-requests/"
+      },
+      {
+        "name": "blog",
+        "mount_point": "news",
+        "url": "https://sourceforge.net/p/javamail-crypto/news/",
+        "mount_label": "News",
+        "api_url": "https://sourceforge.net/rest/p/javamail-crypto/news/"
+      },
+      {
+        "name": "discussion",
+        "mount_point": "discussion",
+        "url": "https://sourceforge.net/p/javamail-crypto/discussion/",
+        "mount_label": "Discussion",
+        "api_url": "https://sourceforge.net/rest/p/javamail-crypto/discussion/"
+      },
+      {
+        "name": "cvs",
+        "mount_point": "code",
+        "url": "https://sourceforge.net/p/javamail-crypto/code/",
+        "mount_label": "Code"
+      },
+      {
+        "name": "activity",
+        "mount_point": "activity",
+        "url": "https://sourceforge.net/p/javamail-crypto/activity/",
+        "mount_label": "Activity",
+        "api_url": "https://sourceforge.net/rest/p/javamail-crypto/activity/"
+      }
+    ],
+    "labels": [],
+    "categories": {
+      "audience": [
+        {
+          "id": 3,
+          "shortname": "developers",
+          "fullname": "Developers",
+          "fullpath": "Intended Audience :: by End-User Class :: Developers"
+        }
+      ],
+      "developmentstatus": [
+        {
+          "id": 10,
+          "shortname": "4-beta",
+          "fullname": "4 - Beta",
+          "fullpath": "Development Status :: 4 - Beta"
+        }
+      ],
+      "environment": [
+        {
+          "id": 238,
+          "shortname": "non-interactive-daemon",
+          "fullname": "Non-interactive (Daemon)",
+          "fullpath": "User Interface :: Non-interactive (Daemon)"
+        }
+      ],
+      "language": [
+        {
+          "id": 198,
+          "shortname": "java",
+          "fullname": "Java",
+          "fullpath": "Programming Language :: Java"
+        }
+      ],
+      "license": [
+        {
+          "id": 16,
+          "shortname": "gnu-library-or-lesser-general-public-license-version-2.0-lgplv2",
+          "fullname": "GNU Library or Lesser General Public License version 2.0 (LGPLv2)",
+          "fullpath": "License :: OSI-Approved Open Source :: GNU Library or Lesser General Public License version 2.0 (LGPLv2)"
+        }
+      ],
+      "translation": [
+        {
+          "id": 275,
+          "shortname": "english",
+          "fullname": "English",
+          "fullpath": "Translations :: English"
+        }
+      ],
+      "os": [
+        {
+          "id": 235,
+          "shortname": "os-independent",
+          "fullname": "OS Independent",
+          "fullpath": "Operating System :: OS Independent"
+        }
+      ],
+      "database": [],
+      "topic": [
+        {
+          "id": 28,
+          "shortname": "email",
+          "fullname": "Email",
+          "fullpath": "Topic :: Communications :: Email"
+        },
+        {
+          "id": 44,
+          "shortname": "cryptography",
+          "fullname": "Cryptography",
+          "fullpath": "Topic :: Security :: Cryptography"
+        }
+      ]
+    },
+    "icon_url": null,
+    "screenshots": []
+  }
+}
