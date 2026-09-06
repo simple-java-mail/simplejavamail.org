@@ -274,11 +274,12 @@ com.example.ExampleMailTransportAdapter</code></pre>
     &lt;artifactId&gt;openpgp-module&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
     <p>
-      The module keeps Bouncy Castle types out of the public Simple Java Mail API, but uses these libraries for the OpenPGP implementation:
+      The module keeps OpenPGP library types out of the public Simple Java Mail API. PGPainless handles key selection, algorithm policy, and the
+      cryptographic operations; Simple Java Mail handles the surrounding RFC 3156 MIME structure. The implementation uses:
     </p>
     <ul>
+      <li><a class="indent" href="https://www.pgpainless.org/"><code>org.pgpainless:pgpainless-core</code></a></li>
       <li><a class="indent" href="https://www.bouncycastle.org/documentation/documentation-java/"><code>org.bouncycastle:bcpg-jdk18on</code></a></li>
-      <li><a class="indent" href="https://www.bouncycastle.org/documentation/documentation-java/"><code>org.bouncycastle:bcprov-jdk18on</code></a></li>
     </ul>
     <p class="wide">
       Key discovery, public keyservers, WKD, and application trust policy are outside the module. Pass the key-ring bytes selected by your application.
