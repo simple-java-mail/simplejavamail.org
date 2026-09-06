@@ -9,7 +9,7 @@ typora-copy-images-to: ../assets/journal
 
 ## It's 2006 and there's no Stack Overflow
 
-We are going back all the way to 2006. I was fresh out of computer science school and had joined a Java team at a large insurance company. A bug report came in that had apparently been bouncing between the dev team and the business manager for a while: emails sent from the backends behaved inconsistently in mail clients. Attachments weren't shown properly, downloads sometimes had no progress indicator because their size was indeterminate, or the plain text body was rendered even though an HTML body was available. We are talking about Outlook, Thunderbird, and a plethora of webmail clients, including small internet providers with their own webmail interfaces. It was a mess and the ticket kept growing back like a bad weed. Specifically a hogweed, because developers didn't like touching it and kept burning themselves whenever they did.
+We are going back all the way to 2006. I had just graduated in computer science and joined a Java team at a large insurance company. A bug report came in that had apparently been bouncing between the dev team and the business manager for a while: emails sent from the backends behaved inconsistently in mail clients. Attachments weren't shown properly, downloads sometimes had no progress indicator because their size was indeterminate, or the plain text body was rendered even though an HTML body was available. We are talking about Outlook, Thunderbird, and a plethora of webmail clients, including small internet providers with their own webmail interfaces. It was a mess and the ticket kept rearing its ugly head like a sandworm.
 
 And now it was my turn.
 

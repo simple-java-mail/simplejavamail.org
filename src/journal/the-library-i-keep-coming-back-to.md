@@ -10,7 +10,7 @@ series:
 draft: true
 typora-root-url: ..
 typora-copy-images-to: ../assets/journal
-ai-banner: "This article is from set of three that emerged from a deep ai-assisted archeology dig. Due to the long history and sheer number of references unearthed, this article was also streamlined using ai and wouldn't have been possible otherwise."
+ai-banner: "This article is from a set of three that emerged from a deep AI-assisted archaeology dig. Due to the long history and sheer number of references unearthed, this article was also streamlined using AI and wouldn't have been possible otherwise."
 ---
 
 ## The release graph tells on me
