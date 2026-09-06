@@ -427,8 +427,10 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 					domain keys at email or Mailer level.
 				</p>
 				<p>
-					Use <code class="inline language-java">dkimPrivateKeyPath(String)</code> or
-					<code class="inline language-java">dkimPrivateKeyPath(File)</code> for a key file; it is read immediately.
+					Use <code class="inline language-java">dkimPrivateKeyPath(Path)</code>,
+					<code class="inline language-java">dkimPrivateKeyPath(String)</code>, or
+					<code class="inline language-java">dkimPrivateKeyPath(File)</code> for a key file; it is read immediately and
+					the stream Simple Java Mail opens is closed before the call returns.
 					For key material already in memory, <code class="inline language-java">dkimPrivateKeyData(byte[])</code>
 					copies the bytes. The <code class="inline language-java">String</code> overload converts the supplied key data to
 					UTF-8 bytes without Base64-decoding it. The <code class="inline language-java">InputStream</code> overload consumes
@@ -438,7 +440,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 			<div class="side">
 <pre><code class="small">currentEmailBuilder.signWithDomainKey(
 	DkimConfig.builder()
-		.dkimPrivateKeyPath("secrets/dkim-private-key.der")
+		.dkimPrivateKeyPath(Path.of("secrets/dkim-private-key.der"))
 		.dkimSigningDomain("your-domain.org")
 		.dkimSelector("dkim1")
 		.useLengthParam(false) // default
@@ -490,7 +492,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 			</div>
 			<div class="side">
 <pre><code class="small">DkimConfig.builder()
-    .dkimPrivateKeyPath("secrets/dkim-private-key.der")
+    .dkimPrivateKeyPath(Path.of("secrets/dkim-private-key.der"))
     .dkimSigningDomain("your-domain.org")
     .dkimSelector("dkim1")
     // Only if a known service appends a footer:
@@ -574,7 +576,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 			<div class="side">
 				Signing an email:
 				<pre><code>Pkcs12Config myKeyInfo = Pkcs12Config.builder()
-    .pkcs12Store("my_smime_keystore.pkcs12")
+    .pkcs12Store(Path.of("my_smime_keystore.pkcs12"))
     .storePassword("my_store_password")
     .keyAlias("my_key_alias")
     .keyPassword("my_key_password")
@@ -594,7 +596,7 @@ mailer.sendMail(emailToBeSigned);
 				<pre><code>Email emailToBeEncrypted = currentEmailBuilder
     .(..)
     .encryptWithSmime(SmimeEncryptionConfig.builder()
-		.x509Certificate("x509CertificateInStandardPEM.crt")
+		.x509Certificate(Path.of("x509CertificateInStandardPEM.crt"))
 		.keyEncapsulationAlgorithm("RSA_OAEP_SHA384") // optional
 		.cipherAlgorithm("AES256_CBC") // optional
 		.build())
@@ -851,7 +853,7 @@ nonMergedEmail.getSmimeSignedEmail();
 
 			<div class="wide">
 <pre><code>Pkcs12Config yourPkcs12Config = Pkcs12Config.builder()
-      .pkcs12Store("smime_keystore.pkcs12") // path, File or InputStream
+      .pkcs12Store(Path.of("smime_keystore.pkcs12")) // or String, File or InputStream
       .storePassword("letmein")
       .keyAlias("smime_test_user_alias")
       .keyPassword("letmein")

@@ -348,10 +348,9 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
       Compose the sources your application owns:
 <pre><code class="language-java small">SimpleJavaMailConfig config = ConfigLoader.builder()
     .withClasspathResource("mail-base.properties")
-    .withInputStream(
+    .withPropertiesFile(
         "deployment file",
-        Files.newInputStream(Paths.get(
-            "config", "simplejavamail.properties")))
+        Path.of("config", "simplejavamail.properties"))
     .withProperties("runtime overrides", runtimeOverrides)
     .withMap("local overrides", localOverrides)
     .withSource(secretManagerSource)
@@ -359,9 +358,10 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
 
 SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
       <p>
-        <code class="inline language-java">withInputStream(...)</code> consumes and closes the stream immediately, including when reading fails.
-        Maps, <code class="inline language-java">Properties</code>, and custom sources are sampled when <code class="inline language-java">load()</code>
-        runs. The snapshot detaches their values before returning.
+        A <code class="inline language-java">withPropertiesFile(Path)</code> source is sampled whenever <code class="inline language-java">load()</code>
+        runs, and Simple Java Mail closes the stream it opens. <code class="inline language-java">withInputStream(...)</code> still consumes and closes the
+        supplied stream immediately. Maps, <code class="inline language-java">Properties</code>, and custom sources are sampled at load time. The snapshot
+        detaches their values before returning.
       </p>
     </div>
   </section>
@@ -776,10 +776,9 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
       </p>
 <pre><code class="language-java">ConfigLoader loader = ConfigLoader.builder()
     .withClasspathResource("simplejavamail.properties")
-    .withInputStream(
+    .withPropertiesFile(
         "selected environment",
-        Files.newInputStream(Paths.get(
-            "config", "candystore", "simplejavamail.properties")));
+        Path.of("config", "candystore", "simplejavamail.properties"));
 
 if (someSpecialCondition) {
     loader.withClasspathResource("special-override.properties");
