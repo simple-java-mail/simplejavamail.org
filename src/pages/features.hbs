@@ -927,9 +927,11 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
         observe their server interaction.
       </p>
       <p>
-        An unknown failure may have happened after the server accepted some or all recipients. Do not automatically retry it unless duplicate submission
-        is acceptable or prevented. A partial failure also needs recipient-aware recovery. Even <code class="inline language-java">ACCEPTED</code> confirms
-        SMTP submission, not final mailbox delivery; use Delivery Status Notification, bounces, read receipts or provider-specific tracking for that.
+        A timeout, reset or EOF while waiting for the final reply after <code class="inline language-text">DATA</code> is
+        <code class="inline language-java">UNKNOWN</code>: no reply is not the same as a rejection, and the server may already have accepted the message.
+        Do not automatically retry it unless duplicate submission is acceptable or prevented. A partial failure also needs recipient-aware recovery.
+        Even <code class="inline language-java">ACCEPTED</code> confirms SMTP submission, not final mailbox delivery; use Delivery Status Notification,
+        bounces, read receipts or provider-specific tracking for that.
       </p>
       <p>
         The open-connection example uses the Mailer's built-in SMTP transport. It cannot be combined with a
