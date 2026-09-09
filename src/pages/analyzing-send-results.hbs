@@ -1,0 +1,471 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/analyzing-send-results.html"
+tags:
+  - "publicPage"
+title: "Analyzing send results"
+section: "Protect and operate"
+breadcrumbParent: "/debugging.html"
+description: "Read SMTP submission receipts, follow a partial send recipient by recipient, and use server replies and retry guidance to decide what to do next."
+---
+  <section>
+    <div class="wide">
+      <p>
+        A send can throw even though the SMTP server accepted the message for some recipients. Retrying the original email could then send those
+        recipients another copy. A <code>MailSubmissionReceipt</code> tells you what is known about that attempt, including individual recipient
+        replies and which recipients, if any, are candidates for a retry.
+      </p>
+      <p>
+        The examples use the 10.0 API. SMTP conversations and output are illustrative, not replies you should expect from a particular server.
+        Acceptance here always means SMTP submission, not final mailbox delivery or inbox placement.
+      </p>
+    </div>
+  </section>
+
+  <section class="toc">
+    <ul>
+      <li><a href="#section-get-receipt">Get the receipt, including when a send fails</a></li>
+      <li><a href="#section-partial-send">Follow one partially successful send</a></li>
+      <li><a href="#section-recipient-details">Inspect recipient details and server replies</a></li>
+      <li><a href="#section-retry-decisions">Decide what can be retried</a></li>
+      <li><a href="#section-unknown-acceptance">When the final reply never arrives</a></li>
+      <li><a href="#section-other-send-paths">Use the same facts in other send paths</a></li>
+      <li><a href="#section-async-results" class="indent">Asynchronous sends</a></li>
+      <li><a href="#section-observer-results" class="indent">Mail-send observers</a></li>
+      <li><a href="#section-open-connection-results" class="indent">Open connections and simple batches</a></li>
+      <li><a href="#section-provider-details">Account for missing provider details</a></li>
+    </ul>
+  </section>
+
+  <a href="#section-get-receipt" id="section-get-receipt" class="section-link h2">&sect;</a>
+  <h2>Get the receipt, including when a send fails</h2>
+  <section>
+    <div class="view">
+      <p>
+        Use <code>sendMailAndGetReceiptSync(email)</code> when the caller needs the receipt immediately. It follows the ordinary synchronous send
+        path, but returns a <code>MailSubmissionReceipt</code>. A failed or partial submission throws <code>MailSubmissionException</code> instead;
+        <code>getSubmissionReceipt()</code> gives you the facts from that same attempt. The exception's <code>getStatus()</code> delegates to the
+        receipt, and <code>getCause()</code> retains the original Jakarta Mail failure.
+      </p>
+      <p>
+        Catching only <code>MailSubmissionException</code> is deliberate here. Preparation and validation failures, for example, do not produce a
+        submission receipt and still propagate to the caller. A receipt is not a promise that an SMTP command was reached: a connection failure can
+        also leave a receipt with no server response or known acceptance.
+      </p>
+      <p>
+        The snippets below reuse a configured <code>mailer</code> and an <code>email</code>, and omit imports. <code>printReceipt</code> is a small
+        application method defined in the next example, not another Simple Java Mail API.
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small" id="example-get-receipt">MailSubmissionReceipt receipt;
+try {
+    receipt = mailer.sendMailAndGetReceiptSync(email);
+} catch (MailSubmissionException failure) {
+    receipt = failure.getSubmissionReceipt();
+}
+
+printReceipt(receipt);</code></pre>
+    </div>
+  </section>
+  <section>
+    <div class="wide">
+      <h3>Two levels, four getters</h3>
+      <p>
+        Two getters describe the whole attempt. Each <code>recipient</code> in <code>receipt.getRecipientResults()</code> exposes two more:
+      </p>
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable send result getter overview">
+        <table>
+          <thead><tr><th>Getter</th><th>Returned enum</th><th>Question it answers</th></tr></thead>
+          <tbody>
+            <tr><td><code>receipt.getStatus()</code></td><td><code>MailSubmissionStatus</code></td><td>Was the whole attempt accepted, partially accepted, rejected or unknown?</td></tr>
+            <tr><td><code>receipt.getRetryDisposition()</code></td><td><code>MailRetryDisposition</code></td><td>What do the recorded facts say about retrying this envelope?</td></tr>
+            <tr><td><code>recipient.getDisposition()</code></td><td><code>MailRecipientDisposition</code></td><td>What is the final submission result for this recipient?</td></tr>
+            <tr><td><code>recipient.getRcptStatus()</code></td><td><code>SmtpRecipientStatus</code></td><td>What happened at <code>RCPT TO</code> for this address?</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>ACCEPTED</code> at <code>RCPT TO</code> only means the server accepted the address. An <code>ACCEPTED</code> recipient disposition
+        means the message was accepted for that recipient. An <code>ACCEPTED</code> receipt means that happened for every submitted recipient and
+        the send completed successfully. None of these confirms mailbox delivery.
+      </p>
+    </div>
+  </section>
+  <section>
+    <div class="wide">
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable submission status reference">
+        <table>
+          <thead><tr><th><code>receipt.getStatus()</code></th><th>What happened</th></tr></thead>
+          <tbody>
+            <tr><td><code>ACCEPTED</code></td><td>Every submitted envelope recipient was accepted, and the send completed successfully.</td></tr>
+            <tr><td><code>PARTIALLY_ACCEPTED</code></td><td>At least one recipient was accepted, but the attempt was not a clean success for the whole envelope. The send fails.</td></tr>
+            <tr><td><code>REJECTED</code></td><td>No recipient was accepted for submission. The send fails; inspect the replies and retry guidance for the reason.</td></tr>
+            <tr><td><code>UNKNOWN</code></td><td>The send path cannot determine acceptance. This can describe a failed SMTP attempt or successful processing in logging-only mode or a custom mailer.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>getEmailId()</code> returns the effective Message-ID, or <code>null</code> if none was produced.
+        <code>getSubmittedAt()</code> is the timestamp captured after the attempt completed or failed, not a delivery timestamp.
+        <code>getSmtpResponse()</code> is an optional provider response; a positive reply alone does not replace the overall status and recipient facts.
+      </p>
+      <p>
+        <code>isAcceptedByServer()</code> means <em>at least one</em> recipient was accepted, so it is also true for <code>PARTIALLY_ACCEPTED</code>.
+        <code>hasServerAcceptanceInformation()</code> is false for <code>UNKNOWN</code>. Neither method is a shortcut for confirming that everyone
+        received the message.
+      </p>
+    </div>
+  </section>
+
+  <a href="#section-partial-send" id="section-partial-send" class="section-link h2">&sect;</a>
+  <h2>Follow one partially successful send</h2>
+  <section>
+    <div class="view">
+      <p>
+        Suppose an email is addressed to Alice, Bob and Carol, in that order. The server accepts Alice's address, temporarily rejects Bob's, and
+        permanently rejects Carol's. With partial sending enabled, the message data is then submitted for Alice alone.
+      </p>
+      <p>
+        For the default Angus provider, enable this behavior with <code>mail.smtp.sendpartial</code> through the mailer builder, before building
+        the Mailer. This example uses <code>SMTP_TLS</code>; <code>SMTPS</code> uses <code>mail.smtps.sendpartial</code> instead.
+        Without partial sending, a recipient rejection stops submission of the message data, so Alice would remain unsent too.
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small" id="example-partial-config">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 587, "username", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withProperty("mail.smtp.sendpartial", true)
+    .buildMailer();
+
+// Reuse the Mailer for your workload; close it when finished.</code></pre>
+<pre><code class="language-text small">RCPT TO:&lt;alice@example.org&gt;  → 250 2.1.5 Recipient OK
+RCPT TO:&lt;bob@example.org&gt;    → 450 4.2.0 Try again later
+RCPT TO:&lt;carol@example.org&gt;  → 550 5.1.1 No such mailbox
+DATA                         → 354 Send message data
+[message data, then a dot]    → 250 2.0.0 Queued as A17</code></pre>
+    </div>
+  </section>
+  <section>
+    <div class="wide">
+      <p>
+        The final <code>250</code> confirms that Alice's submission was accepted. It does not undo Bob's or Carol's rejection. The call throws
+        <code>MailSubmissionException</code> with a <code>PARTIALLY_ACCEPTED</code> receipt. The earlier catch block passes that receipt to this method:
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small" id="example-print-receipt">private static void printReceipt(MailSubmissionReceipt receipt) {
+    System.out.println("Submission: " + receipt.getStatus());
+    System.out.println("Retry: " + receipt.getRetryDisposition());
+
+    for (MailRecipientResult recipient : receipt.getRecipientResults()) {
+        String address = recipient.getEnvelopeAddress()
+            .orElse(recipient.getOriginalAddress());
+        String code = recipient.getRcptResponse()
+            .map(reply -&gt; Integer.toString(reply.getReturnCode()))
+            .orElse("unavailable");
+
+        System.out.printf("%s: rcpt=%s (%s), submitted=%s%n",
+            address, recipient.getRcptStatus(), code,
+            recipient.getDisposition());
+    }
+}</code></pre>
+      <strong>Illustrative output for this attempt</strong>
+<pre><code class="language-text small" id="output-partial-send">Submission: PARTIALLY_ACCEPTED
+Retry: SAFE_TO_RETRY_UNACCEPTED
+alice@example.org: rcpt=ACCEPTED (250), submitted=ACCEPTED
+bob@example.org: rcpt=TEMPORARILY_REJECTED (450), submitted=VALID_UNSENT
+carol@example.org: rcpt=PERMANENTLY_REJECTED (550), submitted=INVALID</code></pre>
+    </div>
+    <div class="wide">
+      <ul class="indent">
+        <li><strong>Alice:</strong> do not resend her copy. The server already accepted it.</li>
+        <li><strong>Bob:</strong> his copy was not submitted. A later attempt may succeed.</li>
+        <li><strong>Carol:</strong> this reply requires attention to the address; repeating the same attempt is not the next step.</li>
+      </ul>
+      <p>
+        The older <code>getAcceptedRecipients()</code>, <code>getValidUnsentRecipients()</code> and <code>getInvalidRecipients()</code> lists remain
+        available as immutable address lists derived from the same recipient results. Prefer the individual results when the reason matters:
+        being in <code>getValidUnsentRecipients()</code> does not, on its own, make an address retryable.
+      </p>
+    </div>
+  </section>
+
+  <a href="#section-recipient-details" id="section-recipient-details" class="section-link h2">&sect;</a>
+  <h2>Inspect recipient details and server replies</h2>
+  <section>
+    <div class="wide">
+      <p>
+        <code>getRecipientResults()</code> keeps one immutable result per envelope recipient occurrence, in envelope order, when the provider exposes
+        that envelope. These are transport recipients, including Bcc or overridden envelope receivers, not just the visible To header. Repeated
+        addresses can have different RCPT replies, so do not collapse the list into a map and discard occurrences.
+      </p>
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable recipient result reference">
+        <table>
+          <thead><tr><th><code>MailRecipientResult</code> method</th><th>What it tells you</th></tr></thead>
+          <tbody>
+            <tr><td><code>getOriginalAddress()</code></td><td>The original transport address, including a display name when supplied.</td></tr>
+            <tr><td><code>getEnvelopeAddress()</code></td><td>The optional mailbox form used by the transport.</td></tr>
+            <tr><td><code>getDisposition()</code></td><td>Final submission knowledge: <code>ACCEPTED</code>, <code>VALID_UNSENT</code>, <code>INVALID</code> or <code>UNKNOWN</code>.</td></tr>
+            <tr><td><code>getRcptStatus()</code></td><td>What happened at RCPT TO: <code>ACCEPTED</code>, <code>TEMPORARILY_REJECTED</code>, <code>PERMANENTLY_REJECTED</code>, <code>NOT_ATTEMPTED</code> or <code>UNKNOWN</code>.</td></tr>
+            <tr><td><code>getRcptAttempted()</code></td><td><code>Optional&lt;Boolean&gt;</code>: true or false when known. Empty is unknown, not false.</td></tr>
+            <tr><td><code>getRcptResponse()</code></td><td>The optional reply to this recipient's RCPT command, not a copy of the final DATA response.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        An address accepted at RCPT TO is not yet an accepted message. For example, the server could later reject DATA for policy reasons. In that
+        case <code>getRcptStatus()</code> can be <code>ACCEPTED</code> while <code>getDisposition()</code> is <code>VALID_UNSENT</code>.
+      </p>
+    </div>
+  </section>
+  <section>
+    <div class="view">
+      <p>
+        Both <code>receipt.getSmtpResponse()</code> and <code>recipient.getRcptResponse()</code> expose <code>SmtpServerResponse</code> when available.
+        Its <code>getReturnCode()</code> is the primary code, such as <code>550</code>.
+        <code>getEnhancedStatusCode()</code> optionally gives more detail, such as <code>5.1.1</code>. Missing, malformed, inconsistent or
+        primary-code-mismatched enhanced statuses remain absent.
+      </p>
+      <p>
+        <code>getResponse()</code> returns the raw server text, or <code>null</code> if absent.
+        <code>isPositiveCompletionReply()</code> tests for a 2xx reply to that command. On a recipient result it says nothing about the later DATA step.
+        Use the structured codes for decisions, not a search through the server's human-readable wording.
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small" id="example-server-replies">for (MailRecipientResult recipient : receipt.getRecipientResults()) {
+    recipient.getRcptResponse().ifPresent(reply -&gt;
+        System.out.printf("RCPT: %d, enhanced=%s%n",
+            reply.getReturnCode(),
+            reply.getEnhancedStatusCode().orElse("unavailable")));
+}
+
+receipt.getSmtpResponse().ifPresent(reply -&gt;
+    System.out.printf("Transaction: %d, enhanced=%s%n",
+        reply.getReturnCode(),
+        reply.getEnhancedStatusCode().orElse("unavailable")));</code></pre>
+<pre><code class="language-text small" id="output-server-replies">RCPT: 250, enhanced=2.1.5
+RCPT: 450, enhanced=4.2.0
+RCPT: 550, enhanced=5.1.1
+Transaction: 250, enhanced=2.0.0</code></pre>
+    </div>
+  </section>
+
+  <a href="#section-retry-decisions" id="section-retry-decisions" class="section-link h2">&sect;</a>
+  <h2>Decide what can be retried</h2>
+  <section>
+    <div class="wide">
+      <p>
+        <code>getRetryDisposition()</code> summarizes what the recorded SMTP facts allow you to conclude. It does not resend mail, pick a delay or
+        set an attempt limit. “Safe” means those facts do not indicate duplicate submission for the candidates. It is not an exactly-once guarantee.
+      </p>
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable retry guidance reference">
+        <table>
+          <thead><tr><th>Retry disposition</th><th>Application decision</th></tr></thead>
+          <tbody>
+            <tr><td><code>SAFE_TO_RETRY_ALL</code></td><td>The whole envelope is known unsent and the known facts permit a retry. Apply your backoff and attempt limits.</td></tr>
+            <tr><td><code>SAFE_TO_RETRY_UNACCEPTED</code></td><td>Consider only <code>getRetryableRecipients()</code>, excluding anyone already accepted or permanently rejected.</td></tr>
+            <tr><td><code>DUPLICATE_RISK</code></td><td>Acceptance is uncertain, or a candidate mailbox also appears as accepted. Reconcile the attempt before deciding to resend.</td></tr>
+            <tr><td><code>CALLER_POLICY_REQUIRED</code></td><td>The provider facts do not support more specific advice. Use your application's knowledge of the send path.</td></tr>
+            <tr><td><code>DO_NOT_RETRY</code></td><td>The send succeeded, the rejection requires a change, or no recipients qualify. Do not repeat this attempt unchanged.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div class="view">
+      <p>
+        <code>getRetryableRecipients()</code> is populated only for the two safe-to-retry dispositions. It excludes permanent RCPT rejections and is
+        empty for a permanent final DATA rejection or ambiguous acceptance. For our partial send, only Bob appears.
+      </p>
+      <p>
+        This example just collects the candidates. Your retry job must use an envelope containing only those candidates, not resend the original
+        email to Alice, Bob and Carol. Your application owns backoff, attempt limits, persistence and any message or address corrections.
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small" id="example-retry-candidates">List&lt;String&gt; retryAddresses = receipt.getRetryableRecipients().stream()
+    .map(recipient -&gt; recipient.getEnvelopeAddress()
+        .orElse(recipient.getOriginalAddress()))
+    .collect(Collectors.toList());
+
+System.out.println("Retry candidates: " + retryAddresses);</code></pre>
+<pre><code class="language-text small" id="output-retry-candidates">Retry candidates: [bob@example.org]</code></pre>
+    </div>
+  </section>
+
+  <a href="#section-unknown-acceptance" id="section-unknown-acceptance" class="section-link h2">&sect;</a>
+  <h2>When the final reply never arrives</h2>
+  <section>
+    <div class="view">
+      <p>
+        Now consider a separate attempt addressed only to Alice. Her RCPT command succeeds and the client sends the message data, but the connection
+        drops before the final response arrives. The server may already have queued the message. A missing reply is not a rejection.
+      </p>
+      <p>
+        The receipt is <code>UNKNOWN</code> with <code>DUPLICATE_RISK</code>, no final SMTP response and no automatic retry candidates. Even if the
+        provider retained Alice's positive RCPT reply, it cannot prove final submission. Some failure paths also lose those earlier RCPT details;
+        the receipt then leaves them unknown rather than guessing.
+      </p>
+      <p>
+        Check server logs or provider tracking if available, or apply an explicit application policy for possible duplicates. Reusing a Message-ID
+        does not by itself guarantee that an SMTP server will discard a second submission.
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-text small">RCPT TO:&lt;alice@example.org&gt;  → 250 Recipient OK
+DATA                         → 354 Send message data
+[message data, then a dot]    → connection lost; no final reply</code></pre>
+<pre><code class="language-java small" id="example-unknown-acceptance">System.out.println("Submission: " + receipt.getStatus());
+System.out.println("Retry: " + receipt.getRetryDisposition());
+System.out.println("Final reply present: " + receipt.getSmtpResponse().isPresent());
+System.out.println("Retry candidates: " + receipt.getRetryableRecipients().size());</code></pre>
+<pre><code class="language-text small" id="output-unknown-acceptance">Submission: UNKNOWN
+Retry: DUPLICATE_RISK
+Final reply present: false
+Retry candidates: 0</code></pre>
+    </div>
+  </section>
+
+  <a href="#section-other-send-paths" id="section-other-send-paths" class="section-link h2">&sect;</a>
+  <h2>Use the same facts in other send paths</h2>
+  <a href="#section-async-results" id="section-async-results" class="section-link h3">&sect;</a>
+  <h3>Asynchronous sends</h3>
+  <section>
+    <div class="view">
+      <p>
+        <code>sendMailAndGetReceiptAsync(email)</code> returns <code>CompletableFuture&lt;MailSubmissionReceipt&gt;</code>. Failed and partial
+        submissions complete it exceptionally with <code>MailSubmissionException</code>. CompletableFuture stages can wrap that failure in
+        <code>CompletionException</code>, so unwrap it before reading the receipt.
+      </p>
+      <p>
+        This callback prints the same partial-send output as the synchronous example. <code>whenComplete</code> observes the result without
+        recovering from the failure: <code>observedSend</code> still completes exceptionally for that partial send. Keep the Mailer open until
+        outstanding sends complete, and use a thread-safe callback.
+      </p>
+      <p>
+        The existing <code>sendMailAndGetReceipt(email)</code> method follows the Mailer's configured async default; its boolean overload chooses
+        the mode explicitly. The named Sync and Async methods make that choice visible at the call site.
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small" id="example-async-receipt">CompletableFuture&lt;MailSubmissionReceipt&gt; observedSend =
+    mailer.sendMailAndGetReceiptAsync(email).whenComplete((receipt, failure) -&gt; {
+        if (failure == null) {
+            printReceipt(receipt);
+            return;
+        }
+
+        Throwable cause = failure;
+        while (cause instanceof CompletionException &amp;&amp; cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        if (cause instanceof MailSubmissionException) {
+            printReceipt(((MailSubmissionException) cause).getSubmissionReceipt());
+        } else {
+            System.out.println("Failed without a submission receipt: "
+                + cause.getClass().getSimpleName());
+        }
+    });</code></pre>
+    </div>
+  </section>
+
+  <a href="#section-observer-results" id="section-observer-results" class="section-link h3">&sect;</a>
+  <h3>Mail-send observers</h3>
+  <section>
+    <div class="view">
+      <p>
+        If you want one reporting point for ordinary sends, asynchronous sends and batches, configure <code>withMailSendObserver(...)</code> on
+        the builder. Its <code>MailSendObserver.onMailSendCompleted(MailSendOutcome)</code> callback receives the whole attempt, including preparation
+        and scheduling failures, rather than only SMTP facts. The optional <code>getSubmissionReceipt()</code> is the same receipt returned to the
+        caller or attached to <code>MailSubmissionException</code>.
+      </p>
+      <p>
+        <code>isSuccessful()</code> describes whether the configured send operation completed without throwing. In logging-only mode that can be
+        true while the receipt is <code>UNKNOWN</code>, because no SMTP submission occurred. <code>isLoggingOnly()</code> reports the configured mode.
+        <code>getFailure()</code> contains the attempt's failure when present.
+      </p>
+      <p>
+        The observer runs before the synchronous call returns or throws, or before the asynchronous future completes. Keep it quick and thread-safe;
+        observer RuntimeExceptions are logged and ignored. For timestamps, callback threads and a streaming progress demo, see the
+        <a href="/features.html#section-mail-send-observer">mail-send observer guide</a>.
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small" id="example-observer-receipt">mailerBuilder.withMailSendObserver(outcome -&gt; {
+    String submission = outcome.getSubmissionReceipt()
+        .map(receipt -&gt; receipt.getStatus().name())
+        .orElse("none");
+
+    System.out.printf("successful=%s, loggingOnly=%s, submission=%s%n",
+        outcome.isSuccessful(), outcome.isLoggingOnly(), submission);
+});</code></pre>
+      <strong>Illustrative outcomes from separate attempts</strong>
+<pre><code class="language-text small" id="output-observer-receipt">successful=false, loggingOnly=false, submission=PARTIALLY_ACCEPTED
+successful=false, loggingOnly=false, submission=none
+successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
+      <p>The middle line could be a preparation or scheduling failure. It is not an unknown SMTP result: there is no receipt.</p>
+    </div>
+  </section>
+
+  <a href="#section-open-connection-results" id="section-open-connection-results" class="section-link h3">&sect;</a>
+  <h3>Open connections and simple batches</h3>
+  <section>
+    <div class="view">
+      <p>
+        Inside <code>withOpenConnection(...)</code>, <code>MailSender.sendMailAndGetReceipt(email)</code> returns the same receipt synchronously while
+        reusing the callback's connection. This is useful when a job needs to record each successful submission before advancing to the next email.
+        The example prints the receipt and rethrows a failure so the callback stops.
+      </p>
+      <p>
+        Simple-batch methods return a completion future, not a list of receipts. Use the configured observer for each email actually attempted.
+        Batches stop at their first failure; untouched emails have no outcomes. Pooling changes how a connection is obtained, not how to read a
+        receipt. <code>withOpenConnection</code> uses the built-in transport path and cannot be combined with a
+        <a href="/features.html#section-custom-mailer">CustomMailer</a>.
+      </p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small" id="example-open-connection-receipt">mailer.withOpenConnection(sender -&gt; {
+    try {
+        printReceipt(sender.sendMailAndGetReceipt(email));
+    } catch (MailSubmissionException failure) {
+        printReceipt(failure.getSubmissionReceipt());
+        throw failure;
+    }
+});</code></pre>
+      <p>The same Alice/Bob/Carol attempt produces the earlier partial-send output, then the exception leaves the callback.</p>
+    </div>
+  </section>
+
+  <a href="#section-provider-details" id="section-provider-details" class="section-link h2">&sect;</a>
+  <h2>Account for missing provider details</h2>
+  <section>
+    <div class="wide">
+      <p>
+        The API is provider-neutral, but the available evidence depends on the provider. Angus supplies individual RCPT replies when it can.
+        Simple Java Mail collects its successful replies internally and restores the prior reporting setting after the send. You do not need to
+        enable <code>mail.smtp.reportsuccess</code>; a fully accepted send returns normally even if that setting was already enabled.
+      </p>
+      <p>
+        Other providers may expose fewer facts. Some connection failures prevent Angus from exposing earlier RCPT replies. An early abort at a
+        repeated mailbox can also leave its exact envelope position unknown; individual RCPT facts then remain absent and retry advice requires
+        caller policy. Logging-only mode and custom mailers expose no RCPT evidence and use <code>CALLER_POLICY_REQUIRED</code>.
+        Older serialized receipts retain their known recipient buckets, but cannot recover original envelope order or RCPT details that were never stored.
+      </p>
+      <p>
+        Receipts and recipient results are immutable snapshots of one attempt, including when a pooled transport is reused. They are not sanitized
+        logging reports: addresses and raw server replies may contain personal information or control characters. The examples use fictional addresses
+        and mostly print enums and codes. In application logs, decide which details to retain and escape untrusted text appropriately.
+      </p>
+      <p>
+        For a problem before submission, start with <a href="/debugging.html#section-config-diagnostics">configuration provenance</a>,
+        <a href="/debugging.html#section-async-queue">async queue diagnostics</a> or
+        <a href="/debugging.html#section-debug-logging">Jakarta Mail debug logging</a>. For later delivery, use
+        <a href="/features.html#section-delivery-status-notification">delivery status notifications</a>, bounces or provider-specific tracking;
+        a submission receipt alone cannot tell you what happened in the recipient's mailbox.
+      </p>
+    </div>
+  </section>

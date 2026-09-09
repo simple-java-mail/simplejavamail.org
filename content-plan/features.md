@@ -64,6 +64,8 @@ Clearly label which features are part of the main dependency and which require a
 - serialization;
 - access to generated IDs, submission receipts, `Session`, and mailer configuration.
 
+Keep a short introduction and the existing submission-receipt and recipient-reply anchors here. Link to `/analyzing-send-results.html` under Diagnostics for the public API reference, worked partial-send example, illustrative output, caller-owned retry policy and missing-provider-details guidance.
+
 ### Extend delivery
 
 - custom sending logic for REST/provider delivery;

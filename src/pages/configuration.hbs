@@ -62,6 +62,7 @@ description: "Configure mailers in Java, property files, or environment variable
 	  <li><a href="#section-mail-send-observer">Terminal mail-send observer</a></li>
       <li><a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
       <li><a href="#section-batch-and-clustering">Batch and clustering support</a></li>
+	  <li><a href="#section-async-queue" class="indent">Bound asynchronous work and handle a full queue</a></li>
 	  <li><a href="#section-not-reusing-connections" class="indent">How direct connections work</a></li>
 	  <li><a href="#section-reusing-connections" class="indent">Reusing connections with a pool</a></li>
       <li><a href="#section-clustering" class="indent">Advanced performance tuning: Clustering with multiple connection pools</a></li>
@@ -231,9 +232,14 @@ mailerBuilder.withThreadPoolSize(3);
 // 0: core threads stay alive, !0: threads die after delay (default 1)
 mailerBuilder.withThreadPoolKeepAliveTime(5000);
 
+// optional bound on waiting async tasks, separate from worker count
+mailerBuilder.withAsyncQueueCapacity(100);
+mailerBuilder.withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT);
+
 // completely replace the thread pool executor with your own
-// this negates all related properties such as pool size and keepAliveTime
-mailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
+// discard built-in queue settings; configure your executor's queue yourself
+mailerBuilder.resetAsyncQueue()
+    .withExecutorService(new MyAwesomeCustomThreadPoolExecutor());
 </code></pre>
 		  <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
 mailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
@@ -557,6 +563,12 @@ simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
 simplejavamail.defaults.poolsize=10
 simplejavamail.defaults.poolsize.keepalivetime=2000
 
+# Optional async queue controls (default capacity is -1, meaning unbounded)
+simplejavamail.defaults.async.queue.capacity=100
+simplejavamail.defaults.async.queue.overflowpolicy=REJECT
+# Positive caller-side admission wait; used only by WAIT_FOR_CAPACITY
+simplejavamail.defaults.async.queue.waittimeoutmillis=1000
+
 # Connection-pool defaults
 simplejavamail.defaults.connectionpool.clusterkey.uuid=38400000-8cf0-11bd-b23e-10b96e4ef00d
 simplejavamail.defaults.connectionpool.coresize=0
@@ -869,8 +881,8 @@ Mailer mailer = mail.mailerBuilder()
         on how the Mailer is used and whether its executor came from Simple Java Mail or from your application.
       </p>
       <p class="wide">
-        Closing a Mailer releases the resources it owns: it stops an executor created by Simple Java Mail and, when pooled delivery is active, closes that
-        Mailer's connection-pool registration. It does not wait for outstanding send futures or stop an executor supplied by your application.
+        Closing a Mailer stops new work on its built-in executor, waits for accepted tasks to finish, and then closes its connection-pool registration.
+        Finish synchronous work and sends on an application-supplied executor before closing: the Mailer does not drain or stop a caller-owned executor.
       </p>
 
       <table>
@@ -890,7 +902,7 @@ Mailer mailer = mail.mailerBuilder()
         <tr>
           <td>Asynchronous sending with the default executor</td>
           <td>The Mailer owns its executor. Direct sending uses a single-thread executor by default.</td>
-          <td>Wait for every returned future, then call <code class="inline language-java">mailer.close()</code>.</td>
+          <td>Call <code class="inline language-java">mailer.close()</code> to drain accepted work. Still inspect each returned future for send failures.</td>
         </tr>
         <tr>
           <td>Sending with a custom <code class="inline language-java">ExecutorService</code></td>
@@ -900,7 +912,7 @@ Mailer mailer = mail.mailerBuilder()
         <tr>
           <td>Pooled sending</td>
           <td>The Mailer registers its SMTP connection pool and owns its default worker executor.</td>
-          <td>Wait for the futures, then call <code class="inline language-java">close()</code> on every Mailer. In a cluster, each Mailer has its own pool registration.</td>
+          <td>Close every Mailer; built-in async work drains before its pool closes. Finish caller-owned work first. In a cluster, each Mailer has its own pool registration.</td>
         </tr>
         <tr>
           <td>A Spring-managed Mailer</td>
@@ -916,9 +928,13 @@ Mailer mailer = mail.mailerBuilder()
         <code class="inline language-java">withExecutorService(...)</code>.
       </p>
       <p class="wide">
-        The older <code class="inline language-java">shutdownConnectionPool()</code> method starts the same cleanup and returns the connection-pool shutdown
-        future. Despite its name, it also initiates shutdown of a Mailer-created executor when no connection pool is present. Neither method waits for your
-        asynchronous send futures, so finish those first.
+        The older <code class="inline language-java">shutdownConnectionPool()</code> method starts the same cleanup and returns a future for draining the
+        built-in executor and closing the pool. Repeated calls return the same cleanup future. Despite its name, it also works without a connection pool.
+        A successful cleanup does not mean that every send succeeded; those results remain on the individual send futures.
+      </p>
+      <p class="wide">
+        Graceful shutdown does not cancel SMTP or impose a total send deadline. It can wait for slow I/O or an application callback. Call blocking
+        <code class="inline language-java">close()</code> from the application's owning thread, not a Mailer worker or its observer, which would wait for itself.
       </p>
     </div>
   </section>
@@ -938,7 +954,7 @@ Mailer mailer = mail.mailerBuilder()
     <div class="side">
       <h4>Asynchronous work</h4>
       <p>
-        Keep the Mailer open until all returned futures have completed. Try-with-resources is safe when the wait happens inside its scope.
+        With the built-in executor, try-with-resources drains accepted tasks when leaving the block. Await the futures as well if the caller needs their results.
       </p>
 <pre><code class="language-java small">try (Mailer mailer = mailerBuilder
         .async()
@@ -975,6 +991,92 @@ Mailer mailer = mail.mailerBuilder()
 			boundary that match your code.
 		</p>
 	</div>
+  </section>
+
+  <a href="#section-async-queue" id="section-async-queue" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Bound asynchronous work and handle a full queue{{/components/feature-heading-h3}}
+
+  <section>
+    <div class="view">
+      <p>
+        A background job can produce emails faster than the SMTP server accepts them. Limiting workers alone leaves the waiting queue free to grow.
+        Set an async queue capacity when you want the application to notice overload and decide whether to pause the producer, retain work in its own
+        durable queue, or skip a notification that is no longer useful.
+      </p>
+      <p>
+        The default capacity is <code>-1</code> (unbounded). A positive capacity limits waiting tasks; <code>0</code> permits only immediate handoff
+        to a worker. This is one queue per Mailer, not per SMTP connection or cluster. The SMTP work still runs on a worker, never as a full-queue fallback on the caller.
+      </p>
+      <p>
+        The example rejects immediately once workers and waiting slots are occupied. Rejection completes the returned future exceptionally with
+        <code>MailSendRejectedException</code>. An ordinary email attempt also reaches the configured observer once on the submitting thread, with no
+        submission receipt and no started timestamp. No transport or proxy is acquired for the rejected task.
+      </p>
+    </div>
+    <div class="side">
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 587, "user", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withThreadPoolSize(4) // with batch-module; otherwise one worker
+    .withAsyncQueueCapacity(100)
+    .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT)
+    .buildMailer();
+
+mailer.sendMailAsync(email).whenComplete((ignored, failure) -&gt; {
+    Throwable cause = failure instanceof CompletionException ? failure.getCause() : failure;
+    if (cause instanceof MailSendRejectedException) {
+        MailSendRejectedException rejected = (MailSendRejectedException) cause;
+        logger.warn("Mail was not scheduled: {}", rejected.getReason());
+    } else if (cause != null) {
+        logger.warn("Mail send failed", cause);
+    }
+});</code></pre>
+      <p>
+        Rejection means this attempt was not scheduled. Other send failures can represent an accepted or ambiguous SMTP transaction:
+        inspect the <a href="features.html#section-submission-receipts">submission receipt</a> before deciding to retry.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="view">
+      <h4>Let a background producer wait briefly</h4>
+      <p>
+        For a producer that can slow down, <code>WAIT_FOR_CAPACITY</code> waits on the submitting thread until a queue slot opens or the positive
+        admission timeout expires. The default timeout is 1000ms. Avoid this policy on request or event-loop threads that must return promptly.
+        An observer submitting another async send can also wait; with a full one-worker queue, only the timeout may let that worker continue.
+      </p>
+      <p>
+        <code>CAPACITY_WAIT_TIMED_OUT</code>, <code>CAPACITY_WAIT_INTERRUPTED</code>, and <code>EXECUTOR_SHUT_DOWN</code> explain unsuccessful waits;
+        <code>QUEUE_FULL</code> is immediate rejection. An interrupted admission wait preserves the calling thread's interrupt flag.
+        The wait timeout is not a send deadline and does not cancel SMTP.
+      </p>
+<pre><code class="language-java small">mailerBuilder.withAsyncQueueCapacity(100)
+    .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.WAIT_FOR_CAPACITY)
+    .withAsyncQueueWaitTimeoutMillis(250);</code></pre>
+    </div>
+    <div class="side">
+      <h4>Know what the bound counts</h4>
+      <p>
+        Worker count, waiting queue capacity, and connection-pool size are independent. A worker waiting for a pool lease still counts as active.
+        Queued tasks are FIFO; concurrent execution and completion need not be. Email preparation remains on the caller before queue admission,
+        so the bound does not limit memory used by simultaneous callers preparing emails.
+      </p>
+      <p>
+        An asynchronous simple batch takes one slot and opens its iterable only when execution starts. Rejected batches do not touch the iterator or
+        report outcomes for its emails. Async connection tests share the queue; synchronous and open-connection operations do not use it.
+      </p>
+      <p>
+        A caller-owned executor defines its own queue, policy, and shutdown. Combining one with non-default built-in queue settings fails when building
+        the Mailer; use <code>resetAsyncQueue()</code> before <code>withExecutorService(...)</code> to discard them explicitly.
+        The standalone <code>BatchTransportExecutor</code> has a separate executor and is not configured by these settings.
+      </p>
+      <p>
+        Use <a href="debugging.html#section-async-queue">queue snapshots</a> for counts and rejection reasons, and
+        <a href="#section-mail-send-observer">observer timestamps</a> for individual queue delay. For lifecycle behavior, see
+        <a href="#section-mailer-lifecycle">graceful shutdown</a>.
+      </p>
+    </div>
   </section>
 
   <a href="#section-not-reusing-connections" id="section-not-reusing-connections" class="section-link h3">&sect;</a>

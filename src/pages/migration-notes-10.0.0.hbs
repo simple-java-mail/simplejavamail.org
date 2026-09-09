@@ -47,6 +47,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
       <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
       <li><a href="#explicit-send-mode">Choose explicit synchronous or asynchronous send methods</a></li>
+      <li><a href="#async-shutdown">Account for graceful async shutdown</a></li>
 	  <li><a href="#mail-send-observer">Observe terminal outcomes across a Mailer</a></li>
       <li><a href="#submission-results">If you inspect submission receipts or send failures</a></li>
       <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
@@ -813,6 +814,26 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; receiptFuture =
     </p>
   </section>
 
+  <a href="#async-shutdown" id="async-shutdown" class="section-link h2">&sect;</a>
+  <h2>Account for graceful async shutdown</h2>
+  <section>
+    <p class="wide">
+      <strong>What changes:</strong> With the built-in executor, <code>Mailer.close()</code> now waits for accepted async work before closing its
+      connection pool. <code>shutdownConnectionPool()</code> starts the same cleanup without waiting; its returned future includes executor drain
+      and pool cleanup. New async tasks are rejected once shutdown starts. Inspect individual send futures for their results.
+    </p>
+    <p class="wide">
+      Close from the owning application thread, not a Mailer worker or observer: blocking close there would wait for itself and is rejected.
+      Graceful close does not cancel slow sends or impose a total deadline. Finish synchronous work and sends on a caller-owned executor yourself
+      before closing; ownership of a supplied executor is unchanged.
+    </p>
+    <p class="wide">
+      Queues remain unbounded unless you opt into <code>withAsyncQueueCapacity(...)</code>. If you replace the executor and have configured built-in
+      queue settings, call <code>resetAsyncQueue()</code> first; non-default settings are not silently ignored. See
+      <a href="configuration.html#section-async-queue">queue configuration</a> and <a href="configuration.html#section-mailer-lifecycle">lifecycle guidance</a>.
+    </p>
+  </section>
+
   <a href="#mail-send-observer" id="mail-send-observer" class="section-link h2">&sect;</a>
   <h2>Observe terminal outcomes across a Mailer</h2>
 
@@ -895,6 +916,21 @@ private void recordMailSendOutcome(MailSendOutcome outcome) {
       recipients. Do not automatically retry an unknown outcome unless duplicate submission is prevented or acceptable. Retrying a whole
       <code class="inline language-java">PARTIALLY_ACCEPTED</code> envelope can likewise duplicate mail for recipients already accepted. No status proves
       final mailbox delivery; DSNs, bounces and provider webhooks remain separate.
+    </p>
+  </section>
+
+  <section>
+    <p class="wide">
+      Receipts also expose <code class="inline language-java">getRecipientResults()</code>,
+      <code class="inline language-java">getRetryDisposition()</code> and <code class="inline language-java">getRetryableRecipients()</code>.
+      The old recipient-list getters remain available. Individual RCPT replies are separate from final message acceptance; see
+      <a href="features.html#section-recipient-replies">recipient replies and retry decisions</a> for a mixed-recipient example.
+    </p>
+    <p class="wide">
+      With Angus, <code class="inline language-properties">mail.smtp.reportsuccess=true</code> no longer makes a fully accepted transaction fail.
+      Simple Java Mail collects success-reporting exceptions internally and returns an accepted receipt. Genuine failures still retain their original
+      provider exception. Missing SMTP replies are absent rather than represented by code zero or an EOF sentinel; the original failure remains
+      available for provider-specific inspection.
     </p>
   </section>
 

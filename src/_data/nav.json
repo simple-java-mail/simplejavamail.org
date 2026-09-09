@@ -70,7 +70,13 @@
       "label": "Protect and operate",
       "items": [
         { "title": "Security", "url": "/security.html" },
-        { "title": "Diagnostics", "url": "/debugging.html" }
+        {
+          "title": "Diagnostics",
+          "url": "/debugging.html",
+          "children": [
+            { "title": "Analyzing send results", "url": "/analyzing-send-results.html" }
+          ]
+        }
       ]
     },
     {

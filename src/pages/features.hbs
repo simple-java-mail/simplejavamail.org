@@ -519,6 +519,11 @@ mailer.sendMail(email);
 		<p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
 			on how to set thread-pool defaults or configure the executor service, and to
       <a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly shutdown.</p>
+      <p>
+        If a background producer can outrun SMTP, <code>withAsyncQueueCapacity(...)</code> bounds waiting tasks without changing your send calls.
+        See <a href="configuration.html#section-async-queue">queue limits and backpressure</a> for immediate rejection or a bounded caller-side wait,
+        and <a href="debugging.html#section-async-queue">queue diagnostics</a> for counts and rejection reasons. Queues remain unbounded by default.
+      </p>
     </div>
   </section>
 
@@ -911,31 +916,16 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
         <code class="inline language-java">sendMailAndGetReceiptSync(...)</code> or
         <code class="inline language-java">sendMailAndGetReceiptAsync(...)</code>. They follow the same send path as their non-receipt counterparts, but
         return a provider-neutral
-        <code class="inline language-java">MailSubmissionReceipt</code> with the effective Message-ID, timestamp, status and immutable recipient groups.
+        <code class="inline language-java">MailSubmissionReceipt</code> with the effective Message-ID, timestamp, status, individual recipient replies
+        and retry guidance.
       </p>
       <p>
-        <code class="inline language-java">ACCEPTED</code> means every submitted envelope recipient was accepted. Failed or partial sends throw
-        <code class="inline language-java">MailSubmissionException</code>; its receipt distinguishes
-        <code class="inline language-java">PARTIALLY_ACCEPTED</code>, <code class="inline language-java">REJECTED</code>, and
-        <code class="inline language-java">UNKNOWN</code>, lists accepted, valid-unsent and invalid recipients, and retains the original Jakarta Mail
-        exception as its cause. Asynchronous sends complete their future with the same exception.
+        Failed or partial submissions throw <code class="inline language-java">MailSubmissionException</code>, which carries the receipt for that
+        attempt. Asynchronous sends complete their future exceptionally instead. A receipt describes SMTP submission, not final mailbox delivery.
       </p>
       <p>
-        The provider response is separate and optional. Angus normally supplies the return code and final SMTP response, such as
-        <code class="inline language-text">250 ... queued as ...</code>; another Jakarta Mail provider can report acceptance without one. Logging-only
-        mode and custom mailers return <code class="inline language-java">UNKNOWN</code> after successful processing because Simple Java Mail cannot
-        observe their server interaction.
-      </p>
-      <p>
-        A timeout, reset or EOF while waiting for the final reply after <code class="inline language-text">DATA</code> is
-        <code class="inline language-java">UNKNOWN</code>: no reply is not the same as a rejection, and the server may already have accepted the message.
-        Do not automatically retry it unless duplicate submission is acceptable or prevented. A partial failure also needs recipient-aware recovery.
-        Even <code class="inline language-java">ACCEPTED</code> confirms SMTP submission, not final mailbox delivery; use Delivery Status Notification,
-        bounces, read receipts or provider-specific tracking for that.
-      </p>
-      <p>
-        The open-connection example uses the Mailer's built-in SMTP transport. It cannot be combined with a
-        <a href="#section-custom-mailer">CustomMailer</a>, which owns its own connection lifecycle.
+        See <a href="/analyzing-send-results.html">Analyzing send results</a> for the receipt API, a worked partial-send example, illustrative
+        output, asynchronous and open-connection usage, and how to read uncertain acceptance before retrying.
       </p>
     </div>
 
@@ -959,14 +949,25 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
         failure.getCause());
 }
 </code></pre>
-<pre><code class="language-java small">mailer.withOpenConnection(sender -> {
-    MailSubmissionReceipt receipt = sender.sendMailAndGetReceipt(email);
-    database.markSubmitted(email, receipt.getStatus());
-});
-</code></pre>
     </div>
   </section>
 
+
+  <a href="#section-recipient-replies" id="section-recipient-replies" class="section-link h3">&sect;</a>
+  <h3>Individual recipient replies and retry decisions</h3>
+
+  <section>
+    <div class="view">
+      <p>
+        <code class="inline language-java">receipt.getRecipientResults()</code> separates each recipient's RCPT reply from final submission.
+        An accepted address does not prove the message was submitted. The
+        <a href="/analyzing-send-results.html#section-partial-send">Alice, Bob and Carol example</a> follows those stages through one partially
+        successful send, then uses <code class="inline language-java">getRetryDisposition()</code> and
+        <code class="inline language-java">getRetryableRecipients()</code> to identify who can be retried. These APIs provide guidance; your
+        application still owns retries and must account for possible duplicates.
+      </p>
+    </div>
+  </section>
 
   <a href="#section-ssl-tls" id="section-ssl-tls" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Sending with SSL and TLS{{/components/feature-heading-h2}}

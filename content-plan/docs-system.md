@@ -71,6 +71,7 @@ The global **Docs** item opens a compact flyout on hover or keyboard focus. It m
 
 - Security
 - Diagnostics
+  - Analyzing send results
 
 **Integrate and understand**
 

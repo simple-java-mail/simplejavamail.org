@@ -13,8 +13,10 @@ description: "Test SMTP connections, inspect the settings in use, route debug ou
 		<li><a href="#section-override-receivers">Override envelope-level receivers</a></li>
 		<li><a href="#section-debug-logging">Enable Jakarta Mail debug logging</a></li>
 		<li><a href="#section-config-diagnostics">Trace loaded configuration values</a></li>
+		<li><a href="#section-async-queue">Inspect async queue pressure</a></li>
 		<li><a href="#section-inspect-mailer-email">Inspect a mailer or an email</a></li>
 		<li><a href="#section-mailexception">Catching exceptions</a></li>
+		<li><a href="/analyzing-send-results.html">Analyzing send results</a></li>
 		<li><a href="#section-logging">Logging output</a></li>
 		<li><a href="#section-log4j2" class="indent">Example with Log4j 2</a></li>
 		<li><a href="#section-logback" class="indent">Example with Logback</a></li>
@@ -262,6 +264,39 @@ Jakarta Mail properties:
   </section>
 
 
+  <a href="#section-async-queue" id="section-async-queue" class="section-link h2">&sect;</a>
+  <h2>Inspect async queue pressure</h2>
+  <section>
+    <div class="view">
+      <p>
+        When background mail falls behind, <code>mailer.getAsyncQueueSnapshot()</code> shows waiting tasks, active workers, configured limits,
+        shutdown state, and cumulative rejection counts. It contains no message content. Counts are instantaneous estimates, not a promise that a
+        later send will fit. Take a new snapshot to see new activity; previous snapshots do not change.
+      </p>
+      <p>
+        A worker waiting for a connection-pool lease is active, and an async simple batch counts as one task. Async connection tests share these counts.
+        For a caller-owned executor the result is empty: use that executor's own diagnostics.
+      </p>
+      <p>
+        This is changing runtime activity. <code>mailer.getOperationalConfig().getAsyncQueueConfig()</code> describes settings, while
+        <code>mail.getConfig().getDiagnostics()</code> traces loaded property defaults. The
+        <a href="configuration.html#section-mail-send-observer">mail-send observer</a> reports each attempt's queue delay through
+        <code>readyAt</code> and <code>startedAt</code>. See <a href="configuration.html#section-async-queue">queue configuration and overflow policies</a>.
+      </p>
+    </div>
+    <div class="side">
+<pre><code class="language-java small">mailer.getAsyncQueueSnapshot().ifPresent(queue -&gt; {
+    logger.info("Mail queue: {}/{}, active workers: {}/{}, closing: {}",
+        queue.getQueuedCount(), queue.getConfiguration().getCapacity(),
+        queue.getActiveCount(), queue.getWorkerLimit(), queue.isShutdown());
+    logger.info("Rejected operations: {}", queue.getRejectionCounts());
+});</code></pre>
+<pre><code class="language-text small">Mail queue: 100/100, active workers: 4/4, closing: false
+Rejected operations: {QUEUE_FULL=12, CAPACITY_WAIT_TIMED_OUT=0,
+    CAPACITY_WAIT_INTERRUPTED=0, EXECUTOR_SHUT_DOWN=0}</code></pre>
+    </div>
+  </section>
+
   <a href="#section-inspect-mailer-email" id="section-inspect-mailer-email" class="section-link h2">&sect;</a>
   <h2>Inspect a mailer or an email</h2>
 
@@ -303,6 +338,10 @@ mailer.getEmailGovernance();
         An asynchronous send reports those failures through its <code class="inline language-java">CompletableFuture</code>. See
         <a href="features.html#section-handling-async-result">Handling asynchronous results</a> for an example. The no-argument
         <code class="inline language-java">sendMail(email)</code> follows the mailer's configured async default.
+      </p>
+      <p>
+        A failed send does not always mean nothing was submitted. See <a href="/analyzing-send-results.html">Analyzing send results</a> for a
+        recipient-by-recipient example, the receipt and server-response APIs, and how to decide whether retrying could send someone a duplicate.
       </p>
     </div>
 

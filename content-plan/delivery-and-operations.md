@@ -1,6 +1,6 @@
 # Delivery and operations
 
-Primary routes: `/debugging.html`, with delivery sections on `/features.html` and `/configuration.html`
+Primary routes: `/debugging.html` and its child `/analyzing-send-results.html`, with delivery sections on `/features.html` and `/configuration.html`
 Role: show how a mailer behaves under load, network constraints, and failure
 Primary audience: backend, platform, and operations-minded developers
 
@@ -68,7 +68,7 @@ Make the stages explicit:
 
 - validation means the message meets configured application rules;
 - connection test means an SMTP connection/authentication path was accepted;
-- submission receipt means the SMTP server accepted the message at submission;
+- a submission receipt records known facts about the attempt, including partial, rejected or unknown acceptance; it is not proof of delivery;
 - delivery/read notifications are separate requests and are not universal guarantees;
 - inbox placement is outside the library's control.
 
@@ -76,6 +76,22 @@ Make the stages explicit:
 
 Title: `Diagnose Simple Java Mail: connection tests, logs, receipts, and failures`
 Description: `Test SMTP connections, validate messages, inspect the settings in use, route Jakarta Mail debug output, understand async failures, and read server replies.`
+
+## Analyzing send results: `/analyzing-send-results.html`
+
+Place this page under Diagnostics using the existing always-expanded child navigation and breadcrumb pattern. Keep the old Capabilities anchors as short introductions linking here.
+
+The reader's question is: "The send failed, but did anyone's copy get accepted, and what should I do next?"
+
+- Start with `MailSubmissionReceipt` and `MailSubmissionException`, including receipts on failed or partial sends.
+- Follow Alice, Bob and Carol through a partial send: RCPT 250/450/550, then final DATA 250. Explain why the send fails despite Alice's acceptance.
+- Cover recipient occurrences, RCPT versus final disposition, optional attempted/reply facts, primary/enhanced codes and the compatibility address lists.
+- Put the retry disposition reference next to actual candidate-selection code and illustrative output. The application owns retries; do not show an automatic resend of the original envelope.
+- Contrast this with a lost final reply: unknown acceptance, duplicate risk and no retry candidates.
+- Show async receipt handling, observer outcomes, and callback-scoped open-connection receipts; explain simple-batch and pooling behavior.
+- Preserve provider limitations, immutable snapshots, raw-log-data warnings and the distinction between submission and mailbox delivery.
+
+Keep this a public API guide, not a walkthrough of internal Angus helper methods. Label protocol transcripts and sample output as illustrative; connect code snippets to that output.
 
 ## Rationale
 
