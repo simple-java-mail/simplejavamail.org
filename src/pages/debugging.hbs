@@ -7,6 +7,8 @@ title: "Diagnostics"
 section: "Protect and operate"
 description: "Test SMTP connections, inspect the settings in use, route debug output, understand failures, and read server replies."
 ---
+  <section><p class="wide">For a visual map of the queue, connection pool, SMTP transport, and observer callback, see
+    <a href="/sending-and-execution.html#section-send-architecture">Inside a mail send</a>. The sections below cover the diagnostics available at those boundaries.</p></section>
   <section class="toc">
     <ul>
 		<li><a href="#section-debug-mode">Logging emails instead of sending</a></li>
@@ -281,7 +283,7 @@ Jakarta Mail properties:
         This is changing runtime activity. <code>mailer.getOperationalConfig().getAsyncQueueConfig()</code> describes settings, while
         <code>mail.getConfig().getDiagnostics()</code> traces loaded property defaults. The
         <a href="configuration.html#section-mail-send-observer">mail-send observer</a> reports each attempt's queue delay through
-        <code>readyAt</code> and <code>startedAt</code>. See <a href="configuration.html#section-async-queue">queue configuration and overflow policies</a>.
+        <code>readyAt</code> and <code>startedAt</code>. See <a href="sending-and-execution.html#section-async-queue">queue configuration and overflow policies</a>.
       </p>
     </div>
     <div class="side">

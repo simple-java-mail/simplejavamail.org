@@ -141,7 +141,7 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
           <p>Supply your own address validator, executor service, or terminal send observer while normal message preparation and submission remain in place.</p>
           <nav class="extension-boundary-links" aria-label="Mailer runtime extension documentation">
             <a href="#section-email-validation">Validation policy</a>
-            <a href="configuration.html#section-batch-and-clustering">Executor service</a>
+            <a href="sending-and-execution.html#section-batch-and-clustering">Executor service</a>
             <a href="#section-mail-send-observer">Send observer</a>
           </nav>
         </dd>
@@ -518,10 +518,10 @@ mailer.sendMail(email);
 </code></pre>
 		<p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
 			on how to set thread-pool defaults or configure the executor service, and to
-      <a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly shutdown.</p>
+      <a href="sending-and-execution.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly shutdown.</p>
       <p>
         If a background producer can outrun SMTP, <code>withAsyncQueueCapacity(...)</code> bounds waiting tasks without changing your send calls.
-        See <a href="configuration.html#section-async-queue">queue limits and backpressure</a> for immediate rejection or a bounded caller-side wait,
+        See <a href="sending-and-execution.html#section-async-queue">queue limits and backpressure</a> for immediate rejection or a bounded caller-side wait,
         and <a href="debugging.html#section-async-queue">queue diagnostics</a> for counts and rejection reasons. Queues remain unbounded by default.
       </p>
     </div>
@@ -560,155 +560,35 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
       </p>
       <p class="wide">
         First use the <a href="smtp-connection-pooling.html">pool orchestration guide</a> to choose the delivery path and lifecycle boundary that match
-        your code. Then refer to the <a href="configuration.html#section-batch-and-clustering">configuration section</a> for Mailer settings.
-        Its <a href="configuration.html#section-mailer-lifecycle">lifecycle section</a> explains how to finish queued work and close each Mailer.
+        your code. Then refer to the <a href="sending-and-execution.html#section-batch-and-clustering">configuration section</a> for Mailer settings.
+        Its <a href="sending-and-execution.html#section-mailer-lifecycle">lifecycle section</a> explains how to finish queued work and close each Mailer.
       </p>
     </div>
   </section>
 
   <a href="#section-handling-async-result" id="section-handling-async-result" class="section-link h3">&sect;</a>
   {{#> components/feature-heading-h3 core=true}}Handling asynchronous results{{/components/feature-heading-h3}}
-
   <section>
     <div class="view">
-      <p>
-        <code class="inline language-java">sendMailAsync(...)</code> always runs the operation asynchronously. Passing
-        <code class="inline language-java">true</code> to the existing <code class="inline language-java">sendMail(...)</code> or
-        <code class="inline language-java">testConnection(...)</code> overload does the same. The returned
-        <em><a href="https://www.baeldung.com/java-completablefuture" target="_blank">CompletableFuture</a></em> covers the whole operation:
-        applying defaults and overrides, validation, scheduling, conversion, connection and transport. A failure at any of those stages completes
-        the future exceptionally.
-      </p>
-      <p>
-		  Preparation and validation still happen on the calling thread before the transport work is scheduled. In asynchronous mode, their failures are
-        placed on the future instead of escaping from the method call. Clear call errors, such as a null email argument, can still be thrown immediately.
-      </p>
-      <p>
-        <code class="inline language-java">sendMailSync(...)</code> instead runs the work on the calling thread, returns
-        <code class="inline language-java">void</code> after success, and throws a failure directly. The existing boolean overload with
-        <code class="inline language-java">false</code> retains its completed-future contract.
-      </p>
+      <p>Async sends return <code>MailSend&lt;T&gt;</code>. Use <code>getCompletion()</code> to await the actual result or attach a callback.
+        Its optional <code>requestCancellation()</code> method asks remaining work to stop; it does not claim the email was unsent.</p>
+      <p><code>sendMailSync(...)</code> still returns void and throws directly. Preparation remains on the calling thread for async sends.
+        For execution modes, deadlines, and cancellation, see <a href="/sending-and-execution.html">Sending and execution</a>.
+        To interpret receipts and failures, see <a href="/analyzing-send-results.html">Analyzing send results</a>.</p>
     </div>
-
-    <div class="side">
-      <pre><code class="small">CompletableFuture&lt;Void&gt; future = mailer.sendMailAsync(email);
-
-future.whenComplete((unused, failure) -> {
-    if (failure != null) {
-        log.error("Unable to send email", failure);
-    }
-});
-</code></pre>
-    </div>
+    <div class="side"><pre><code class="language-java">mailer.sendMailAsync(email).getCompletion()
+    .whenComplete((unused, failure) -&gt; {
+        if (failure != null) {
+            log.error("Unable to send email", failure);
+        }
+    });</code></pre></div>
   </section>
-
 
   <a href="#section-mail-send-observer" id="section-mail-send-observer" class="section-link h3">&sect;</a>
   {{#> components/feature-heading-h3 core=true}}Observing completed mail sends{{/components/feature-heading-h3}}
-
-  <section>
-    <div class="view">
-      <p>
-        Configure one <code class="inline language-java">MailSendObserver</code> when audit, metrics, or progress code should see every completed email
-        handled by a reusable Mailer. The builder keeps its usual <code class="inline language-java">with...</code> vocabulary; the
-        <code class="inline language-java">onMailSendCompleted(...)</code> method is the callback Simple Java Mail invokes. Configuring another observer
-        replaces the previous one.
-      </p>
-      <p>
-        The observer receives one terminal <code class="inline language-java">MailSendOutcome</code> for each reached email. It covers the complete Simple
-        Java Mail attempt, including preparation and asynchronous queue time. Its optional <code class="inline language-java">MailSubmissionReceipt</code>
-        is narrower: it contains SMTP submission facts only. Preparation and scheduling failures therefore have no receipt; a
-        <code class="inline language-java">MailSubmissionException</code> outcome contains that exception's exact receipt.
-      </p>
-      <p>
-        This is a stream of completed-email progress, not a stream of queued, connecting, leased, or other transport lifecycle events. It does not expose
-        the Email, rendered content, connection, pool, proxy, or executor.
-      </p>
-    </div>
-
-    <div class="side">
-<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
-    .withSMTPServer(
-        "smtp.example.org", 587,
-        "user", "password")
-    .withMailSendObserver(
-        this::recordMailSendOutcome)
-    .buildMailer();
-
-private void recordMailSendOutcome(
-        MailSendOutcome outcome) {
-    Duration totalTime = Duration.between(
-        outcome.getRequestedAt(),
-        outcome.getCompletedAt());
-
-    audit.record(
-        outcome.getEffectiveMessageId(),
-        outcome.isSuccessful(),
-        totalTime);
-
-    outcome.getSubmissionReceipt()
-        .ifPresent(receipt -> metrics
-            .recordSubmissionStatus(
-                receipt.getStatus()));
-
-    outcome.getFailure()
-        .ifPresent(failure -> metrics
-            .recordFailure(failure.getClass()));
-}</code></pre>
-    </div>
-  </section>
-
-  <section>
-    <div class="wide full-width-example">
-      <p>
-        A named observer makes the configuration method and callback roles explicit:
-      </p>
-<pre><code class="language-java small">final class MetricsMailSendObserver implements MailSendObserver {
-
-    @Override
-    public void onMailSendCompleted(MailSendOutcome outcome) {
-        Duration sendTime = outcome.getStartedAt()
-            .map(startedAt -> Duration.between(
-                startedAt, outcome.getCompletedAt()))
-            .orElse(Duration.ZERO);
-
-        metrics.recordMailSend(
-            outcome.isSuccessful(),
-            outcome.isLoggingOnly(),
-            sendTime);
-    }
-}
-
-Mailer mailer = mail.mailerBuilder()
-    .withMailSendObserver(new MetricsMailSendObserver())
-    .buildMailer();</code></pre>
-      <p>
-        <code class="inline language-java">requestedAt</code> records when the individual attempt begins,
-        <code class="inline language-java">readyAt</code> when preparation finishes,
-        <code class="inline language-java">startedAt</code> when execution begins, and
-        <code class="inline language-java">completedAt</code> when the terminal result exists. Ready-to-start is executor queue time; start-to-completion is
-        send execution time. A preparation failure has neither ready nor started time. A scheduling failure has a ready time but no started time.
-      </p>
-      <p>
-        Synchronous callbacks run before the call returns or throws. Accepted asynchronous work calls the observer on its worker thread before the future
-        completes; preparation or scheduling failures call it on the caller thread. Different sends may notify concurrently, so observers must be
-        thread-safe, quick, and non-blocking. A runtime exception from observer code is logged and ignored without changing the send result or cleanup.
-      </p>
-      <p>
-        <code class="inline language-java">isLoggingOnly()</code> reports the Mailer's configured mode, not server acceptance. A successful logging-only
-        attempt still has an <code class="inline language-java">UNKNOWN</code> submission receipt because no SMTP server was contacted. Message-ID getters
-        return only real initial or effective Message-ID values; missing IDs remain <code class="inline language-java">null</code> rather than receiving a
-        synthetic correlation value.
-      </p>
-      <p>
-        The manually runnable
-        <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/simple-java-mail/src/test/java/demo/MailSendObserverDemoApp.java">MailSendObserverDemoApp</a>
-        sends several emails asynchronously and prints each terminal outcome immediately with its Message-ID, queue, send and total time, completion count,
-        status, and callback thread. Enable <code class="inline language-java">DemoAppBase</code> logging-only mode to try the stream without an SMTP server.
-      </p>
-    </div>
-  </section>
-
+  <section><p class="wide">Configure <code>withMailSendObserver(...)</code> for one reporting point across sends and batches.
+    The <a href="/sending-and-execution.html#section-mail-send-observer">observer guide</a> covers inline and executor-backed callbacks,
+    both observer styles, timestamps, and the streaming demo.</p></section>
 
   <a href="#section-custom-session" id="section-custom-session" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Sending with your own Session instance{{/components/feature-heading-h2}}

@@ -48,6 +48,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
       <li><a href="#explicit-send-mode">Choose explicit synchronous or asynchronous send methods</a></li>
       <li><a href="#async-shutdown">Account for graceful async shutdown</a></li>
+	  <li><a href="#mail-send-execution-control">Update send completion access; opt into deadlines and cancellation</a></li>
 	  <li><a href="#mail-send-observer">Observe terminal outcomes across a Mailer</a></li>
       <li><a href="#submission-results">If you inspect submission receipts or send failures</a></li>
       <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
@@ -794,19 +795,19 @@ Transport.send(message);</code></pre>
 
   <section>
     <p class="wide" style="font-size:smaller">
-      <strong>Nothing breaks:</strong> Existing no-mode and boolean send methods remain supported. New methods make blocking, return type, and failure
+      Existing no-mode and boolean send methods remain supported, with the <a href="#mail-send-execution-control">new completion handle described below</a>. Explicit methods make blocking, return type, and failure
       behavior visible without consulting the Mailer's configuration or reading a boolean argument.
     </p>
     <pre class="full-width-example"><code class="language-java">mailer.sendMailSync(email);                         // failures are thrown here
-CompletableFuture&lt;Void&gt; send = mailer.sendMailAsync(email);
+CompletableFuture&lt;Void&gt; send = mailer.sendMailAsync(email).getCompletion();
 
 MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);
 CompletableFuture&lt;MailSubmissionReceipt&gt; receiptFuture =
-        mailer.sendMailAndGetReceiptAsync(email);</code></pre>
+        mailer.sendMailAndGetReceiptAsync(email).getCompletion();</code></pre>
     <p class="wide">
       Explicit methods ignore the Mailer's configured <code class="inline language-java">async()</code> default. The <code class="inline language-java">Sync</code>
-      methods finish on the calling thread and throw failures directly. The <code class="inline language-java">Async</code> methods return a future and put
-      preparation, scheduling, and submission failures on it. A null Email remains an immediate argument error in both modes.
+      methods finish on the calling thread and throw failures directly. The <code class="inline language-java">Async</code> methods return MailSend;
+      its completion retains preparation, scheduling, and submission failures. A null Email remains an immediate argument error in both modes.
     </p>
     <p class="wide">
       Keep <code class="inline language-java">sendMail(email)</code>, <code class="inline language-java">sendMailAndGetReceipt(email)</code>, or their boolean
@@ -824,15 +825,46 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; receiptFuture =
     </p>
     <p class="wide">
       Close from the owning application thread, not a Mailer worker or observer: blocking close there would wait for itself and is rejected.
-      Graceful close does not cancel slow sends or impose a total deadline. Finish synchronous work and sends on a caller-owned executor yourself
-      before closing; ownership of a supplied executor is unchanged.
+      Graceful close does not cancel slow sends or add a deadline; configured send deadlines still apply. It also drains this Mailer's synchronous
+      sends and sends on a caller-owned executor, without shutting that executor down. Offloaded observer callbacks are not awaited.
     </p>
     <p class="wide">
       Queues remain unbounded unless you opt into <code>withAsyncQueueCapacity(...)</code>. If you replace the executor and have configured built-in
       queue settings, call <code>resetAsyncQueue()</code> first; non-default settings are not silently ignored. See
-      <a href="configuration.html#section-async-queue">queue configuration</a> and <a href="configuration.html#section-mailer-lifecycle">lifecycle guidance</a>.
+      <a href="sending-and-execution.html#section-async-queue">queue configuration</a> and <a href="sending-and-execution.html#section-mailer-lifecycle">lifecycle guidance</a>.
     </p>
   </section>
+
+  <a href="#mail-send-execution-control" id="mail-send-execution-control" class="section-link h2">&sect;</a>
+  <h2>Update send completion access; opt into deadlines and cancellation</h2>
+  <section><div class="wide">
+    <p>The Async, configurable-default, and boolean send methods now return <code>MailSend&lt;T&gt;</code> instead of CompletableFuture.
+      This includes receipt-returning sends and simple batches. Calls that ignore the return value need no source change, but callers must
+      recompile against 10.0. Code that awaits or composes the result adds <code>getCompletion()</code>:</p>
+<pre><code class="language-java">// Before:
+CompletableFuture&lt;Void&gt; completed = mailer.sendMailAsync(email);
+
+// 10.0:
+MailSend&lt;Void&gt; send = mailer.sendMailAsync(email);
+CompletableFuture&lt;Void&gt; completed = send.getCompletion();
+send.requestCancellation(); // optional; no acknowledgement return value</code></pre>
+    <p>Each completion view is detached. Cancelling it, completing it manually, or applying <code>orTimeout(...)</code> does not stop SMTP work.
+      Use <code>requestCancellation()</code> for that. Requests are idempotent; inspect the final result and any receipt rather than assuming non-acceptance.
+      Explicit <code>sendMailSync</code> and <code>sendMailAndGetReceiptSync</code> still return void and a receipt, respectively.
+      Connection tests, rehearsal, shutdown, and standalone BatchTransportExecutor return types are unchanged.</p>
+    <p>Total send deadlines are opt-in through <code>withMailSendTimeout(Duration.ofSeconds(30))</code> or
+      <code>simplejavamail.defaults.mailsend.timeout=PT30S</code>, including Spring and CLI configuration.
+      Unsupported transport/socket integrations fail before connection when a total deadline is requested; ordinary untimed sending remains available.</p>
+    <p><code>withMailSendObserver(observer)</code> still runs inline before send completion.
+      The new <code>withMailSendObserver(observer, applicationExecutor)</code> attempts handoff before completion without waiting for the callback.
+      It does not retry or run inline after rejection. Calling the one-argument overload again restores inline dispatch.
+      The application owns that executor and downstream processing.</p>
+    <p>Graceful Mailer shutdown now also drains its accepted synchronous sends and its sends on caller-owned executors, without shutting those executors down.
+      It waits for inline observers and offloaded handoff attempts, not for offloaded callbacks. A cancelled/expired queued operation completes
+      on a private Mailer completion worker; slow inline callbacks or future continuations can delay other completions there, but not deadline signals.</p>
+    <p>See <a href="/sending-and-execution.html">Sending and execution</a> for the complete behavior and
+      <a href="/analyzing-send-results.html#section-control-results">Analyzing send results</a> for cancellation and timeout receipts.</p>
+  </div></section>
 
   <a href="#mail-send-observer" id="mail-send-observer" class="section-link h2">&sect;</a>
   <h2>Observe terminal outcomes across a Mailer</h2>
@@ -862,7 +894,7 @@ private void recordMailSendOutcome(MailSendOutcome outcome) {
       <code class="inline language-java">MailSendOutcome</code> describes the whole attempt and carries preparation, queue, execution, logging-mode,
       Message-ID, success, and exact failure facts. Its optional <code class="inline language-java">MailSubmissionReceipt</code> remains the narrower SMTP
       submission result. This observer is terminal progress, not transport lifecycle instrumentation. See the
-      <a href="features.html#section-mail-send-observer">complete observer guide and streaming demo</a>.
+      <a href="sending-and-execution.html#section-mail-send-observer">complete observer guide and streaming demo</a>.
     </p>
   </section>
 

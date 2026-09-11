@@ -45,6 +45,8 @@ The homepage release date is generated from `site.releaseDate`.
 - [ ] Review module-baseline wording when artifact contents change.
 - [ ] Review security “since version” notes when behavior changes.
 - [ ] Review Java baseline, Javadocs, Maven Central, and release links if their targets change.
+- [ ] Review the shared mail-send infographic against the implementation for this release. Its master and wording source are in the Simple Java Mail repository under `docs/concurrency/`; do not independently edit `src/assets/architecture/inside-a-mail-send.png`.
+- [ ] After an infographic update, copy the master PNG, refresh the revision query in `src/_includes/components/mail-send-architecture.hbs`, and check its inline/full-size views plus the umbrella issue's embed. Record an updated-or-unchanged review in the master maintenance notes; matching copies alone do not establish that the architecture is current.
 
 ## Version numbers that are not the current library release
 

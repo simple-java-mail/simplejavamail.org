@@ -19,6 +19,8 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
         The examples use the 10.0 API. SMTP conversations and output are illustrative, not replies you should expect from a particular server.
         Acceptance here always means SMTP submission, not final mailbox delivery or inbox placement.
       </p>
+      <p>For a visual map of the pieces producing these results and observer callbacks, see
+        <a href="/sending-and-execution.html#section-send-architecture">Inside a mail send</a>.</p>
     </div>
   </section>
 
@@ -29,6 +31,7 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       <li><a href="#section-recipient-details">Inspect recipient details and server replies</a></li>
       <li><a href="#section-retry-decisions">Decide what can be retried</a></li>
       <li><a href="#section-unknown-acceptance">When the final reply never arrives</a></li>
+      <li><a href="#section-control-results">Interpret cancellation and timeout results</a></li>
       <li><a href="#section-other-send-paths">Use the same facts in other send paths</a></li>
       <li><a href="#section-async-results" class="indent">Asynchronous sends</a></li>
       <li><a href="#section-observer-results" class="indent">Mail-send observers</a></li>
@@ -330,6 +333,50 @@ Retry candidates: 0</code></pre>
     </div>
   </section>
 
+  <a href="#section-control-results" id="section-control-results" class="section-link h2">&sect;</a>
+  <h2>Interpret cancellation and timeout results</h2>
+  <section>
+    <div class="view">
+      <p><code>MailSendCancelledException</code> and <code>MailSendTimeoutException</code> say why an operation stopped.
+        Their optional <code>getSubmissionReceipt()</code> says what SMTP facts were known. These are separate questions:
+        a stop request does not recall mail or establish that it was unsent.</p>
+      <p>Before execution or while claiming a connection there may be no receipt. With the managed Angus transport, a stop before the
+        terminating DATA command is known unsent; a lost final reply after DATA termination or BDAT LAST is
+        <code>UNKNOWN</code> with <code>DUPLICATE_RISK</code>. Recipient replies already captured remain available.
+        If final acceptance was observed first, a late request can still leave a normal successful completion.</p>
+      <p>The callback below sees the actual operation failure. <code>get()</code> and <code>join()</code> wrap it in
+        ExecutionException and CompletionException, respectively. Cancelling the detached future itself affects only that view.
+        For configuration, ownership, and the limitations of stopping I/O, see
+        <a href="/sending-and-execution.html#section-send-deadlines">Deadlines and cancellation</a>.</p>
+    </div>
+    <div class="side"><pre><code class="language-java">MailSend&lt;MailSubmissionReceipt&gt; send =
+    mailer.sendMailAndGetReceiptAsync(email);
+
+send.getCompletion().whenComplete((receipt, failure) -&gt; {
+    if (failure instanceof MailSendCancelledException) {
+        System.out.println("Cancellation stopped remaining work");
+        ((MailSendCancelledException) failure).getSubmissionReceipt()
+            .ifPresent(MyDiagnostics::printReceipt);
+    } else if (failure instanceof MailSendTimeoutException) {
+        System.out.println("The send budget expired");
+        ((MailSendTimeoutException) failure).getSubmissionReceipt()
+            .ifPresent(MyDiagnostics::printReceipt);
+    } else if (failure != null) {
+        recordFailure(failure);
+    } else {
+        printReceipt(receipt);
+    }
+});
+
+// For example, the campaign was withdrawn:
+send.requestCancellation();</code></pre>
+<pre><code class="language-text">Cancellation stopped remaining work
+Submission: UNKNOWN
+Retry: DUPLICATE_RISK</code></pre>
+      <p>This illustrative output means the final acceptance reply was not observed. Do not automatically retry the original email.</p>
+    </div>
+  </section>
+
   <a href="#section-other-send-paths" id="section-other-send-paths" class="section-link h2">&sect;</a>
   <h2>Use the same facts in other send paths</h2>
   <a href="#section-async-results" id="section-async-results" class="section-link h3">&sect;</a>
@@ -337,8 +384,8 @@ Retry candidates: 0</code></pre>
   <section>
     <div class="view">
       <p>
-        <code>sendMailAndGetReceiptAsync(email)</code> returns <code>CompletableFuture&lt;MailSubmissionReceipt&gt;</code>. Failed and partial
-        submissions complete it exceptionally with <code>MailSubmissionException</code>. CompletableFuture stages can wrap that failure in
+        <code>sendMailAndGetReceiptAsync(email)</code> returns <code>MailSend&lt;MailSubmissionReceipt&gt;</code>; its <code>getCompletion()</code>
+        provides a detached CompletableFuture. Failed and partial submissions complete it exceptionally with <code>MailSubmissionException</code>. Chained stages can wrap that failure in
         <code>CompletionException</code>, so unwrap it before reading the receipt.
       </p>
       <p>
@@ -353,7 +400,7 @@ Retry candidates: 0</code></pre>
     </div>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-async-receipt">CompletableFuture&lt;MailSubmissionReceipt&gt; observedSend =
-    mailer.sendMailAndGetReceiptAsync(email).whenComplete((receipt, failure) -&gt; {
+    mailer.sendMailAndGetReceiptAsync(email).getCompletion().whenComplete((receipt, failure) -&gt; {
         if (failure == null) {
             printReceipt(receipt);
             return;
@@ -389,9 +436,9 @@ Retry candidates: 0</code></pre>
         <code>getFailure()</code> contains the attempt's failure when present.
       </p>
       <p>
-        The observer runs before the synchronous call returns or throws, or before the asynchronous future completes. Keep it quick and thread-safe;
-        observer RuntimeExceptions are logged and ignored. For timestamps, callback threads and a streaming progress demo, see the
-        <a href="/features.html#section-mail-send-observer">mail-send observer guide</a>.
+        By default the observer runs before the synchronous call returns or throws, or before async completion. The executor overload instead
+        attempts handoff before completion without waiting for the callback. For dispatch, ownership, timestamps, and the progress demos, see
+        <a href="/sending-and-execution.html#section-mail-send-observer">the observer configuration guide</a>.
       </p>
     </div>
     <div class="wide full-width-example">
@@ -421,7 +468,7 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
         The example prints the receipt and rethrows a failure so the callback stops.
       </p>
       <p>
-        Simple-batch methods return a completion future, not a list of receipts. Use the configured observer for each email actually attempted.
+        Simple-batch methods return a <code>MailSend&lt;Void&gt;</code> handle, not a list of receipts. Use the configured observer for each email actually attempted.
         Batches stop at their first failure; untouched emails have no outcomes. Pooling changes how a connection is obtained, not how to read a
         receipt. <code>withOpenConnection</code> uses the built-in transport path and cannot be combined with a
         <a href="/features.html#section-custom-mailer">CustomMailer</a>.

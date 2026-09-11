@@ -13,6 +13,11 @@ description: "Reuse SMTP connections without giving up the API or framework that
   <h2 id="pooling-layers-title">One application, six delivery paths</h2>
   <section>
     <p class="wide">
+      This page explains which integration owns messages, transports, and pools. For Simple Java Mail's own Mailer queue limits,
+      deadlines, cancellation, observer dispatch, and shutdown, see <a href="/sending-and-execution.html">Sending and execution</a>.
+      Those settings do not configure standalone BatchTransportExecutor operations or another framework's sends.
+    </p>
+    <p class="wide">
       Every option starts in your application. Follow a solid green path for the programming model you want to keep; dashed links reveal which modules
       provide the physical pool underneath. Path 01 reuses one scoped connection without a pool. Paths 02 through 06 converge on the same
       <code>smtp-connection-pool</code> foundation.
@@ -572,7 +577,7 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
       <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/tree/master/smtp-connection-pool-demo">Direct pool, standalone batch, Jakarta Mail, Spring, Camel, and Simple Java Mail smoke demos</a></li>
       <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/blob/4.0.1/README.md">Direct pool and provider reference</a></li>
       <li><a href="configuration.html#section-reusing-connections">Mailer pool configuration</a> and <a href="configuration.html#section-clustering">cluster configuration</a></li>
-      <li><a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
+      <li><a href="sending-and-execution.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
     </ul>
     <p class="wide">
       The upstream <a href="https://github.com/simple-java-mail/smtp-connection-pool/blob/master/smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/BatchModuleDemo.java"><code>BatchModuleDemo</code></a>
