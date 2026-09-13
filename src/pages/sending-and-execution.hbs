@@ -36,12 +36,12 @@ description: "Choose send execution, queue limits, deadlines, cancellation, obse
 <h2>Choose how sends execute</h2>
 <section>
   <div class="view">
-    <p><code>sendMailSync(email)</code> sends on the calling thread and throws failures directly.
-      <code>sendMailAndGetReceiptSync(email)</code> does the same and returns a submission receipt.
-      Use the Async variants when the caller should continue while SMTP work runs.</p>
-    <p>Async sends return <code>MailSend&lt;T&gt;</code>, where T is Void or MailSubmissionReceipt.
-      The default-mode and boolean send methods, including simple batches, return the same handle.
-      With synchronous mode, they throw failures directly and return an already completed handle on success.</p>
+    <p><code>mailer.sync().sendMail(email)</code> finishes on the calling thread and throws failures directly.
+      It returns a submission receipt; ignore it when only completion matters.
+      <code>mailer.async().sendMail(email)</code> returns <code>MailSend&lt;MailSubmissionReceipt&gt;</code> for background SMTP work.</p>
+    <p>Both views are cached and share one Mailer, its resources and its lifecycle. Obtaining a view starts no work.
+      Choose the mode per operation: there is no builder async default or boolean execution-mode argument in 10.0.0.
+      <code>testConnection()</code> uses the same sync/async views.</p>
     <p><code>getCompletion()</code> returns a detached CompletableFuture for the actual result. Each call creates a fresh view.
       Completing, cancelling, or applying <code>orTimeout(...)</code> to that view cannot change the send.
       Use <code>requestCancellation()</code> when you intend to stop the underlying work.</p>
@@ -49,7 +49,7 @@ description: "Choose send execution, queue limits, deadlines, cancellation, obse
       a null email remains an immediate argument error. Simple batches retain lazy iteration on their execution thread.</p>
   </div>
   <div class="side"><pre><code class="language-java">MailSend&lt;MailSubmissionReceipt&gt; send =
-    mailer.sendMailAndGetReceiptAsync(email);
+    mailer.async().sendMail(email);
 
 send.getCompletion().whenComplete((receipt, failure) -&gt; {
     if (failure == null) {
@@ -91,7 +91,7 @@ MailSubmissionReceipt receipt = send.getCompletion().join();</code></pre></div>
     .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT)
     .buildMailer();
 
-mailer.sendMailAsync(email).getCompletion().whenComplete((ignored, failure) -&gt; {
+mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -&gt; {
     Throwable cause = failure instanceof CompletionException ? failure.getCause() : failure;
     if (cause instanceof MailSendRejectedException) {
         MailSendRejectedException rejected = (MailSendRejectedException) cause;
@@ -166,7 +166,7 @@ mailer.sendMailAsync(email).getCompletion().whenComplete((ignored, failure) -&gt
     .withMailSendTimeout(Duration.ofSeconds(30))
     .buildMailer();
 
-MailSend&lt;Void&gt; send = mailer.sendMailAsync(email);
+MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
 
 // Called by application code when this notification is obsolete:
 send.requestCancellation();
@@ -230,12 +230,15 @@ simplejavamail.defaults.mailsend.timeout=PT30S</code></pre>
 		<div>
 			<pre><code class="language-java small">Mailer mailer = mailerBuilder.(..).buildMailer();
 
-mailer.sendMailSync(email); // blocks; failures are thrown here
-CompletableFuture&lt;Void&gt; future = mailer.sendMailAsync(email).getCompletion();
+mailer.sync().sendMail(email); // blocks; failures are thrown here
+CompletableFuture&lt;MailSubmissionReceipt&gt; future = mailer.async().sendMail(email).getCompletion();
 
-/* Existing default-driven calls remain supported: */
-Mailer defaultAsyncMailer = mailerBuilder.(..).async().buildMailer();
-defaultAsyncMailer.sendMail(email); // follows the configured async default
+// Runtime selection belongs in application code:
+if (backgroundJob) {
+    mailer.async().sendMail(email).getCompletion().whenComplete(this::recordResult);
+} else {
+    mailer.sync().sendMail(email);
+}
 </code></pre>
 		</div><br/>
 		Defining your own thread pool using an ExecutorService (the direct-sending default is
@@ -244,9 +247,7 @@ defaultAsyncMailer.sendMail(email); // follows the configured async default
 			<pre><code class="language-java small">mailerBuilder.withExecutorService(new MyAwesomeCustomThreadPoolExecutor())</code></pre>
 		</div>
 		<p class="wide">
-			The explicit <code class="inline language-java">Sync</code> and <code class="inline language-java">Async</code> methods ignore the Mailer's
-			configured async default. Use <code class="inline language-java">sendMail(email)</code> or the boolean overload only when selecting the mode from
-			configuration or runtime data is intentional.
+			Queue, executor, pooling and timeout settings still come from the builder, properties or Spring. They configure resources, not which view an operation uses. If runtime data decides the mode, branch explicitly as above and handle asynchronous failures.
 		</p>
 		<p class="wide">
 			See <a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for who shuts down the default and custom executors.
@@ -258,14 +259,14 @@ defaultAsyncMailer.sendMail(email); // follows the configured async default
 	<div class="view">
 		<p>
 			When reconnecting for every message is the only problem you need to solve, use simple sequential batch sending. It sends all provided emails
-			over one SMTP connection. It sends one at a time, stops at the first failure and reuses only that connection.
+			over one SMTP connection. It consumes the iterable lazily, sends one at a time, stops at the first failure and reuses only that connection. Neither mode collects receipts: the sync call returns void, and the async completion carries Void. Use the configured MailSendObserver for per-email outcomes, including attempts before a later failure.
 		</p>
 	</div>
 
 	<div class="wide full-width-example">
-<pre><code class="language-java small">mailer.sendMailsInSimpleBatch(emails);        // uses the mailer's async default
-mailer.sendMailsInSimpleBatch(emails, false); // blocks until the batch is done
-mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch asynchronously
+<pre><code class="language-java small">mailer.sync().sendMailsInSimpleBatch(emails); // blocks until the batch is done
+MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails);
+batch.getCompletion().join(); // optional: wait for the whole sequential batch
 </code></pre>
 		<p>
 			For sustained high-volume sending, prefer <a href="#section-reusing-connections">pooled connections</a>.
@@ -283,7 +284,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 		<p>
 			This form uses the Mailer's built-in SMTP connection. It cannot be combined with a
 			<a href="features.html#section-custom-mailer">CustomMailer</a>, which owns its own connection lifecycle. Use
-			<code class="inline language-java">sendMail(...)</code> normally and keep any connection reuse inside that implementation.
+			<code class="inline language-java">mailer.sync().sendMail(...)</code> or its async equivalent and keep any connection reuse inside that implementation.
 		</p>
 	</div>
 
@@ -413,7 +414,7 @@ Mailer tertiary = mail.mailerBuilder()
     .buildMailer();
 
 try {
-    primary.sendMailSync(email); // one registered pool is selected for this send
+    primary.sync().sendMail(email); // one registered pool is selected for this send
 } catch (MailException failure) {
     // The selected SMTP submission failed.
     // Its connection is discarded, but its server pool stays in the cluster.
@@ -598,7 +599,7 @@ Mailer mailer = mail.mailerBuilder()
 
 // Sends may complete before publish() runs. A broker acknowledgement
 // is separate again from processing that event on another system.
-MailSend&lt;Void&gt; send = mailer.sendMailAsync(email);
+MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
 send.getCompletion().join();
 
 mailer.close();              // finishes SJM work and handoff attempts
@@ -687,7 +688,7 @@ observationWorkers.shutdown(); // application owns this executor
       </p>
 <pre><code class="language-java small">try (Mailer mailer = mailerBuilder
         .buildMailer()) {
-    mailer.sendMailSync(email);
+    mailer.sync().sendMail(email);
 }</code></pre>
     </div>
 
@@ -696,13 +697,11 @@ observationWorkers.shutdown(); // application owns this executor
       <p>
         With the built-in executor, try-with-resources drains accepted tasks when leaving the block. Await the futures as well if the caller needs their results.
       </p>
-<pre><code class="language-java small">try (Mailer mailer = mailerBuilder
-        .async()
-        .buildMailer()) {
-    CompletableFuture&lt;Void&gt; first =
-            mailer.sendMail(firstEmail).getCompletion();
-    CompletableFuture&lt;Void&gt; second =
-            mailer.sendMail(secondEmail).getCompletion();
+<pre><code class="language-java small">try (Mailer mailer = mailerBuilder.buildMailer()) {
+    CompletableFuture&lt;MailSubmissionReceipt&gt; first =
+            mailer.async().sendMail(firstEmail).getCompletion();
+    CompletableFuture&lt;MailSubmissionReceipt&gt; second =
+            mailer.async().sendMail(secondEmail).getCompletion();
 
     CompletableFuture.allOf(first, second)
             .join();

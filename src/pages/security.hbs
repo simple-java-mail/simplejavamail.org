@@ -590,7 +590,7 @@ Email emailToBeSigned = currentEmailBuilder
 		.build())
     .buildEmail();
 
-mailer.sendMail(emailToBeSigned);
+mailer.sync().sendMail(emailToBeSigned);
 </code></pre>
 				Encrypting an email:
 				<pre><code>Email emailToBeEncrypted = currentEmailBuilder
@@ -602,7 +602,7 @@ mailer.sendMail(emailToBeSigned);
 		.build())
     .buildEmail();
 
-mailer.sendMail(emailToBeEncrypted);
+mailer.sync().sendMail(emailToBeEncrypted);
 </code></pre>
 				Encrypting with different recipient certificates:
 				<pre><code>SmimeEncryptionConfig algorithmsAndFallback = SmimeEncryptionConfig.builder()
@@ -912,7 +912,7 @@ Email protectedEmail = currentEmailBuilder
     .encryptWithOpenPgp(encryption)
     .buildEmail();
 
-mailer.sendMail(protectedEmail);</code></pre>
+mailer.sync().sendMail(protectedEmail);</code></pre>
 			</div>
 		</section>
 

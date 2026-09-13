@@ -298,7 +298,7 @@ description: "Reuse SMTP connections without giving up the API or framework that
     </div>
     <div class="wide full-width-example">
       <p>
-        If you already have all messages, <code>mailer.sendMailsInSimpleBatch(emails, false)</code> is the shorter equivalent. Move to a pool only when
+        For a lazy iterable of messages, <code>mailer.sync().sendMailsInSimpleBatch(emails)</code> is the shorter equivalent; it does not collect receipts. Move to a pool only when
         independent work must run concurrently or several SMTP Sessions must form a cluster.
       </p>
     </div>
@@ -330,7 +330,7 @@ description: "Reuse SMTP connections without giving up the API or framework that
         .withConnectionPoolMaxSize(10)
         .withConnectionPoolExpireAfterMillis(30_000)
         .buildMailer()) {
-    mailer.sendMail(email); // sync or async, as configured
+    mailer.sync().sendMail(email); // or mailer.async().sendMail(email) for background work
 }</code></pre>
     </div>
     <div class="wide full-width-example">

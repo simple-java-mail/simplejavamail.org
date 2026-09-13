@@ -45,7 +45,7 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
   <section>
     <div class="view">
       <p>
-        Use <code>sendMailAndGetReceiptSync(email)</code> when the caller needs the receipt immediately. It follows the ordinary synchronous send
+        Every single-email send produces a receipt. <code>mailer.sync().sendMail(email)</code> returns it directly; ignore it when only completion matters. It follows the ordinary synchronous send
         path, but returns a <code>MailSubmissionReceipt</code>. A failed or partial submission throws <code>MailSubmissionException</code> instead;
         <code>getSubmissionReceipt()</code> gives you the facts from that same attempt. The exception's <code>getStatus()</code> delegates to the
         receipt, and <code>getCause()</code> retains the original Jakarta Mail failure.
@@ -63,7 +63,7 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-get-receipt">MailSubmissionReceipt receipt;
 try {
-    receipt = mailer.sendMailAndGetReceiptSync(email);
+    receipt = mailer.sync().sendMail(email);
 } catch (MailSubmissionException failure) {
     receipt = failure.getSubmissionReceipt();
 }
@@ -350,7 +350,7 @@ Retry candidates: 0</code></pre>
         <a href="/sending-and-execution.html#section-send-deadlines">Deadlines and cancellation</a>.</p>
     </div>
     <div class="side"><pre><code class="language-java">MailSend&lt;MailSubmissionReceipt&gt; send =
-    mailer.sendMailAndGetReceiptAsync(email);
+    mailer.async().sendMail(email);
 
 send.getCompletion().whenComplete((receipt, failure) -&gt; {
     if (failure instanceof MailSendCancelledException) {
@@ -384,7 +384,7 @@ Retry: DUPLICATE_RISK</code></pre>
   <section>
     <div class="view">
       <p>
-        <code>sendMailAndGetReceiptAsync(email)</code> returns <code>MailSend&lt;MailSubmissionReceipt&gt;</code>; its <code>getCompletion()</code>
+        <code>mailer.async().sendMail(email)</code> returns <code>MailSend&lt;MailSubmissionReceipt&gt;</code>; its <code>getCompletion()</code>
         provides a detached CompletableFuture. Failed and partial submissions complete it exceptionally with <code>MailSubmissionException</code>. Chained stages can wrap that failure in
         <code>CompletionException</code>, so unwrap it before reading the receipt.
       </p>
@@ -394,13 +394,12 @@ Retry: DUPLICATE_RISK</code></pre>
         outstanding sends complete, and use a thread-safe callback.
       </p>
       <p>
-        The existing <code>sendMailAndGetReceipt(email)</code> method follows the Mailer's configured async default; its boolean overload chooses
-        the mode explicitly. The named Sync and Async methods make that choice visible at the call site.
+        There is no separate receipt-specific send method or configured execution-mode default. Choose <code>mailer.sync()</code> or <code>mailer.async()</code> per operation.
       </p>
     </div>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-async-receipt">CompletableFuture&lt;MailSubmissionReceipt&gt; observedSend =
-    mailer.sendMailAndGetReceiptAsync(email).getCompletion().whenComplete((receipt, failure) -&gt; {
+    mailer.async().sendMail(email).getCompletion().whenComplete((receipt, failure) -&gt; {
         if (failure == null) {
             printReceipt(receipt);
             return;

@@ -238,7 +238,7 @@ Email email = mail.emailBuilder()
         .withEnvelopeSender("bounces@example.org") // optional
         .buildEmail();
 
-MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);</code></pre>
+MailSubmissionReceipt receipt = mailer.sync().sendMail(email);</code></pre>
 	</div>
 	<p class="wide">
 	  The result remains the canonical <code class="inline language-java">Email</code>; all getters expose its parsed fields and every existing send method
@@ -734,7 +734,7 @@ MimeMessage message =
         EmailConverter.emailToMimeMessage(email, session);
 Transport.send(message);</code></pre>
 <pre><code class="language-java">// 10.0.0: keep the Email until send time
-mailer.sendMail(email);</code></pre>
+mailer.sync().sendMail(email);</code></pre>
     </div>
     <p class="wide">
       If you keep your own Jakarta Mail sending code, read the bounce and DSN options from the <code class="inline language-java">Email</code> and apply
@@ -791,28 +791,61 @@ Transport.send(message);</code></pre>
   </section>
 
   <a href="#explicit-send-mode" id="explicit-send-mode" class="section-link h2">&sect;</a>
-  <h2>Choose explicit synchronous or asynchronous send methods</h2>
-
+  <h2>Choose execution through Mailer.sync() or Mailer.async()</h2>
   <section>
-    <p class="wide" style="font-size:smaller">
-      Existing no-mode and boolean send methods remain supported, with the <a href="#mail-send-execution-control">new completion handle described below</a>. Explicit methods make blocking, return type, and failure
-      behavior visible without consulting the Mailer's configuration or reading a boolean argument.
-    </p>
-    <pre class="full-width-example"><code class="language-java">mailer.sendMailSync(email);                         // failures are thrown here
-CompletableFuture&lt;Void&gt; send = mailer.sendMailAsync(email).getCompletion();
+    <p class="wide"><strong>Breaking change:</strong> execution mode is now explicit on each operation.
+      Remove builder <code>.async()</code>; builder and OperationalConfig <code>isAsync()</code> are gone too.
+      The flat, default-driven, boolean-mode and receipt-specific Mailer methods have been removed without deprecated aliases.
+      Recompile integrations and custom Mailer implementations against 10.0.0 rather than relying on old binary signatures.</p>
+    <p class="wide">The two cached views share one Mailer, its executor, connections and lifecycle. They do not own resources or need closing.
+      Configuration getters, validation, rehearsal, queue inspection, <code>withOpenConnection(...)</code> and shutdown remain on Mailer.
+      The scoped <code>MailSender</code> inside <code>withOpenConnection</code> is unchanged, including its receipt-specific method.</p>
+    <div class="wide table-scroll"><table>
+      <thead><tr><th>Previous Mailer call</th><th>10.0.0 call</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code>sendMailSync(email)</code>, <code>sendMailAndGetReceiptSync(email)</code>,
+          or either send family with <code>false</code></td><td><code>mailer.sync().sendMail(email)</code></td><td>MailSubmissionReceipt</td></tr>
+        <tr><td><code>sendMailAsync(email)</code>, <code>sendMailAndGetReceiptAsync(email)</code>,
+          or either send family with <code>true</code></td><td><code>mailer.async().sendMail(email)</code></td><td>MailSend&lt;MailSubmissionReceipt&gt;</td></tr>
+        <tr><td><code>sendMail(email)</code>, <code>sendMailAndGetReceipt(email)</code></td>
+          <td>Choose <code>sync().sendMail(email)</code> or <code>async().sendMail(email)</code> explicitly</td><td>Receipt, or receipt-bearing handle</td></tr>
+        <tr><td><code>sendMailsInSimpleBatch(emails, false)</code></td><td><code>mailer.sync().sendMailsInSimpleBatch(emails)</code></td><td>void</td></tr>
+        <tr><td><code>sendMailsInSimpleBatch(emails, true)</code></td><td><code>mailer.async().sendMailsInSimpleBatch(emails)</code></td><td>MailSend&lt;Void&gt;</td></tr>
+        <tr><td><code>sendMailsInSimpleBatch(emails)</code></td><td>Choose the sync or async batch view</td><td>No receipt collection in either mode</td></tr>
+        <tr><td><code>testConnection(false)</code></td><td><code>mailer.sync().testConnection()</code></td><td>void</td></tr>
+        <tr><td><code>testConnection(true)</code></td><td><code>mailer.async().testConnection()</code></td><td>CompletableFuture&lt;Void&gt;</td></tr>
+        <tr><td><code>testConnection()</code></td><td>Choose the sync or async test view</td><td>void, or future</td></tr>
+      </tbody>
+    </table></div>
+    <p class="wide">Every single-email send now produces a receipt. It describes SMTP submission, not final delivery; inspect it only when useful.
+      Ignoring a synchronous receipt does not suppress failures. Update asynchronous variables from <code>MailSend&lt;Void&gt;</code> or
+      <code>CompletableFuture&lt;Void&gt;</code> to their MailSubmissionReceipt equivalents.</p>
+    <pre class="full-width-example"><code class="language-java">// Only completion matters:
+mailer.sync().sendMail(email);
 
-MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);
-CompletableFuture&lt;MailSubmissionReceipt&gt; receiptFuture =
-        mailer.sendMailAndGetReceiptAsync(email).getCompletion();</code></pre>
-    <p class="wide">
-      Explicit methods ignore the Mailer's configured <code class="inline language-java">async()</code> default. The <code class="inline language-java">Sync</code>
-      methods finish on the calling thread and throw failures directly. The <code class="inline language-java">Async</code> methods return MailSend;
-      its completion retains preparation, scheduling, and submission failures. A null Email remains an immediate argument error in both modes.
-    </p>
-    <p class="wide">
-      Keep <code class="inline language-java">sendMail(email)</code>, <code class="inline language-java">sendMailAndGetReceipt(email)</code>, or their boolean
-      overloads when configuration-driven or runtime mode selection is intentional. They delegate to the same explicit implementation paths.
-    </p>
+// Or retain the exact receipt:
+MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
+
+// Background work:
+MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
+CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion();</code></pre>
+    <p class="wide">Sync preparation, connection and submission failures throw directly. Async preparation and validation still run on the caller
+      thread, and admission can wait for capacity; operational and scheduling failures go onto completion. Null arguments remain immediate errors.
+      Failed or partial SMTP submissions retain their <code>MailSubmissionException</code> and receipt.</p>
+    <p class="wide">Simple batches still consume their iterable lazily, send sequentially over one shared connection and stop on the first failure.
+      They return completion only and do not accumulate receipts. Use <code>MailSendObserver</code> for individual outcomes; untouched emails produce none.</p>
+    <p class="wide">Executor, queue, pooling and timeout properties, including Spring support, are unchanged. They configure resources, not execution
+      mode. There was no async-mode property to migrate. If application configuration or runtime data decides the mode, make that branch explicit:</p>
+    <pre class="full-width-example"><code class="language-java">if (runInBackground) {
+    mailer.async().sendMail(email).getCompletion().whenComplete(this::recordResult);
+} else {
+    MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
+    recordResult(receipt, null);
+}</code></pre>
+    <p class="wide">CLI <code>send</code> and <code>connect</code> use the synchronous view and wait for completion.
+      Remove <code>--mailer:async</code> and <code>--mailer:async--help</code>; both are rejected with an argument error.
+      The CLI does not print send receipts, and daemon request concurrency is unchanged.</p>
+    <p class="wide">See <a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> for lifecycle and observer contracts.</p>
   </section>
 
   <a href="#async-shutdown" id="async-shutdown" class="section-link h2">&sect;</a>
@@ -838,20 +871,15 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; receiptFuture =
   <a href="#mail-send-execution-control" id="mail-send-execution-control" class="section-link h2">&sect;</a>
   <h2>Update send completion access; opt into deadlines and cancellation</h2>
   <section><div class="wide">
-    <p>The Async, configurable-default, and boolean send methods now return <code>MailSend&lt;T&gt;</code> instead of CompletableFuture.
-      This includes receipt-returning sends and simple batches. Calls that ignore the return value need no source change, but callers must
-      recompile against 10.0. Code that awaits or composes the result adds <code>getCompletion()</code>:</p>
-<pre><code class="language-java">// Before:
-CompletableFuture&lt;Void&gt; completed = mailer.sendMailAsync(email);
-
-// 10.0:
-MailSend&lt;Void&gt; send = mailer.sendMailAsync(email);
-CompletableFuture&lt;Void&gt; completed = send.getCompletion();
+    <p>Async sends now return <code>MailSend&lt;MailSubmissionReceipt&gt;</code>; asynchronous simple batches return <code>MailSend&lt;Void&gt;</code>.
+      Use <code>getCompletion()</code> to await or compose the result, and request cancellation only when needed:</p>
+<pre><code class="language-java">MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
+CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
 send.requestCancellation(); // optional; no acknowledgement return value</code></pre>
     <p>Each completion view is detached. Cancelling it, completing it manually, or applying <code>orTimeout(...)</code> does not stop SMTP work.
       Use <code>requestCancellation()</code> for that. Requests are idempotent; inspect the final result and any receipt rather than assuming non-acceptance.
-      Explicit <code>sendMailSync</code> and <code>sendMailAndGetReceiptSync</code> still return void and a receipt, respectively.
-      Connection tests, rehearsal, shutdown, and standalone BatchTransportExecutor return types are unchanged.</p>
+      Sync sends return receipts directly. Connection tests live on the execution views described above; rehearsal, shutdown and standalone
+      BatchTransportExecutor APIs are unchanged.</p>
     <p>Total send deadlines are opt-in through <code>withMailSendTimeout(Duration.ofSeconds(30))</code> or
       <code>simplejavamail.defaults.mailsend.timeout=PT30S</code>, including Spring and CLI configuration.
       Unsupported transport/socket integrations fail before connection when a total deadline is requested; ordinary untimed sending remains available.</p>
@@ -924,7 +952,7 @@ private void recordMailSendOutcome(MailSendOutcome outcome) {
       </tbody>
     </table>
     <pre class="full-width-example"><code class="language-java">try {
-    MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);
+    MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
     checkpoint(receipt.getEmailId(),
             receipt.getStatus(), receipt.getSubmittedAt());
 } catch (MailSubmissionException failure) {

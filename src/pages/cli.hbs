@@ -11,6 +11,9 @@ description: "Send, validate, and test mail settings from the Java 17+ command l
     <p class="wide">
       The CLI exposes the Simple Java Mail builders as terminal commands. You can build a message, configure a mailer, validate it, test the connection,
       and send without writing a Java entry point.
+      The send and connect commands finish only after their synchronous Mailer operation completes; send receipts are not printed.
+      There is no CLI async switch in 10.0.0: remove <code>--mailer:async</code> and its option-specific help flag, both of which now produce an argument error.
+      The daemon can still handle separate requests concurrently.
     </p>
     <p class="wide">
       The CLI distribution and <code class="inline language-text">cli-module</code> require Java 17 or newer. The Java libraries require Java 11 or newer.

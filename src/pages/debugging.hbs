@@ -45,7 +45,7 @@ description: "Test SMTP connections, inspect the settings in use, route debug ou
     .(...)
     .buildMailer();
 
-mailer.sendMail(email); // <-- this email will be logged but not sent
+mailer.sync().sendMail(email); // <-- this email will be logged but not sent
 </code></pre>
 		  or:
 		  <pre><code class="language-properties">simplejavamail.transport.mode.logging.only=true
@@ -131,7 +131,7 @@ simplejavamail.javaxmail.debug.out=SLF4J
         .withDebugPrinter(jakartaMailDebug)
         .buildMailer()) {
 
-    mailer.testConnection();
+    mailer.sync().testConnection();
 }
 </code></pre>
 	</div>
@@ -338,8 +338,8 @@ mailer.getEmailGovernance();
       </p>
       <p>
         An asynchronous send reports those failures through its <code class="inline language-java">CompletableFuture</code>. See
-        <a href="features.html#section-handling-async-result">Handling asynchronous results</a> for an example. The no-argument
-        <code class="inline language-java">sendMail(email)</code> follows the mailer's configured async default.
+        <a href="features.html#section-handling-async-result">Handling asynchronous results</a> for an example. Choose
+        <code class="inline language-java">mailer.sync().sendMail(email)</code> for direct exceptions, or the async view for completion-based handling.
       </p>
       <p>
         A failed send does not always mean nothing was submitted. See <a href="/analyzing-send-results.html">Analyzing send results</a> for a
@@ -350,7 +350,7 @@ mailer.getEmailGovernance();
     <div class="side">
 <pre><code>
 try {
-   mailer.sendMailSync(email);
+   mailer.sync().sendMail(email);
 } catch (MailException e) {
    // handle the exception
 }

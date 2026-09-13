@@ -138,7 +138,7 @@ mail.mailerBuilder()
         .withTransportStrategy(TransportStrategy.SMTP_TLS)
         .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password")
         .buildMailer()
-        .sendMail(email);
+        .sync().sendMail(email);
 </code></pre>
       <pre><code class="small">
 // preconfigured Session?
@@ -565,6 +565,8 @@ simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
 simplejavamail.defaults.poolsize=10
 simplejavamail.defaults.poolsize.keepalivetime=2000
 
+# Execution mode is chosen in Java: mailer.sync() or mailer.async(); there is no mode property.
+# These settings configure the async executor's queue, not a Mailer-wide async default.
 # Optional async queue controls (default capacity is -1, meaning unbounded)
 simplejavamail.defaults.async.queue.capacity=100
 simplejavamail.defaults.async.queue.overflowpolicy=REJECT

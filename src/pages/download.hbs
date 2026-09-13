@@ -65,7 +65,7 @@ Email email = mail.emailBuilder().startingBlank()
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
     .buildMailer();
 
-mailer.sendMailSync(email);</code></pre>
+mailer.sync().sendMail(email);</code></pre>
       </div>
       <p class="start-note">Port and transport strategy must match the server. See the <a href="/security.html#section-authentication-methods">transport strategy guide</a> before adapting this example.</p>
     </section>
@@ -77,7 +77,7 @@ mailer.sendMailSync(email);</code></pre>
         <article>
           <h3>Test the connection</h3>
           <p>Check the server and credentials separately from a message send.</p>
-          <pre><code class="language-java">mailer.testConnection();</code></pre>
+          <pre><code class="language-java">mailer.sync().testConnection();</code></pre>
         </article>
         <article>
           <h3>Validate the message</h3>

@@ -223,7 +223,7 @@ Email email = mail.emailBuilder().startingBlank()
 mail.mailerBuilder()
   .withSMTPServer("server", 25, "username", "password")
   .buildMailer()
-  .sendMail(email);
+  .sync().sendMail(email);
 </code></pre>
 	  </div>
   </section>
@@ -278,8 +278,8 @@ mail.mailerBuilder()
     .withSMTPServer("server", 25, "username", "password")
     .buildMailer();
 
-inhouseMailer.sendMail(email);
-inhouseMailer.sendMail(anotherEmail);
+inhouseMailer.sync().sendMail(email);
+inhouseMailer.sync().sendMail(anotherEmail);
 </code></pre>
       Or as preconfigured Spring bean:
       <pre><code>@Bean(destroyMethod = "close")
@@ -462,7 +462,7 @@ Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
   .withSMTPServer("server host", 587, "username", yourPassword)
   .withTransportStrategy(TransportStrategy.SMTP_TLS)
   .buildMailer()
-  .sendMail(email);
+  .sync().sendMail(email);
 </code></pre>
 		  <pre><code>OAuth2AccessTokenProvider accessTokens =
     () -&gt; tokenService.currentAccessToken();
@@ -472,7 +472,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
   .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
   .withOAuth2AccessTokenProvider(accessTokens)
   .buildMailer()
-  .sendMail(email);
+  .sync().sendMail(email);
 </code></pre>
 	  </div>
 	  <p class="wide">
@@ -491,31 +491,20 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
   <section>
     <div class="view">
       <p>
-        Make the execution mode explicit at the call site. <code class="inline language-java">sendMailSync(...)</code> blocks until the configured send
-        path completes and throws failures directly. <code class="inline language-java">sendMailAsync(...)</code> returns a
-        <code class="inline language-java">CompletableFuture</code> whose completion covers the whole send attempt.
+        Choose <code class="inline language-java">mailer.sync().sendMail(email)</code> to finish on the caller thread or
+        <code class="inline language-java">mailer.async().sendMail(email)</code> to schedule SMTP work.
+        Both produce a submission receipt, which is optional to inspect. Sync failures throw directly; async operational failures go onto
+        the <code>MailSend&lt;MailSubmissionReceipt&gt;</code> completion.
       </p>
-      <p>
-        Existing no-mode and boolean calls remain supported for configuration-driven or dynamic mode selection. If an authenticated proxy is used, the
-        <a href="#section-proxy">proxy bridging server</a> is kept alive until the last email has been sent.</p>
-      <p>
-        Depending on the SMTP server (and proxy server if used) this can greatly influence how fast emails are sent.
-      </p>
+      <p>The views share the same Mailer, executor, pool and lifecycle. There is no Mailer-wide async default.
+        If an authenticated proxy is used, its bridge remains available while work needs it.</p>
     </div>
 
     <div class="side">
-<pre><code>mailer.sendMailSync(email);
-CompletableFuture&lt;Void&gt; future = mailer.sendMailAsync(email);
+<pre><code>mailer.sync().sendMail(email);
+MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
 </code></pre>
-      Or keep using the configured default when that is intentional:
-      <pre><code>
-Mailer mailer = mailerBuilder
-  .(..)
-  .async()
-  .buildMailer();
 
-mailer.sendMail(email);
-</code></pre>
 		<p>Refer to the <a href="configuration.html#section-programmatic-api-other">configuration section</a>
 			on how to set thread-pool defaults or configure the executor service, and to
       <a href="sending-and-execution.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly shutdown.</p>
@@ -534,16 +523,15 @@ mailer.sendMail(email);
         If reconnecting for each email is the only overhead you need to avoid, use <code class="inline language-java">sendMailsInSimpleBatch(...)</code>.
         It sends multiple emails sequentially over one SMTP connection.
       </p>
-      <pre><code class="small">mailer.sendMailsInSimpleBatch(emails);        // uses the mailer's async default
-mailer.sendMailsInSimpleBatch(emails, false); // blocks until the batch is done
-mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch asynchronously
+      <pre><code class="small">mailer.sync().sendMailsInSimpleBatch(emails); // completion only, no receipt collection
+MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // one sequential task
 </code></pre>
       <p class="wide">
         If the caller owns the queue and needs custom work between sends, use
         <code class="inline language-java">withOpenConnection(...)</code>. The scoped sender keeps one SMTP connection open for the callback, but it is still
         caller-managed, sequential and not pooled.
         This form uses the Mailer's built-in SMTP connection. A <a href="#section-custom-mailer">CustomMailer</a> owns its own connection, so call
-        <code class="inline language-java">sendMail(...)</code> normally and manage any connection reuse inside that implementation.
+        <code class="inline language-java">mailer.sync().sendMail(...)</code> or its async equivalent and manage any connection reuse inside that implementation.
       </p>
       <pre><code class="small">mailer.withOpenConnection(sender -> {
     while (database.hasPendingMail()) {
@@ -572,11 +560,11 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
     <div class="view">
       <p>Async sends return <code>MailSend&lt;T&gt;</code>. Use <code>getCompletion()</code> to await the actual result or attach a callback.
         Its optional <code>requestCancellation()</code> method asks remaining work to stop; it does not claim the email was unsent.</p>
-      <p><code>sendMailSync(...)</code> still returns void and throws directly. Preparation remains on the calling thread for async sends.
+      <p><code>mailer.sync().sendMail(...)</code> returns a receipt and throws failures directly; ignoring the receipt is fine. Preparation remains on the calling thread for async sends.
         For execution modes, deadlines, and cancellation, see <a href="/sending-and-execution.html">Sending and execution</a>.
         To interpret receipts and failures, see <a href="/analyzing-send-results.html">Analyzing send results</a>.</p>
     </div>
-    <div class="side"><pre><code class="language-java">mailer.sendMailAsync(email).getCompletion()
+    <div class="side"><pre><code class="language-java">mailer.async().sendMail(email).getCompletion()
     .whenComplete((unused, failure) -&gt; {
         if (failure != null) {
             log.error("Unable to send email", failure);
@@ -606,7 +594,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 
 SimpleJavaMail.fromDefaults().mailerBuilder(yourSession)
     .buildMailer()
-    .sendMail(email);
+    .sync().sendMail(email);
 </code></pre>
     </div>
   </section>
@@ -779,7 +767,7 @@ Instant sentAt = email.getSentDateAsInstant();</code></pre>
 
     <div class="side">
 <pre><code>
-mailer.sendMail(email); // id updated during sending!
+mailer.sync().sendMail(email); // id updated during sending!
 email.getId(); // <1420232606.6.1509560747190@Cypher>
 </code></pre>
     </div>
@@ -792,11 +780,10 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
   <section>
     <div class="view">
       <p>
-        When a log, trace, or background job needs a durable submission checkpoint, use
-        <code class="inline language-java">sendMailAndGetReceiptSync(...)</code> or
-        <code class="inline language-java">sendMailAndGetReceiptAsync(...)</code>. They follow the same send path as their non-receipt counterparts, but
-        return a provider-neutral
-        <code class="inline language-java">MailSubmissionReceipt</code> with the effective Message-ID, timestamp, status, individual recipient replies
+        Every single-email send returns a provider-neutral receipt, directly from
+        <code>mailer.sync().sendMail(email)</code> or through the completion of <code>mailer.async().sendMail(email)</code>.
+        Inspect it when a log, trace or background job needs a submission checkpoint; otherwise ignore it. The
+        <code class="inline language-java">MailSubmissionReceipt</code> contains the effective Message-ID, timestamp, status, individual recipient replies
         and retry guidance.
       </p>
       <p>
@@ -811,7 +798,7 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
 
     <div class="side">
 <pre><code class="language-java small">try {
-    MailSubmissionReceipt receipt = mailer.sendMailAndGetReceiptSync(email);
+    MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
 
     database.markSubmitted(
         receipt.getEmailId(),
@@ -1559,7 +1546,7 @@ JMail.strictValidator()
     .buildEmail();
 
 MailSubmissionReceipt receipt =
-    mailer.sendMailAndGetReceiptSync(email);</code></pre>
+    mailer.sync().sendMail(email);</code></pre>
 	  </div>
   </section>
 
@@ -1945,9 +1932,8 @@ currentMailerBuilder.withProxy("proxy.host.com", 1080, "proxy username", "proxy 
         <a href="#section-handling-async-result">Handling asynchronous mailing result</a>.
       </p>
       <p>
-        If the mailer was configured with <code class="inline language-java">async()</code>, no-arg
-        <code class="inline language-java">testConnection()</code> uses that async default. Use
-        <code class="inline language-java">testConnection(false)</code> when you need a blocking test.
+        Choose <code>mailer.sync().testConnection()</code> for a blocking health check, or
+        <code>mailer.async().testConnection()</code> for a future. Both include connection cleanup before reporting completion.
       </p>
     </div>
 
@@ -1956,9 +1942,8 @@ currentMailerBuilder.withProxy("proxy.host.com", 1080, "proxy username", "proxy 
 Mailer mailer = ...;
 
 // perform connection test
-mailer.testConnection();      // uses the mailer's async default
-mailer.testConnection(false); // explicitly blocking
-mailer.testConnection(true);  // explicitly asynchronous
+mailer.sync().testConnection(); // throws failures directly
+CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 </code></pre>
     </div>
   </section>
@@ -2003,7 +1988,7 @@ mailer.testConnection(true);  // explicitly asynchronous
 			the message. Define a <em>CustomMailer</em> and plug it in.
 		</p>
 		<p class="wide">
-			A CustomMailer owns its sending connection, so call <code class="inline language-java">mailer.sendMail(...)</code> normally.
+			A CustomMailer owns its sending connection, so call <code class="inline language-java">mailer.sync().sendMail(...)</code> normally.
 			<code class="inline language-java">withOpenConnection(...)</code> is unavailable in this setup; keep any connection reuse inside the CustomMailer
 			implementation.
 		</p>
@@ -2176,7 +2161,7 @@ private static String render(
       .buildMailer();
 
 try {
-	mailer.sendMail(emailBiggerThan4Bytes);
+	mailer.sync().sendMail(emailBiggerThan4Bytes);
 } catch(Exception e) {
 	// cause: EmailTooBigException
 	// msg: "Email size of 277 bytes exceeds maximum allowed size of 4 bytes"
