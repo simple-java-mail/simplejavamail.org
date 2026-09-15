@@ -39,6 +39,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
       <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
       <li><a href="#opportunistic-tls">Move opportunistic TLS to the Mailer builder</a></li>
+      <li><a href="#mandatory-starttls">Remove overrides that disable mandatory STARTTLS</a></li>
       <li><a href="#proxy-bridge-port">Let authenticated proxy bridges choose a port</a></li>
       <li><a href="#direct-session">If you create Jakarta Mail Sessions yourself</a></li>
       <li><a href="#spring-context">Review Spring auto-configuration and beans</a></li>
@@ -510,6 +511,47 @@ Mailer mailer = mail.mailerBuilder()
     <p class="wide">
       If you call <code class="inline language-java">TransportStrategy.SMTP.generateProperties()</code> yourself, it now always includes the properties
       for optional STARTTLS. Disabling optional STARTTLS only takes effect while a Mailer is being built.
+    </p>
+  </section>
+
+  <a href="#mandatory-starttls" id="mandatory-starttls" class="section-link h2">&sect;</a>
+  <h2>Remove overrides that disable mandatory STARTTLS</h2>
+
+  <section>
+    <p class="wide">
+      <strong>What changes:</strong> Selecting <code class="inline language-java">SMTP_TLS</code> or
+      <code class="inline language-java">SMTP_OAUTH2</code> while also disabling
+      <code class="inline language-properties">mail.smtp.starttls.required</code> now fails during
+      <code class="inline language-java">buildMailer()</code>, before proxy, pool or send-operation setup. Previously, that combination could
+      send credentials without encryption when STARTTLS was absent. Property-file, Spring and CLI overrides are checked too.
+    </p>
+<pre><code class="language-java">// Remove this contradictory override:
+// .withProperty("mail.smtp.starttls.required", "false")
+
+Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.com", 587, "username", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .buildMailer();</code></pre>
+    <p class="wide">
+      Remove <code class="inline language-properties">simplejavamail.extraproperties.mail.smtp.starttls.required=false</code> from external
+      configuration as well. If another configuration source supplies it, a final Java
+      <code class="inline language-java">withProperty("mail.smtp.starttls.required", null)</code> removes the inherited override.
+      Omit the property to use the strategy default, or use <code class="inline language-java">Boolean.TRUE</code> or a case-insensitive
+      <code class="inline language-text">"true"</code> string without surrounding whitespace. Malformed values also fail construction;
+      they do not mean true to the provider.
+    </p>
+    <p class="wide">
+      If plaintext fallback is intentional for username/password authentication, choose
+      <code class="inline language-java">TransportStrategy.SMTP</code>. The default remains opportunistic SMTP, including with credentials:
+      try STARTTLS when offered and allow plaintext when it is absent. A failed upgrade or certificate check still fails the connection.
+      OAuth2 keeps mandatory STARTTLS; do not switch access tokens to the ordinary password strategy as a workaround.
+    </p>
+    <p class="wide">
+      The check also applies in logging-only mode, but not to caller-owned Sessions or a
+      <code class="inline language-java">CustomMailer</code>. It checks this override at construction, not later Session mutations,
+      arbitrary provider or socket-factory replacements, or certificate-trust exceptions. No default port or public signature changes.
+      See <a href="security.html#section-authentication-methods">choosing SMTP encryption and authentication</a> and
+      <a href="debugging.html#section-config-diagnostics">configuration provenance diagnostics</a> to trace a loaded override.
     </p>
   </section>
 

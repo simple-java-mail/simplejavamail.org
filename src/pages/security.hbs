@@ -65,7 +65,7 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 		<section class="toc">
 			<ul>
 				<li><a href="#section-security-routes">Which security route handles what?</a></li>
-				<li><a href="#section-authentication-methods">Authentication methods with transport strategies</a></li>
+				<li><a href="#section-authentication-methods">Choosing SMTP encryption and authentication</a></li>
 				<li><a href="#section-transport-strategy-smtp" class="indent">TransportStrategy.SMTP</a></li>
 				<li><a href="#section-transport-strategy-smtps" class="indent">TransportStrategy.SMTPS</a></li>
 				<li><a href="#section-transport-strategy-tls" class="indent">TransportStrategy.SMTP_TLS</a></li>
@@ -88,13 +88,15 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 
 
 		<a href="#section-authentication-methods" id="section-authentication-methods" class="section-link h2">&sect;</a>
-		<h2>Authentication methods with transport strategies</h2>
+		<h2>Choosing SMTP encryption and authentication</h2>
 
 		<section>
 			<div>
 				<p class="wide">
-					Although Simple Java Mail started out as a library to help produce RFC-anatomically correct emails, one of its
-					primary drivers now is to simplify configuration, using <em>transport strategies</em>.
+					The transport strategy chooses how your Mailer connects. Unless you configure another strategy, the default is
+					<code class="inline language-java">SMTP</code>: try STARTTLS when the server offers it and allow plaintext when it does not.
+					Adding a username and password does not change that choice. If your application requires encryption, choose
+					<code class="inline language-java">SMTP_TLS</code> or <code class="inline language-java">SMTPS</code> explicitly.
 				</p>
 				<p class="wide">
 					There are four strategies:
@@ -112,7 +114,33 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 				<pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP
 # or: SMTPS, SMTP_TLS, SMTP_OAUTH2
 </code></pre>
-				<p>Let's quickly review them one-by-one.</p>
+				<div class="doc-table-wrap" tabindex="0" aria-label="Scrollable SMTP transport strategy comparison">
+					<table class="security-route-table">
+						<thead><tr><th>Strategy</th><th>TLS behavior</th><th>When STARTTLS is absent</th><th>Default port</th></tr></thead>
+						<tbody>
+							<tr><th><code>SMTP</code> (default)</th><td>Try STARTTLS when offered</td><td>May continue in plaintext, including password authentication</td><td>25</td></tr>
+							<tr><th><code>SMTP_TLS</code></th><td>Require STARTTLS before authentication or mail</td><td>Fail the connection</td><td>587</td></tr>
+							<tr><th><code>SMTPS</code></th><td>TLS from the start of the connection</td><td>Not applicable; no STARTTLS upgrade</td><td>465</td></tr>
+							<tr><th><code>SMTP_OAUTH2</code></th><td>Require STARTTLS before sending the access token</td><td>Fail the connection</td><td>587</td></tr>
+						</tbody>
+					</table>
+				</div>
+				<p class="wide">
+					In 10.0.0, <code class="inline language-java">buildMailer()</code> rejects an extra
+					<code class="inline language-properties">mail.smtp.starttls.required</code> value that disables STARTTLS when you select
+					<code class="inline language-java">SMTP_TLS</code> or <code class="inline language-java">SMTP_OAUTH2</code>.
+					Remove that override to keep mandatory TLS. For opportunistic username/password authentication, choose
+					<code class="inline language-java">SMTP</code> instead. See the <a href="migration-notes-10.0.0.html#mandatory-starttls">migration example</a>.
+				</p>
+				<p class="wide">
+					This check runs when Simple Java Mail creates the Session, including logging-only builds. A caller-supplied Session or
+					<code class="inline language-java">CustomMailer</code> keeps its own connection configuration. The check does not freeze the Session,
+					validate arbitrary provider or socket-factory replacements, or change your certificate-trust and server-identity settings.
+				</p>
+				<p class="wide">
+					A <a href="debugging.html#section-smtp-capabilities">connection probe</a> can help explain what happened on its own connection;
+					it does not choose a strategy or approve a later send. Configure the required behavior on the Mailer that sends the email.
+				</p>
 			</div>
 		</section>
 
@@ -125,8 +153,9 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
     .withTransportStrategy(TransportStrategy.SMTP);</code></pre>
 			<div>
 				<p class="wide">
-					The SMTP legacy strategy is the oldest and simplest strategy, which works with simple username and password. This transport strategy
-					attempts a TLS upgrade, but falls back to plaintext when a mail server does not indicate support for STARTTLS.
+					This is the default strategy for both unauthenticated relays and username/password connections. With opportunistic TLS enabled,
+					it attempts a TLS upgrade when the server advertises STARTTLS. If the server does not advertise it, the connection can continue
+					in plaintext. Password authentication is not protected in that case; base64 encoding is not encryption.
 				</p>
 			</div>
 		</section>
@@ -136,6 +165,10 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 					Whenever TLS is negotiated, Simple Java Mail verifies that the certificate belongs to the SMTP host. From 9.2.0 onward,
 					it also uses the JVM trust store instead of accepting every certificate by default. Both checks can be overridden, but that
 					should be reserved for controlled compatibility or test environments.
+				</p>
+				<p class="wide">
+					Fallback means STARTTLS was not offered. If the server offers it but refuses the upgrade, or the TLS handshake or certificate check
+					fails, the connection fails. Simple Java Mail does not automatically retry that connection in plaintext.
 				</p>
 				<p class="wide">
 					This strategy can still fall back to plaintext when the server does not advertise STARTTLS. An active attacker can therefore
@@ -153,6 +186,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 					<code class="inline language-properties">simplejavamail.opportunistic.tls</code>.
 					This escape hatch applies only to <code class="inline language-java">TransportStrategy.SMTP</code>. It does not change mandatory TLS,
 					OAuth2 transport, or SMTPS.
+					Turning it off deliberately skips STARTTLS even when offered; it is not a fallback after a failed handshake.
 				</p>
 			</div>
 			<div class="side">
@@ -193,9 +227,11 @@ Or with properties:
 
 		<section>
 			<p class="wide">
-				Plaintext SMTP with a mandatory, authenticated STARTTLS upgrade.
+				The connection starts with SMTP and must upgrade to TLS before authentication or mail submission. A username and password work here too;
+				there is no fallback to plaintext if the server lacks STARTTLS.
 			</p>
 			<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+	.withSMTPServer("smtp.example.com", 587, "username", "password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS);</code></pre>
 
 			<p class="wide">
@@ -206,27 +242,6 @@ Or with properties:
 				<li>to a subject matching the identity of the remote SMTP server.</li>
 			</ol>
 		</section>
-		<section>
-			<div>
-				<p class="wide">
-					To quote FastMail on the <a href="https://www.fastmail.help/hc/en-us/articles/360058753834-SSL-TLS-and-STARTTLS">differences between SSL and TLS</a>:
-				</p>
-				<blockquote>
-					<p class="wide">
-						<strong>SSL and TLS</strong> both provide a way to encrypt a communication channel between two computers (e.g. your computer
-						and our server). TLS is the successor to SSL and the terms SSL and TLS are used interchangeably unless you're
-						referring to a specific version of the protocol.
-					</p>
-				</blockquote>
-				<blockquote>
-					<p class="wide">
-						The ordering of protocols in terms of oldest to newest is: SSL v2, SSL v3, TLS v1.0, TLS v1.1, TLS v1.2, TLS v1.3 (currently proposed).
-					</p>
-				</blockquote>
-			</div>
-		</section>
-
-
 		<a href="#section-transport-strategy-oauth2" id="section-transport-strategy-oauth2" class="section-link h3">&sect;</a>
 		<h3>TransportStrategy.SMTP_OAUTH2</h3>
 

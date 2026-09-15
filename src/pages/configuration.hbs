@@ -82,6 +82,14 @@ description: "Configure mailers in Java, property files, or environment variable
     </div>
 
     <div>
+      <p>
+        Without a configured transport strategy, the Mailer uses <code class="inline language-java">SMTP</code> with opportunistic TLS,
+        even when you supply a username and password. It tries STARTTLS when advertised and may continue in plaintext when it is absent;
+        a failed TLS upgrade stops the connection. Choose <code class="inline language-java">SMTP_TLS</code> or
+        <code class="inline language-java">SMTPS</code> if encryption is required. See the
+        <a href="security.html#section-authentication-methods">transport strategy comparison</a> for the differences.
+        In 10.0.0, extra properties that disable mandatory STARTTLS are <a href="migration-notes-10.0.0.html#mandatory-starttls">rejected when building the Mailer</a>.
+      </p>
 <pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 
 // start with a fresh builder
@@ -102,11 +110,12 @@ mail.mailerBuilder()
   .withSMTPServerHost("smtp.host.com")
   .withSMTPServerPort(25);
 
-// adding the transport strategy...
-mailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS)
+// require STARTTLS, also when authenticating with username/password
+mailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
 
-// narrow escape hatch for broken STARTTLS servers; plain SMTP only
-mailerBuilder.withOpportunisticTLS(false)
+// separate choice: explicitly skip STARTTLS for a plain SMTP connection
+mailerBuilder.withTransportStrategy(TransportStrategy.SMTP)
+  .withOpportunisticTLS(false);
 
 // or instead adding anonymous proxy configuration
 mailerBuilder.withProxy("proxy.host.com", 1080);
