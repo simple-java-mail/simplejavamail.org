@@ -815,6 +815,10 @@ Transport.send(message);</code></pre>
         <tr><td><code>testConnection(false)</code></td><td><code>mailer.sync().testConnection()</code></td><td>void</td></tr>
         <tr><td><code>testConnection(true)</code></td><td><code>mailer.async().testConnection()</code></td><td>CompletableFuture&lt;Void&gt;</td></tr>
         <tr><td><code>testConnection()</code></td><td>Choose the sync or async test view</td><td>void, or future</td></tr>
+        <tr><td>Development probe <code>probeConnection()</code> / <code>probeConnection(authenticate)</code></td>
+          <td><code>mailer.sync().probeConnection()</code> / <code>mailer.sync().probeConnection(authenticate)</code></td><td>SmtpConnectionReport</td></tr>
+        <tr><td>Development probe <code>probeConnectionAsync()</code> / <code>probeConnectionAsync(authenticate)</code></td>
+          <td><code>mailer.async().probeConnection()</code> / <code>mailer.async().probeConnection(authenticate)</code></td><td>CompletableFuture&lt;SmtpConnectionReport&gt;</td></tr>
       </tbody>
     </table></div>
     <p class="wide">Every single-email send now produces a receipt. It describes SMTP submission, not final delivery; inspect it only when useful.
@@ -831,7 +835,8 @@ MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
 CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion();</code></pre>
     <p class="wide">Sync preparation, connection and submission failures throw directly. Async preparation and validation still run on the caller
       thread, and admission can wait for capacity; operational and scheduling failures go onto completion. Null arguments remain immediate errors.
-      Failed or partial SMTP submissions retain their <code>MailSubmissionException</code> and receipt.</p>
+      Failed or partial SMTP submissions retain their <code>MailSubmissionException</code> and receipt. Probes keep connection failures in their
+      safe report; async admission/shutdown failures complete the probe future exceptionally.</p>
     <p class="wide">Simple batches still consume their iterable lazily, send sequentially over one shared connection and stop on the first failure.
       They return completion only and do not accumulate receipts. Use <code>MailSendObserver</code> for individual outcomes; untouched emails produce none.</p>
     <p class="wide">Executor, queue, pooling and timeout properties, including Spring support, are unchanged. They configure resources, not execution
@@ -842,7 +847,8 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
     MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
     recordResult(receipt, null);
 }</code></pre>
-    <p class="wide">CLI <code>send</code> and <code>connect</code> use the synchronous view and wait for completion.
+    <p class="wide">The boolean on <code>probeConnection(authenticate)</code> is retained: it selects authentication, not execution mode.
+      CLI <code>send</code> and <code>connect</code> use the synchronous view and wait for completion.
       Remove <code>--mailer:async</code> and <code>--mailer:async--help</code>; both are rejected with an argument error.
       The CLI does not print send receipts, and daemon request concurrency is unchanged.</p>
     <p class="wide">See <a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> for lifecycle and observer contracts.</p>
@@ -878,7 +884,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
 send.requestCancellation(); // optional; no acknowledgement return value</code></pre>
     <p>Each completion view is detached. Cancelling it, completing it manually, or applying <code>orTimeout(...)</code> does not stop SMTP work.
       Use <code>requestCancellation()</code> for that. Requests are idempotent; inspect the final result and any receipt rather than assuming non-acceptance.
-      Sync sends return receipts directly. Connection tests live on the execution views described above; rehearsal, shutdown and standalone
+      Sync sends return receipts directly. Connection tests and probes live on the execution views described above; rehearsal, shutdown and standalone
       BatchTransportExecutor APIs are unchanged.</p>
     <p>Total send deadlines are opt-in through <code>withMailSendTimeout(Duration.ofSeconds(30))</code> or
       <code>simplejavamail.defaults.mailsend.timeout=PT30S</code>, including Spring and CLI configuration.

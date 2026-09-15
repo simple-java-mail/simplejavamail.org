@@ -41,7 +41,7 @@ description: "Choose send execution, queue limits, deadlines, cancellation, obse
       <code>mailer.async().sendMail(email)</code> returns <code>MailSend&lt;MailSubmissionReceipt&gt;</code> for background SMTP work.</p>
     <p>Both views are cached and share one Mailer, its resources and its lifecycle. Obtaining a view starts no work.
       Choose the mode per operation: there is no builder async default or boolean execution-mode argument in 10.0.0.
-      <code>testConnection()</code> uses the same sync/async views.</p>
+      <code>testConnection()</code> and <code>probeConnection()</code> use the same sync/async views.</p>
     <p><code>getCompletion()</code> returns a detached CompletableFuture for the actual result. Each call creates a fresh view.
       Completing, cancelling, or applying <code>orTimeout(...)</code> to that view cannot change the send.
       Use <code>requestCancellation()</code> when you intend to stop the underlying work.</p>

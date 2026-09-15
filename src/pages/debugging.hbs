@@ -14,6 +14,7 @@ description: "Test SMTP connections, inspect the settings in use, route debug ou
 		<li><a href="#section-debug-mode">Logging emails instead of sending</a></li>
 		<li><a href="#section-override-receivers">Override envelope-level receivers</a></li>
 		<li><a href="#section-debug-logging">Enable Jakarta Mail debug logging</a></li>
+		<li><a href="#section-smtp-capabilities">Inspect SMTP capabilities and TLS</a></li>
 		<li><a href="#section-config-diagnostics">Trace loaded configuration values</a></li>
 		<li><a href="#section-async-queue">Inspect async queue pressure</a></li>
 		<li><a href="#section-inspect-mailer-email">Inspect a mailer or an email</a></li>
@@ -137,6 +138,173 @@ simplejavamail.javaxmail.debug.out=SLF4J
 	</div>
   </section>
 
+
+  <a href="#section-smtp-capabilities" id="section-smtp-capabilities" class="section-link h2">&sect;</a>
+  <h2>Inspect SMTP capabilities and TLS</h2>
+
+  <section>
+    <div class="view">
+      <p>
+        A connection works on your laptop but behaves differently in production. Did STARTTLS happen? Does that endpoint advertise DSN?
+        Did authentication actually succeed? <code>mailer.sync().probeConnection()</code> opens a fresh connection and returns those facts in an
+        immutable <code>SmtpConnectionReport</code>. It sends no email and does not borrow a connection from your send pool.
+      </p>
+      <p>
+        The CLI exposes the same report through <code>sjm probe</code>, with an optional <code>--authenticate</code> flag.
+        See the <a href="cli.html#section-probe">CLI examples and exit codes</a> for one-shot and daemon use.
+      </p>
+      <p>
+        The default probe does not authenticate with the SMTP server: it neither consults cached SMTP credentials nor calls your Jakarta Mail
+        authenticator or OAuth2 token provider. Configured proxy authentication and TLS client certificates still apply.
+        Pass <code>true</code> to test the configured credentials as well. This choice applies only to this probe; ordinary sending is unchanged.
+        Authentication follows your existing TLS and AUTH settings, so check those before enabling it against an unfamiliar endpoint.
+      </p>
+      <p>
+        The synchronous methods always run on the caller's thread. <code>mailer.async().probeConnection()</code> and
+        <code>mailer.async().probeConnection(true)</code> use the Mailer's executor and complete after transport and proxy cleanup have been attempted.
+        Execution mode is selected by the view, not by configuration. Connection failures become reports; scheduling and Mailer-shutdown failures
+        complete an async future exceptionally.
+      </p>
+    </div>
+    <div class="side">
+<pre><code class="language-java small">try (Mailer mailer = SimpleJavaMail.fromDefaults()
+        .mailerBuilder()
+        .withSMTPServer("smtp.example.org", 587)
+        .withTransportStrategy(TransportStrategy.SMTP_TLS)
+        .buildMailer()) {
+    SmtpConnectionReport report = mailer.sync().probeConnection();
+    logger.info("SMTP connection:\n{}", report);
+
+    report.getEffectiveCapabilities().ifPresent(capabilities -&gt; {
+        logger.info("DSN advertised: {}", capabilities.supports("DSN"));
+        capabilities.getMaximumMessageSize().ifPresent(bytes -&gt;
+            logger.info("Advertised SIZE limit: {} bytes", bytes));
+    });
+
+    report.getFailurePhase().ifPresent(phase -&gt;
+        logger.warn("{}: {}", phase,
+            report.getFailureDescription().orElse("No detail available")));
+}</code></pre>
+<pre><code class="language-java small">// On a Mailer with credentials already configured:
+SmtpConnectionReport withAuthentication = mailer.sync().probeConnection(true);
+boolean authenticated = withAuthentication.isAuthenticated();
+
+// Or run the probe in the background; keep the Mailer open until it finishes.
+CompletableFuture&lt;SmtpConnectionReport&gt; pending =
+    mailer.async().probeConnection();</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="view">
+      <h3>Compare SMTP features before and after STARTTLS</h3>
+      <p>
+        This illustrative report shows a server that advertises a different SIZE limit and adds DSN after STARTTLS.
+        <code>getBeforeTls()</code> is history; <code>getAfterTls()</code> describes the encrypted EHLO. Use
+        <code>getEffectiveCapabilities()</code> when you want the applicable snapshot. Failed connection setup, rejected post-TLS EHLO,
+        HELO-only fallback, and oversized diagnostic replies can leave it empty. Empty means unknown, not &ldquo;no extensions supported.&rdquo;
+      </p>
+      <p>
+        <code>getExtensions()</code> includes unknown extensions and repeated advertisements, in sorted name order.
+        <code>supports("DSN")</code> is case-insensitive; the same lookup works for SMTPUTF8, 8BITMIME, PIPELINING, CHUNKING,
+        BINARYMIME and REQUIRETLS. These are server advertisements, not claims that Simple Java Mail used or implemented those features.
+        In particular, this probe adds no PIPELINING or CHUNKING send path.
+      </p>
+      <p>
+        <code>getMaximumMessageSize()</code> only returns a consistent positive numeric SIZE limit. An absent limit, zero (no fixed maximum),
+        conflicting duplicates and malformed values return empty. Check <code>supports("SIZE")</code> separately.
+      </p>
+    </div>
+    <div class="side">
+<pre><code class="language-text small">SMTP connection probe: SUCCESS
+Endpoint: smtp.example.org:587 (smtp)
+Greeting: 220 smtp.example.org ready
+Before TLS: {SIZE=[10485760], STARTTLS=[]}
+STARTTLS: completed
+After TLS: {AUTH=[LOGIN PLAIN], DSN=[], SIZE=[26214400]}
+TLS active during setup: true
+TLS details: TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, peer=[CN=smtp.example.org, smtp.example.org], configured identity check=true, custom hostname verifier=not observed
+Authentication: not requested
+Elapsed: 138ms</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="view">
+      <h3>Keep configuration, negotiation and delivery apart</h3>
+      <p>
+        Read the configured transport strategy from <code>mailer.getTransportStrategy()</code>. The probe reports what happened
+        during connection setup; it does not repeat that configuration setting.
+      </p>
+      <p>
+        <code>getTlsDetails()</code> exposes the negotiated TLS protocol, cipher and public certificate identities when Angus's supported hooks
+        allow it. The identity-check flag is configured policy, not a new trust verdict. A custom hostname verifier's result is separate,
+        and handshake metadata can exist even when a later verifier rejects the connection. A verifier configured by class name is left
+        untouched; TLS details are unavailable in that case. Trust, hostname checks and caller-supplied socket factories are not weakened
+        to collect diagnostics.
+      </p>
+      <p>
+        The Angus probe reports at most 32 certificate identities, including the certificate subject. If there are more, the report warns
+        that additional names were omitted. This limit keeps diagnostic output manageable; it does not affect certificate verification.
+      </p>
+      <p>
+        <code>isSuccessful()</code> includes connection setup, requested authentication and cleanup. <code>isConnected()</code> means setup
+        completed, not that a socket remains open. Inspect the failure phase and earlier snapshots when a probe fails; raw provider
+        exceptions and AUTH exchanges are not stored. Display text is bounded and control characters are escaped for logs, though the
+        report intentionally contains endpoint and public server/certificate names.
+      </p>
+      <p>
+        The probe uses the Mailer's existing endpoint, proxy, TLS settings and provider timeouts. It explicitly connects even in logging-only
+        mode. The total <em>mail-send</em> deadline does not apply, and cancelling the returned future does not abort network I/O.
+        Timing starts when execution begins, so it excludes executor queue time. A pooled Mailer probes its configured endpoint, not every
+        cluster member, and it does not call the mail-send observer.
+      </p>
+      <p>
+        Angus SMTP/SMTPS is supported through a dedicated probe adapter. Another provider needs its own
+        <code>SmtpConnectionProbeAdapter</code>; absent support or a <code>CustomMailer</code> produces an explicit unsupported report without
+        opening a connection. Your original Session's properties and provider registration are not rewritten.
+        An adapter can confirm a successful connection without exposing the full EHLO reply or TLS session details. Those fields stay
+        unavailable; that does not mean the connection failed or the server advertised no extensions.
+      </p>
+    </div>
+    <div class="side">
+<pre><code class="language-text small">SMTP connection probe: FAILED
+Endpoint: smtp.example.org:587 (smtp)
+Greeting: 220 smtp.example.org ready
+Before TLS: {SIZE=[10485760]}
+STARTTLS: not attempted
+After TLS: not available
+TLS active during setup: false
+TLS details: not available
+Authentication: not requested
+Failure at STARTTLS: STARTTLS did not complete. Check whether the server offers TLS, its certificate and hostname, and your trust settings.
+Elapsed: 42ms</code></pre>
+      <p>This illustrative failure retains the plain EHLO, but does not present it as usable capabilities after the required TLS setup failed.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wide">
+      <table>
+        <thead><tr><th>Question</th><th>Use</th><th>Connects to SMTP?</th></tr></thead>
+        <tbody>
+          <tr><td>Can the normal connection path open?</td><td><code>mailer.sync().testConnection()</code> or its async equivalent</td><td>Yes</td></tr>
+          <tr><td>What did this endpoint advertise and negotiate?</td><td><code>mailer.sync().probeConnection()</code> or its async equivalent</td><td>Yes, on a fresh dedicated connection</td></tr>
+          <tr><td>Will this email pass preparation?</td><td><code>validate(email)</code></td><td>No</td></tr>
+          <tr><td>What bytes and envelope will preparation produce?</td><td><code>rehearse(email)</code></td><td>No</td></tr>
+          <tr><td>Where did a loaded setting come from?</td><td><a href="#section-config-diagnostics"><code>mail.getConfig().getDiagnostics()</code></a></td><td>No</td></tr>
+          <tr><td>What happened to an actual send?</td><td><a href="/analyzing-send-results.html">Submission receipt and mail-send outcome</a></td><td>The send does</td></tr>
+        </tbody>
+      </table>
+      <p>
+        A successful probe proves neither future message acceptance nor inbox delivery. Capabilities may change between connections and
+        endpoints. Run the manual
+        <a href="https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/modules/simple-java-mail/src/test/java/demo/SmtpConnectionProbeDemoApp.java">SmtpConnectionProbeDemoApp</a>
+        for a complete example: without arguments it starts a loopback-only SMTP peer, prints a real report and sends no email.
+        Its <code>--configured</code> mode instead uses the shared demo SMTP settings; add <code>--authenticate</code> only to that mode to test credentials.
+      </p>
+    </div>
+  </section>
 
   <a href="#section-config-diagnostics" id="section-config-diagnostics" class="section-link h2">&sect;</a>
   <h2>Trace loaded configuration values</h2>

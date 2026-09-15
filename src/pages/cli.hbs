@@ -5,13 +5,13 @@ tags:
   - "publicPage"
 title: "Command-line interface"
 section: "Integrate and understand"
-description: "Send, validate, and test mail settings from the Java 17+ command line, optionally reusing Mailers and SMTP pools through a local daemon."
+description: "Send, validate, test connections, and inspect SMTP capabilities from the Java 17+ command line, with an optional local daemon."
 ---
   <section class="introduction">
     <p class="wide">
       The CLI exposes the Simple Java Mail builders as terminal commands. You can build a message, configure a mailer, validate it, test the connection,
-      and send without writing a Java entry point.
-      The send and connect commands finish only after their synchronous Mailer operation completes; send receipts are not printed.
+      inspect SMTP capabilities, and send without writing a Java entry point.
+      The send, connect, and probe commands finish only after their synchronous Mailer operation completes; send receipts are not printed.
       There is no CLI async switch in 10.0.0: remove <code>--mailer:async</code> and its option-specific help flag, both of which now produce an argument error.
       The daemon can still handle separate requests concurrently.
     </p>
@@ -22,7 +22,7 @@ description: "Send, validate, and test mail settings from the Java 17+ command l
     <h2>From builder API to CLI commands</h2>
 
     <p class="wide">
-      The commands and options are generated from the builder API and its Javadocs using <a href="https://picocli.info/">Picocli</a>,
+      Builder options are generated from the builder API and its Javadocs using <a href="https://picocli.info/">Picocli</a>,
       <a href="https://github.com/dnault/therapi-runtime-javadoc">Therapi</a>, and a small adapter in Simple Java Mail.
     </p>
     <p class="wide">
@@ -33,6 +33,7 @@ description: "Send, validate, and test mail settings from the Java 17+ command l
   <section class="toc">
     <ul>
       <li><a href="#section-how-to-use">How to use</a></li>
+      <li><a href="#section-probe" class="indent">Inspect an SMTP connection</a></li>
       <li><a href="#section-daemon" class="indent">Optional background daemon</a></li>
       <li><a href="#section-usage-help" class="indent">Usage help</a></li>
       <li><a href="#section-at-files" class="indent">@-files</a></li>
@@ -56,7 +57,7 @@ description: "Send, validate, and test mail settings from the Java 17+ command l
       Maven plugins).
     </p>
     <p class="wide">
-      The flags are deliberately explicit because they map directly to builder methods.
+      Builder flags are deliberately explicit because they map directly to builder methods.
     </p>
     <pre><code class="language-text small">
       sjm
@@ -88,12 +89,64 @@ description: "Send, validate, and test mail settings from the Java 17+ command l
   </section>
 
 
+  <a href="#section-probe" id="section-probe" class="section-link h3">&sect;</a>
+  <h3>Inspect an SMTP connection</h3>
+
+  <section>
+    <p class="wide">
+      Use <code>sjm connect</code> for a simple connection check, or <code>sjm probe</code> to see what the server advertised and what happened
+      during TLS setup. A probe opens a fresh connection, prints the same report as <code>mailer.sync().probeConnection()</code>, and closes
+      that connection without sending an email. It connects even when logging-only mode is enabled.
+    </p>
+<pre><code class="language-text">sjm probe --mailer:withSMTPServer smtp.example.org 587 --mailer:withTransportStrategy SMTP_TLS
+
+# With SMTP settings and credentials already supplied through configuration:
+sjm probe --authenticate
+
+# Use the daemon's configuration and return the report to this terminal:
+sjm probe --daemon=require --authenticate</code></pre>
+    <p class="wide">
+      SMTP authentication is off by default, even when credentials are configured. <code>--authenticate</code> opts in for this invocation
+      only; it does not change later probes or sends. Configured proxy authentication and TLS client certificates still apply without that flag.
+      Authentication follows your TLS settings, so check the endpoint and policy before opting in. Keep passwords out of shell history;
+      use the existing <a href="#section-config-properties">configuration sources</a> instead.
+    </p>
+    <p class="wide">
+      The authentication flag controls the dedicated probe connection, not existing send pools. If you configured a nonzero connection-pool
+      core size, building the Mailer can also open and authenticate pooled send connections. For a one-shot diagnostic without that warm-up,
+      use <code>--mailer:withConnectionPoolCoreSize 0</code>, which is already the default, and check any per-cluster core-size overrides.
+      This does not stop pools already running in a daemon.
+    </p>
+<pre><code class="language-text">SMTP connection probe: SUCCESS
+Endpoint: smtp.example.org:587 (smtp)
+Greeting: 220 smtp.example.org ready
+Before TLS: {SIZE=[10485760], STARTTLS=[]}
+STARTTLS: completed
+After TLS: {AUTH=[LOGIN PLAIN], DSN=[], SIZE=[26214400]}
+...
+Authentication: succeeded (LOGIN)
+Elapsed: 142ms</code></pre>
+    <p class="wide">
+      This sample is abbreviated. The <a href="debugging.html#section-smtp-capabilities">SMTP diagnostics guide</a> explains the full report,
+      including partial failures, unavailable metadata, and the separate capability lists before and after STARTTLS.
+      Advertised support does not prove a later email will be accepted or delivered.
+    </p>
+    <p class="wide">
+      The report goes to stdout, including failed and unsupported reports. Exit code <code>0</code> means the probe succeeded;
+      <code>3</code> means it failed or is unsupported. Invalid arguments return <code>2</code>. Ordinary execution errors are written to stderr;
+      daemon routing retains its existing exit codes. A daemon may reuse the Mailer, but each probe still opens and closes its own SMTP connection.
+    </p>
+    <p class="wide">
+      Run <code>sjm probe --help</code> for Mailer options or <code>sjm probe --authenticate--help</code> for the authentication flag.
+    </p>
+  </section>
+
   <a href="#section-daemon" id="section-daemon" class="section-link h3">&sect;</a>
   <h3>Optional background daemon</h3>
 
   <section>
     <p class="wide">
-      Every <code class="inline language-text">sjm send</code>, <code class="inline language-text">connect</code>, and
+      Every <code class="inline language-text">sjm send</code>, <code class="inline language-text">connect</code>, <code class="inline language-text">probe</code>, and
       <code class="inline language-text">validate</code> command runs once and exits by default. Add <code class="inline language-text">-d</code>
       to acquire a per-user daemon. This keeps CLI setup and matching Mailers alive between commands.
     </p>
