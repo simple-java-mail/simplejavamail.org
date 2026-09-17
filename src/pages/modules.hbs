@@ -121,6 +121,24 @@ description: "Understand the default Angus provider adapter and choose optional 
       An adapter implements <code class="inline language-java">supports(Transport)</code>, optionally declares which content-preservation requirements it
       supports, and performs the final submission in <code class="inline language-java">sendMessage(Transport, PreparedMail)</code>.
     </p>
+    <p>
+      For <a href="/features.html#section-dsn-envelope-id">DSN envelope identifiers (ENVID)</a>, also opt in through
+        <code>supportsDeliveryEnvelope(...)</code>. Its default preserves existing envelope behavior but declines fixed ENVID and recipient-specific NOTIFY, so an older adapter cannot
+      silently drop a new identifier. An adapter that supports it must check DSN on the actual connected transport and fail before submission when
+      the server cannot honor the fixed identifier. The bundled Angus adapter does this check after connection setup, not from an earlier probe result.
+      Without a fixed value it generates a fresh UUID when DSN is available, and otherwise sends normally without ENVID. Adapters report the effective,
+      unencoded identifier through <code>MailTransportResult.withEnvelopeId(...)</code>; the same value reaches <code>MailSubmissionReceipt.getEnvelopeId()</code>.
+        Leave it absent when no identifier was used or its use is unknown.
+      </p>
+      <p>For <a href="/features.html#section-dsn-recipients">recipient-specific NOTIFY</a>, the ordered
+        <code>DeliveryEnvelope.getRecipientOptions()</code> list contains one <code>DeliveryRecipient</code> per input envelope occurrence.
+        An empty list means no recipient-specific preference. Match the prepared address order, including duplicates and any subsequent provider group expansion;
+        an explicit set replaces shared NOTIFY, while an empty set inherits it. Reject unsupported explicit preferences before MAIL FROM.
+        <code>MailTransportCompatibilityException</code> identifies this pre-submission rejection so a healthy pooled connection remains reusable;
+        never use it for an SMTP transaction that has already started.</p>
+      <p>The managed Angus command hook adds ORCPT without replacing Angus's recipient loop or reply handling. Ordinary Angus transports from caller-owned
+        Sessions or custom socket factories do not have that hook. ORCPT is optional for third-party adapters; any automatically generated value must match the actual envelope recipient
+        and leave notification preferences and MIME bytes unchanged.</p>
     <div class="wide full-width-example">
       <p>Register the implementation through the standard Java service-provider mechanism:</p>
 <pre><code class="language-text small"># META-INF/services/org.simplejavamail.api.mailer.spi.MailTransportAdapter

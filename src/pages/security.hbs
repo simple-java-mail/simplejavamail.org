@@ -410,7 +410,15 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 				<li>every TO/CC/BCC recipient name and address</li>
 				<li>disposition-notification-to recipient name and address, if provided</li>
 				<li>return-receipt-to recipient name and address, if provided</li>
+				<li><a href="/features.html#section-dsn-envelope-id">fixed DSN envelope identifiers (ENVID)</a>, validated separately when their configuration is built</li>
 			</ul>
+
+			<p class="wide">
+				Fixed envelope identifiers accept only printable ASCII, so CR, LF, tabs and other control characters are rejected before an Email can be built.
+				The bundled Angus adapter encodes spaces, <code>+</code> and <code>=</code> just before sending, so an identifier cannot add another SMTP parameter.
+				For example, <code>order RET=FULL</code> becomes <code>ENVID=order+20RET+3DFULL</code>, not a separate <code>RET</code> setting.
+				Raw MAIL extensions and custom transport implementations remain caller-owned.
+			</p>
 
 			<p class="wide">
 				Here's some more info on this topic:
@@ -423,8 +431,8 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 			</ul>
 
 			<p class="wide">
-				This behaviour can only be turned off by turning off all client validations, which also includes checking for email completeness and email-address validations.
-				The scans will still be performed, but issues found will only be logged as warnings.
+				Use the following setting to log ordinary client-validation findings, including header-scan findings, as warnings instead of blocking the send.
+				The checks still run. ENVID validation and encoding are unaffected: an invalid fixed envelope identifier is still rejected.
 			</p>
 <pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
 	.disablingAllClientValidation(true);
@@ -439,7 +447,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 			<div class="view">
 				<p>
 					Simple Java Mail supports signing with <a href="https://www.endpointdev.com/blog/2014/04/spf-dkim-and-dmarc-brief-explanation/">DKIM</a>
-					domain keys at email or Mailer level.
+					domain keys on individual emails or reusable Email defaults/overrides templates.
 				</p>
 				<p>
 					Use <code class="inline language-java">dkimPrivateKeyPath(Path)</code>,
@@ -462,16 +470,25 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 		.build()
 );
 </code></pre>
-				Or configure DKIM once for every email sent through a mailer:
-				<pre><code class="small">currentMailerBuilder
-    .withDefaultDkimSigning(
-        DkimConfig.builder()
+				Or configure DKIM as a default for emails sent through a mailer:
+				<pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+Email signingDefaults = mail.emailBuilder().startingBlank()
+    .signWithDomainKey(DkimConfig.builder()
             .dkimPrivateKeyData(privateKeyBytes)
             .dkimSigningDomain("your_domain.org")
             .dkimSelector("your_selector")
             .build())
+    .buildEmail();
+
+currentMailerBuilder
+    .withEmailDefaults(signingDefaults)
     .buildMailer();
 </code></pre>
+				<p>
+					The template can omit the sender; the prepared email cannot. A message's own DKIM setting wins over a default.
+					A supplied template replaces property-derived message defaults, so see
+					<a href="configuration.html#section-config-mailer">defaults and overrides</a> if you want to keep those as well.
+				</p>
 				Or with properties:
 				<pre><code class="language-properties small"># defaults on Mailer level:
 				simplejavamail.dkim.signing.private_key_file_or_data=file:my_dkim_key.der

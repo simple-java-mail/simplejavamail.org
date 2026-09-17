@@ -32,6 +32,7 @@ breadcrumbParent: "/migration-notes.html"
     <ul>
       <li><a href="#java-11">Run on Java 11 or newer</a></li>
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
+      <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
       <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
 	  <li><a href="#exact-eml">Submit finalized EML without rebuilding it</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
@@ -161,6 +162,73 @@ Mailer mailer = mail.mailerBuilder()
       <code class="inline language-java">MailerRegularBuilder&lt;?&gt;</code> or
       <code class="inline language-java">MailerFromSessionBuilder&lt;?&gt;</code>. The old shortcuts happened to return internal implementation classes.
       The new entry point returns the public interfaces instead.
+    </p>
+  </section>
+
+  <a href="#dkim-defaults" id="dkim-defaults" class="section-link h2">&sect;</a>
+  <h2>Move DKIM defaults into Email templates</h2>
+
+  <section>
+    <p class="wide">
+      <strong>What breaks:</strong> The dedicated Mailer methods <code>withDefaultDkimSigning(...)</code>,
+      <code>clearDefaultDkimSigning()</code>, <code>getDefaultDkimSigningConfig()</code>, and
+      <code>isDefaultDkimSigningConfigured()</code> are removed in 10.0.0. Use the Email signing API and the shared
+      <code>withEmailDefaults(...)</code> / <code>withEmailOverrides(...)</code> mechanism instead. Recompile integrations using the removed methods.
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+Email defaults = mail.emailBuilder().startingBlank()
+    .signWithDomainKey(dkimConfig)
+    .buildEmail();
+mailerBuilder.withEmailDefaults(defaults);</code></pre>
+    </div>
+    <p class="wide">
+      Both former signing overloads exist on the Email builder. A policy template may omit the sender and recipients; the prepared message
+      still needs them. DKIM applies to the whole message, not individual recipients. Its precedence is the same as other single values:
+      override, submitted Email, then default, subject to per-email opt-outs.
+    </p>
+    <p class="wide">
+      A supplied defaults template replaces the property-derived template, rather than merging with it. That behavior is unchanged.
+      To keep unrelated property defaults while changing or omitting the default signature, materialize them and edit a copy:
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">Email configuredDefaults = mail.emailBuilder().startingBlank()
+    .buildEmailCompletedWithDefaultsAndOverrides();
+
+// Keep other configured message defaults and replace the signature.
+Email signingDefaults = mail.emailBuilder().copying(configuredDefaults)
+    .signWithDomainKey(dkimConfig)
+    .buildEmail();
+mailerBuilder.withEmailDefaults(signingDefaults);
+
+// Or omit only default DKIM signing.
+Email unsignedDefaults = mail.emailBuilder().copying(configuredDefaults)
+    .clearDkim()
+    .buildEmail();
+mailerBuilder.withEmailDefaults(unsignedDefaults);</code></pre>
+    </div>
+    <p class="wide">
+      Materialization reads configured key files and decodes inline key data before you can clear DKIM. Unlike the removed dedicated DKIM clear flag,
+      this recipe cannot skip an unreadable key file or malformed Base64 setting. A replacement template built with ordinary <code>buildEmail()</code> skips
+      property-derived message defaults entirely.
+    </p>
+    <p class="wide">
+      On a submitted Email, <code>clearDkim()</code> removes its local choice and allows a default again. To prevent a default signature for
+      that Email, use <code>dontApplyDefaultValueFor(EmailProperty.DKIM_SIGNING_CONFIG)</code>. Use
+      <code>dontApplyOverrideValueFor(...)</code> separately to ignore an override. See
+      <a href="configuration.html#section-config-mailer">the full defaults and overrides contract</a> for collection and recipient behavior.
+    </p>
+    <p class="wide">
+      <code>clearEmailDefaults()</code> restores property-derived defaults, rather than disabling them. An empty explicit template omits all
+      default message settings. Inspect your explicit template through <code>mailerBuilder.getEmailDefaults()</code>, or resolved policy through
+      <code>mailer.getEmailGovernance()</code>; there is no separate DKIM configured flag.
+      DKIM property keys and Spring configuration are unchanged. Exact EML still bypasses message governance.
+    </p>
+    <p class="wide">
+      CLI signing configuration continues to use <code>simplejavamail.dkim.signing.*</code> properties; Java signing objects are not CLI values.
+      The generated <code>--mailer:clearDefaultDkimSigning</code> option is removed too. Omit the DKIM default from the configuration used by that
+      invocation, or use <code>--email:ignoringDefaultsYesNo true</code> to skip all message defaults and supply the required values yourself.
+      <code>--email:clearDkim</code> clears only the local choice, not incoming defaults.
     </p>
   </section>
 
@@ -757,7 +825,7 @@ simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath=true</cod
   <section>
     <p class="wide" style="font-size:smaller">
       <strong>What to check:</strong> If you set a bounce address or request delivery-status notifications, send the original
-      <code class="inline language-java">Email</code> through a Simple Java Mail Mailer. That path keeps the same SMTP behavior as before.
+      <code class="inline language-java">Email</code> through a Simple Java Mail Mailer. That path still applies those options when submitting the email.
     </p>
     <p class="wide">
       A bounce address and delivery-status notification (DSN) options are instructions to the SMTP server. They are not part of the message body or
@@ -780,7 +848,8 @@ mailer.sync().sendMail(email);</code></pre>
     </div>
     <p class="wide">
       If you keep your own Jakarta Mail sending code, read the bounce and DSN options from the <code class="inline language-java">Email</code> and apply
-      them through your mail provider's API yourself. For Angus, that means
+      them through your mail provider's API yourself. The following example maps the existing bounce address and NOTIFY/RET options, not ENVID.
+      For Angus, that means
       <a href="#angus-api-boundary">declaring Angus as a compile dependency</a> and doing the following:
     </p>
     <pre class="full-width-example"><code class="language-java">MimeMessage converted =
@@ -829,6 +898,32 @@ Transport.send(message);</code></pre>
       Other mail providers need their own equivalent. This is the provider-specific work that Simple Java Mail normally handles for you. When you send
       through a Simple Java Mail Mailer, it now stops before sending if the active provider cannot honor those options. In 9.x they could be silently
       ignored.
+    </p>
+  </section>
+
+  <section>
+    <p class="wide">
+      <strong>New SMTP default:</strong> the bundled Angus adapter now adds a fresh UUID as <code>ENVID</code> on each DSN-capable send, even when
+      you do not set NOTIFY or RET. If your SMTP tests compare the complete <code>MAIL FROM</code> command, allow for that changing identifier.
+      Message-ID and MIME bytes are unaffected. Servers without usable DSN support still receive the email without ENVID.
+    </p>
+    <p class="wide">
+      Existing raw ENVID configuration suppresses automatic generation. Direct Jakarta Mail sends and CustomMailer keep their existing envelope
+      handling. See the <a href="/features.html#section-dsn-envelope-id">ENVID provider boundaries</a>.
+    </p>
+    <p class="wide">
+      On managed Angus connections with DSN support, recipient commands now also include automatic <code>ORCPT</code>, even without a NOTIFY setting.
+      It carries the actual envelope recipient, including BCC and override receivers, without changing MIME bytes or adding round trips.
+      Update SMTP fixtures that compare complete <code>RCPT TO</code> commands. Optional ORCPT is omitted when an address cannot be represented safely
+      or exceeds the encoded parameter limit. Ordinary Angus transports obtained from caller-owned Sessions or custom socket factories do not gain this behavior.
+    </p>
+    <p class="wide">
+      <strong>Breaking Java API change:</strong> the <code>EmailPopulatingBuilder</code> String overloads of
+      <code>withDeliveryStatusNotificationNotifyOptions</code> and <code>withDeliveryStatusNotificationReturnOption</code>, available since 9.0.0,
+      are removed in 10.0.0. Use the existing enum overloads instead: replace <code>"FAILURE,DELAY"</code> with <code>NotifyOption.FAILURE, NotifyOption.DELAY</code>, and
+      <code>"HDRS"</code> with <code>DeliveryStatusNotification.ReturnOption.HEADERS_ONLY</code>, then recompile.
+      Property and Spring values are unchanged. CLI option names and text input also stay the same, including comma/semicolon-separated notification
+      events and the <code>FULL</code>/<code>HDRS</code> return aliases. No configuration or CLI migration is needed for this change.
     </p>
   </section>
 

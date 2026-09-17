@@ -263,9 +263,12 @@ mailerBuilder.withLocalBindAddress("203.0.113.10", 25252);
 mailerBuilder.withSmtpClientHostname("orders-service.prod.example.com");
 mailerBuilder.clearSmtpClientHostname();
 </code></pre>
-		  <pre><code class="small">// configure DKIM once for all emails sent through this mailer
+		  <pre><code class="small">// message policy uses Email templates, including signing
+Email signingDefaults = mail.emailBuilder().startingBlank()
+    .signWithDomainKey(defaultDkimConfig)
+    .buildEmail();
+mailerBuilder.withEmailDefaults(signingDefaults);
 // individual emails can still provide their own DKIM config
-mailerBuilder.withDefaultDkimSigning(defaultDkimConfig);
 </code></pre>
 		  <pre><code class="small">// change the default sending logic to your own approach
 mailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test connections
@@ -561,6 +564,8 @@ simplejavamail.defaults.bcc.name=
 simplejavamail.defaults.bcc.address=bcc1@default.com;bcc2@default.com
 
 # Delivery Status Notification defaults
+# Shared Email fallback; explicit recipient/group NOTIFY preferences take precedence.
+# ENVID is generated per send when DSN is supported; fixingEnvelopeId(...) supplies an optional fixed value on the Email.
 simplejavamail.defaults.delivery.status.notification.notify=FAILURE,DELAY
 simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
 
@@ -670,12 +675,14 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 
 	<section>
 		<p class="wide">
-			With property files and system properties you can define global defaults. But sometimes that is not enough.
+			Property files, environment variables, and system properties supply defaults captured in your factory's configuration snapshot.
+			Use Email templates when different Mailers need different message settings, such as a sender or signing configuration.
 		</p>
 		<p class="wide">
-			With Simple Java Mail, you can set both defaults and overrides on the Mailer level using Java code. This will override
-			global defaults loaded from a property file for example. However, before using it as defaults Email reference, you can still have your defaults
-			initialized with global defaults, by using <code>emailBuilder.buildEmailCompletedWithDefaultsAndOverrides()</code>.
+			A supplied defaults template replaces the property-derived message defaults entirely; missing fields are not filled from properties.
+			To retain those values, first use <code>buildEmailCompletedWithDefaultsAndOverrides()</code> to materialize them, then edit a copy.
+			Ordinary <code>buildEmail()</code> leaves defaults unapplied. Templates can be incomplete, including a DKIM signing template without a sender;
+			the Mailer validates the prepared message before sending.
 		</p>
 		<p class="wide">
 			<a href="features.html#section-exact-eml">Exact EML</a> is deliberately outside this message-governance layer. Its supplied bytes are already final,
@@ -710,6 +717,24 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
     .buildEmail();
 </code></pre>
 		</div>
+	</section>
+
+	<section>
+		<p class="wide">
+			For single values such as subject or signing configuration, the order is override, submitted Email, then default.
+			Compound settings such as DKIM configuration are selected as a whole. Recipient and attachment lists are additive in that order;
+			headers combine by name, with an override replacing the entire value list for the same name.
+			An explicit recipient S/MIME certificate still wins over the Email-level fallback, even when that fallback came from an override template.
+		</p>
+		<p class="wide">
+			Repeated <code>withEmailDefaults(...)</code> calls replace the template. <code>clearEmailDefaults()</code> restores the snapshot-derived
+			defaults; it does not switch them off. Use an empty explicit template to omit all default message settings, or the per-email opt-outs below.
+		</p>
+		<p class="wide">
+			To remove only default DKIM signing while preserving other property defaults, materialize the defaults, copy that Email, call
+			<code>clearDkim()</code>, and pass the result to <code>withEmailDefaults(...)</code>. Materialization still reads any configured signing key.
+			The <a href="migration-notes-10.0.0.html#dkim-defaults">10.0.0 migration example</a> shows both replacing and removing the default signature.
+		</p>
 	</section>
 
 	<section>

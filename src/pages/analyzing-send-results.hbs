@@ -513,5 +513,16 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
         <a href="/features.html#section-delivery-status-notification">delivery status notifications</a>, bounces or provider-specific tracking;
         a submission receipt alone cannot tell you what happened in the recipient's mailbox.
       </p>
+      <p>
+        To identify the original destination in a later DSN, the managed Angus transport supplies
+        <a href="/features.html#section-dsn-recipients">ORCPT and optional recipient-specific NOTIFY preferences</a> when supported.
+        ORCPT can appear as <code>Original-Recipient</code> in that later report; it is not the immediate receipt's <code>getOriginalAddress()</code> field.
+        To match a later DSN to your application record, retain <code>receipt.getEnvelopeId()</code>, the effective
+        <a href="/features.html#section-dsn-envelope-id">envelope identifier (ENVID)</a>. The bundled Angus adapter generates one per send when DSN
+        is supported, unless you set <code>fixingEnvelopeId(...)</code>. The value is <code>null</code> when no effective identifier is available.
+        The observer exposes the same receipt through <code>outcome.getSubmissionReceipt()</code>, including for batches.
+        A later report can return the value as <code>Original-Envelope-ID</code>. It is separate from Message-ID and does not prove acceptance or final delivery.
+        Neither result waits for that report; your application still needs to receive and process it.
+      </p>
     </div>
   </section>

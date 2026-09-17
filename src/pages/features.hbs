@@ -1393,7 +1393,9 @@ Session session = mailer.getSession();
         This is separate from read receipts: DSN is about delivery status at SMTP/server level.
       </p>
       <p>
-        DSN can be configured per email, through mailer defaults or through properties.
+        Shared notification events and the return option can be configured per email, through Mailer Email defaults or through properties.
+        They remain best effort when the server does not support DSN. A fixed per-send identifier and
+        <a href="#section-dsn-recipients">explicit recipient preferences</a> have stricter contracts, described below.
       </p>
     </div>
 
@@ -1417,6 +1419,181 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
     </div>
   </section>
 
+
+  <a href="#section-dsn-envelope-id" id="section-dsn-envelope-id" class="section-link h3">&sect;</a>
+  <h3>Match a later notification to a send</h3>
+
+  <section>
+    <div class="view">
+      <p>
+        When you process delivery-status notifications, an SMTP envelope identifier (<code>ENVID</code>) lets you match a report to the send that
+        requested it. For example, distinguish two attempts to send the same order confirmation, even if their MIME Message-ID is identical.
+        The bundled Angus adapter generates a fresh UUID for each send when the server supports DSN. Keep the effective identifier from the
+        submission receipt alongside your application record; there is nothing to configure for automatic generation.
+      </p>
+      <p>
+        A later DSN can return it in <code>Original-Envelope-ID</code>. Simple Java Mail does not read those notifications for you, and an immediate
+        <a href="/analyzing-send-results.html">submission receipt</a> still describes submission, not final delivery. Requesting DSN does not guarantee
+        that a notification will arrive.
+      </p>
+    </div>
+    <div class="side">
+<pre><code class="language-java small">Email email = mail.emailBuilder().startingBlank()
+    .from("sender@example.com")
+    .withRecipients(new RecipientBuilder()
+        .withAddress("receiver@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withPlainText("Your order confirmation")
+    .withDeliveryStatusNotification(
+        DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+        DeliveryStatusNotification.NotifyOption.FAILURE,
+        DeliveryStatusNotification.NotifyOption.DELAY)
+    .buildEmail();
+
+MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
+String envelopeId = receipt.getEnvelopeId();
+if (envelopeId != null) {
+    saveSendRecord(envelopeId, receipt.getEmailId());
+}</code></pre>
+      <p>Illustrative outgoing SMTP command, followed by fields from a possible later failure notification:</p>
+<pre><code class="language-text small">MAIL FROM:&lt;sender@example.com&gt; RET=HDRS ENVID=9aed6f37-0f12-4dd7-9835-82a87c83a596
+
+Original-Envelope-ID: 9aed6f37-0f12-4dd7-9835-82a87c83a596
+Final-Recipient: rfc822; receiver@example.com
+Action: failed
+Status: 5.1.1</code></pre>
+      <p>The notification's <code>5.1.1</code> means a bad destination mailbox address; it is not the result of the Java send call.</p>
+      <p>If you already have an identifier, fix it explicitly, just like a Message-ID:</p>
+<pre><code class="language-java small">emailBuilder.fixingEnvelopeId("order-42-attempt-1");</code></pre>
+    </div>
+    <div class="wide full-width-example">
+      <h4>What to expect</h4>
+      <ul>
+        <li>Automatic generation is best-effort. If the actual connection does not advertise usable DSN support, sending continues normally without
+          ENVID and <code>receipt.getEnvelopeId()</code> is <code>null</code>. The check uses the connection after TLS/authentication, not an earlier probe.</li>
+        <li>A fixed identifier is a requirement: without DSN support, sending throws <code>MailSubmissionException</code> before <code>MAIL FROM</code>.
+          Remove <code>fixingEnvelopeId(...)</code>, or pass <code>null</code>, to resume automatic generation; alternatively use a DSN-capable server.</li>
+        <li>For a fixed identifier, pass the unencoded value: non-empty printable ASCII, at most 94 characters after SMTP xtext encoding (100 including
+          <code>ENVID=</code>). Spaces, <code>+</code> and <code>=</code> each use three encoded characters. Nothing is trimmed. Avoid secrets or personal information.</li>
+        <li>Generated identifiers belong to individual submissions, not the Email object. Reusing an Email, including concurrent sends, generates
+          separate identifiers. Fixed identifiers are retained by copying/reuse and partial NOTIFY/RET changes; whole DSN replacement replaces the fixed value.</li>
+        <li>Read the effective identifier from the receipt returned by synchronous or asynchronous sending, or from the receipt in a
+          <code>MailSendObserver</code> outcome. This also works for simple batches and open connections. A failed submission can carry an identifier;
+          its presence does not imply SMTP acceptance. Notifications still arrive separately and must be received and processed by your application.</li>
+        <li>This is an envelope option, not a MIME header. The same method is available for <a href="#section-exact-eml">exact EML</a>, without changing
+          its bytes or signatures. An identifier alone is valid; explicit NOTIFY or RET options are not required.</li>
+        <li>There is no global property or Spring setting for a per-send identifier. Automatic generation needs no configuration. Whole-value Mailer defaults/overrides can
+          carry DSN too, but a fixed identifier there would be reused across sends.</li>
+        <li>Other <a href="/modules.html#mail-transport-adapter-spi">transport adapters</a> must opt in to fixed ENVID support and report any effective
+          identifier. <code>CustomMailer</code> receives a fixed value on the Email and owns its envelope handling; Simple Java Mail does not generate
+          or report an effective identifier for CustomMailer. Logging-only sends also report none. Validation and rehearsal do not submit ENVID.</li>
+        <li>Unrelated raw MAIL parameters are retained. Existing ENVID in <code>mail.smtp.mailextension</code> or <code>mail.smtps.mailextension</code>
+          suppresses automatic generation; that unvalidated raw value is not reported on the receipt. Combining raw ENVID with <code>fixingEnvelopeId(...)</code>
+          is rejected. Use the typed API for validation and receipt correlation.</li>
+      </ul>
+      <p>The CLI supports both construction paths. Add the appropriate option to your existing <code>sjm send</code> command:</p>
+<pre><code class="language-shell small"># Composed email
+--email:fixingEnvelopeId "order-42-attempt-1"
+
+# Exact EML
+--email:fixingExactEnvelopeId "order-42-attempt-1"</code></pre>
+      <p>For recipient-specific notification preferences and automatic original-recipient metadata, see the next section.
+        See <a href="https://www.rfc-editor.org/rfc/rfc3461.html#section-4.4">RFC 3461</a> for the SMTP envelope-identifier contract.</p>
+    </div>
+  </section>
+
+  <a href="#section-dsn-recipients" id="section-dsn-recipients" class="section-link h3">&sect;</a>
+  <h3>Notification preferences per recipient</h3>
+  <section>
+    <div class="wide full-width-example">
+      <p>You might want a delivery confirmation for a customer but no notifications for an archive copy. Put that choice on the recipient.
+        Use a recipient group for shared defaults, and the Email setting as the fallback. Only NOTIFY varies per recipient:
+        RET and ENVID still belong to the whole SMTP transaction.</p>
+<pre><code class="language-java small">import org.simplejavamail.api.email.config.DeliveryStatusNotification.NotifyOption;
+
+Recipient customer = new RecipientBuilder()
+    .withAddress("customer@example.com")
+    .withType(Message.RecipientType.TO)
+    .withDeliveryStatusNotificationNotifyOptions(NotifyOption.SUCCESS)
+    .build();
+
+Collection&lt;Recipient&gt; team = new RecipientsBuilder()
+    .withDefaultDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE)
+    .withRecipient(customer) // keeps its explicit SUCCESS preference
+    .withRecipient("support@example.com", Message.RecipientType.CC)
+    .buildRecipients();
+
+Recipient archive = new RecipientBuilder()
+    .withAddress("archive@example.com")
+    .withType(Message.RecipientType.BCC)
+    .withDeliveryStatusNotificationNotifyOptions(NotifyOption.NEVER)
+    .build();
+
+Email email = mail.emailBuilder().startingBlank()
+    .from("sender@example.com")
+    .withRecipients(team)
+    .withRecipients(archive)
+    .withDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE, NotifyOption.DELAY)
+    .withPlainText("Your order confirmation")
+    .buildEmail();
+
+MailSubmissionReceipt receipt = mailer.sync().sendMail(email);</code></pre>
+      <p>With the managed Angus transport and a DSN-capable server, the recipient commands look like this:</p>
+<pre><code class="language-text small">RCPT TO:&lt;customer@example.com&gt; NOTIFY=SUCCESS ORCPT=rfc822;customer@example.com
+RCPT TO:&lt;support@example.com&gt; NOTIFY=FAILURE ORCPT=rfc822;support@example.com
+RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.com</code></pre>
+      <p><code>NotifyOption.SUCCESS</code> requests a delivery-success notification, not a read receipt or an immediate send result.
+        <code>FAILURE</code> requests notification of failed delivery; <code>DELAY</code> requests notification when delivery is delayed.
+        <code>NEVER</code> requests no notifications and must be used alone. These are enum values, so your IDE can show the choices and their documentation.</p>
+      <p>The complete preference wins; events are not combined with the Email fallback. A group is a builder convenience that produces ordinary recipients,
+        not an RFC address group or a separate SMTP transaction.</p>
+      <ul>
+        <li><code>withDefaultDeliveryStatusNotificationNotifyOptions(...)</code> fills missing preferences in a group.
+          <code>withFixedDeliveryStatusNotificationNotifyOptions(...)</code> replaces every preference in that group's output.
+          The last default, fixed, or clear group policy wins.</li>
+        <li><code>clearingDeliveryStatusNotificationNotifyOptions()</code> restores fallback. On a group it also strips preferences copied from
+          source recipients. An empty typed array supplies no preference: a recipient setter restores fallback, a group default leaves existing
+          recipient choices intact, and a fixed group policy clears them. <code>NEVER</code> explicitly requests no notifications instead.</li>
+        <li>An explicit recipient preference still wins over an Email-level value from <code>withEmailOverrides(...)</code>.
+          Configure reusable message policy through <a href="/configuration.html#section-config-mailer">Email defaults and overrides</a>;
+          there is no second set of Mailer DSN setters. Reusing groups or emails does not mutate their preferences.</li>
+        <li>Recipient-specific preferences require both a supporting transport and usable DSN support on the actual connection.
+          Otherwise sending fails with <code>MailSubmissionException</code> before <code>MAIL FROM</code>; it does not silently drop the preference.
+          The healthy connection remains reusable. Clear the preference if best-effort shared Email settings are sufficient.</li>
+      </ul>
+      <h4>Automatic original-recipient metadata</h4>
+      <p>The managed Angus transport adds ORCPT whenever the connection supports DSN, even without a NOTIFY setting.
+        It records the actual envelope recipient, including BCC and override receivers, not the visible To header. Duplicate occurrences remain separate.
+        This adds command parameters, not extra SMTP round trips, and does not change notification preferences or MIME bytes.</p>
+      <p>A later notification can include <code>Original-Recipient: rfc822; customer@example.com</code>, even if the final destination changed along the way.
+        Your application still has to receive and interpret that notification. Neither ORCPT nor ENVID guarantees that a notification will arrive.</p>
+      <p>ASCII addresses use <a href="https://www.rfc-editor.org/rfc/rfc3461.html#section-4.2">RFC 3461 xtext</a>, so a <code>+</code> becomes
+        <code>+2B</code>. Internationalized addresses use <a href="https://datatracker.ietf.org/doc/html/rfc6533#section-3">RFC 6533's UTF-8 address type</a>
+        when Angus has <code>mail.mime.allowutf8=true</code> and the server advertises SMTPUTF8. Otherwise automatic ORCPT is omitted for those addresses;
+        ordinary provider address handling is unchanged. An ORCPT parameter over 500 encoded bytes is omitted, never truncated.</p>
+      <h4>Other sending paths</h4>
+      <p><a href="#section-exact-eml">Exact EML</a> accepts <code>Recipient...</code> through <code>withEnvelopeRecipients(...)</code>, retaining NOTIFY
+        preferences without changing supplied bytes. Its shared notification and return methods also accept the same enums:</p>
+<pre><code class="language-java small">Email exact = mail.emailBuilder().startingFromExactEml(emlBytes)
+    .withEnvelopeRecipients(customer, archive)
+    .withDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE, NotifyOption.DELAY)
+    .withDeliveryStatusNotificationReturnOption(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY)
+    .buildEmail();</code></pre>
+      <p>The same rules apply to synchronous/asynchronous sends, simple batches, and open connections.</p>
+      <p>A caller-owned Session or custom socket factory uses ordinary Angus without the managed recipient-command hook: it retains shared Email NOTIFY/RET and ENVID support,
+        but does not add ORCPT and rejects explicit recipient preferences. Other <a href="/modules.html#mail-transport-adapter-spi">provider adapters</a>
+        must opt in. <code>CustomMailer</code> receives the preferences on the Email's recipients and owns their transport mapping.
+        Logging-only mode and rehearsal do not contact a server or check its DSN capabilities.</p>
+      <p>Recipient-specific choices use the Java recipient builders; there is no recipient policy DSL in the CLI or global properties.
+        Existing <a href="/configuration.html#section-available-properties">shared DSN properties</a>, Spring configuration, and CLI Email options
+        continue to configure the Email fallback. Use enum values in Java; property loading and CLI converters parse text before calling the typed builders.
+        CLI option names are unchanged, including the exact-email <code>--email:withEnvelopeDsnNotifyOptions</code> and
+        <code>--email:withEnvelopeDsnReturnOption</code> options. They still accept notification lists such as <code>failure,delay</code>
+        and return aliases such as <code>HDRS</code>.
+        There is no setting to override ORCPT for forwarding or gateway use cases.</p>
+    </div>
+  </section>
 
   <a href="#section-email-validation" id="section-email-validation" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Validating Email Addresses{{/components/feature-heading-h2}}
@@ -1531,7 +1708,8 @@ JMail.strictValidator()
 		  <p>
 			  SMTP-envelope recipients are mandatory and independent of visible <code class="inline language-text">To</code>,
 			  <code class="inline language-text">Cc</code>, and <code class="inline language-text">Bcc</code> headers. Add an envelope sender only when it should
-			  differ from the provider default. DSN notify and return options are also available because they belong to the envelope rather than the MIME bytes.
+			  differ from the provider default. DSN notify and return options, including an optional <a href="#section-dsn-envelope-id">envelope identifier</a>,
+			  are also available because they belong to the envelope rather than the MIME bytes.
 		  </p>
 	  </div>
 
