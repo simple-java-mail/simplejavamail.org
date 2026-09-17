@@ -16,7 +16,7 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
         replies and which recipients, if any, are candidates for a retry.
       </p>
       <p>
-        The examples use the 10.0 API. SMTP conversations and output are illustrative, not replies you should expect from a particular server.
+        The examples use the 10.0.0 API. SMTP conversations and output are illustrative, not replies you should expect from a particular server.
         Acceptance here always means SMTP submission, not final mailbox delivery or inbox placement.
       </p>
       <p>For a visual map of the pieces producing these results and observer callbacks, see
@@ -112,6 +112,12 @@ printReceipt(receipt);</code></pre>
         <code>getEmailId()</code> returns the effective Message-ID, or <code>null</code> if none was produced.
         <code>getSubmittedAt()</code> is the timestamp captured after the attempt completed or failed, not a delivery timestamp.
         <code>getSmtpResponse()</code> is an optional provider response; a positive reply alone does not replace the overall status and recipient facts.
+      </p>
+      <p>
+        <code>isRequireTlsUsed()</code> tells you whether the first server was actually sent the RFC 8689 REQUIRETLS parameter for this attempt.
+        It can be true even when that server rejected <code>MAIL FROM</code>, and false when a required send failed locally before that command.
+        It does not claim that later relays complied. See <a href="security.html#section-requiretls">Require TLS for onward delivery</a> for the
+        configuration and trust checks behind this value.
       </p>
       <p>
         <code>isAcceptedByServer()</code> means <em>at least one</em> recipient was accepted, so it is also true for <code>PARTIALLY_ACCEPTED</code>.

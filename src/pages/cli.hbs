@@ -70,9 +70,16 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
           --email:cc "Candy Research Group" "&lt;james@candy-insights.com&gt;;&lt;jean@candy-insights.com&gt;"
           --email:bcc "box1 &lt;info-box@candystore.com&gt;,box2 &lt;reminders@candystore.com&gt;"
           --email:withPlainText "I discovered a new flavor! (..)"
+          --email:withTlsRequiredForOnwardDelivery
           --mailer:withSMTPServer "my-smtp-server.com" 1234 "myuser" "mypass"
           --mailer:withTransportStrategy "SMTP_TLS"
     </code></pre>
+    <p class="wide">
+      The REQUIRETLS flag is per Email and asks supporting relays to keep TLS mandatory after the first server accepts the message; it is separate from
+      the Mailer's first-hop transport strategy. Exact EML uses <code class="inline language-text">--email:withExactTlsRequiredForOnwardDelivery</code>.
+      A send fails before <code class="inline language-text">MAIL FROM</code> when the actual connection cannot honor the request. See
+      <a href="security.html#section-requiretls">Require TLS for onward delivery</a> for the trust, capability, and reporting contract.
+    </p>
     <p>
       You can also check the <a href="https://github.com/bbottema/simple-java-mail/tree/develop/modules/cli-module/src/test/java/demo">demo code</a>
       included in the sources.

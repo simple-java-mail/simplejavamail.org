@@ -15,6 +15,7 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 			</header>
 			<div class="doc-card-grid">
 				{{> components/doc-overview-card href="#section-transport-strategy-tls" kicker="Connection" title="TLS" description="Encrypt the SMTP connection and verify the identity of the server receiving your mail." core=true}}
+				{{> components/doc-overview-card href="#section-requiretls" kicker="Onward delivery" title="REQUIRETLS" description="Ask supporting SMTP relays to keep TLS mandatory after your submission server accepts the message." core=true}}
 				{{> components/doc-overview-card href="#section-transport-strategy-oauth2" kicker="Authentication" title="OAuth2" description="Use fixed or refresh-aware access tokens instead of a mailbox password." core=true}}
 				{{> components/doc-overview-card href="#section-sending-dkim" kicker="Domain signing" title="DKIM" description="Sign outgoing mail so receiving systems can verify the signing domain and message integrity." dkim=true}}
 				{{> components/doc-overview-card href="#section-sending-smime" kicker="Content protection" title="S/MIME" description="Sign message content, encrypt it for recipients, and read protected attachments." smime=true}}
@@ -39,6 +40,7 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 					</thead>
 					<tbody>
 						<tr><th>TLS / STARTTLS</th><td>The SMTP hop between your application and its submission server</td><td>Your application and SMTP server</td><td>None</td><td>Simple Java Mail core</td></tr>
+						<tr><th>REQUIRETLS</th><td>Whether supporting SMTP relays must use authenticated TLS for onward delivery</td><td>Your submission server and later supporting relays</td><td>None</td><td>Simple Java Mail core; RFC 8689 server support required</td></tr>
 						<tr><th>OAuth2</th><td>Your application's right to use an SMTP account, without giving the mailer a mailbox password</td><td>The SMTP server</td><td>None</td><td>Simple Java Mail core plus your token provider</td></tr>
 						<tr><th>DKIM</th><td>A signing domain and the integrity of the signed headers and body</td><td>Receiving mail systems</td><td>Can satisfy DMARC when the valid DKIM signing domain aligns with the visible From domain</td><td><code>dkim-module</code> plus the domain's DNS record</td></tr>
 						<tr><th>SPF</th><td>Whether the sending server is authorized for the SMTP envelope domain</td><td>Receiving mail systems</td><td>Can satisfy DMARC when SPF passes and the envelope domain aligns with the visible From domain</td><td>Sending infrastructure and DNS, outside this library</td></tr>
@@ -70,6 +72,7 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 				<li><a href="#section-transport-strategy-smtps" class="indent">TransportStrategy.SMTPS</a></li>
 				<li><a href="#section-transport-strategy-tls" class="indent">TransportStrategy.SMTP_TLS</a></li>
 				<li><a href="#section-transport-strategy-oauth2" class="indent">TransportStrategy.SMTP_OAUTH2</a></li>
+				<li><a href="#section-requiretls">Require TLS for onward delivery</a></li>
 				<li><a href="#section-custom-ssl-factory">Configure your own SSL connection factory</a></li>
 				<li><a href="#section-whitelist-hosts">Certificate trust</a></li>
 				<li><a href="#section-verify-server-identity">Verifying server identity</a></li>
@@ -294,6 +297,77 @@ Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
 			<p class="wide">
 				Spring applications can register the provider as a bean. See <a href="/spring.html#section-spring-oauth2">Spring integration</a> for the direct
 				bean form and an adapter for Spring Security's OAuth2 client manager.
+			</p>
+		</section>
+
+
+		<a href="#section-requiretls" id="section-requiretls" class="section-link h2">&sect;</a>
+		<h2>Require TLS for onward delivery</h2>
+
+		<section>
+			<div>
+				<p class="wide">
+					A Mailer's <code class="inline language-java">TransportStrategy</code> controls the connection from your application to its configured SMTP
+					server. It says nothing about the next hop. For an individual message that must not be relayed over plaintext, request RFC 8689 REQUIRETLS on
+					the Email:
+				</p>
+			</div>
+			<pre class="full-width-example"><code class="language-java">Email email = mail.emailBuilder().startingBlank()
+    .from("sender@example.org")
+    .withRecipients(RecipientBuilder.to("Recipient", "recipient@example.net"))
+    .withSubject("Sensitive report")
+    .withPlainText("...")
+    .withTlsRequiredForOnwardDelivery()
+    .buildEmail();
+
+MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
+if (receipt.isRequireTlsUsed()) {
+    audit.record("REQUIRETLS was issued for this SMTP attempt");
+}</code></pre>
+			<div>
+				<p class="wide">
+					The bundled Angus adapter checks the actual send connection immediately before submission. It requires TLS, server-identity checking, a trusted
+					certificate policy, and a post-TLS REQUIRETLS advertisement. If one is missing, no <code class="inline language-text">MAIL FROM</code> command is
+					sent. For example:
+				</p>
+				<pre><code class="language-text small">This email requires REQUIRETLS, but the SMTP server does not advertise usable REQUIRETLS support after TLS negotiation.
+Use a server that supports RFC 8689, or clear the requirement for this email. No message was submitted.</code></pre>
+				<p class="wide">
+					This check is intentionally separate from a <a href="debugging.html#section-smtp-capabilities">connection probe</a>, which uses another connection.
+					<code class="inline language-java">SMTP_TLS</code> and <code class="inline language-java">SMTPS</code> do not enable REQUIRETLS automatically.
+					The default opportunistic <code class="inline language-java">SMTP</code> strategy can satisfy it when STARTTLS actually succeeds and all checks pass.
+				</p>
+			</div>
+		</section>
+		<section>
+			<div class="view">
+				<p>
+					To apply the same suppressible default through property files, environment variables or Spring configuration, set:
+				</p>
+				<pre><code class="language-properties small">simplejavamail.defaults.requiretls=true</code></pre>
+				<p>
+					Calling <code class="inline language-java">clearTlsRequiredForOnwardDelivery()</code> removes a value set directly on that builder and resumes the
+					normal defaults/overrides fallback. To opt one composed Email out of a configured default or override, suppress that source explicitly.
+					Exact EML uses <code class="inline language-java">withTlsRequiredForOnwardDelivery()</code> too, but keeps bypassing Email templates and preserves
+					its source bytes unchanged.
+				</p>
+			</div>
+			<div class="side">
+				<pre><code class="language-java">Email email = mail.emailBuilder().startingBlank()
+    .dontApplyDefaultValueFor(
+        EmailProperty.TLS_REQUIRED_FOR_ONWARD_DELIVERY)
+    .dontApplyOverrideValueFor(
+        EmailProperty.TLS_REQUIRED_FOR_ONWARD_DELIVERY)
+    // compose the email
+    .buildEmail();</code></pre>
+			</div>
+		</section>
+		<section>
+			<p class="wide">
+				A true <code class="inline language-java">isRequireTlsUsed()</code> means the first server received REQUIRETLS on this attempt, including a rejected
+				<code class="inline language-text">MAIL FROM</code>. It does not prove server acceptance, compliance by every later relay, final delivery, or
+				end-to-end confidentiality. Use <a href="#section-sending-smime">S/MIME</a> or
+				<a href="#section-sending-openpgp">OpenPGP/MIME</a> when the message content itself needs cryptographic protection.
 			</p>
 		</section>
 
@@ -916,7 +990,7 @@ mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENC
 					recipients, so your application remains responsible for choosing the right keys.
 				</p>
 				<p>
-					S/MIME and OpenPGP/MIME are alternative content-protection formats in 10.0, so one email cannot configure both. DKIM can be combined with
+					S/MIME and OpenPGP/MIME are alternative content-protection formats in 10.0.0, so one email cannot configure both. DKIM can be combined with
 					either format and is applied after content protection to the final outgoing message.
 				</p>
 			</div>
