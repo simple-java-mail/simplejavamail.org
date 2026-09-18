@@ -324,6 +324,7 @@ description: "Reuse SMTP connections without giving up the API or framework that
         .withConnectionPoolCoreSize(2)
         .withConnectionPoolMaxSize(10)
         .withConnectionPoolExpireAfterMillis(30_000)
+        .withConnectionPoolExpireAfterCreationMillis(900_000)
         .buildMailer()) {
     mailer.sendMail(email); // sync or async, as configured
 }</code></pre>
@@ -335,6 +336,10 @@ description: "Reuse SMTP connections without giving up the API or framework that
         <li><code>Mailer.close()</code> waits for accepted work and closes that Mailer's registered pool.</li>
         <li>Retry, circuit breaking, and ambiguous-delivery policy remain application concerns.</li>
       </ul>
+      <p>
+        The optional creation-age limit complements idle expiry by eventually replacing even frequently reused connections. Leave it unset to disable
+        this rule, or clear it with <code>clearConnectionPoolExpireAfterCreationMillis()</code>. Only positive values are accepted.
+      </p>
     </div>
   </section>
 
@@ -381,6 +386,7 @@ try (BatchTransportExecutor&lt;String&gt; batch =
                      .withMaxPoolSize(8)
                      .withClaimTimeoutMillis(30_000)
                      .withExpireAfterMillis(60_000)
+                     .withExpireAfterCreationMillis(900_000)
                      .build()) {
     batch.registerSession("transactional", session);
 
@@ -404,6 +410,10 @@ try (BatchTransportExecutor&lt;String&gt; batch =
         The callback must not connect or close the Transport. A normal return releases it. Any escaping checked exception, runtime exception, or error
         invalidates it before the same failure is propagated or placed on the future.
       </p>
+      <p>
+        <code>withExpireAfterCreationMillis(...)</code> is optional; use <code>clearExpireAfterCreationMillis()</code> to remove it. Expiry checks run
+        asynchronously and never interrupt a callback that currently owns a Transport.
+      </p>
     </div>
   </section>
 
@@ -423,7 +433,7 @@ try (BatchTransportExecutor&lt;String&gt; batch =
           define claim, invalidation, draining, and shutdown policy; application teams take on that responsibility too.
         </p>
       </div>
-      <p><strong>Dependency:</strong> <code>org.simplejavamail:smtp-connection-pool:4.0.1</code></p>
+      <p><strong>Dependency:</strong> <code>org.simplejavamail:smtp-connection-pool:4.2.0</code></p>
     </div>
     <div class="side">
 <pre><code class="language-java">SmtpConnectionPool pool =
@@ -464,7 +474,7 @@ pool.shutDown().get();</code></pre>
           <code>connect()</code> / <code>close()</code> must stay framework-owned; the provider does not add message building, a work queue, or futures.
         </p>
       </div>
-      <p><strong>Dependencies:</strong> <code>smtp-connection-pool-jakarta-provider:4.0.1</code> and one physical provider such as <code>angus-mail:2.0.5</code></p>
+      <p><strong>Dependencies:</strong> <code>smtp-connection-pool-jakarta-provider:4.2.0</code> and one physical provider such as <code>angus-mail:2.0.5</code></p>
     </div>
     <div class="side">
 <pre><code class="language-java">Properties properties = new Properties();
@@ -505,7 +515,7 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
           boundary for Camel 4.21+ / Java 17+ integration, not as a general-purpose batch API.
         </p>
       </div>
-      <p><strong>Dependency:</strong> <code>org.simplejavamail:smtp-connection-pool-camel:4.0.1</code></p>
+      <p><strong>Dependency:</strong> <code>org.simplejavamail:smtp-connection-pool-camel:4.2.0</code></p>
     </div>
     <div class="side">
 <pre><code class="language-java">from("direct:mail")
@@ -547,6 +557,14 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
         BatchTransportExecutor.OAUTH2_TOKEN_PROVIDER_PROPERTY,
         (Supplier&lt;String&gt;) tokenService::currentAccessToken);</code></pre>
 
+    <h3>Idle expiry and creation-age expiry are independent</h3>
+    <p class="wide">
+      Idle expiry retires an available connection after it has not been claimed for the configured duration. Creation-age expiry retires an available
+      connection after its total lifetime reaches the configured duration, even if it was used regularly. Either rule can make a connection eligible
+      for asynchronous retirement, but neither interrupts an active lease. See the
+      <a href="configuration.html#section-reusing-connections">Mailer Java and property examples</a> for global and per-cluster configuration.
+    </p>
+
     <h3>JPMS names are stable through the full pool chain</h3>
     <p class="wide">
       Simple Java Mail consumes the fixed chain: <code>org.bbottema.genericobjectpool</code>,
@@ -570,7 +588,7 @@ SmtpPoolRegistry.shutdown(session).get();</code></pre>
   <section>
     <ul>
       <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/tree/master/smtp-connection-pool-demo">Direct pool, standalone batch, Jakarta Mail, Spring, Camel, and Simple Java Mail smoke demos</a></li>
-      <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/blob/4.0.1/README.md">Direct pool and provider reference</a></li>
+      <li><a href="https://github.com/simple-java-mail/smtp-connection-pool/blob/4.2.0/README.md">Direct pool and provider reference</a></li>
       <li><a href="configuration.html#section-reusing-connections">Mailer pool configuration</a> and <a href="configuration.html#section-clustering">cluster configuration</a></li>
       <li><a href="configuration.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
     </ul>

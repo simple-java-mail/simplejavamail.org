@@ -494,6 +494,7 @@ simplejavamail.defaults.connectionpool.coresize=0
 simplejavamail.defaults.connectionpool.maxsize=4
 simplejavamail.defaults.connectionpool.claimtimeout.millis=10000
 simplejavamail.defaults.connectionpool.expireafter.millis=5000
+simplejavamail.defaults.connectionpool.expireaftercreation.millis=900000
 simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
 
 # Per-cluster defaults
@@ -502,6 +503,7 @@ simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
 simplejavamail.defaults.connectionpool.clusters.orders.maxsize=3
 simplejavamail.defaults.connectionpool.clusters.orders.claimtimeout.millis=30000
 simplejavamail.defaults.connectionpool.clusters.orders.expireafter.millis=600000
+simplejavamail.defaults.connectionpool.clusters.orders.expireaftercreation.millis=900000
 simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RANDOM_ACCESS
 simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.maxsize=8
 
@@ -860,6 +862,7 @@ simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
 simplejavamail.defaults.connectionpool.clusters.orders.maxsize=3
 simplejavamail.defaults.connectionpool.clusters.orders.claimtimeout.millis=30000
 simplejavamail.defaults.connectionpool.clusters.orders.expireafter.millis=600000
+simplejavamail.defaults.connectionpool.clusters.orders.expireaftercreation.millis=900000
 simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RANDOM_ACCESS
 
 # or key the config directly by UUID
@@ -1087,7 +1090,8 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 				up to four connections active as long as needed.
 			</p>
 			<p class="wide">
-				The connection pool configuration is flexible, allowing adjustments to core connection pool size, maximum pool size, and connection expiry policy.
+				The connection pool configuration is flexible, allowing adjustments to core connection pool size, maximum pool size, idle expiry, and an optional
+				maximum connection age.
 			</p>
 			<p class="wide">
 				This section configures the Simple Java Mail <code>Mailer</code> path. Compare it with the standalone batch facade, direct leases, and
@@ -1104,6 +1108,7 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up (default 4)
 	   .withConnectionPoolClaimTimeoutMillis(TimeUnit.MINUTES.toMillis(1)) // wait max 1 minute for available connection (default about 24.9 days)
 	   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour (default 5 seconds)
+	   .withConnectionPoolExpireAfterCreationMillis(TimeUnit.MINUTES.toMillis(15)) // replace connections after 15 minutes, even when regularly reused
 	   .buildMailer();
 	</code></pre>
 				<p class="wide">
@@ -1113,7 +1118,18 @@ mailer.sendMailsInSimpleBatch(emails, true);  // schedules the whole batch async
 simplejavamail.defaults.connectionpool.maxsize=10
 simplejavamail.defaults.connectionpool.claimtimeout.millis=60000
 simplejavamail.defaults.connectionpool.expireafter.millis=1800000
+simplejavamail.defaults.connectionpool.expireaftercreation.millis=900000
 	</code></pre>
+		  <p class="wide">
+			  Idle expiry starts counting after the last use; creation-age expiry starts when the physical SMTP connection is created. The creation-age setting
+			  is disabled when it is not supplied. Configure a positive number of milliseconds, or call
+			  <code>clearConnectionPoolExpireAfterCreationMillis()</code> to remove a value inherited from properties. A value of <code>0</code> is not a disable
+			  sentinel and is rejected.
+		  </p>
+		  <p class="wide">
+			  Expiration is asynchronous and only retires available connections. It never interrupts an active lease, so a busy connection can live beyond the
+			  configured age until it is returned to the pool and the expiration worker observes it.
+		  </p>
 		  <p class="wide">
 			  A live connection pool keeps the JVM running. See <a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly
           application shutdown, including clustered Mailers.
@@ -1154,6 +1170,7 @@ Mailer clusteredMailer = mailerBuilder
     .withConnectionPoolMaxSize(10)
     .withConnectionPoolClaimTimeoutMillis(60000)
     .withConnectionPoolExpireAfterMillis(1800000)
+    .withConnectionPoolExpireAfterCreationMillis(900000)
     .withConnectionPoolLoadBalancingStrategy(LoadBalancingStrategy.ROUND_ROBIN)
     .buildMailer();</code></pre>
 				or using properties:
@@ -1216,12 +1233,18 @@ simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
 simplejavamail.defaults.connectionpool.clusters.orders.maxsize=3
 simplejavamail.defaults.connectionpool.clusters.orders.claimtimeout.millis=30000
 simplejavamail.defaults.connectionpool.clusters.orders.expireafter.millis=600000
+simplejavamail.defaults.connectionpool.clusters.orders.expireaftercreation.millis=900000
 simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RANDOM_ACCESS
 
 # Direct UUID-keyed config. If clusterkey.uuid is omitted, the alias itself must be a UUID.
 simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.maxsize=8
+simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.expireaftercreation.millis=1200000
 simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.loadbalancing.strategy=ROUND_ROBIN
 </code></pre>
+			<p>
+				A per-cluster creation-age value overrides the global setting. If it is omitted, that cluster inherits the global value; if both are omitted,
+				creation-age expiry remains disabled.
+			</p>
 		</div>
 
 		<p class="wide">
