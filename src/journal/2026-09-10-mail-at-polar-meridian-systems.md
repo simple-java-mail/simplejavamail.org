@@ -27,67 +27,59 @@ At Polar Meridian Systems, with hundreds of teams all over the world, someone is
 
 Well, with roughly **5.2 million email deliveries per working day**, they can't all go first.
 
-<div class="journal-diagram-wide">
+Meet the company.
+
+<div class="journal-diagram-wide polar-meridian-estate-map">
 
 ```mermaid
 %%{init: { "flowchart": { "padding": 8, "nodeSpacing": 24, "rankSpacing": 26 } } }%%
 flowchart TB
     accTitle: Polar Meridian's company-wide mail estate
-    accDescr: Polar Meridian has about 5.2 million recipient deliveries on a working day. Around 4.5 million follow existing staff, inbound and hosted mail routes. Around 700,000 come from selected business applications through the regional application-mail integration discussed in this case study. Both routes reach staff, shared and external inboxes.
+    accDescr: Polar Meridian has about 5.2 million recipient deliveries on a working day. Its company composition creates two mail estates. Around 4.5 million use existing corporate platforms for staff, inbound and hosted mail. Around 700,000 come from selected business applications through a regional application-mail service using Simple Java Mail and corporate SMTP. Both reach staff, shared and external inboxes.
 
-    subgraph polar["Polar Meridian Systems · global industrial manufacturer"]
+    subgraph polar["Company-wide mail estate"]
         direction TB
-        subgraph company["Company composition"]
+        subgraph company["Polar Meridian Systems — global industrial manufacturer"]
             direction LR
             regions["Regional subsidiaries<br/>Americas · EMEA · APAC"]
             operations["Factories + service operations<br/>field engineering"]
             corporate["Corporate functions<br/>Finance + Product Marketing"]
         end
 
-        apps["Selected business apps<br/>orders · service<br/>finance · campaigns"]
+        activity["<span class='polar-activity-label'>Company activity<br/>people · processes · systems</span>"]
 
-        subgraph integration["One regional application-mail integration"]
-            direction LR
-            policy[("Policy + durable work<br/>approved requests · archive")]
-            dispatch["Dispatch workers<br/>Simple Java Mail"]
-            observe["Observer + SRE monitoring<br/>outcomes · timing · pressure"]
-            policy --> dispatch
-            dispatch -.->|attempt result| observe
-        end
+        everyday["<span class='polar-estate-label'>Everyday company communication<br/>staff correspondence · inbound mail<br/>hosted tools</span>"]
+        existing["<span class='polar-estate-label'>Existing corporate mail platforms<br/>≈ 4.5m recipient deliveries / day</span>"]
 
-        smtp["Corporate SMTP platform<br/>approved regional relay"]
-        existing["Existing mail estate<br/>staff mail · incoming mail<br/>hosted tools"]
+        apps["<span class='polar-estate-label'>Selected business applications<br/>orders · service<br/>finance · campaigns</span>"]
+        integration["<span class='polar-estate-label'>Regional application-mail service<br/>Simple Java Mail via corporate SMTP<br/>≈ 700k recipient deliveries / day</span>"]
     end
 
     mailboxes(("Mailbox ecosystem<br/><span class='mailbox-audience'><span class='mailbox-actor'>👥</span><span>Staff</span></span><br/><span class='mailbox-audience'><span class='mailbox-actor'>👤</span><span>Customers</span></span><br/><span class='mailbox-audience'><span class='mailbox-actor'>👥</span><span>Partners</span></span>"))
 
-    regions --> apps
-    operations --> apps
-    corporate --> apps
-    apps -->|approved mail requests| integration
-    integration -->|SMTP + TLS| smtp
-    existing -->|≈ 4.5m / day| mailboxes
-    smtp -->|≈ 700k / day| mailboxes
+    regions --> activity
+    operations --> activity
+    corporate --> activity
+    activity --> everyday
+    activity --> apps
+    everyday --> existing
+    apps --> integration
+    existing --> mailboxes
+    integration --> mailboxes
 
-    classDef regional fill:#F6F7F3,stroke:#5B6872,color:#13212B
     classDef organisational fill:#ECEFEF,stroke:#9AA3A8,color:#37474F
-    classDef application fill:#E4F2F2,stroke:#087E8B,color:#13212B
     classDef component fill:#DCECF6,stroke:#2F6F9F,color:#13212B
-    classDef infrastructure fill:#13212B,stroke:#13212B,color:#FFFFFF
     classDef existing fill:#F6F7F3,stroke:#87929A,color:#37474F
     classDef person fill:#FFFFFF,stroke:#5B6872,color:#13212B
-    class regions regional
-    class operations,corporate organisational
-    class apps application
-    class policy,dispatch,observe component
-    class smtp infrastructure
-    class existing existing
+    class regions,operations,corporate,activity organisational
+    class everyday,existing,apps existing
+    class integration component
     class mailboxes person
+    linkStyle 3,5,7 stroke:#87929A,stroke-width:1.5px
+    linkStyle 4,6,8 stroke:#087E8B,stroke-width:1.75px
 ```
 
 </div>
-
-*Most of the 5.2 million deliveries already follow the grey route. The teal route is the smaller application slice we'll open up next.*
 
 Unlike [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), this company has a messaging-platform team, SREs and security engineers. Email has enough volume and enough competing users to warrant proper orchestration. A mistake in one application should not make several continents wait for password resets.
 
