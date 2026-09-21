@@ -3,6 +3,9 @@ title: "Simple Java Mail's Origin Story"
 description: "How an email bug at an insurance company became a utility class, then Vesijama, and eventually Simple Java Mail."
 date: "2026-08-29"
 category: "Project history"
+banner-type: tip
+banner-header: "Written without AI"
+banner-body: "No AI was used to write this article (except for fixing typos)."
 typora-root-url: ..
 typora-copy-images-to: ../assets/journal
 ---

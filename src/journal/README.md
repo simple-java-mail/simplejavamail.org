@@ -1,19 +1,25 @@
 # Engineering Journal authoring
 
-Write each journal entry as a Markdown file in this directory. The filename becomes the permanent URL:
+Write each journal entry as a Markdown file in this directory, prefixed with a sorting date in `YYYY-MM-DD` format. This keeps the files in reading order when Typora or a file browser sorts them alphabetically:
 
 ```text
-src/journal/what-belongs-in-simple-java-mail.md
+src/journal/2026-08-26-what-belongs-in-simple-java-mail.md
 -> /journal/what-belongs-in-simple-java-mail.html
 ```
 
-Use lowercase kebab-case filenames. Renaming a published file changes its URL, so treat the filename as permanent after publication.
+Use lowercase kebab-case after the date. Eleventy automatically removes the date prefix from `page.fileSlug`, so the date does not appear in the permanent URL. Changing only that prefix is safe; changing the words after it changes the URL.
+
+The filename date is for sorting files. The `date` in front matter remains the publication date used by the website and feed.
+
+## Editorial baseline
+
+Apply the [article editorial workflow](../../content-plan/article-editorial-workflow.md) to improve an outline or draft through a structured first pass. It covers the article's point, information order, examples, evidence, voice and rendered presentation, including the micro-narrative told by headings, visuals, code and captions when readers skim. The workflow is reusable across article types and does not prescribe a fixed story structure.
 
 ## Writing in Typora
 
-Open this directory as a folder in Typora, then duplicate `article-template.md` for each new entry. Rename the copy to the lowercase kebab-case URL you want before writing, fill in the front matter, and leave `draft: true` until the entry is ready to publish.
+Open this directory as a folder in Typora, then create a new `YYYY-MM-DD-your-article-title.md` file for each entry. Copy and fill in the front matter example below, and leave `draft: true` until the entry is ready to publish.
 
-The template carries two Typora-only settings:
+Keep these two Typora-only settings in each entry:
 
 ```yaml
 typora-root-url: ..
@@ -61,16 +67,39 @@ The complete date is retained for feed metadata and chronological ordering. Jour
 
 Optional fields:
 
+- `subtitle`, shown directly below the title; supports inline Markdown such as `~~strikethrough~~`
 - `author`, which defaults to the journal author in `src/_data/site.json`
 - `updated`, formatted as `YYYY-MM-DD`
 - `draft`, which defaults to `false`
-- `ai-banner`, an article-specific explanation of how AI contributed to the writing
+- `banner-type`, `banner-header` and `banner-body`, together defining an article banner
 - `mermaid`, set to `true` when the article contains Mermaid diagrams
-- `series`, with a shared `title` plus numeric `part` and `total` values
+- `series`, with a shared `title` and numeric `part`; add `total` when the final number of parts is known
+- `caseStudy`, with a `company`, short `label`, `description` and numeric `order` for the Case studies index
 
-When `ai-banner` contains text, the article displays it in an AI-assisted writing disclosure. Leave the field out when AI was used only to fix typos; those articles receive the standard no-AI writing disclosure automatically.
+The banner fields are optional as a group. Leave all three out for no banner; there is no automatic authorship disclosure. Choose `note` for amber, `info` for blue or `tip` for green:
+
+```yaml
+banner-type: note
+banner-header: "AI-Assisted"
+banner-body: >-
+  This article began as an AI-assisted draft, then was reviewed and edited by me.
+```
+
+The header is uppercased by CSS, so its original wording stays intact in the Markdown file. Header and body are plain text, not HTML or Markdown. Banners can contain any article-specific notice, not just information about AI use.
 
 For a diagram that Typora and the website can both render, set `mermaid: true` and use a fenced `mermaid` block. The website loads its local Mermaid renderer only for articles carrying that flag.
+
+For a tall diagram, keep the fence's language as just `mermaid` so Typora recognizes it, and add `%% journal: compact` on a line inside the block:
+
+```mermaid
+%% journal: compact
+flowchart TB
+    A --> B
+```
+
+Typora treats that line as an ordinary Mermaid comment. The website uses it to cap the diagram's height at 600px and scale it proportionally to fit narrower screens. Captions work the same way as for other diagrams.
+
+Keep the shared flowchart spacing unless a diagram needs a specific adjustment. Use the compact comment to reduce its displayed size rather than squeezing its `rankSpacing`. A longer arrow such as `--->` can reserve extra room for a label where a connection enters a group.
 
 Series metadata adds an editorial line above the article title and its Journal-index entry without changing the article's permanent URL:
 
@@ -82,6 +111,28 @@ series:
 ```
 
 A series occupies the chronological position of Part 1 and remains together. Use Part 1's publication date for every article in the set; the individual `part` values follow the Journal's oldest-to-newest reading order. The RSS feed remains newest first for feed readers.
+
+For alphabetical file sorting, give the parts consecutive filename dates while keeping their shared publication date in front matter. For example, all three of these entries have `date: "2026-09-01"`:
+
+```text
+2026-09-01-twenty-years-of-simple-java-mail.md
+2026-09-02-the-libraries-behind-simple-java-mail.md
+2026-09-03-the-library-i-keep-coming-back-to.md
+```
+
+### Case studies
+
+Case studies are Journal articles with an additional entry on `/case-studies.html`. Add this metadata to include one:
+
+```yaml
+caseStudy:
+  company: "Staple & Sons"
+  label: "Self-managed SMTP"
+  description: "A small company secures its self-managed mail setup after a troll farm abuses it."
+  order: 1
+```
+
+`label` is the short badge identifying the kind of setup, such as "Self-managed SMTP" or "Enterprise integration". `order` controls only the Case studies index, not the Journal's reading order. The company profile is separate from the article's title and description; the index links to the existing Journal URL. Draft case studies appear in local preview and are excluded from the production index, just like other Journal drafts.
 
 ### Categories
 
@@ -95,9 +146,23 @@ Use one of these exact values:
 
 The category describes the entry's main lens, not its tone. For a personal account of how Simple Java Mail began in 2006 and why it became a library, use `Project history`.
 
-The page template provides the article title, so begin the Markdown body with prose or an `##` heading. Any Markdown construct that produces an `h1` fails the build. Headings from `h2` through `h6` receive permalinks; second- and third-level headings are also added to the article navigation automatically.
+The page template provides the article title, so begin the Markdown body with prose or an `##` heading. Any Markdown construct that produces an `h1` fails the build. Headings from `h2` through `h6` receive permalinks; only top-level article sections (`##` / `h2`) appear in the table of contents.
 
 Fenced code blocks, tables, blockquotes, lists, links, and raw HTML are supported. Raw HTML is trusted and is not sanitized, so only use content maintained in this repository. Put journal images in `src/assets/journal/`. Absolute site paths such as `/assets/journal/example.png` and document-relative paths such as `../assets/journal/example.png` both resolve to the same published asset.
+
+For an image without a border or padding and with normal paragraph spacing, add `class="journal-paragraph-image"` to its `<img>` tag. Images remain centered by default. Add `image-align-left` or `image-align-right` to align any journal image, independently of its other styling. Combine them with, for example, `class="journal-paragraph-image image-align-right"`.
+
+### Image, code and diagram captions
+
+Put an italic-only paragraph immediately after a standalone image or fenced code block, including a Mermaid diagram, separated by a blank line. Typora displays ordinary italic text; the website groups the pair into a `<figure>` with a styled `<figcaption>`. Alt text remains separate from the visible caption.
+
+```markdown
+![Example quotation email](/assets/journal/example-email.png)
+
+*The quotation is just an excuse to deliver the personal note.*
+```
+
+This works with Markdown images and standalone `<img>` tags, including their size and alignment classes. Use the same italic line after a code fence or Mermaid diagram; flowcharts and sequence diagrams both support it. Captions can contain links and inline code. Ordinary paragraphs, inline images, lists and blockquotes are unchanged, as are diagrams without a caption.
 
 ## Citing archived sources
 

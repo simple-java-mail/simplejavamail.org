@@ -9,7 +9,9 @@ series:
   total: 3
 typora-root-url: ..
 typora-copy-images-to: ../assets/journal
-ai-banner: "This article is from a set of three that emerged from a deep AI-assisted archaeology dig. Due to the long history and sheer number of references unearthed, this article was also streamlined using AI and wouldn't have been possible otherwise."
+banner-type: note
+banner-header: "AI-Assisted"
+banner-body: "This article is from a set of three that emerged from a deep AI-assisted archaeology dig. Due to the long history and sheer number of references unearthed, this article was also streamlined using AI and wouldn't have been possible otherwise."
 mermaid: true
 ---
 
@@ -150,7 +152,7 @@ The gap became painful in [RTF-to-HTML issue #6](https://github.com/bbottema/rtf
 
 This is where my usual style of hacking reaches its limit. I could see what the parser needed to do and what its API should look like. I could not keep enough of the RTF grammar, Outlook's variations and rendering semantics in my head to implement a real parser in the time I had.
 
-Capable coding agents changed that equation. I could make them investigate the formats, compare implementations, preserve the split between RTF parsing and Outlook conversion and produce the irritating number of regression tests the problem deserved. I still had to decide what the converter promised and how Outlook Message Parser should use it. The agent could stay inside the parser until the details were right. In July 2026, more than six years after the general-parser issue was opened, the [parser overhaul](https://github.com/bbottema/rtf-to-html/commit/9775f4c72b51f843068ba3236fdfcbded395ab8e) finally handled real RTF-only Outlook messages and the original `\par` case. [The Library I Keep Coming Back To](/journal/the-library-i-keep-coming-back-to.html) tells the broader story of how that changed my maintenance rhythm.
+Capable coding agents changed that equation. I could make them investigate the formats, compare implementations, preserve the split between RTF parsing and Outlook conversion and produce the irritating number of regression tests the problem deserved. I still had to decide what the converter promised and how Outlook Message Parser should use it. The agent could stay inside the parser until the details were right. In July 2026, more than six years after the general-parser issue was opened, the [parser overhaul](https://github.com/bbottema/rtf-to-html/commit/9775f4c72b51f843068ba3236fdfcbded395ab8e) finally handled real RTF-only Outlook messages and the original `\par` case. The Library I Keep Coming Back To tells the broader story of how that changed my maintenance rhythm.
 
 Coding agents do not turn me into an RTF expert; they let me combine architectural judgement with more technical depth than I could muster by myself.
 
@@ -210,7 +212,7 @@ That left users [stranded behind ignored fixes](https://github.com/bbottema/simp
 
 You see, the code had already passed through several hands. JavaMail-Crypto started on [SourceForge](/sources/sourceforge/javamail-crypto/project.html) in 2003 and covered both S/MIME and OpenPGP. Its archives contain the same sort of real-world friction: a signature [accepted by Outlook and Thunderbird but rejected by webMethods](/sources/sourceforge/javamail-crypto/mailman/message-457552.html#message-457552), and an old bug where [`setHeader` overwrote repeated headers](/sources/sourceforge/javamail-crypto/bugs/3.html#ticket-3) such as multiple `To` fields. Torsten extracted and modernised the S/MIME part in [2015](https://github.com/markenwerk/java-utils-mail-smime/commit/2ae3534db52e00bd8427cdc68ed83fef4f0d8066) as `java-utils-mail-smime`.
 
-I had permission from [two of the three](https://github.com/bbottema/simple-java-mail/issues/295#issuecomment-869926957) by June 2021 and [all three by Christmas Eve](https://github.com/bbottema/simple-java-mail/issues/295#issuecomment-1000912695). The Jakarta Mail migration had been underway for half a year by then, with [a break while I caught my breath](/journal/the-library-i-keep-coming-back-to.html#i-thought-i-was-done). On 28 December I finished [migrating and relicensing `java-utils-mail-smime`](https://github.com/simple-java-mail/java-utils-mail-smime/commit/6eac0beb12506b9dbfb345431ab3f1de05ffb5e4). Simple Java Mail 7.0.0 followed days later. What I took home from this is that working in open source and trying to be effective sometimes means you have to track down the people behind three generations of a project before you can move it forward.
+I had permission from [two of the three](https://github.com/bbottema/simple-java-mail/issues/295#issuecomment-869926957) by June 2021 and [all three by Christmas Eve](https://github.com/bbottema/simple-java-mail/issues/295#issuecomment-1000912695). The Jakarta Mail migration had been underway for half a year by then, with a break while I caught my breath. On 28 December I finished [migrating and relicensing `java-utils-mail-smime`](https://github.com/simple-java-mail/java-utils-mail-smime/commit/6eac0beb12506b9dbfb345431ab3f1de05ffb5e4). Simple Java Mail 7.0.0 followed days later. What I took home from this is that working in open source and trying to be effective sometimes means you have to track down the people behind three generations of a project before you can move it forward.
 
 ## A tale of two proxies
 
@@ -240,7 +242,7 @@ flowchart LR
 
 Simple Java Mail has two unrelated SOCKS stories, and I have managed to blur them together before.
 
-The first is the feature users see. [Still the Same Ticket](/journal/twenty-years-of-simple-java-mail.html) covers the six-year journey from declining proxy support to making it a supported feature. The supporting-library detail is that [issue #38](https://github.com/bbottema/simple-java-mail/issues/38) led me to adapt `sockslib` down to a small local bridge that accepts JavaMail's anonymous connection and forwards it through an authenticated proxy. One follow-up bug then turned out to be the difference between Windows saying `socket closed` and Linux saying [`Socket closed`](https://github.com/bbottema/simple-java-mail/issues/56). These are the details hiding behind a checkbox labelled "authenticated proxy support."
+The first is the feature users see. Still the Same Ticket covers the six-year journey from declining proxy support to making it a supported feature. The supporting-library detail is that [issue #38](https://github.com/bbottema/simple-java-mail/issues/38) led me to adapt `sockslib` down to a small local bridge that accepts JavaMail's anonymous connection and forwards it through an authenticated proxy. One follow-up bug then turned out to be the difference between Windows saying `socket closed` and Linux saying [`Socket closed`](https://github.com/bbottema/simple-java-mail/issues/56). These are the details hiding behind a checkbox labelled "authenticated proxy support."
 
 The second is [java-socks-proxy-server](https://github.com/bbottema/java-socks-proxy-server), a server used to test SOCKS integrations. It continued a small GPLv2 project by José Ricardo Damico. I had changed and relicensed it without preserving a convincing permission trail. An annoyed user eventually challenged that in [issue #11](https://github.com/bbottema/java-socks-proxy-server/issues/11) and said, ["I will not use 'your' code"](https://github.com/bbottema/java-socks-proxy-server/issues/11#issuecomment-1311974568). The quotation marks did their job.
 

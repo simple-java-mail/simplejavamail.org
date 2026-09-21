@@ -1,6 +1,6 @@
 ---
 title: "Still the Same Ticket"
-description: "How users, mistakes and changing ideas about simplicity turned one mail utility into the Simple Java Mail of today."
+description: "How Simple Java Mail grew more capable over twenty years while pursuing the same goal: making email simple for developers through a well-designed API."
 date: "2026-09-01"
 category: "Project history"
 series:
@@ -10,9 +10,15 @@ series:
 draft: true
 typora-root-url: ..
 typora-copy-images-to: ../assets/journal
-ai-banner: "This article is from a set of three that emerged from a deep AI-assisted archaeology dig. Due to the long history and sheer number of references unearthed, this article was also streamlined using AI and wouldn't have been possible otherwise."
+banner-type: note
+banner-header: "AI-Assisted"
+banner-body: "This article is from a set of three that emerged from a deep AI-assisted archaeology dig. Due to the long history and sheer number of references unearthed, this article was also streamlined using AI and wouldn't have been possible otherwise."
 mermaid: true
 ---
+
+I had made a reusable mailer that should not be reused.
+
+It could carry content from the previous email into the next one. A user found that less than two months after I published the library.
 
 ## It all started with a ticket
 
@@ -41,7 +47,7 @@ That table makes the path look much straighter than it was. There were quiet yea
 
 The first two reported issues arrived less than two months after the initial upload. One was a null pointer when no HTML body was supplied. The reporter not only found it, but [returned with the exact patch](/sources/google-code/vesijama/issue-1.html#comment-1) twenty-five minutes later. Basic stuff, stuff you normally catch with JUnit. I had much to learn.
 
-The other was even worse. A `Mailer` could retain content from the _previously_ sent message because I reused part of the MIME structure. The report correctly called out the ["severe security and performance implications"](/sources/google-code/vesijama/issue-2.html#comment-0). I had made a reusable mailer that should not be reused. The fix was to create a fresh MIME wrapper for every email. This is painful to read back, now.
+The other was the reusable-mailer bug. I had reused part of the MIME structure. The report correctly called out the ["severe security and performance implications"](/sources/google-code/vesijama/issue-2.html#comment-0). The fix was to create a fresh MIME wrapper for every email. This is painful to read back, now.
 
 That became a familiar pattern: I would implement what looked complete, and actual usage would reveal the missing half. Users corrected the brackets around a [`Content-ID`](/sources/google-code/vesijama/issue-5.html#comment-0), found that JavaMail's default charset could quietly turn text into US-ASCII instead of [UTF-8](/sources/google-code/vesijama/issue-7.html#comment-2), and discovered that a port stopped working when I passed JavaMail an `Integer` while its properties expected a [string](/sources/google-code/vesijama/issue-8.html#comment-0). That last one had even worked in my tests.
 

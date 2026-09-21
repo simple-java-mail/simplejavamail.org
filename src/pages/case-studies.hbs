@@ -1,0 +1,43 @@
+---
+layout: "layouts/marketing.hbs"
+permalink: "/case-studies.html"
+tags:
+  - "publicPage"
+title: "Case studies"
+style: "journal"
+description: "Worked email-system designs with fictional companies: self-managed mail servers, enterprise applications and customer-specific SMTP services."
+---
+    <section class="journal-index">
+      <div class="shell">
+        <header class="journal-index-header">
+          <h1>Case studies</h1>
+          <a class="journal-index-link" href="{{site.journal.indexUrl}}">Engineering Journal</a>
+        </header>
+
+        <p class="journal-index-intro">These are worked examples with fictional companies, not customer stories. Each has a different mail setup and a different set of problems to solve.</p>
+
+        <div class="case-study-grid">
+          {{#each collections.caseStudies}}
+            <article class="case-study-card">
+              <a class="case-study-card-link" href="{{this.url}}" aria-labelledby="case-study-company-{{@index}}" aria-describedby="case-study-label-{{@index}}">
+                <span class="case-study-label" id="case-study-label-{{@index}}">{{data.caseStudy.label}}</span>
+                <h2 id="case-study-company-{{@index}}">
+                  {{#if data.caseStudy.logo}}
+                    <img class="case-study-logo" src="{{data.caseStudy.logo}}" alt="{{data.caseStudy.company}}" width="600" height="200" decoding="async">
+                  {{else}}
+                    {{data.caseStudy.company}}
+                  {{/if}}
+                </h2>
+                <p>{{data.caseStudy.description}}</p>
+                <span class="case-study-card-title">
+                  <span>{{data.title}}</span>
+                  <span aria-hidden="true">→</span>
+                </span>
+              </a>
+            </article>
+          {{else}}
+            <p>The first case studies are still being written. In the meantime, you can read the <a href="{{site.journal.indexUrl}}">Engineering Journal</a> or find a guide for <a href="/use-cases.html">common email jobs</a>.</p>
+          {{/each}}
+        </div>
+      </div>
+    </section>

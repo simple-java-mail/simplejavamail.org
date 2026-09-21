@@ -77,9 +77,9 @@ eleventyExcludeFromCollections: true
           </header>
           <section class="sfa-discussion" aria-label="Discussion thread">
             {{#each sourceForgeSource.posts}}
-              <article id="{{slug}}" class="sfa-post" style="--post-depth: {{depth}}">
+              <article id="{{anchor}}" class="sfa-post" style="--post-depth: {{depth}}">
                 <header>
-                  <a href="#{{slug}}">{{authorName}}</a>
+                  <a href="#{{anchor}}">{{authorName}}</a>
                   <span>{{author}} · <time datetime="{{posted.iso}}">{{posted.label}}</time></span>
                 </header>
                 <div class="sfa-markup">{{{sourceForgeMarkup text}}}</div>

@@ -7,21 +7,37 @@ const dateValue = z.union([z.date(), z.string()]).refine((value) => Boolean(isoD
 const articleSeries = z.object({
   title: nonBlankText,
   part: z.number().int().positive(),
-  total: z.number().int().positive(),
-}).refine(({ part, total }) => part <= total, {
+  total: z.number().int().positive().optional(),
+}).refine(({ part, total }) => total === undefined || part <= total, {
   message: "part must not be greater than total",
 });
 const articleData = z.object({
   title: nonBlankText,
+  subtitle: nonBlankText.optional(),
   description: nonBlankText,
   category: nonBlankText,
   date: dateValue,
   author: nonBlankText.optional(),
   updated: dateValue.optional(),
   draft: z.boolean().optional(),
-  "ai-banner": nonBlankText.optional(),
+  "banner-type": z.enum(["note", "info", "tip"]).optional(),
+  "banner-header": nonBlankText.optional(),
+  "banner-body": nonBlankText.optional(),
   mermaid: z.boolean().optional(),
   series: articleSeries.optional(),
+  caseStudy: z.object({
+    company: nonBlankText,
+    logo: nonBlankText.startsWith("/assets/").optional(),
+    label: nonBlankText,
+    description: nonBlankText,
+    order: z.number().int().positive(),
+  }).optional(),
+}).refine((data) => {
+  const fields = [data["banner-type"], data["banner-header"], data["banner-body"]];
+  return fields.every((value) => value === undefined) || fields.every(Boolean);
+}, {
+  message: "Provide banner-type, banner-header and banner-body together, or omit all three",
+  path: ["banner-type"],
 });
 
 export default {

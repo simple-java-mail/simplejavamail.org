@@ -115,6 +115,7 @@ function normalizeDiscussion(source) {
     postIds.add(post.slug);
     return {
       ...post,
+      anchor: post.slug,
       depth: post.slug.split("/").length,
       authorName: source.authorNames?.[post.author] || post.author,
       posted: sourceForgeTimestamp(post.timestamp),

@@ -11,7 +11,10 @@ description: "Whole-system email design, project archaeology, and maintainer per
       <div class="shell journal-index-inner">
         <header class="journal-index-header">
           <h1>Engineering Journal</h1>
-          <a class="journal-feed-link" href="{{site.journal.feedUrl}}">RSS</a>
+          <nav class="journal-index-links" aria-label="Journal links">
+            <a class="journal-index-link" href="/case-studies.html">Case studies</a>
+            <a class="journal-index-link" href="{{site.journal.feedUrl}}">RSS</a>
+          </nav>
         </header>
 
         <div class="journal-entry-list">
@@ -22,7 +25,7 @@ description: "Whole-system email design, project archaeology, and maintainer per
                   <p class="journal-series-label journal-series-label--index">
                     <span>{{data.series.title}}</span>
                     <span aria-hidden="true">·</span>
-                    <span class="journal-series-part">Part {{data.series.part}} of {{data.series.total}}</span>
+                    <span class="journal-series-part">Part {{data.series.part}}{{#if data.series.total}} of {{data.series.total}}{{/if}}</span>
                   </p>
                 {{/if}}
                 <h2><a href="{{this.url}}">{{data.title}}</a></h2>

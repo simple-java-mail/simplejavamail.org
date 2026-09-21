@@ -74,6 +74,7 @@ export default function (eleventyConfig) {
 
   const markdown = createMarkdownLibrary();
   eleventyConfig.setLibrary("md", markdown);
+  eleventyConfig.addFilter("markdownInline", (value) => markdown.renderInline(String(value ?? "")));
 
   eleventyConfig.addPlugin(handlebarsPlugin, { eleventyLibraryOverride: Handlebars });
   eleventyConfig.addPlugin(rssPlugin);
@@ -85,6 +86,10 @@ export default function (eleventyConfig) {
   eleventyConfig.addCollection("publishedJournal", (collectionApi) => orderJournalEntries(collectionApi
     .getFilteredByTag("journal")
     .filter((entry) => !entry.data.draft), true));
+  eleventyConfig.addCollection("caseStudies", (collectionApi) => collectionApi
+    .getFilteredByTag("journal")
+    .filter((entry) => entry.data.caseStudy && !entry.data.draft)
+    .sort((left, right) => left.data.caseStudy.order - right.data.caseStudy.order));
 
   eleventyConfig.addPreprocessor("journal-policy", "md", function (data, content) {
     if (!articlePath.test(this.inputPath)) return;

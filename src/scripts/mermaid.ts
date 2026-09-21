@@ -9,6 +9,10 @@ if (mermaid && document.querySelector('.mermaid')) {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
+    // Mermaid 12 defaults to ELK and its new "neo" look. Keep the established
+    // Journal diagrams visually stable.
+    layout: 'dagre',
+    look: 'classic',
     theme: 'base',
     themeVariables: {
       background: '#FFFFFF',
@@ -26,13 +30,17 @@ if (mermaid && document.querySelector('.mermaid')) {
       curve: 'basis',
       diagramPadding: 4,
       htmlLabels: true,
-      nodeSpacing: 24,
-      rankSpacing: 28,
+      nodeSpacing: 32,
+      rankSpacing: 40,
+      subGraphTitleMargin: { top: 8, bottom: 16 },
       useMaxWidth: true,
     },
   });
 
-  void mermaid.run({ querySelector: '.mermaid' }).catch((error: unknown) => {
-    console.error('Unable to render Mermaid diagram.', error);
-  });
+  // Mermaid measures labels during layout; wait for their web fonts to avoid clipping.
+  void document.fonts.ready
+    .then(() => mermaid.run({ querySelector: '.mermaid' }))
+    .catch((error: unknown) => {
+      console.error('Unable to render Mermaid diagram.', error);
+    });
 }

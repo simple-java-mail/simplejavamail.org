@@ -1,5 +1,6 @@
 import MarkdownIt from "markdown-it";
 import markdownItAnchor from "markdown-it-anchor";
+import { journalCaptions } from "./journal-captions.mjs";
 
 function journalHeadingPermalink(slug, options, state, index) {
   const heading = state.tokens[index + 1];
@@ -21,7 +22,11 @@ export function createMarkdownLibrary() {
     const token = tokens[index];
     const language = token.info.trim().split(/\s+/u, 1)[0];
     if (language !== "mermaid") return defaultFenceRenderer(tokens, index, options, env, renderer);
-    return `<figure class="journal-diagram" data-pagefind-ignore><pre class="mermaid">${markdown.utils.escapeHtml(token.content)}</pre></figure>\n`;
+    const compactClass = /^\s*%% journal: compact\s*$/mu.test(token.content) ? " mermaid-compact" : "";
+    const diagram = `<pre class="mermaid${compactClass}">${markdown.utils.escapeHtml(token.content)}</pre>`;
+    // The caption plugin supplies the enclosing figure when a caption is present.
+    if (token.meta?.journalCaptioned) return `${diagram}\n`;
+    return `<figure class="journal-diagram" data-pagefind-ignore>${diagram}</figure>\n`;
   };
   markdown.use(markdownItAnchor, {
     level: [2, 3, 4, 5, 6],
@@ -30,6 +35,7 @@ export function createMarkdownLibrary() {
     tabIndex: false,
     permalink: journalHeadingPermalink,
   });
+  markdown.use(journalCaptions);
   return markdown;
 }
 
@@ -130,9 +136,9 @@ export function slugifyHeading(value) {
 
 export function headingsFromHtml(content) {
   const headings = [];
-  const pattern = /<h([23])\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/gi;
+  const pattern = /<h2\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/gi;
   for (const match of String(content).matchAll(pattern)) {
-    headings.push({ depth: Number(match[1]), id: match[2], text: textFromHtml(match[3]).replace(/^#\s*/, "").trim() });
+    headings.push({ depth: 2, id: match[1], text: textFromHtml(match[2]).replace(/^#\s*/, "").trim() });
   }
   return headings;
 }
