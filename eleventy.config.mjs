@@ -88,7 +88,7 @@ export default function (eleventyConfig) {
     .filter((entry) => !entry.data.draft), true));
   eleventyConfig.addCollection("caseStudies", (collectionApi) => collectionApi
     .getFilteredByTag("journal")
-    .filter((entry) => entry.data.caseStudy && !entry.data.draft)
+    .filter((entry) => entry.data.caseStudy)
     .sort((left, right) => left.data.caseStudy.order - right.data.caseStudy.order));
 
   eleventyConfig.addPreprocessor("journal-policy", "md", function (data, content) {
