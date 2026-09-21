@@ -27,7 +27,11 @@ At Polar Meridian Systems, with hundreds of teams all over the world, someone is
 
 Well, with roughly **5.2 million email deliveries per working day**, they can't all go first.
 
-Meet the company.
+## Meet the company
+
+Let's give Polar Meridian 150,000 employees worldwide, with about 100,000 regular users of corporate email. That puts its workforce somewhere between ING's roughly 64,000 employees in 2025 and HCLTech's 223,000 in its 2024–25 annual report. The staff estimate allows roughly forty received emails a day per regular user on average, and much less for infrequent users. Some teams receive far more than others.
+
+Unlike [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), this company has a messaging-platform team, SREs and security engineers. Email has enough volume and enough competing users to warrant proper orchestration. A mistake in one application should not make several continents wait for password resets.
 
 <div class="journal-diagram-wide polar-meridian-estate-map">
 
@@ -35,7 +39,7 @@ Meet the company.
 %%{init: { "flowchart": { "padding": 8, "nodeSpacing": 24, "rankSpacing": 26 } } }%%
 flowchart TB
     accTitle: Polar Meridian's company-wide mail estate
-    accDescr: Polar Meridian has about 5.2 million recipient deliveries on a working day. Its company composition creates two mail estates. Around 4.5 million use existing corporate platforms for staff, inbound and hosted mail. Around 700,000 come from selected business applications through a regional application-mail service using Simple Java Mail and corporate SMTP. Both reach staff, shared and external inboxes.
+    accDescr: Polar Meridian has about 5.2 million recipient deliveries per working day. Existing corporate platforms carry around 4.5 million, including 600,000 from staff to external contacts. The regional application-mail service uses Simple Java Mail and corporate SMTP for 700,000, including 150,000 external application notifications and a working-day average of 100,000 campaign deliveries. The smaller figures are included in those route totals, not additional traffic. Across both routes, staff inboxes receive about 4.1 million deliveries and shared mailboxes and processing addresses receive 200,000. Both routes also reach customers and partners. These are rounded planning estimates, not exact reconciled counts.
 
     subgraph polar["Company-wide mail estate"]
         direction TB
@@ -49,13 +53,13 @@ flowchart TB
         activity["<span class='polar-activity-label'>Company activity<br/>people · processes · systems</span>"]
 
         everyday["<span class='polar-estate-label'>Everyday company communication<br/>staff correspondence · inbound mail<br/>hosted tools</span>"]
-        existing["<span class='polar-estate-label'>Existing corporate mail platforms<br/>≈ 4.5m recipient deliveries / day</span>"]
+        existing["<span class='polar-estate-label'>Existing corporate mail platforms</span>"]
 
         apps["<span class='polar-estate-label'>Selected business applications<br/>orders · service<br/>finance · campaigns</span>"]
-        integration["<span class='polar-estate-label'>Regional application-mail service<br/>Simple Java Mail via corporate SMTP<br/>≈ 700k recipient deliveries / day</span>"]
+        integration["<span class='polar-estate-label'>Regional application-mail service<br/>Simple Java Mail via corporate SMTP</span>"]
     end
 
-    mailboxes(("Mailbox ecosystem<br/><span class='mailbox-audience'><span class='mailbox-actor'>👥</span><span>Staff</span></span><br/><span class='mailbox-audience'><span class='mailbox-actor'>👤</span><span>Customers</span></span><br/><span class='mailbox-audience'><span class='mailbox-actor'>👥</span><span>Partners</span></span>"))
+    mailboxes(("Mailbox ecosystem<br/><span class='mailbox-audience'><span class='mailbox-actor'>👥</span><span>Staff<br/>≈ 4.1m / day</span></span><br/><span class='mailbox-audience'><span class='mailbox-actor'>📥</span><span>Shared / processing<br/>200k / day</span></span><br/><span class='mailbox-audience'><span class='mailbox-actor'>👤</span><span>Customers</span></span><br/><span class='mailbox-audience'><span class='mailbox-actor'>👥</span><span>Partners</span></span>"))
 
     regions --> activity
     operations --> activity
@@ -64,8 +68,8 @@ flowchart TB
     activity --> apps
     everyday --> existing
     apps --> integration
-    existing --> mailboxes
-    integration --> mailboxes
+    existing -->|"≈ 4.5m total / day<br/>incl. 600k staff-to-external"| mailboxes
+    integration -->|"700k total / day<br/>incl. 150k external notices<br/>+ 100k campaign deliveries"| mailboxes
 
     classDef organisational fill:#ECEFEF,stroke:#9AA3A8,color:#37474F
     classDef component fill:#DCECF6,stroke:#2F6F9F,color:#13212B
@@ -81,43 +85,7 @@ flowchart TB
 
 </div>
 
-Unlike [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), this company has a messaging-platform team, SREs and security engineers. Email has enough volume and enough competing users to warrant proper orchestration. A mistake in one application should not make several continents wait for password resets.
-
-## Let's break it down, shall we?
-
-Let's give Polar Meridian 150,000 employees worldwide, with about 100,000 regular users of corporate email. These are rough planning figures for our fictional manufacturer, covering a full 24-hour working day across all its regions and mail platforms.
-
-- **About 4.1 million to staff inboxes:** conversations, meetings, workflow notifications, engineering and operational alerts, and incoming external mail.
-- **200,000 to shared mailboxes and processing addresses:** deliveries to support queues, operational mailboxes and email-to-ticket systems, separate from individual inboxes.
-- **600,000 from staff to external contacts:** replies, sales, support, procurement and distributor conversations.
-- **150,000 external application notifications:** order and shipment updates, account notices, documents and service bulletins.
-- **100,000 campaign deliveries, averaged across working days:** two million eligible contacts receiving thirteen campaigns a year, spread over 260 working days. An actual campaign day will look quite different.
-
-That's about **5.2 million recipient deliveries per working day**, excluding blocked spam, retries or archive copies. The staff estimate allows roughly forty received emails a day per regular user on average, and much less for infrequent users. Some teams receive far more than others.
-
 Our **Java service** handles **600,000 transactional and operational deliveries**, plus the campaign averages: **700,000 per working day**, already included in the company total. Employee correspondence, incoming mail and notifications sent directly by hosted tools stay on their existing systems.
-
-```mermaid
-%% journal: compact
-%%{init: { "flowchart": { "padding": 8 } } }%%
-flowchart TB
-    accTitle: Where Simple Java Mail fits in Polar Meridian's email
-    accDescr: Two mail routes contribute to Polar Meridian's roughly 5.2 million recipient deliveries per working day. Staff correspondence, incoming mail and hosted-tool notifications use existing mail systems for about 4.5 million deliveries. Selected business applications submit notifications and campaigns through our Java service using Simple Java Mail, then corporate SMTP, for 700,000 deliveries. Both routes reach staff, shared and external inboxes. Campaign figures are working-day averages.
-
-    ordinary["Staff + outside senders<br/>+ hosted tools"] --> existing["Existing mail systems"]
-    apps["Business applications<br/>notifications + campaigns"] --> service["Our Java service<br/>Simple Java Mail"]
-    existing -->|≈ 4.5m / day| inboxes["Staff, shared and<br/>external inboxes"]
-    service -->|700k / day<br/>via corporate SMTP| inboxes
-
-    classDef context fill:#ECEFEF,stroke:#9AA3A8,color:#37474F
-    classDef design fill:#E4F2F2,stroke:#087E8B,color:#13212B
-    class ordinary,existing context
-    class apps,service design
-    linkStyle 0,2 stroke:#87929A
-    linkStyle 1,3 stroke:#087E8B
-```
-
-*Two routes within the same 5.2-million total. We're designing the 700,000-delivery application route.*
 
 There are real examples of this kind of application-mail setup. Retarus describes [BSH bringing about a dozen cloud applications onto one mail platform](https://www.retarus.com/cases/customer-stories/bsh/) and [Solvay sending about 350,000 emails a month from SAP](https://www.retarus.com/cases/customer-stories/solvay/). Those are particular application workloads, not whole-company totals or the measurements behind our fictional numbers.
 
@@ -125,7 +93,7 @@ Let's design the service they operate using Simple Java Mail 10.0.0. We'll follo
 
 ## The setup
 
-One *regional deployment* is shown here. Simple Java Mail runs inside the dispatch workers; the corporate messaging team operates the SMTP service behind the approved submission endpoints.
+Let's look inside one of Polar Meridian's regional application-mail services. Its Java dispatch workers use Simple Java Mail to send through the corporate SMTP service, which the messaging-platform team operates.
 
 ```mermaid
 %% journal: compact
