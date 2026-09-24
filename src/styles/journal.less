@@ -362,7 +362,7 @@
   white-space: pre-wrap;
 }
 .journal-prose pre.mermaid svg { display: block; width: 100% !important; max-width: 640px !important; height: auto !important; margin: auto; }
-.journal-prose pre.mermaid.mermaid-compact svg { flex: 0 1 auto; width: 100% !important; max-height: 600px; }
+.journal-prose pre.mermaid.mermaid-compact svg { flex: 0 1 auto; width: 100% !important; max-height: 900px; }
 .journal-prose .journal-diagram-wide pre.mermaid svg { max-width: 780px !important; }
 .journal-prose .polar-meridian-estate-map pre.mermaid .polar-estate-label {
   display: inline-block;
@@ -971,6 +971,7 @@ html.archive-dialog-open { overflow: hidden; }
 .pnb-comment-body p { margin: 0 0 0.75rem; }
 
 @media (max-width: 980px) {
+  .journal-prose pre.mermaid.mermaid-compact svg { max-height: 600px; }
   .journal-article-grid { grid-template-columns: 1fr; gap: @space-2xl; }
   .journal-record-rail { position: static; display: block; }
   .journal-record-rail dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }

@@ -97,7 +97,7 @@ flowchart TB
     A --> B
 ```
 
-Typora treats that line as an ordinary Mermaid comment. The website uses it to cap the diagram's height at 600px and scale it proportionally to fit narrower screens. Captions work the same way as for other diagrams.
+Typora treats that line as an ordinary Mermaid comment. The website caps the diagram's height at 900px on desktop, or 600px at viewport widths of 980px and below, and scales it proportionally to fit narrower screens. Captions work the same way as for other diagrams.
 
 Keep the shared flowchart spacing unless a diagram needs a specific adjustment. Use the compact comment to reduce its displayed size rather than squeezing its `rankSpacing`. A longer arrow such as `--->` can reserve extra room for a label where a connection enters a group.
 
