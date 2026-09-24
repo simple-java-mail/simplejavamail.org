@@ -1,13 +1,13 @@
 ---
 title: "Case study: Your Mail Server Works for a Troll Farm Now"
-description: "Staple & Sons sells office supplies. A troll farm has found another use for its mail servers. A fictional recovery story about email abuse, modest pooling and getting security right."
+description: "Staple & Sons sells office supplies. A troll farm has found another use for its mail servers. A fictional recovery story about parallel sending, email abuse and getting security right."
 date: "2026-09-11"
 category: "Security"
 caseStudy:
   company: "Staple & Sons"
   logo: "/assets/journal/companies/staple-and-sons.png"
   label: "Self-managed SMTP"
-  description: "A small office-supply company runs its own mail servers. Then a troll farm finds a use for them. Recovering from abuse, securing the setup and keeping a modest SMTP pool under control."
+  description: "A small office-supply company scales up its mail servers, then discovers who's using the extra capacity. Parallel sending, recovery from abuse and getting security right."
   order: 1
 series:
   title: "Case Studies"
@@ -18,7 +18,7 @@ typora-root-url: ..
 typora-copy-images-to: ../assets/journal
 banner-type: note
 banner-header: "Case Study"
-banner-body: "Welcome to the Case Study series! A small company discovers it's sending mail for a troll farm. I'll show you how its developers stop the abuse, bring their overloaded servers under control and track what happens to their mail. Then we'll tackle sender spoofing, unsafe connections and protecting confidential messages, with practical Simple Java Mail examples along the way."
+banner-body: "Welcome to the Case Study series! A small company discovers it's sending mail for a troll farm. I'll show you how its mail setup scales up, then how the developers stop the abuse, bring their overloaded servers under control and track what happens to their mail. Then we'll tackle sender spoofing, unsafe connections and protecting confidential messages, with practical Simple Java Mail examples along the way."
 ---
 
 Staple & Sons sells things that hold other things together. Shelving, packaging, office furniture. There's nothing really special about Staple & Sons, it's all a little boring, really. Little did they know, their business was going to get a little bit less boring very soon.
@@ -27,7 +27,7 @@ There is a warehouse, a sales team and a customer portal. Two developers maintai
 
 ## The setup
 
-Staple & Sons runs its own Linux/Postfix relay. This is the mail path on an ordinary working day.
+Staple & Sons runs its own Linux/Postfix relay. Let's give it about 2,000 outgoing messages on an ordinary working day, with a 20,000-message newsletter now and then. Their mail takes this route:
 
 ```mermaid
 %%{init: { "flowchart": { "subGraphTitleMargin": { "top": 8, "bottom": 12 }, "padding": 8, "nodeSpacing": 28, "rankSpacing": 24 } } }%%
@@ -80,6 +80,17 @@ It's a Tuesday and the first complaints start coming in. The first one is about 
 
 That helps briefly. They increase the connection-pool limits too, so workers can handle more load at the same time. When the relay struggles, the hosting provider supplies another one, and a new deployment is wired up with its own sending configuration; they're running a cluster now. Before long, the small company has several SMTP pools and enough infrastructure to look impressive in a diagram.
 
+Let's put numbers on that expansion. For this fictional peak, give each of three deployments 100 send workers and room for 100 SMTP connections. Assume each small, individually addressed message occupies a worker for an average of 200 milliseconds per successful submission, with all 300 workers kept busy:
+
+```text
+3 deployments × 100 concurrent sends ÷ 0.2 seconds = 1,500 submissions/second
+1,500 submissions/second × (30 × 60 seconds)       = 2,700,000 messages
+```
+
+*From 2,000 messages a day to 2.7 million submitted in half an hour, under these assumptions.*
+
+That's an illustrative workload and an educated guesstimate: the application, network and relays must sustain it, of course, but it's entirely plausible. [Parallel sends and reused SMTP connections](/smtp-connection-pooling.html#option-mailer) let workers keep submitting without waiting for every other send or reconnecting each time. We're counting messages accepted by their relays, not retries or confirmed arrivals in recipients' inboxes; [Postfix still has to queue and deliver them onward](https://www.postfix.org/QSHAPE_README.html).
+
 Some time later, some operations time out again under the load. An existing retry job puts failed work back in the queue, where it competes with the original work and the whole thing starts to choke. Apparently, adding capacity hasn't stopped the backlog from growing. At this point, they're starting to wonder where the growth is coming from and they have a call with business. Well, business doesn't have a clue. What is happening at Staple & Sons?
 
 ## Who are we sending all this mail for?
@@ -97,8 +108,8 @@ By now, the setup had grown, and there's an intruder:
 ```mermaid
 %%{init: { "flowchart": { "subGraphTitleMargin": { "top": 8, "bottom": 12 }, "padding": 8, "nodeSpacing": 28, "rankSpacing": 24 } } }%%
 flowchart TB
-    accTitle: Three deployments and three relays, still sending the troll farm's mail
-    accDescr: The Java customer portal still produces quotation-sharing mail and account or order notifications, including password resets and invoices. The newsletter job still adds bulk mail to the same database queue. The troll farm, highlighted in red, abuses only quotation sharing through a customer account; its mail joins those legitimate streams in the growing backlog. Three sending deployments each run workers and their own enlarged SMTP connection pool, using three Postfix relays. The queue, pools and relays are amber to indicate load, not compromise. The farm has no direct access to those systems; the company's own application is doing the sending.
+    accTitle: An illustrative peak of 1,500 submissions per second across three deployments
+    accDescr: The Java customer portal still produces quotation-sharing mail and account or order notifications, including password resets and invoices. The newsletter job still adds bulk mail to the same database queue. The troll farm, highlighted in red, abuses only quotation sharing through a customer account; its mail joins those legitimate streams in the growing backlog. Three deployments each have 100 send workers and an SMTP pool limited to 100 connections. Under the article's illustrative assumptions of full worker utilization and 200 milliseconds per accepted message, each submits 500 individually addressed messages per second to its Postfix relay, totalling 1,500 per second or 2.7 million in half an hour. These are fictional submission figures, not a benchmark or a measure of onward delivery. The queue, pools and relays are amber to indicate load, not compromise. The farm has no direct access to those systems; the company's own application is doing the sending.
 
     farm(["Troll farm<br/>customer account"])
     customer(["Customer"])
@@ -112,18 +123,18 @@ flowchart TB
         database[("Database<br/>shared mail queue<br/>growing backlog")]
 
         subgraph deployment1["Deployment 1"]
-            workers1["Send workers<br/>Simple Java Mail<br/>increased count"]
-            pool1["SMTP pool 1<br/>raised limit"]
+            workers1["Simple Java Mail<br/>100 send workers"]
+            pool1["SMTP pool 1<br/>up to 100 connections"]
         end
 
         subgraph deployment2["Deployment 2"]
-            workers2["Send workers<br/>Simple Java Mail<br/>increased count"]
-            pool2["SMTP pool 2<br/>raised limit"]
+            workers2["Simple Java Mail<br/>100 send workers"]
+            pool2["SMTP pool 2<br/>up to 100 connections"]
         end
 
         subgraph deployment3["Deployment 3"]
-            workers3["Send workers<br/>Simple Java Mail<br/>increased count"]
-            pool3["SMTP pool 3<br/>raised limit"]
+            workers3["Simple Java Mail<br/>100 send workers"]
+            pool3["SMTP pool 3<br/>up to 100 connections"]
         end
 
         subgraph smtp["SMTP · Linux / Postfix"]
@@ -143,9 +154,9 @@ flowchart TB
     workers1 --> pool1
     workers2 --> pool2
     workers3 --> pool3
-    pool1 --> relay1
-    pool2 --> relay2
-    pool3 --> relay3
+    pool1 -->|500 submissions/s| relay1
+    pool2 -->|500 submissions/s| relay2
+    pool3 -->|500 submissions/s| relay3
     relay1 & relay2 & relay3 --> recipients["Recipient mail servers"]
 
     classDef adversary fill:#FDE8E8,stroke:#B83232,color:#821B1B,stroke-width:2px;
@@ -154,6 +165,8 @@ flowchart TB
     class database,pool1,pool2,pool3,relay1,relay2,relay3 overloaded;
     linkStyle 0 stroke:#B83232,color:#821B1B,stroke-width:2px;
 ```
+
+*Illustrative peak: 300 concurrent sends feed three relays. Much of that capacity now serves one customer account.*
 
 No SMTP password has been stolen. Nobody has broken TLS. The application is doing the sending for the farm, with its own credentials and its own good name.
 
@@ -255,7 +268,7 @@ These are momentary estimates, not a promise that the next send will fit. The di
 
 ### Two workers, twenty waiting slots
 
-The backlog doesn't need to move into Java heap all at once. The devs leave pending messages in the database and try smaller limits for the Mailer.
+The backlog doesn't need to move into Java heap all at once. Having scaled up to a hundred send workers per deployment, the devs now leave pending messages in the database and try just two workers for bulk mail.
 
 The limits control three different things:
 
@@ -424,7 +437,7 @@ bulkDispatcher.startDispatching();
 
 `forWorkload()` returns a filtered view of the same database outbox. Its claim query selects only that workload, with password resets and invoices marked `account`, and newsletters and quotation sharing marked `bulk` when queued. Each dispatcher has its own polling thread, Mailer workers and waiting slots, so newsletters cannot fill the account-mail queue. They stop both dispatchers at application shutdown. Both still use the relays, of course; the developers have to watch the combined load from all those deployments.
 
-They compare the timing figures while adjusting limits and watching the relays. Once the legitimate traffic is comfortably handled, they can retire the extra relays. They're no longer trying to find the largest number that fits in `withConnectionPoolMaxSize()`.
+They compare the timing figures while adjusting limits and watching the relays. Their ordinary 2,000 messages a day and occasional 20,000-message newsletter are a rather different workload from that 2.7-million-message half-hour. Once the legitimate traffic is comfortably handled, they can retire the extra relays. They're no longer trying to find the largest number that fits in `withConnectionPoolMaxSize()`.
 
 ---
 

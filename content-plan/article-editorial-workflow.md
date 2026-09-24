@@ -63,6 +63,8 @@ Where it helps, carry a few concrete examples, objects or experiences through su
 
 Check local transitions, including across section headings: why does this sentence or paragraph follow the previous one? When moving from a requirement, classification or policy to a concrete example, carry the relevant requirement into the example's opening. Readers should understand why this particular person, request or event is worth following now. A heading such as "Follow one request" or a generic "Let's see what that looks like" does not establish that connection by itself.
 
+Identify the question or subject established by a paragraph's opening, then check that subsequent sentences develop it. A true, readable fact can still answer a different question. Move or remove it if it belongs elsewhere; adding a connective cannot repair its placement.
+
 Keep transitions understandable on their own. Read each heading and opening sentence without the preceding section: does it name the subject and the action or requirement, or rely on "that check," "those limits" or "this approach"? Repeat a precise noun or short qualifier when needed to preserve the connection without making the reader reconstruct it. Do not restate whole explanations or remove ordinary pronouns whose referents are clear within the same passage.
 
 Before promising to return to a problem, check whether it belongs here yet. If the intervening sections do not help explain or resolve it, introduce it where the article is ready to address it. A forward link cannot repair premature placement; making the problem more dramatic can make the interruption worse. Let an overview complete its immediate job without previewing every complication.
@@ -72,6 +74,8 @@ Check the exit as carefully as the entrance. Show what the example establishes b
 ## Pass 3: Manage reading effort and keep useful connective prose
 
 Merge adjacent paragraphs that are doing the same job. Trim repeated qualifications and conclusions, especially after an example has already demonstrated the point. Replace a long explanation with a small concrete example when that genuinely reduces the reader's work.
+
+Look for stacked declaratives (parataxis). Where adjacent sentences explain different parts of the same idea, make their actual relationship clear: cause, contrast, sequence, qualification or consequence. Recast or join them where useful, without inventing causality or merely replacing full stops with "and". Keep short sentences when the pause provides emphasis, humour, breathing room or a real change of thought; avoid turning the paragraph into one long sentence.
 
 Look for long runs of explanation or unfamiliar concepts without a concrete reference point. Bullets can collect parallel points, a table can expose a comparison, and a sequence diagram can show an interaction. Choose the form that makes the material easiest to follow; do not impose a paragraph quota or a visual every few paragraphs. An oversized diagram can interrupt reading as much as a wall of prose.
 
@@ -160,7 +164,11 @@ Read the article as a conversation between the author and the intended reader. P
 
 Use vocabulary the intended audience already understands. Familiar technical terms can be clearer than elaborate descriptive replacements. Explain genuine ambiguity where it matters; do not relabel a recognisable concept just to account for every adjacent possibility.
 
-Look for language that makes the reader translate an abstraction before understanding the point. Words such as "boundaries," "ownership" and "compartments," repeated "not X but Y" constructions, grand generalisations and mechanical transitions are review candidates, not a blacklist. Inspect the full sentence and paragraph before proposing a change; replacing one abstraction with another is not an improvement.
+When an abbreviation introduces a person's role, give the full role first. Establish which specific component, organisation or process a shorthand name refers to before using it. A reader may know the term without knowing what it names in this article.
+
+When switching between related resources or other entities, name the new subject explicitly, especially if what is being counted, limited or compared has changed. Do not let phrases such as "its slot" or "one too" blur distinct resources or units.
+
+Look for language that makes the reader translate an abstraction before understanding the point. Words such as "boundaries," "ownership" and "compartments," repeated "not X but Y" constructions, grand generalisations and mechanical transitions are review candidates, not a blacklist. Inspect the full sentence and paragraph before proposing a change. Where an abstraction hides a practical task, describe what someone actually does and to what: "add the figures and check the total against the limit", for example. Replacing one abstraction with another, or inventing an action for livelier prose, is not an improvement.
 
 Distinguish the author's opinion from telling the reader what conclusion to reach. Let examples earn their conclusions, but retain a personal judgment when it adds something. Check that a trimmed sentence was not the connective tissue holding the paragraph together.
 
@@ -188,7 +196,7 @@ Keep changes scoped to the article and authorised supporting files. If a problem
 
 Read the whole result once more for flow, consistency and preserved voice. Then repeat the skim-only pass. Repair regressions introduced by the editing, but stop after a coherent baseline; leave meaningful author choices visible rather than polishing indefinitely.
 
-After moving or materially changing a block, reread its lead-in and continuation and recheck any affected examples, references or captions. A local improvement can disconnect the surrounding section. Repeat the affected checks rather than assuming an earlier pass still covers the revised material.
+After changing a sentence or moving a block, reread the whole paragraph, its lead-in and its continuation; check for new repetition or a broken connection. For terminology changes, trace the affected term through headings, captions, labels and examples as well as prose, checking where readers first encounter it. Keep justified shorthand after its introduction; do not blindly replace every occurrence. Recheck affected references and examples rather than assuming an earlier pass still covers the revised material.
 
 Return:
 

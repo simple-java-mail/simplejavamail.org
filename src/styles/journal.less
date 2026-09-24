@@ -398,6 +398,14 @@
 .journal-prose img.image-align-right { margin-left: auto; margin-right: 0; }
 .journal-prose .journal-captioned:has(> img.image-align-left) > figcaption { text-align: left; }
 .journal-prose .journal-captioned:has(> img.image-align-right) > figcaption { text-align: right; }
+.journal-prose .journal-captioned:has(> .journal-persona-image) {
+  float: right;
+  width: min(40%, 20rem);
+  margin: @space-2xs 0 @space-md @space-lg;
+}
+.journal-prose img.journal-persona-image { width: 100%; }
+// Portraits wrap alongside prose, leaving headings and technical examples full-width.
+.journal-prose:has(.journal-persona-image) > :not(p) { clear: both; }
 .journal-prose .journal-activity-figure { margin: @space-lg 0; }
 .journal-activity-chart {
   max-width: 100%;
@@ -982,6 +990,11 @@ html.archive-dialog-open { overflow: hidden; }
 }
 
 @media (max-width: 720px) {
+  .journal-prose .journal-captioned:has(> .journal-persona-image) {
+    float: none;
+    width: min(100%, 22rem);
+    margin: 0 auto @space-md;
+  }
   .journal-record-rail { display: block; }
   .journal-record-rail dl { grid-template-columns: 1fr 1fr; }
   .journal-entry-toc { border-top: 0; }
