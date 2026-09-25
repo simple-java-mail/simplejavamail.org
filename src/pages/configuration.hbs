@@ -277,6 +277,22 @@ mailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test co
   </section>
 
 
+  <a href="#section-legacy-smtp-content" id="section-legacy-smtp-content" class="section-link h3">&sect;</a>
+  <h3>Known tolerant legacy SMTP servers</h3>
+  <section>
+    <div class="view">
+      <p>Reuse one Mailer for ASCII and international mail; the bundled managed Angus transport negotiates each message separately.
+        Only enable this compatibility option after verifying that the server and onward delivery route preserve internationalized addresses,
+        raw UTF-8 headers and raw 8-bit bodies without advertising the corresponding extensions. It defaults to false:</p>
+<pre><code class="small">mailerBuilder.withLegacySmtpContentSupport(true);
+boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnabled();</code></pre>
+      <p>This does not relax TLS, REQUIRETLS, explicit DSN or content-safety checks. An accepted submission does not prove downstream delivery.
+        In a shared cluster, the selected Session's configuration supplies this permission, not the Mailer you happened to call.
+        Read the <a href="features.html#section-international-mail">international-mail workflow and provider boundaries</a> before enabling it.</p>
+    </div>
+  </section>
+
+
   <a href="#section-proxy-bridge-ports" id="section-proxy-bridge-ports" class="section-link h3">&sect;</a>
   {{#> components/feature-heading-h3 socks=true}}Authenticated proxy bridge ports{{/components/feature-heading-h3}}
 
@@ -529,6 +545,8 @@ simplejavamail.smtp.port=587
 simplejavamail.smtp.username=username
 simplejavamail.smtp.password=password
 simplejavamail.smtp.clienthostname=orders-service.prod.example.com
+# Opt in only for a verified legacy server and onward delivery route
+simplejavamail.smtp.legacycontentsupport=false
 simplejavamail.smtp.localaddress=203.0.113.10
 simplejavamail.smtp.localport=25252
 

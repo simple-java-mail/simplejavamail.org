@@ -96,6 +96,18 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
   </section>
 
 
+  <a href="#section-legacy-smtp-content" id="section-legacy-smtp-content" class="section-link h3">&sect;</a>
+  <h3>Use a verified legacy SMTP route</h3>
+  <section>
+    <p class="wide">The CLI uses the same per-message negotiation as Java. If you have verified that your legacy server and its onward route preserve
+      UTF-8 or 8-bit data without advertising support, enable this option:</p>
+<pre><code class="language-text">sjm send --email:startingBlank --email:from sender@example.org --email:to müller@example.org --email:withPlainText Hello --mailer:withSMTPServer legacy-relay.example.org 587 --mailer:withLegacySmtpContentSupport true</code></pre>
+    <p class="wide">The equivalent loaded property is <code>simplejavamail.smtp.legacycontentsupport=true</code>; the default is false.
+      The option participates in the daemon's Mailer configuration profile, so requests with different choices do not share a Mailer.
+      Use <code>--mailer:withLegacySmtpContentSupport--help</code> for its full contract. TLS and content-safety checks remain enforced;
+      successful submission is not proof of onward delivery. See the <a href="features.html#section-international-mail">international-mail guide</a>.</p>
+  </section>
+
   <a href="#section-probe" id="section-probe" class="section-link h3">&sect;</a>
   <h3>Inspect an SMTP connection</h3>
 

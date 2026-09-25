@@ -1570,8 +1570,11 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
         Your application still has to receive and interpret that notification. Neither ORCPT nor ENVID guarantees that a notification will arrive.</p>
       <p>ASCII addresses use <a href="https://www.rfc-editor.org/rfc/rfc3461.html#section-4.2">RFC 3461 xtext</a>, so a <code>+</code> becomes
         <code>+2B</code>. Internationalized addresses use <a href="https://datatracker.ietf.org/doc/html/rfc6533#section-3">RFC 6533's UTF-8 address type</a>
-        when Angus has <code>mail.mime.allowutf8=true</code> and the server advertises SMTPUTF8. Otherwise automatic ORCPT is omitted for those addresses;
-        ordinary provider address handling is unchanged. An ORCPT parameter over 500 encoded bytes is omitted, never truncated.</p>
+        when UTF-8 output is enabled and the server advertises SMTPUTF8. UTF-8 output is enabled by default on library-owned stock Angus Sessions.
+        Without advertised SMTPUTF8, internationalized sends fail by default. The explicit
+        <a href="#section-international-mail">legacy-content opt-in</a> can permit the address, but does not establish support for internationalized ORCPT;
+        that optional metadata is still omitted in this case.
+        An ORCPT parameter over 500 encoded bytes is omitted, never truncated.</p>
       <h4>Other sending paths</h4>
       <p><a href="#section-exact-eml">Exact EML</a> accepts <code>Recipient...</code> through <code>withEnvelopeRecipients(...)</code>, retaining NOTIFY
         preferences without changing supplied bytes. Its shared notification and return methods also accept the same enums:</p>
@@ -1581,9 +1584,10 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
     .withDeliveryStatusNotificationReturnOption(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY)
     .buildEmail();</code></pre>
       <p>The same rules apply to synchronous/asynchronous sends, simple batches, and open connections.</p>
-      <p>A caller-owned Session or custom socket factory uses ordinary Angus without the managed recipient-command hook: it retains shared Email NOTIFY/RET and ENVID support,
+      <p>A caller-owned Session using ordinary Angus has no managed recipient-command hook: it retains shared Email NOTIFY/RET and ENVID support,
         but does not add ORCPT and rejects explicit recipient preferences. Other <a href="/modules.html#mail-transport-adapter-spi">provider adapters</a>
         must opt in. <code>CustomMailer</code> receives the preferences on the Email's recipients and owns their transport mapping.
+        Custom socket factories on library-owned stock Angus Sessions keep the managed hook without being replaced.
         Logging-only mode and rehearsal do not contact a server or check its DSN capabilities.</p>
       <p>Recipient-specific choices use the Java recipient builders; there is no recipient policy DSL in the CLI or global properties.
         Existing <a href="/configuration.html#section-available-properties">shared DSN properties</a>, Spring configuration, and CLI Email options
@@ -1751,6 +1755,7 @@ MailSubmissionReceipt receipt =
 			  transport adapter must opt in explicitly or the send fails before submission. A <a href="#section-custom-mailer">CustomMailer</a> receives its
 			  usual <code class="inline language-java">Email</code> and a byte-preserving <code class="inline language-java">MimeMessage</code>.
 		  </p>
+
 		  <p>
 			  The byte-array starter is also available from the CLI, where its argument is read from a file. Relative paths use the invoking client's working
 			  directory, including when a local daemon handles the command.
@@ -1761,6 +1766,86 @@ MailSubmissionReceipt receipt =
 			  for the complete file-to-receipt flow.
 		  </p>
 	  </div>
+  </section>
+
+
+  <a href="#section-international-mail" id="section-international-mail" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}International mail and older SMTP servers{{/components/feature-heading-h2}}
+
+  <section>
+      <div class="wide">
+          <p>
+              Ordinary Unicode subjects, display names and bodies keep their usual MIME encoding. José with an ASCII mailbox does not need SMTPUTF8;
+              an address such as müller@example.org does. Raw UTF-8 headers and raw 8-bit bodies in already finalized messages can also need SMTP extensions.
+          </p>
+          <p>
+              Reuse one Mailer for both kinds of email. On library-owned stock Angus Sessions, Simple Java Mail enables UTF-8 encoding before preparing
+              MIME or creating transports, then selects SMTPUTF8 separately for each submission. ASCII-compatible mail does not acquire that declaration
+              just because the connection can encode UTF-8. Alternating messages reuses the same connections and pool; there is no per-message reconnect.
+          </p>
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 587)
+    .buildMailer();
+
+Email email = mail.emailBuilder().startingBlank()
+    .from("sender@example.org")
+    .withRecipients(RecipientBuilder.to("Müller", "müller@example.org"))
+    .withPlainText("Hello!")
+    .buildEmail();
+
+mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre>
+          <p>
+              By default, the connected server must advertise SMTPUTF8 for internationalized envelope addresses or raw UTF-8 headers, and 8BITMIME for
+              raw 8-bit body bytes. The adapter adds the appropriate parameters when needed. An <code class="inline language-text">8bit</code> label on an
+              entirely ASCII body does not by itself require 8BITMIME. Existing capability-dependent Angus 8-bit conversion remains available.
+          </p>
+          <p>
+              Use the <a href="debugging.html#section-smtp-capabilities">connection probe</a> to inspect a deployment. Sending still checks the actual
+              connection, including its capabilities after STARTTLS. A probe is diagnostic; it does not upgrade a Mailer or certify the onward route.
+          </p>
+          <h3>Opt in for a known tolerant legacy route</h3>
+          <p>
+              Some older deployments accept this content without advertising the extensions. If you have verified that your server <em>and delivery
+              route</em> preserve it, you can explicitly permit the attempt. This defaults to false:
+          </p>
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("legacy-relay.example.org", 587)
+    .withLegacySmtpContentSupport(true)
+    .buildMailer();</code></pre>
+<pre><code class="language-properties small">simplejavamail.smtp.legacycontentsupport=true</code></pre>
+          <p>
+              The option covers internationalized addresses, raw UTF-8 headers and raw 8-bit bodies. Advertised extensions are still used normally.
+              For a missing extension, the adapter attempts the original content without automatically adding the unadvertised SMTPUTF8 or
+              <code class="inline language-text">BODY=8BITMIME</code> parameter. Explicit advanced provider parameters remain your responsibility.
+              A genuine server rejection is reported normally; there is no automatic retry with changed content or fewer requirements.
+          </p>
+          <p>
+              This deliberately operates outside the negotiated guarantees in
+              <a href="https://www.rfc-editor.org/rfc/rfc6531.html#section-3.2">SMTPUTF8</a> and
+              <a href="https://www.rfc-editor.org/rfc/rfc6152.html#section-3">8BITMIME</a>.
+              An accepted <code class="inline language-java">MailSubmissionReceipt</code> confirms SMTP submission, not downstream preservation or final delivery.
+              Enabling the option does not make a server that rejects internationalized addresses accept them.
+          </p>
+          <p>
+              No address characters are replaced, and exact or signed content is never rewritten. TLS, REQUIRETLS and explicit DSN requirements remain
+              enforced. Internationalized ORCPT metadata still requires advertised SMTPUTF8 support. Malformed headers, binary transfer encoding,
+              NUL body bytes and body lines longer than 998 bytes (excluding CRLF) remain rejected; encode unsuitable bodies as Base64 or quoted-printable.
+          </p>
+          <h3>Configuration and provider ownership</h3>
+          <p>
+              An explicit <code class="inline language-properties">mail.mime.allowutf8=false</code> is honored. Caller-owned Sessions, CustomMailer and
+              third-party providers keep their existing ownership. For a caller-owned ordinary Angus transport, enable
+              <code class="inline language-properties">mail.mime.allowutf8=true</code> before creating transports if needed; Angus retains its Session-wide
+              SMTPUTF8 declaration behavior there, including on ASCII messages. Custom socket factories on library-owned stock Angus Sessions are preserved
+              and still receive managed per-message negotiation; they do not automatically gain physical-abort support.
+          </p>
+          <p>
+              The compatibility permission belongs to the configuration of the Session actually selected for sending. In a shared cluster, enabling it
+              for one server does not enable it for the others. See <a href="configuration.html#section-legacy-smtp-content">configuration</a>,
+              <a href="spring.html#section-spring-profiles">Spring profiles</a> and <a href="cli.html#section-legacy-smtp-content">CLI usage</a>.
+              Angus may log that SMTPUTF8 is unavailable; that notice alone does not prevent ASCII-compatible mail.
+          </p>
+      </div>
   </section>
 
 

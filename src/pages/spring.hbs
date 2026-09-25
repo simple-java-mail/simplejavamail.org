@@ -263,6 +263,11 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <section>
 
     <div class="wide">
+      <p>The <a href="features.html#section-international-mail">legacy SMTP content opt-in</a> is also a typed Boolean Spring setting.
+        Leave it unset or false unless you have verified the server and onward delivery route. Put it in the relevant deployment profile;
+        it does not change TLS requirements or prove downstream delivery:</p>
+<pre><code class="language-properties small"># application-verified-legacy-relay.properties
+simplejavamail.smtp.legacycontentsupport=true</code></pre>
       Spring profiles can provide different values, for example <code>default</code> and <code>production</code>:
       <pre><code class="language-properties small">#application.properties
 simplejavamail.javaxmail.debug=true

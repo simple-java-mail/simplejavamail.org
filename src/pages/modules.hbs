@@ -137,8 +137,13 @@ description: "Understand the default Angus provider adapter and choose optional 
         <code>MailTransportCompatibilityException</code> identifies this pre-submission rejection so a healthy pooled connection remains reusable;
         never use it for an SMTP transaction that has already started.</p>
       <p>The managed Angus command hook adds ORCPT without replacing Angus's recipient loop or reply handling. Ordinary Angus transports from caller-owned
-        Sessions or custom socket factories do not have that hook. ORCPT is optional for third-party adapters; any automatically generated value must match the actual envelope recipient
+        Sessions do not have that hook. Library-owned stock Angus Sessions retain it with custom socket factories, without gaining unsupported physical abort.
+        ORCPT is optional for third-party adapters; any automatically generated value must match the actual envelope recipient
         and leave notification preferences and MIME bytes unchanged.</p>
+      <p><code>PreparedMail.isLegacySmtpContentSupportEnabled()</code> carries the actual selected server's compatibility permission, defaulting to false in
+        existing constructors. It does not change the content-preservation contract. The bundled managed Angus adapter negotiates SMTPUTF8 per message;
+        caller-owned Sessions, CustomMailer and third-party providers retain their own transport behavior. See the
+        <a href="features.html#section-international-mail">legacy-content boundaries</a>.</p>
     <div class="wide full-width-example">
       <p>Register the implementation through the standard Java service-provider mechanism:</p>
 <pre><code class="language-text small"># META-INF/services/org.simplejavamail.api.mailer.spi.MailTransportAdapter

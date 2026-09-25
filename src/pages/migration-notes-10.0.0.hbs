@@ -35,6 +35,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
       <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
 	  <li><a href="#exact-eml">Submit finalized EML without rebuilding it</a></li>
+      <li><a href="#smtp-content-compatibility">Check internationalized envelope and finalized 8-bit sends</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -338,6 +339,47 @@ MailSubmissionReceipt receipt = mailer.sync().sendMail(email);</code></pre>
 	  The CLI reads the first argument as a file; relative paths resolve from the invoking client's working directory even when a daemon handles the
 	  request. Continue with the <a href="features.html#section-exact-eml">exact EML guide and demo</a> for the complete behavior and examples.
 	</p>
+  </section>
+
+  <a href="#smtp-content-compatibility" id="smtp-content-compatibility" class="section-link h2">&sect;</a>
+  <h2>SMTP content compatibility is checked before submission</h2>
+
+  <section>
+    <p class="wide">
+      Compared with released 9.x versions, the bundled Angus adapter now checks internationalized envelope addresses, raw UTF-8 headers and raw 8-bit
+      bodies against the actual connection's advertised support before submission. Ordinary Unicode subjects, display names and bodies retain their
+      normal MIME encoding; most applications need no change.
+    </p>
+    <p class="wide">
+      A send that previously worked with a tolerant server without advertised SMTPUTF8 or 8BITMIME can now fail before
+      <code class="inline language-text">MAIL FROM</code> with <code class="inline language-java">MailSubmissionException</code> and a
+      <code class="inline language-java">MailTransportCompatibilityException</code> cause. Prefer a server advertising the needed capabilities.
+      If you have verified that the existing server and onward route preserve the original content, explicitly retain that legacy behavior:
+    </p>
+<pre><code class="language-java">mailerBuilder.withLegacySmtpContentSupport(true);</code></pre>
+<pre><code class="language-properties">simplejavamail.smtp.legacycontentsupport=true</code></pre>
+    <p class="wide">
+      The permission defaults to false and belongs to the selected server's configuration, including shared clusters. It attempts unchanged content
+      without automatically adding an unadvertised extension. It does not guarantee onward preservation or delivery, relax security checks, replace
+      mailbox characters or automatically retry a rejected message.
+    </p>
+    <p class="wide">
+      Library-owned stock Angus Sessions now enable <code class="inline language-properties">mail.mime.allowutf8</code> before preparing MIME or creating
+      transports. The managed transport declares SMTPUTF8 per message. Explicit false overrides and caller-owned Sessions retain their settings.
+      If an internationalized send fails because UTF-8 output is disabled, remove that override or enable it before creating transports.
+      Caller-owned ordinary Angus transports keep their Session-wide declaration behavior.
+    </p>
+    <p class="wide">
+      Fixtures using Angus's <code class="inline language-properties">mail.smtp.allow8bitmime</code> or
+      <code class="inline language-properties">mail.smtps.allow8bitmime</code> should now expect
+      <code class="inline language-text">BODY=8BITMIME</code> when conversion can produce raw 8-bit bytes and the server advertises support.
+      An entirely ASCII body does not require the extension just because it is labelled 8bit.
+    </p>
+    <p class="wide">
+      Malformed UTF-8 headers, binary transfer encoding, NUL body bytes and body lines exceeding 998 bytes (excluding CRLF) now fail locally.
+      Regenerate invalid source headers and use Base64 or quoted-printable for unsuitable bodies before signing or loading final bytes.
+      The legacy setting does not bypass these checks. See the <a href="features.html#section-international-mail">international-mail workflow</a>.
+    </p>
   </section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>
@@ -915,7 +957,8 @@ Transport.send(message);</code></pre>
       On managed Angus connections with DSN support, recipient commands now also include automatic <code>ORCPT</code>, even without a NOTIFY setting.
       It carries the actual envelope recipient, including BCC and override receivers, without changing MIME bytes or adding round trips.
       Update SMTP fixtures that compare complete <code>RCPT TO</code> commands. Optional ORCPT is omitted when an address cannot be represented safely
-      or exceeds the encoded parameter limit. Ordinary Angus transports obtained from caller-owned Sessions or custom socket factories do not gain this behavior.
+      or exceeds the encoded parameter limit. Ordinary Angus transports obtained from caller-owned Sessions do not gain this behavior;
+      custom socket factories on library-owned stock Angus Sessions retain the managed hook.
     </p>
     <p class="wide">
       <strong>Breaking Java API change:</strong> the <code>EmailPopulatingBuilder</code> String overloads of
