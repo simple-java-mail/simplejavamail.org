@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import Handlebars from "handlebars";
 import journalData from "../src/journal/journal.11tydata.mjs";
+import { journalCodeExample } from "../src/_lib/journal-code-example.mjs";
 import {
   createMarkdownLibrary,
   enforceJournalTodoPolicy,
@@ -40,6 +41,46 @@ import {
   loadSourceForgeSources,
   sourceForgeArchiveLink,
 } from "../src/_lib/sourceforge-archive.mjs";
+
+test("expandable Java code omits imports from its body and preview without changing the download", () => {
+  const source = readFileSync(new URL("../src/assets/journal/examples/polar-meridian/PolarMeridianDispatcher.java", import.meta.url), "utf8");
+  const example = journalCodeExample("polar-meridian/PolarMeridianDispatcher.java");
+  assert.equal(example.source, source.slice(source.indexOf("/**")));
+  assert.doesNotMatch(example.source, /^import /mu);
+  assert.deepEqual(example.previewLines, example.source.split(/\r?\n/u).slice(0, 6));
+  assert.equal(readFileSync(new URL("../src/assets/journal/examples/polar-meridian/PolarMeridianDispatcher.java", import.meta.url), "utf8"), source);
+  assert.equal(example.language, "java");
+  assert.throws(() => journalCodeExample("../../../_data/site.json"), /must stay inside/);
+  assert.throws(() => journalCodeExample(import.meta.filename), /must use a path relative/);
+});
+
+test("Handlebars source disclosure survives Markdown rendering without rewriting the Java", () => {
+  const handlebars = Handlebars.create();
+  handlebars.registerHelper("journalCodeExample", journalCodeExample);
+  handlebars.registerPartial("components/journal-code-disclosure", readFileSync(
+    new URL("../src/_includes/components/journal-code-disclosure.hbs", import.meta.url), "utf8"));
+  const article = readFileSync(new URL("../src/journal/2026-09-10-mail-at-polar-meridian-systems.md", import.meta.url), "utf8");
+  const body = article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, "");
+  const html = createMarkdownLibrary().render(handlebars.compile(body)({}));
+  // Markdown normalizes line endings, including escaped source inside raw HTML.
+  const source = journalCodeExample("polar-meridian/PolarMeridianDispatcher.java").source.replace(/\r\n/gu, "\n");
+  assert.match(html, /<details class="journal-code-disclosure" data-pagefind-ignore>/);
+  assert.doesNotMatch(html, /<details[^>]*\bopen\b/);
+  assert.ok(html.includes(`<pre><code class="language-java">${Handlebars.escapeExpression(source)}</code></pre>`));
+  assert.ok(html.includes("Expand Dispatcher"));
+  assert.ok(html.includes("Collapse Dispatcher"));
+  assert.doesNotMatch(html, /\{\{> components\/journal-code-disclosure/);
+});
+
+test("source disclosures escape both the example and its preview", () => {
+  const render = Handlebars.compile(readFileSync(
+    new URL("../src/_includes/components/journal-code-disclosure.hbs", import.meta.url), "utf8"));
+  const source = '</code><script>alert("example")</script>';
+  const html = render({ source, previewLines: [source], title: "<Dispatcher>", language: "java" });
+  assert.doesNotMatch(html, /<script>|<Dispatcher>/);
+  assert.equal(html.split(Handlebars.escapeExpression(source)).length - 1, 2);
+  assert.match(html, /aria-hidden="true"/);
+});
 
 test("journal series allow an unknown total but validate a declared total", () => {
   const data = {

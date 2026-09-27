@@ -164,6 +164,18 @@ Put an italic-only paragraph immediately after a standalone image or fenced code
 
 This works with Markdown images and standalone `<img>` tags, including their size and alignment classes. Use the same italic line after a code fence or Mermaid diagram; flowcharts and sequence diagrams both support it. Captions can contain links and inline code. Ordinary paragraphs, inline images, lists and blockquotes are unchanged, as are diagrams without a caption.
 
+### Expandable source examples
+
+To show a complete downloadable example without repeating its source in the article, add `templateEngineOverride: hbs,md` to that article's front matter and include the existing Handlebars component:
+
+```handlebars
+{{> components/journal-code-disclosure (journalCodeExample "polar-meridian/PolarMeridianDispatcher.java") title="Dispatcher"}}
+```
+
+Paths are relative to `src/assets/journal/examples/`. Eleventy reads and escapes the file at build time; the page shows a short faded preview with a native expand/collapse control, and the expanded code has the usual Copy button. No browser fetch is needed. Typora shows the include expression rather than the full example; use the website preview to inspect it. Only articles opting into the override process Handlebars expressions; escape literal `{{` sequences in those articles with a backslash if needed.
+
+Java import blocks at the start of a file are omitted from both the preview and the expanded display. The downloadable source file keeps its imports.
+
 ## Citing archived sources
 
 ### Google Code

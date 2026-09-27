@@ -31,6 +31,7 @@ import {
   decodeGoogleCodeEntities,
 } from "./src/_lib/google-code-archive.mjs";
 import { createSourceForgeMarkupLibrary, decodeSourceForgeEntities } from "./src/_lib/sourceforge-archive.mjs";
+import { journalCodeExample } from "./src/_lib/journal-code-example.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const articlePath = /[\\/]src[\\/]journal[\\/][^\\/]+\.md$/i;
@@ -75,6 +76,7 @@ export default function (eleventyConfig) {
   const markdown = createMarkdownLibrary();
   eleventyConfig.setLibrary("md", markdown);
   eleventyConfig.addFilter("markdownInline", (value) => markdown.renderInline(String(value ?? "")));
+  eleventyConfig.addFilter("journalCodeExample", journalCodeExample);
 
   eleventyConfig.addPlugin(handlebarsPlugin, { eleventyLibraryOverride: Handlebars });
   eleventyConfig.addPlugin(rssPlugin);
@@ -121,6 +123,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/lib": "assets/lib" });
   eleventyConfig.addPassthroughCopy({ "node_modules/mermaid/dist/mermaid.min.js": "assets/lib/mermaid.min.js" });
   eleventyConfig.addPassthroughCopy({ "src/static": "." });
+  eleventyConfig.ignores.add("src/assets/journal/examples/**/README.md");
   eleventyConfig.ignores.add("src/journal/README.md");
   eleventyConfig.ignores.add("src/journal/article-template.md");
   eleventyConfig.ignores.add("src/styles/tokens.less");

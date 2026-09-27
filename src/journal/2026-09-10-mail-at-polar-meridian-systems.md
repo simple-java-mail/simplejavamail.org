@@ -16,14 +16,15 @@ series:
 draft: true
 draft-note: "Follow https://github.com/bbottema/simple-java-mail/issues/740 before 10.0.0. Revisit centrally enforced requirements through properties and Email overrides, starting with REQUIRETLS and any approved signing/encryption requirements, plus a policy-conflict rehearsal. Keep connection TLS distinct from onward REQUIRETLS, and add API examples or implementation claims only after verifying what actually lands."
 mermaid: true
+templateEngineOverride: hbs,md
 typora-root-url: ..
 typora-copy-images-to: ../assets/journal
 banner-type: note
 banner-header: "Case Study"
-banner-body: "Welcome to the Case Study series! This time, I'll show you where Simple Java Mail fits in a company that already has enterprise mail infrastructure. We'll reserve capacity for competing workloads, sign and encrypt confidential partner messages, archive what we send and give the SREs useful monitoring."
+banner-body: "Welcome to the Case Study series! This time, we'll follow Ravi as he builds a shared mail service with Simple Java Mail on top of Polar Meridian's existing mail infrastructure. Leonie needs her login code and order confirmation, while Noor will help keep the service running. We'll keep Marketing's newsletter from holding up urgent mail, sign and encrypt confidential partner messages, and give Noor the send records and monitoring she needs to spot and investigate trouble."
 ---
 
-At Polar Meridian Systems, colleagues are emailing across continents, customers are asking about orders and suppliers are chasing payments. Meanwhile, its applications are sending order confirmations, service bulletins, login codes and a newsletter that Marketing would very much like to send today. Everyone involved thinks their email is as important as the next.
+At Polar Meridian Systems, colleagues are emailing across continents, customers are asking about orders and suppliers are chasing payments. Meanwhile, its applications are sending order confirmations, confidential maintenance updates, login codes and a newsletter that Marketing would very much like to send today. Everyone involved thinks their email is as important as the next.
 
 Well, with roughly **5.2 million email deliveries per working day**, they can't all go first.
 
@@ -41,7 +42,7 @@ Unlike [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html
 %%{init: { "flowchart": { "padding": 8, "nodeSpacing": 24, "rankSpacing": 26 } } }%%
 flowchart TB
     accTitle: Polar Meridian's company-wide mail estate
-    accDescr: Polar Meridian has about 5.2 million recipient deliveries per working day. Existing corporate platforms carry around 4.5 million, including 600,000 from staff to external contacts. The regional application-mail service uses Simple Java Mail and corporate SMTP for 700,000, including 150,000 external application notifications and a working-day average of 100,000 campaign deliveries. The smaller figures are included in those route totals, not additional traffic. Across both routes, staff inboxes receive about 4.1 million deliveries and shared mailboxes and processing addresses receive 200,000. Both routes also reach customers and partners. These are rounded planning estimates, not exact reconciled counts.
+    accDescr: Polar Meridian has about 5.2 million recipient deliveries per working day. Existing corporate platforms carry around 4.5 million, including 600,000 from staff to external contacts. The regional application-mail service uses Simple Java Mail and corporate SMTP for 700,000, including 150,000 external application notifications and a working-day average of 100,000 campaign deliveries. The smaller figures are included in those two totals, not additional traffic. Across both mail streams, staff inboxes receive about 4.1 million deliveries and shared mailboxes and processing addresses receive 200,000. Both mail streams also reach customers and partners. These are rounded planning estimates, not exact reconciled counts.
 
     subgraph polar["Company-wide mail estate"]
         direction TB
@@ -95,7 +96,7 @@ There are real examples of this kind of application-mail setup. Retarus describe
 
 *Ravi builds the mail service the application teams will share.*
 
-Ravi is the Java developer building this shared service with Simple Java Mail 10.0.0. He wants application teams to hand over notification requests without each team having to manage SMTP credentials, certificates and send tracking. His workers will construct and send the emails. Let's follow him through the integration, with an order confirmation, a confidential service bulletin and Marketing's newsletter competing for attention.
+Ravi is the Java developer building this shared service with Simple Java Mail 10.0.0. He wants application teams to hand over notification requests without each team having to manage SMTP credentials, certificates and send tracking. His workers will construct and send the emails. Let's follow him through the integration, with an order confirmation, a maintenance update and Marketing's newsletter competing for attention.
 
 ## The setup
 
@@ -134,9 +135,9 @@ The SMTP service is deliberately one box. That might not look like a lot, but ou
 
 Ravi’s platform team relies on the corporate messaging team for relay redundancy, onward delivery and DKIM signing. Simple Java Mail belongs in the dispatch workers: composing messages, applying the selected protection, reusing connections and reporting what happened during submission.
 
-The work we're designing sits before and around those SMTP connections. Which application gets the next worker? Who may read the bulletin? How does the person on call find a delayed order confirmation after a worker restarts? **An existing mail server doesn't answer those application questions.**
+The work we're designing sits before and around those SMTP connections. Which application gets the next worker? Who may read the maintenance update? How does the person on call find a delayed order confirmation after a worker restarts? **An existing mail server doesn't answer those application questions.**
 
-## Nobody agrees how urgent their email is
+## Everyone’s email is urgent, but Leonie just wants to log in
 
 <img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-leonie.png" alt="Leonie at a distributor's desk, checking her inbox while Polar Meridian's ordering portal waits for a verification code." width="1356" height="1159" loading="lazy" decoding="async">
 
@@ -162,9 +163,9 @@ For urgent mail, they set a service-level objective (SLO): **99.9% submitted wit
 
 Each class gets separate queues, Mailers and workers. The platform assigns the class from application and template rules; a campaign cannot become urgent just because Marketing's release date moved.
 
-## Follow one order confirmation
+## Leonie places her order and Ravi gets to work
 
-Leonie gets her login code and places the order. The ordering portal's backend saves her order and adds a confirmation request to its outbox in the same transaction. Ravi's dispatcher service receives the business-event ID, template, permitted recipients and region, then chooses the approved sender and route. SMTP credentials and signing keys stay with the platform.
+Leonie gets her login code and places the order. The ordering portal's backend saves her order and adds a confirmation request to its outbox in the same transaction. Ravi's dispatcher service receives the business-event ID, template, permitted recipients and region, then chooses the approved sender address and SMTP server. SMTP credentials and signing keys stay with the platform.
 
 The mail service's dispatcher polls for due email jobs:
 
@@ -191,11 +192,24 @@ sequenceDiagram
 
 *Order-confirmation batch job: claim and send a mail job, and store the result of the attempt.*
 
-Urgent mail goes first; Leonie's confirmation is waiting in the database, where a worker restart won't lose that task. Ravi gives each sending attempt a fresh Message-ID, so he can tell retries apart while keeping them tied to her order through the business-event ID.
+Ravi starts with `dispatchPending()`, polled independently for each traffic class. We'll fill in this outline as we go; the early excerpts aren't ready for deployment:
 
-First, we need to fill in the diagram's permission check. What is the portal's backend allowed to send, to whom, and with what protection?
+```java
+Optional<Job> next = outbox.claimNextDue(workload, clock.instant());
+if (next.isEmpty()) {
+    return;
+}
+Job job = next.get();
+PreparedMail prepared = prepare(job);
+MailSend<MailSubmissionReceipt> send =
+    sendArchived(prepared.mailer, job.requestId, prepared.email);
+```
 
-## Security before the first application joins
+*Leonie's confirmation becomes one claimed job, then one sending attempt.*
+
+The application's `outbox` claims a database row atomically, preventing two instances from taking the same job. `prepare()` and `sendArchived()` are Ravi's helpers. First, what is the portal's backend allowed to send, to whom, and with what protection?
+
+## Onboarding starts with security
 
 Before connecting the portal's backend to the shared mail service, its developers go through an onboarding process with Ravi's platform team. Together, they agree on an identity and a short list of sending permissions:
 
@@ -203,21 +217,38 @@ Before connecting the portal's backend to the shared mail service, its developer
 - Any required message signing and encryption, including the approved partner identities.
 - A traffic class, conservative sending limits and a support contact.
 
-The dispatcher rechecks permissions before every send: the bulletin needs signing and encryption for its approved recipients regardless of urgency, and suspending an application also stops its pending work.
+In `prepare(job)`, the application's `preparation` adapter checks current permissions, selects a permitted Mailer and renders the message. Ravi adds an attempt ID before the final checks:
+
+```java
+PreparedMail prepare(Job job) throws Exception {
+    preparation.checkPermissions(job);
+    PreparedMail rendered = preparation.render(job);
+    Email email = mail.emailBuilder()
+        .copying(rendered.email)
+        .fixingMessageId("<" + randomUUID() + "@mail.polarmeridian.com>")
+        .buildEmail();
+    preparation.checkFinalMessage(job, rendered.mailer, email);
+    return new PreparedMail(rendered.mailer, rendered.quotaScope, email);
+}
+```
+
+*A queued request still has to pass today's permissions and protection checks.*
+
+The final check includes Mailer settings and every recipient; failure holds the job without sending. `quotaScope` identifies the service's shared SMTP allocation.
 
 ### The connection and the sending identity
 
-The platform and messaging teams agree on three things before opening an SMTP route:
+The platform and messaging teams agree on three things before connecting the mail service to an SMTP server:
 
-- **TLS:** require encryption, validate the certificate chain and server name, and install private issuing authorities in the worker's trust store. Test [certificate validation](https://www.rfc-editor.org/rfc/rfc8314.html#section-5.3) when opening or changing a route.
-- **Credentials:** keep them in deployment secrets and rehearse rotation. These endpoints use STARTTLS/password; OAuth2 routes would use `SMTP_OAUTH2` and a thread-safe token provider via `withOAuth2AccessTokenProvider(...)`.
+- **TLS:** require encryption, validate the certificate chain and server name, and install private issuing authorities in the worker's trust store. Test [certificate validation](https://www.rfc-editor.org/rfc/rfc8314.html#section-5.3) when adding a server or changing its connection settings.
+- **Credentials:** keep them in deployment secrets and rehearse rotation. These servers use STARTTLS/password; OAuth2 authentication would use `SMTP_OAUTH2` and a thread-safe token provider via `withOAuth2AccessTokenProvider(...)`.
 - **Sending domains:** the domain team manages SPF and DMARC; corporate relays add DKIM after their final message changes. Check the resulting signatures and alignment.
 
 [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html#spf-dkim-and-dmarc) had to learn those lessons during an incident, but Polar Meridian gets to make them onboarding requirements.
 
 ### One protected message, several partners
 
-The confidential service bulletin goes to Leonie's employer and an approved service partner. Both need the whole bulletin, but their mail providers should not be able to read its body. Ravi uses [S/MIME](/security.html#section-sending-smime) to let each partner decrypt it and verify Polar Meridian's signature, while TLS still protects the connection to the relay.
+The maintenance update goes to Leonie's employer and an approved service partner, with revised servicing instructions for the equipment they sell or maintain. Both need the whole message, but their mail providers should not be able to read its body. Ravi uses [S/MIME](/security.html#section-sending-smime) to let each partner decrypt it and verify Polar Meridian's signature, while TLS still protects the connection to the relay.
 
 The application's `partnerDirectory` verifies each partner's address and uses the company's PKI service to check [certificate trust, permitted key use and revocation](https://www.rfc-editor.org/rfc/rfc8550.html#section-4). The helper below then takes the certificate from the returned `PartnerIdentity`, rejects it if missing and checks its validity dates:
 
@@ -238,9 +269,9 @@ Recipient protectedRecipient(String partnerId) throws CertificateException {
 }
 ```
 
-*Before the bulletin can leave, resolve each approved partner and their encryption certificate.*
+*Before the maintenance update can leave, resolve each approved partner and their encryption certificate.*
 
-With `smime-module` installed, Ravi builds the bulletin in the worker using `mail`, the platform's configured `SimpleJavaMail` factory. `partnerSigningConfig` supplies its signing credentials; `partnerEncryptionConfig` selects the algorithms agreed and tested with the partners:
+For the maintenance update, `preparation.render(job)` uses `mail`, the platform's configured `SimpleJavaMail` factory, with `smime-module` installed. `partnerSigningConfig` supplies its signing credentials; `partnerEncryptionConfig` selects the algorithms agreed and tested with the partners:
 
 ```java
 Email protectedNotice = mail.emailBuilder().startingBlank()
@@ -248,39 +279,59 @@ Email protectedNotice = mail.emailBuilder().startingBlank()
     .withRecipients(
         protectedRecipient("distributor"),
         protectedRecipient("service-partner"))
-    .withSubject("Confidential service bulletin")
-    .withPlainText(approvedBulletinText)
+    .withSubject("Confidential maintenance update")
+    .withPlainText(approvedMaintenanceUpdateText)
     .signWithSmime(partnerSigningConfig)
     .encryptWithSmime(partnerEncryptionConfig)
     .buildEmail();
 ```
 
-*Sign once, then let each approved partner decrypt the bulletin with their own private key.*
+*Sign once, then let each approved partner decrypt the maintenance update with their own private key.*
 
-### Certificates need looking after too
+### Keeping the certificates up to date
 
 The partners' encryption certificates and Polar Meridian's signing certificate will need replacing while the service is running:
 
-- **At onboarding**, send a non-sensitive bulletin through the real route and verify decryption and signature checking in each partner's receiving software.
-- **Before expiry**, alert the partner integration team and test approved replacements. Include the platform's signing certificate in this process.
+- **At onboarding**, send a test maintenance update using the service's SMTP configuration and verify decryption and signature checking in each partner's receiving software.
+- **Before expiry**, alert the partner integration team and test the newly approved certificates. Include the platform's signing certificate in this process.
 - **At each attempt**, resolve current approved certificates for every recipient, including any added by templates or Mailer configuration, since a waiting request may outlive a certificate's approval.
 
-If a check fails, the application holds the bulletin and records why; encryption stays required. Its retained copy is encrypted separately in the archive. We'll [test that hold with an expired certificate](#a-certificate-expires-instead).
+If a check fails, the application holds the maintenance update and records why; encryption stays required. Its retained copy is encrypted separately in the archive. We'll [test that hold with an expired certificate](#a-certificate-expires-instead).
 
-## A budget before another replica
+## Getting mail jobs to share, not compete
 
-Ravi has approved routes for the order confirmation and protected bulletin, but Marketing also has a newsletter for 300,000 recipients in Europe, each getting their own message. He needs to give the campaign room without making the next customer wait for a login code. For this exercise, the messaging team caps bulk mail at eighty recipient submissions per second, reserving separate capacity for urgent and routine transactional mail:
+Ravi has the sending permissions and security requirements sorted out for the order confirmation and maintenance update. But Marketing also has a newsletter for 300,000 people in Europe. For this exercise, the messaging team caps bulk mail at eighty recipient submissions per second. Even at that rate, it takes just over an hour to submit the newsletter. Login codes need to get through while that batch is still running, so Ravi's Dispatcher enforces a separate allocation for each traffic class, agreed with the messaging team.
 
-```text
-300,000 recipients
-÷ 80 recipients/second
-= 3,750 seconds
-= 62.5 minutes minimum
+Some providers also impose a daily ceiling, such as [Amazon SES's rolling twenty-four-hour limit](https://docs.aws.amazon.com/ses/latest/dg/manage-sending-quotas.html). If Polar Meridian's SMTP service does too, Ravi must cap Marketing's total sends as well. Between `prepare()` and `sendArchived()`, he checks its shared allocation:
+
+```java
+if (!limits.tryAcquire(prepared.email.getId(), job.requestId,
+        prepared.quotaScope, job.workload, prepared.email.getRecipients().size())) {
+    outbox.defer(job, clock.instant().plusSeconds(1));
+    return;
+}
 ```
 
-*The newsletter needs at least an hour; a 2FA code may expire before it even leaves the queue.*
+*Marketing's next job stays in the database; urgent polling carries on.*
 
-That is the earliest the batch could finish submission; slower sends or competing bulk work extend it. There may also be a daily ceiling: [Amazon SES, for example, limits recipients submitted over a rolling twenty-four hours](https://docs.aws.amazon.com/ses/latest/dg/manage-sending-quotas.html). So the platform reserves urgent capacity in both the sending rate and any daily quota, across all replicas: spare connections are useless after the quota is exhausted.
+Ravi's [application-side limiter](/assets/journal/examples/polar-meridian/JdbcDispatchLimits.java) uses a shared database. It locks the workload's row with [`SELECT ... FOR UPDATE`](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS), then checks and charges usage in that transaction:
+
+```java
+Limit limit = lockLimit(tx, scope, workload);
+Instant now = databaseTime(tx);
+Usage used = countUsage(tx, scope, workload, now);
+if (recipients > limit.perSecond - used.lastSecond
+        || recipients > limit.per24Hours - used.retainedDay) {
+    tx.rollback();
+    return false;
+}
+insertCharge(tx, attemptId, requestId, scope, workload, recipients, now);
+tx.commit();
+```
+
+*Two dispatcher instances cannot both spend the same remaining share.*
+
+The shares must fit the service's agreed allocation, accounting for other senders too. Count every recipient, including CC and BCC. Async queues can still bunch up SMTP attempts, so relays enforce their own limits. The [accounting notes](/assets/journal/examples/polar-meridian/README.md) cover unfinished attempts, rolling windows and database costs.
 
 ### Size workers for the busy periods
 
@@ -290,7 +341,7 @@ That is the earliest the batch could finish submission; slower sends or competin
 
 Noor, one of the regional Site Reliability Engineers, reviews the worker and pool limits with Ravi: how many more SMTP connections could another instance of the dispatcher service open, and can the relays handle them? Connection-pool limits apply per instance, so Noor needs to add them up and check whether the existing relays can handle that many connections.
 
-Their load tests include the small order confirmation and the larger, signed and encrypted bulletin. For an urgent peak in this region, suppose they need 100 submissions per second and a connection is occupied for an average of 0.2 seconds per message:
+Their load tests include the small order confirmation and the larger, signed and encrypted maintenance update. For an urgent peak in this region, suppose they need 100 submissions per second and a connection is occupied for an average of 0.2 seconds per message:
 
 ```text
 100 submissions/second × 0.2 seconds = 20 busy connections on average
@@ -305,7 +356,7 @@ The first line estimates demand; the others show configured ceilings per relay p
 
 ### Leave most of the queue in the database
 
-Each replica has two urgent Mailers, one per approved relay, and a separate bulk Mailer. Order confirmations and bulletins have their own allocations; we'll show urgent and bulk here:
+Each replica has two urgent Mailers, one per approved relay, and a separate bulk Mailer. Order confirmations and maintenance updates have their own allocations; we'll show urgent and bulk here:
 
 ```text
 Per replica:
@@ -322,16 +373,16 @@ Four replicas:
 
 The worker and queue limits need load testing. A [bounded async queue](/sending-and-execution.html#section-async-queue) counts waiting tasks, so the platform also limits request size and concurrent preparation to control memory use.
 
-When a queue fills, further work stays in the database. `QUEUE_FULL` means that attempt did no SMTP work and can be deferred; other failures need [a separate retry decision](#a-relay-goes-quiet). [Staple & Sons' dispatcher](/journal/your-mail-server-works-for-a-troll-farm-now.html#the-dispatcher-in-full) shows the loop, which Polar Meridian extends with separate workload claims, regional budgets and rate controls.
+Unlike [Staple & Sons' single queue](/journal/your-mail-server-works-for-a-troll-farm-now.html#the-dispatcher-in-full), Ravi's separate polls keep urgent work moving when bulk is waiting. His dispatcher's `recordResult()` defers rejected jobs; we'll [fill that in during the relay rehearsal](#noor-takes-a-relay-offline-does-urgent-mail-keep-moving).
 
-## Mailer settings are part of the service
+## Ravi puts the onboarding agreements into code
 
-Ravi puts the TLS checks, send timeouts and workload limits on reusable Mailers for each region, traffic class and permitted sending identity. The `mail` factory supplies route builders, and Ravi fills in hosts and credentials from deployment configuration and secrets. That leaves application teams to submit notification requests without access to SMTP credentials or arbitrary Session properties.
+The sending permissions and message protection are already handled during preparation. Ravi now puts the agreed TLS checks and send timeouts on reusable Mailers for each region, traffic class and permitted sending identity. The `mail` factory supplies Mailer builders, and Ravi fills in hosts and credentials from deployment configuration and secrets. That leaves application teams to submit notification requests without access to SMTP credentials or arbitrary Session properties.
 
 Each send gets a fifteen-second budget, with at most two seconds spent claiming a connection, but urgent mail's thirty-second target also has to cover its earlier wait in the application queue:
 
 ```java
-MailerRegularBuilder<?> routeBuilder(String host, String username, String password) {
+MailerRegularBuilder<?> configuredMailerBuilder(String host, String username, String password) {
     return mail.mailerBuilder()
         .withSMTPServer(host, 587, username, password)
         .withTransportStrategy(TransportStrategy.SMTP_TLS)
@@ -347,7 +398,7 @@ MailerRegularBuilder<?> routeBuilder(String host, String username, String passwo
 }
 ```
 
-*Every route starts with the same transport checks and finite send budget.*
+*Every Mailer starts with the same transport checks and finite send budget.*
 
 With the issuing CA installed in the worker's trust store, the explicit trust settings restore 10.0.0's normal checks and clear configured exceptions. Managed Angus aborts stuck socket I/O when the [send budget expires](/sending-and-execution.html#section-send-deadlines); a timeout still requires checking whether SMTP accepted the message.
 
@@ -377,7 +428,7 @@ Dispatchers divide urgent requests between the two Mailers, which share a [clust
 
 Both endpoints must be approved for the same senders and content, with matching transport requirements, so different regional requirements need separate clusters. [RelayDesk](/journal/everybody-brought-their-own-mail-server.html) takes that further: two customers' servers are not interchangeable simply because both speak SMTP.
 
-The three builders below come from `routeBuilder()` with their approved hosts and credentials. The deployment includes `batch-module` for worker pools and connection pooling:
+The three builders below come from `configuredMailerBuilder()` with their approved hosts and credentials. The deployment includes `batch-module` for worker pools and connection pooling:
 
 ```java
 UUID urgentCluster = randomUUID();
@@ -407,24 +458,19 @@ bulkBuilder
 
 *Urgent sends can use either approved relay; bulk work cannot borrow their connections.*
 
-The first pool registration sets the cluster's pool policy, so both urgent builders use the same settings. Clusters are local to one process; reusing their UUID elsewhere shares no sockets or quotas. The messaging team must also reserve the agreed capacity on its servers.
+The first pool registration sets the cluster's pool policy, so both urgent builders use the same settings. Clusters are local to one process; reusing their UUID elsewhere shares no sockets or quotas. The dispatcher's database-backed limits still apply across instances, while the messaging team checks the combined demands on its servers.
 
-Discarding a broken connection leaves its pool registered, so round-robin selection continues to choose it even when the endpoint has failed. We'll [rehearse taking a failed endpoint out of service](#a-relay-goes-quiet) later.
+Discarding a broken connection leaves its pool registered, so round-robin selection continues to choose it even when the endpoint has failed. We'll [rehearse taking a failed endpoint out of service](#noor-takes-a-relay-offline-does-urgent-mail-keep-moving) later.
 
-## An archive with something useful in it
+## What happened to Leonie’s confirmation? Tracing the evidence.
 
-Leonie has an order number. If she asks Support about the confirmation, that should be enough to start an investigation. Ravi adds an archive that connects her order to each sending attempt; the service team can use the same records to check who was included in a bulletin.
+Leonie has an order number. If she asks Support about the confirmation, that should be enough to start an investigation. Ravi adds an archive that connects her order to each sending attempt; the service team can use the same records to check who was included in a maintenance update.
 
-The application's `archive` repository encrypts the approved content and records each attempt against the request, application, region and workload. The worker assigns a new Message-ID before handing it to the approved Mailer:
+The Message-ID from `prepare()` becomes the archive's attempt key. Inside `sendArchived()`, the application's `archive` repository encrypts and commits the content before sending:
 
 ```java
 MailSend<MailSubmissionReceipt> sendArchived(
-        Mailer mailer, String requestId, Email approvedEmail) {
-    Email email = mail.emailBuilder()
-        .copying(approvedEmail)
-        .fixingMessageId("<" + randomUUID() + "@mail.polarmeridian.com>")
-        .buildEmail();
-
+        Mailer mailer, String requestId, Email email) {
     archive.insertAttempt(email.getId(), requestId, email);
     return mailer.async().sendMail(email);
 }
@@ -432,7 +478,7 @@ MailSend<MailSubmissionReceipt> sendArchived(
 
 *Tie each sending attempt to Leonie's order before any SMTP work starts.*
 
-Both the confirmation and the protected bulletin pass through this helper, so neither goes out if inserting its archive record fails. The caller uses the returned completion to update the request queue, deferring `QUEUE_FULL` and holding uncertain failures for review.
+Both messages pass through this helper; a failed insert stops the send. Its completion updates the request queue, while the observer below records the detailed result.
 
 The archive stores the approved `Email`; subsequent Mailer defaults, signing and encryption can affect the submitted bytes. For exact-byte evidence, finalize and retain the EML before using the [preserved-message submission path](/features.html#section-exact-eml). The observer won't supply the body; it carries the send result.
 
@@ -493,7 +539,29 @@ ThreadPoolExecutor observationWorkers = new ThreadPoolExecutor(
 
 *Give archive writes their own workers and a bounded queue.*
 
-Caller-runs would put slow writes back on sending threads; silent discard would hide missing observations. So Ravi chooses explicit rejection and tunes the worker count and buffer with Noor against acceptable archive lag.
+Caller-runs would put slow writes back on sending threads; silent discard would hide missing observations. Ravi passes these workers to the dispatcher as `completionWorkers`, keeping its result writes off sending threads too.
+
+This is the same `sendArchived()` call written out, followed by the result handler. Simple Java Mail's `sendMail()` returns the `MailSend<MailSubmissionReceipt>`:
+
+```java
+archive.insertAttempt(prepared.email.getId(), job.requestId, prepared.email);
+MailSend<MailSubmissionReceipt> send =
+    prepared.mailer.async().sendMail(prepared.email);
+
+send.getCompletion()
+    .handleAsync((receipt, failure) -> {
+        recordResult(job, prepared.email.getId(), receipt, unwrap(failure));
+        return null;
+    }, completionWorkers)
+    .exceptionally(failure -> {
+        reportFailure.accept(unwrap(failure));
+        return null;
+    });
+```
+
+*Sending can finish while its archive and request-result writes wait for a worker.*
+
+A rejected callback or failed write leaves the request unresolved for investigation. Ravi and Noor tune this shared executor against archive and request-update lag.
 
 With `observationSink.onMailSendCompleted` handling the archive and telemetry, Ravi can finish building the urgent and bulk Mailers:
 
@@ -507,7 +575,7 @@ for (MailerRegularBuilder<?> builder :
 }
 ```
 
-*Connect every route to the archive before the dispatchers start using it.*
+*Connect every Mailer to the archive before the dispatchers start using it.*
 
 Simple Java Mail offers the completion notification to the observation executor before completing the send, without waiting for the callback. Rejections are logged without retry or inline fallback; callback exceptions leave the send result unchanged:
 
@@ -526,7 +594,7 @@ flowchart TB
 
 If SMTP accepts Leonie's confirmation just before the process dies or the observation queue fills, its archive record may still lack a result. Another send could give her a second confirmation. If the outcome survived, recovery can repeat the archive write; otherwise Noor checks the request and relay logs. If acceptance remains uncertain, the request stays held for review. Monitoring watches for these missing results.
 
-## Timelines that turn into useful alerts
+## Noor monitors for performance degradation
 
 The archive helps when Leonie asks about a missing confirmation, but Noor wants warning before it gets that far. She combines the recorded send timestamps with the application's earlier queue wait:
 
@@ -541,7 +609,7 @@ The charts use intervals only when both timestamps exist, and flag clock anomali
 
 ### The sends that have not finished yet
 
-A login code stuck in the queue has no completion to plot. To see those sends too, Noor's dashboard reads the database queue, including bulletins held for certificate problems, and polls the Mailers' [queue snapshots](/debugging.html#section-async-queue). This diagnostic sample uses an application-supplied `workload` label:
+A login code stuck in the queue has no completion to plot. To see those sends too, Noor's dashboard reads the database queue, including maintenance updates held for certificate problems, and polls the Mailers' [queue snapshots](/debugging.html#section-async-queue). This diagnostic sample uses an application-supplied `workload` label:
 
 ```java
 mailer.getAsyncQueueSnapshot().ifPresent(queue ->
@@ -578,29 +646,44 @@ When Noor gets paged, she wants a reason to interrupt what she's doing and a use
 | --- | --- |
 | Urgent requests approaching the deadline | Check admission, worker saturation and approved relay health |
 | Rising observation queue or missing archive outcomes | Check persistence, reduce bulk admission and investigate rejected handoffs |
-| SMTP certificate or authentication failures | Hold the affected route and inspect its credentials or trust configuration |
-| A partner certificate nearing expiry, or a bulletin held by its certificate checks | Contact the partner integration team; renew and test the affected certificate |
+| SMTP certificate or authentication failures | Pause sends through the affected Mailers and inspect their credentials or trust configuration |
+| A partner certificate nearing expiry, or a maintenance update held by its certificate checks | Contact the partner integration team; renew and test the affected certificate |
 | A slow newsletter within its agreed window | Keep watching; no urgent page just because it is slower |
 
 The SREs test alert thresholds under load and run synthetic checks during quiet periods. They receive pages through an independent incident channel. The [timing logs that helped Staple & Sons investigate](/journal/your-mail-server-works-for-a-troll-farm-now.html#where-the-time-goes) now contribute to alerts with request ages, queue pressure and a first response already agreed.
 
-## A relay goes quiet
+## Noor takes a relay offline. Does urgent mail keep moving?
 
-Before taking the service on call, Noor rehearses a relay failure with Ravi and the messaging team. They replay Leonie's order-confirmation flow with test recipients while taking SMTP relay A offline. Since that relay also serves the confirmation route, the test request stays queued with its original ID and age. The platform pauses bulk mail while checking surviving capacity; 2FA test emails can use relay B within its agreed allowance.
+Before taking the service on call, Noor rehearses a relay failure with Ravi and the messaging team. They replay Leonie's order-confirmation flow with test recipients while taking SMTP relay A offline. That relay also handles order confirmations, so the test request stays queued with its original ID and age. The platform pauses bulk mail while checking surviving capacity; 2FA test emails can use relay B within its agreed allowance.
 
 Ravi stops admission to the affected urgent Mailers and replaces them with a new cluster containing only relay B. Already-admitted sends are drained and checked before considering retries. A deployment using one highly available SMTP hostname would leave that failover to the messaging team.
 
-Before retrying, the dispatcher distinguishes:
+In `recordResult()`, Ravi distinguishes a local queue rejection from an attempt that may have reached SMTP:
 
-- `QUEUE_FULL`: this offer did not start SMTP work and can wait for a later attempt.
-- Confirmed acceptance: do not send another copy just because subsequent archive work failed.
-- Partial or [unknown acceptance](/analyzing-send-results.html#section-unknown-acceptance): inspect the receipt and recipient-level evidence. A whole-message retry may duplicate mail.
+```java
+if (failure instanceof MailSendRejectedException
+        && ((MailSendRejectedException) failure).getReason() == QUEUE_FULL) {
+    limits.releaseUnsent(attemptId);
+    outbox.defer(job, clock.instant().plusSeconds(5));
+} else if (failure == null && receipt != null && receipt.getStatus() == ACCEPTED) {
+    limits.complete(attemptId);
+    outbox.markSubmitted(job, receipt);
+} else {
+    outbox.holdForReview(job, failure != null ? failure :
+        new IllegalStateException("Submission needs review: " +
+            (receipt == null ? "no receipt" : receipt.getStatus())));
+}
+```
 
-Once its route returns, the test confirmation gets a new attempt against the same request. Noor checks the alert timing and traces the attempt from its earlier wait through to the relay's acceptance, while Ravi verifies that already-accepted sends weren't retried.
+*Only a queue rejection automatically returns the attempted job for another send.*
+
+`QUEUE_FULL` refunds its unused quota. Accepted sends count for twenty-four hours after completion; uncertain attempts stay charged pending investigation. Partial or [unknown acceptance](/analyzing-send-results.html#section-unknown-acceptance) needs receipt evidence before risking a duplicate.
+
+Once relay A is available again, the test confirmation gets a new attempt against the same request. Noor checks the alert timing and traces the attempt from its earlier wait through to the relay's acceptance, while Ravi verifies that already-accepted sends weren't retried.
 
 ### A certificate expires instead
 
-When Ravi supplies an expired partner encryption certificate for a test bulletin, the partner directory blocks the send before an attempt is created, while order confirmations continue. Noor sees the hold reason in the application's request monitor:
+When Ravi supplies an expired partner encryption certificate for a test maintenance update, the partner directory blocks the send before an attempt is created, while order confirmations continue. Noor sees the hold reason in the application's request monitor:
 
 ```text
 WARN ProtectedMailHeld region=EU application=service-platform
@@ -610,19 +693,19 @@ WARN ProtectedMailHeld region=EU application=service-platform
     action=renew_partner_certificate_and_repeat_decryption_test
 ```
 
-*The bulletin waits for a usable certificate; unrelated mail keeps moving.*
+*The maintenance update waits for a usable certificate; unrelated mail keeps moving.*
 
-After approving and testing a replacement certificate, the partner integration team releases the request. The rehearsal checks that no SMTP call occurred while it was held, and that the released bulletin arrives signed and encrypted.
+After approving and testing a replacement certificate, the partner integration team releases the request. The rehearsal checks that no SMTP call occurred while it was held, and that the released maintenance update arrives signed and encrypted.
 
 ### Stop the sends before stopping their observers
 
-In the last rehearsal, Ravi tests how the Java service stops during deployments by shutting down a worker with a bulletin result still waiting to be archived. The application's `dispatchers.stopAndAwait()` stops new claims and waits until no dispatcher can make another send call. With dispatch stopped, Ravi closes the Mailers before draining the observation executor:
+In the last rehearsal, Ravi stops the dispatcher with a maintenance update's result still waiting to be archived. Its `stopAndAwait()` stops the polling tasks and waits until none can make another send call. He then closes the Mailers before draining the workers that persist observations and update requests:
 
 ```java
-dispatchers.stopAndAwait();
+dispatcher.stopAndAwait();
 
-for (Mailer route : mailers) {
-    route.close();
+for (Mailer mailer : mailers) {
+    mailer.close();
 }
 
 observationWorkers.shutdown();
@@ -637,11 +720,15 @@ Because [closing a Mailer](/sending-and-execution.html#section-mailer-lifecycle)
 
 ## Bringing the applications along
 
-Ravi starts the rollout with the ordering portal's backend, checking its sending identity, archive records and submission times. Each application team gets example requests and a staging route to controlled recipients. Confidential bulletins follow once the partners can decrypt them, verify signatures and renew certificates.
+So, let's review. With Simple Java Mail providing the [sending](/sending-and-execution.html#section-send-execution), [signing](/security.html#section-sending-smime), [encryption](/security.html#section-sending-smime) and [send-result APIs](/analyzing-send-results.html#section-get-receipt), Ravi has built a shared mail service that keeps urgent messages moving, protects confidential content and gives Noor [queue diagnostics](/debugging.html#section-async-queue) and [send timings](/sending-and-execution.html#section-mail-send-observer) to spot delays and investigate failed sends. To connect another application, its developers go through onboarding with Ravi's team, agreeing on sending permissions, capacity and support contacts before [testing the integration in staging](/debugging.html#section-override-receivers).
 
-On her next visit, Leonie gets her login code and order confirmation while Marketing's newsletter is still running. If she has a question about the email, Support can follow the send from her order number. That leaves Ravi time for the next application, with Noor ready to operate the service they've tested together. Each new application joins with its sending permissions, allocation and support contact agreed.
+On her next visit, Leonie gets her login code and order confirmation while Marketing's newsletter is still running.
 
-Somebody is still asking whether their email can go first. At least there is now a useful answer.
+Here is the dispatcher we've assembled along the way. You can also [download the Java file](/assets/journal/examples/polar-meridian/PolarMeridianDispatcher.java), with [adapter contracts and database code](/assets/journal/examples/polar-meridian/README.md) to connect it to the real application.
+
+{{> components/journal-code-disclosure (journalCodeExample "polar-meridian/PolarMeridianDispatcher.java") title="Dispatcher"}}
+
+With a flexible setup built to grow and a structured onboarding process, Ravi and Noor are ready for the next mail-sending challenge. They won't let another Leonie stare at an empty inbox again.
 
 <img src="/assets/journal/personas/polar-meridian-finale.png" alt="Ravi, Leonie and Noor posing beside a giant SJM logo outside Polar Meridian Systems." width="1449" height="1086" loading="lazy" decoding="async">
 

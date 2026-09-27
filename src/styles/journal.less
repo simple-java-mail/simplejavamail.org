@@ -344,6 +344,70 @@
 }
 .journal-prose blockquote > :last-child { margin-bottom: 0; }
 .journal-prose pre { margin: @space-xl 0; }
+
+// A short source preview opens into the complete, copyable example.
+.journal-code-disclosure {
+  margin: @space-lg 0;
+  border: 1px solid @line-dark;
+  background: @ink-deep;
+  color: #E7EFF0;
+}
+
+.journal-code-disclosure > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.journal-code-disclosure > summary::-webkit-details-marker { display: none; }
+.journal-code-disclosure > summary:focus-visible { outline-offset: -3px; }
+
+.journal-code-preview {
+  position: relative;
+  display: block;
+  max-height: calc(1.25rem + 6 * 1.7em);
+  padding: 1.25rem 1.4rem 0;
+  overflow: hidden;
+  font-family: @font-mono;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.journal-code-preview-line { display: block; min-height: 1.7em; }
+.journal-code-preview::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3.4em;
+  background: linear-gradient(transparent, @ink-deep);
+  content: "";
+  pointer-events: none;
+}
+
+.journal-code-action {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 3rem;
+  padding: @space-sm @space-md;
+  color: #83D4C9;
+  font-family: @font-mono;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+.journal-code-action span[aria-hidden] { margin-left: @space-xs; }
+.journal-code-disclosure > summary:hover .journal-code-action { background: @ink; color: @white; }
+.journal-code-collapse { display: none; }
+.journal-code-disclosure[open] > summary {
+  position: sticky;
+  top: @header-h;
+  z-index: 3;
+  border-bottom: 1px solid @line-dark;
+  background: @ink-deep;
+}
+.journal-code-disclosure[open] .journal-code-preview,
+.journal-code-disclosure[open] .journal-code-expand { display: none; }
+.journal-code-disclosure[open] .journal-code-collapse { display: inline; }
+.journal-prose .journal-code-disclosure > pre { margin: 0; border: 0; }
+
 .journal-prose .journal-diagram { margin: @space-lg 0; }
 .journal-prose h2 + .journal-diagram { margin-top: 0; }
 .journal-prose pre.mermaid {
