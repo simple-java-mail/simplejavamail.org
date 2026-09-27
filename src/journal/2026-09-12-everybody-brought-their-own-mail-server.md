@@ -26,17 +26,21 @@ banner-body: "Welcome to the Case Study series! This time, we'll follow a suppor
 
 At RelayDesk, a support ticket can be resolved before its reply has left the building.
 
-Maya works in customer support at Kestrel Outfitters. She's found the missing parcel and written an answer in RelayDesk, but the shopper waiting for that answer is still waiting. Kestrel rotated an SMTP password on Friday afternoon, and RelayDesk is still using the old one.
+RelayDesk sells a multi-tenant SaaS platform for running a customer-support desk. It brings tickets and customer history together so agents can pick up a conversation, route it to the right team and ask colleagues for help without losing context. Workflow rules handle follow-ups and escalations, while reporting helps managers track backlogs, response times and service-level agreements. Email is one of the channels those teams use to talk to customers.
+
+Kestrel Outfitters is one of RelayDesk's customers. Its support agents work in RelayDesk, but their replies go out as Kestrel Support. Most tenants use RelayDesk's default sending service; Kestrel requires its replies to pass through Kestrel-controlled SMTP servers, where it already manages domain signing and mail policies.
+
+Maya, one of Kestrel's support agents, opens a ticket from a shopper whose parcel hasn't arrived. The tracking information shows it's waiting at a collection point, so she writes back in RelayDesk to explain where to pick it up. She clicks Send, but the message gets stuck: Kestrel rotated an SMTP password on Friday afternoon, and RelayDesk is still using the old one.
 
 Anika, Kestrel's mail administrator, can arrange the replacement credentials. Unfortunately, Sam, the Java developer investigating the failed send at RelayDesk, cannot reach her until Monday. He can fix his own application; he cannot reset somebody else's password.
-
-RelayDesk is a small customer-support software company with about a dozen engineers and a Java backend running in Europe and North America. It manages support conversations, attachments and case updates. Most customers use its default sending service, but others insist that replies pass through their own mail infrastructure. That brings their credentials, regional arrangements and change procedures into what initially looked like a settings screen.
 
 Let's give Sam a better answer than restarting the application and hoping. RelayDesk, its customers and the people here are fictional; we'll use Simple Java Mail 10.0.0 for the sending work, with customer permissions, job scheduling and configuration changes handled by RelayDesk's application.
 
 ## The setup
 
-Kestrel operates in Europe and North America, with a pair of equivalent relays in each region. Maya's ticket belongs to its European operation. Another customer, Juniper Travel, provides one managed submission hostname and asks RelayDesk to leave the infrastructure behind it alone.
+About a dozen engineers maintain RelayDesk's Java backend, deployed in Europe and North America. Kestrel operates in both regions, with a pair of equivalent relays in each. Maya's ticket belongs to its European operation.
+
+Juniper Travel, another RelayDesk tenant, gives RelayDesk one SMTP address to send through; its mail provider manages the servers behind that address. Juniper's agents keep sending replies while Kestrel's mail is stuck. The email part of the setup looks like this:
 
 ```mermaid
 %% journal: compact
@@ -74,15 +78,15 @@ flowchart TB
     class defaultMail,kestrel,juniper external
 ```
 
-*The reply starts in RelayDesk, but its customer decides which mail service may carry it.*
+*Maya clicks Send in RelayDesk; Kestrel decides which mail servers can carry her reply.*
 
 The regional workers run where each customer's agreement permits. This picture brings them together for us to look at; it doesn't put their connections into one worldwide pool.
 
-Kestrel wants more than its own address in the `From` header. Its outgoing replies must pass through the infrastructure where it applies its mail policies and keeps its records. Unlike [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), Sam cannot reconfigure those servers. Unlike [Polar Meridian](/journal/mail-at-polar-meridian-systems.html), he doesn't have one corporate messaging team to agree a common service with. He gets a contact address, a configuration form and occasionally a spreadsheet.
+Unlike the developers at [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), Sam cannot reconfigure Kestrel's mail servers. Nor does he have [Polar Meridian's](/journal/mail-at-polar-meridian-systems.html) single corporate messaging team to agree a common service with. He gets a contact address, a configuration form and occasionally a spreadsheet.
 
 ## The settings screen opens a network connection
 
-When Kestrel signs up, Anika goes through RelayDesk's onboarding process before the application connects to its relays. The SMTP hostname looks harmless enough in a form, but it asks RelayDesk's servers to connect somewhere on the customer's behalf.
+Anika supplies Kestrel's SMTP settings during onboarding, before the application is allowed to connect to its relays. The SMTP hostname looks harmless enough in a form, but it asks RelayDesk's servers to connect somewhere on the customer's behalf.
 
 The onboarding checks cover a few different things:
 
