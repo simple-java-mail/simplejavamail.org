@@ -181,6 +181,11 @@ mail.mailerBuilder(session)
 // then continue with SMTP handling
 mailerBuilder.disablingAllClientValidation(true);
 </code></pre>
+      <pre><code class="small">// apply your own local email-size limit, independently of the SMTP server
+mailerBuilder.withMaximumEmailSize(10_000_000);</code></pre>
+      <p>Managed Angus sends also check the prepared content against the connected server's advertised SIZE limit automatically.
+        There is no additional property or builder setting. This connected check is separate from the local limit above and offline rehearsal;
+        see <a href="/analyzing-send-results.html#section-message-size">message size diagnostics</a>.</p>
 		<pre><code class="small">// make the underlying Jakarta Mail Session produce debug output
 mailerBuilder
     .withDebugLogging(true)

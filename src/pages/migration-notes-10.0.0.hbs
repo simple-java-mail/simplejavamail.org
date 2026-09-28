@@ -36,6 +36,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
 	  <li><a href="#exact-eml">Submit finalized EML without rebuilding it</a></li>
       <li><a href="#smtp-content-compatibility">Check internationalized envelope and finalized 8-bit sends</a></li>
+      <li><a href="#smtp-size-check">Account for rejection before sending oversized email</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -380,6 +381,20 @@ MailSubmissionReceipt receipt = mailer.sync().sendMail(email);</code></pre>
       Regenerate invalid source headers and use Base64 or quoted-printable for unsuitable bodies before signing or loading final bytes.
       The legacy setting does not bypass these checks. See the <a href="features.html#section-international-mail">international-mail workflow</a>.
     </p>
+  </section>
+
+  <a href="#smtp-size-check" id="smtp-size-check" class="section-link h2">&sect;</a>
+  <h2>Account for rejection before sending oversized email</h2>
+  <section>
+    <p class="wide">Managed Angus connections now check the prepared email against a reliable positive SIZE limit advertised by the selected server.
+      Previously the provider could transmit it and wait for the server to reject it. If a server used to accept mail above its own advertised limit,
+      correct the server's limit, reduce the email, or choose another server. A local rejection has no SMTP reply code; inspect the failure receipt instead.</p>
+    <p class="wide">The client adds <code>SIZE=&lt;bytes&gt;</code> when advertised. If you supply this manually through
+      <code>SMTPMessage.setMailExtension(...)</code> or <code>mail.smtp.mailextension</code> / <code>mail.smtps.mailextension</code>,
+      remove the manual value to use automatic calculation. A single valid estimate is preserved, but malformed or duplicate declarations now fail locally.</p>
+    <p class="wide">Counting adds a serialization pass, so caller-owned attachment and content sources must stay readable and repeatable.
+      Your local <code>withMaximumEmailSize(...)</code> limit and offline rehearsal are unchanged. Caller-owned ordinary Angus transports retain their behavior.
+      See <a href="/analyzing-send-results.html#section-message-size">message size diagnostics</a> for receipts and illustrative output.</p>
   </section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>

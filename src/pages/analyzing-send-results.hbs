@@ -27,6 +27,7 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
   <section class="toc">
     <ul>
       <li><a href="#section-get-receipt">Get the receipt, including when a send fails</a></li>
+      <li><a href="#section-message-size">Check message size against the server limit</a></li>
       <li><a href="#section-partial-send">Follow one partially successful send</a></li>
       <li><a href="#section-recipient-details">Inspect recipient details and server replies</a></li>
       <li><a href="#section-retry-decisions">Decide what can be retried</a></li>
@@ -124,6 +125,64 @@ printReceipt(receipt);</code></pre>
         <code>hasServerAcceptanceInformation()</code> is false for <code>UNKNOWN</code>. Neither method is a shortcut for confirming that everyone
         received the message.
       </p>
+    </div>
+  </section>
+
+  <a href="#section-message-size" id="section-message-size" class="section-link h2">&sect;</a>
+  <h2>Check message size against the server limit</h2>
+  <section>
+    <div class="wide">
+      <p>An attachment can make an email too large for your SMTP server, even if your own application allows it.
+        On managed Angus connections, Simple Java Mail counts the prepared email and checks the server's advertised SIZE limit
+        before submitting anything. There is no switch to enable: ordinary sends, async sends, simple batches and open connections all use this check.</p>
+      <p>These two receipt fields tell you what happened, including when the check rejects an email:</p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small">MailSubmissionReceipt receipt;
+try {
+    receipt = mailer.sync().sendMail(email);
+} catch (MailSubmissionException failure) {
+    receipt = failure.getSubmissionReceipt();
+}
+
+System.out.println("Submission: " + receipt.getStatus());
+System.out.println("Prepared content bytes: " + receipt.getMessageSize());
+System.out.println("Server limit bytes: " + receipt.getServerMaximumMessageSize());
+System.out.println("SMTP reply present: " + receipt.getSmtpResponse().isPresent());</code></pre>
+<pre><code class="language-text small">Submission: REJECTED
+Prepared content bytes: 12345678
+Server limit bytes: 10000000
+SMTP reply present: false</code></pre>
+    </div>
+    <div class="wide">
+      <p>Here the email was too large, so no MAIL FROM, RCPT or DATA command was sent. The exception explains that you can reduce
+        the content or attachments, or use a server with a higher limit. Its receipt lists the recipients as valid but unsent, with
+        <code>CALLER_POLICY_REQUIRED</code> retry guidance. Retrying the same email against the same limit will not help.</p>
+      <p><code>getMessageSize()</code> is the complete prepared SMTP content size, not bytes successfully transferred. It includes SMTP line
+        endings and excludes dot escaping and the DATA terminator. Counting happens after negotiated provider conversion, without another
+        buffered copy; exact and signed content is not rebuilt. Caller-owned attachment and content sources must stay readable and return
+        the same content on repeated reads.</p>
+      <p><code>getServerMaximumMessageSize()</code> describes the actual selected connection, using the capabilities after STARTTLS when applicable.
+        Equality is allowed. Missing, zero, malformed, overflowing or contradictory limits are unknown and do not trigger rejection.
+        The client adds SIZE when advertised; one valid advanced caller-supplied estimate is preserved, but the receipt still reports the measured size.</p>
+      <p>Either field can be <code>null</code>. Incomplete measurement does not become a partial count. Logging-only sends, CustomMailer,
+        ordinary caller-owned Angus Sessions and providers that do not report sizes leave these facts unavailable. A known server limit can
+        survive a failure that happened before counting finished. Being under the limit does not guarantee acceptance or final delivery.</p>
+      <p>This is separate from your application's <code>withMaximumEmailSize(...)</code> guard and
+        <code>mailer.rehearse(email).getEncodedSize()</code>, which work without a server. Rehearsal EML can differ from SMTP content after
+        provider conversion or omitted headers. A <a href="/debugging.html#section-smtp-capabilities">connection probe</a> is useful for diagnosis,
+        but may connect to a different server in a cluster; sending always checks its own connection.</p>
+      <p>To collect these facts for successful and failed attempts in one place, use your mail-send observer. Attempts that fail before a receipt
+        exists do not enter this callback's <code>ifPresent</code> block:</p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small">mailerBuilder.withMailSendObserver(outcome -&gt;
+    outcome.getSubmissionReceipt().ifPresent(receipt -&gt;
+        System.out.printf("%s: content=%s bytes, server limit=%s bytes%n",
+            receipt.getStatus(), receipt.getMessageSize(),
+            receipt.getServerMaximumMessageSize())));</code></pre>
+<pre><code class="language-text small">ACCEPTED: content=3250 bytes, server limit=10000000 bytes
+REJECTED: content=12345678 bytes, server limit=10000000 bytes</code></pre>
     </div>
   </section>
 

@@ -213,6 +213,8 @@ CompletableFuture&lt;SmtpConnectionReport&gt; pending =
       <p>
         <code>getMaximumMessageSize()</code> only returns a consistent positive numeric SIZE limit. An absent limit, zero (no fixed maximum),
         conflicting duplicates and malformed values return empty. Check <code>supports("SIZE")</code> separately.
+        A probe uses a separate connection. For an actual send, the managed Angus path checks its own current limit before submission and
+        exposes measured content bytes and the server limit on the <a href="/analyzing-send-results.html#section-message-size">submission receipt</a>.
       </p>
     </div>
     <div class="side">
@@ -252,6 +254,13 @@ Elapsed: 138ms</code></pre>
         completed, not that a socket remains open. Inspect the failure phase and earlier snapshots when a probe fails; raw provider
         exceptions and AUTH exchanges are not stored. Display text is bounded and control characters are escaped for logs, though the
         report intentionally contains endpoint and public server/certificate names.
+      </p>
+      <p>
+        Each capability snapshot has room for 64 KiB of escaped UTF-8 text, including extension names, parameters and formatting.
+        If the server supplies more, the report leaves that snapshot out and explains why in a warning. It does not show a partial
+        list that could make an extension look absent. There is no separate limit on the number or length of extension lines.
+        This is only a reporting budget: connection setup can still succeed, and sending reads SIZE from the complete reply on its own
+        connection. Long or unusual replies do not switch off that check. The budget does not limit the provider's network reads.
       </p>
       <p>
         The probe uses the Mailer's existing endpoint, proxy, TLS settings and provider timeouts. It explicitly connects even in logging-only

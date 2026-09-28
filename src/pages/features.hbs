@@ -794,6 +794,9 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
         See <a href="/analyzing-send-results.html">Analyzing send results</a> for the receipt API, a worked partial-send example, illustrative
         output, asynchronous and open-connection usage, and how to read uncertain acceptance before retrying.
       </p>
+      <p>Managed Angus sends also check the prepared email against the connected server's SIZE limit before submission.
+        Receipts retain the <a href="/analyzing-send-results.html#section-message-size">measured content size and advertised server maximum</a>
+        when known, including on a local oversized rejection. This is automatic and separate from your own local size limit.</p>
     </div>
 
     <div class="side">
