@@ -25,7 +25,7 @@ Simple Java Mail, however, is not a servlet-based server type of application, bu
 
 ## `Phaser`: coordinating a party whose size keeps changing
 
-The [SOCKS bridge](<!-- TODO: link to the right website doc section -->) is a small local server that uniquely forwards JavaMail’s unauthenticated proxy connections through an authenticated SOCKS proxy. That gives it a lifecycle: start it when needed, keep it alive while sends depend on it, and stop it when the last one finishes. I covered its origins in [A tale of two proxies](/journal/the-libraries-behind-simple-java-mail.html#a-tale-of-two-proxies).
+The [SOCKS bridge](/configuration.html#section-proxy-bridge-ports) is a small local server that uniquely forwards JavaMail’s unauthenticated proxy connections through an authenticated SOCKS proxy. That gives it a lifecycle: start it when needed, keep it alive while sends depend on it, and stop it when the last one finishes. I covered its origins in [A tale of two proxies](/journal/the-libraries-behind-simple-java-mail.html#a-tale-of-two-proxies).
 
 The hard part was knowing when that last send had finished. I could not know the number of sends beforehand, and new ones could arrive while others were still running. A `CountDownLatch` can only count down from its initial count. A `CyclicBarrier` lets a fixed number of participants wait for each other. Neither fitted a group that kept changing.
 
