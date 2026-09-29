@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit;
 
 /**
  * Illustrative PostgreSQL-backed dispatch limits. All dispatcher instances use
- * the same database and pre-provisioned scope/workload rows; see dispatch-limits.sql.
+ * the same database and pre-provisioned sending-quota-group/workload rows; see dispatch-limits.sql.
  * This controls application admissions, not the precise instant SMTP transmits.
  */
 public final class JdbcDispatchLimits implements PolarMeridianDispatcher.SendLimits {
@@ -20,28 +20,28 @@ public final class JdbcDispatchLimits implements PolarMeridianDispatcher.SendLim
     }
 
     @Override
-    public boolean tryAcquire(String attemptId, String requestId, String scope,
-            PolarMeridianDispatcher.Workload workload, int recipients) throws SQLException {
-        if (recipients < 1) {
+    public boolean tryAcquire(String attemptId, String requestId, String sendingQuotaGroup,
+            PolarMeridianDispatcher.Workload workload, int recipientCount) throws SQLException {
+        if (recipientCount < 1) {
             throw new IllegalArgumentException("Count all final envelope recipients before dispatch");
         }
         try (Connection tx = database.getConnection()) {
             tx.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             tx.setAutoCommit(false);
             try {
-                Limit limit = lockLimit(tx, scope, workload);
+                Limit limit = lockLimit(tx, sendingQuotaGroup, workload);
                 if (limit.perSecond > 0 && limit.per24Hours > 0
-                        && (recipients > limit.perSecond || recipients > limit.per24Hours)) {
+                        && (recipientCount > limit.perSecond || recipientCount > limit.per24Hours)) {
                     throw new IllegalArgumentException("Message has more recipients than this workload can admit at once");
                 }
                 Instant now = databaseTime(tx);
-                Usage used = countUsage(tx, scope, workload, now);
-                if (recipients > limit.perSecond - used.lastSecond
-                        || recipients > limit.per24Hours - used.retainedDay) {
+                Usage used = countUsage(tx, sendingQuotaGroup, workload, now);
+                if (recipientCount > limit.perSecond - used.lastSecond
+                        || recipientCount > limit.per24Hours - used.retainedDay) {
                     tx.rollback();
                     return false;
                 }
-                insertCharge(tx, attemptId, requestId, scope, workload, recipients, now);
+                insertCharge(tx, attemptId, requestId, sendingQuotaGroup, workload, recipientCount, now);
                 tx.commit();
                 return true;
             } catch (SQLException | RuntimeException failure) {
@@ -55,31 +55,31 @@ public final class JdbcDispatchLimits implements PolarMeridianDispatcher.SendLim
         }
     }
 
-    private Limit lockLimit(Connection tx, String scope,
+    private Limit lockLimit(Connection tx, String sendingQuotaGroup,
             PolarMeridianDispatcher.Workload workload) throws SQLException {
         try (PreparedStatement statement = statement(tx,
                 "SELECT per_second, per_24_hours FROM mail_dispatch_limit " +
-                        "WHERE quota_scope = ? AND workload = ? FOR UPDATE")) {
-            statement.setString(1, scope);
+                        "WHERE sending_quota_group = ? AND workload = ? FOR UPDATE")) {
+            statement.setString(1, sendingQuotaGroup);
             statement.setString(2, workload.name());
             try (ResultSet row = statement.executeQuery()) {
                 if (!row.next()) {
-                    throw new SQLException("No approved dispatch limit for " + scope + "/" + workload);
+                    throw new SQLException("No approved dispatch limit for " + sendingQuotaGroup + "/" + workload);
                 }
                 return new Limit(row.getLong(1), row.getLong(2));
             }
         }
     }
 
-    private Usage countUsage(Connection tx, String scope,
+    private Usage countUsage(Connection tx, String sendingQuotaGroup,
             PolarMeridianDispatcher.Workload workload, Instant now) throws SQLException {
         try (PreparedStatement statement = statement(tx,
                 "SELECT COALESCE(SUM(CASE WHEN granted_at > ? THEN recipients ELSE 0 END), 0), " +
                         "COALESCE(SUM(recipients), 0) FROM mail_dispatch_charge " +
-                        "WHERE quota_scope = ? AND workload = ? " +
+                        "WHERE sending_quota_group = ? AND workload = ? " +
                         "AND (finished_at IS NULL OR finished_at > ?)")) {
             statement.setTimestamp(1, Timestamp.from(now.minusSeconds(1)));
-            statement.setString(2, scope);
+            statement.setString(2, sendingQuotaGroup);
             statement.setString(3, workload.name());
             statement.setTimestamp(4, Timestamp.from(now.minus(24, ChronoUnit.HOURS)));
             try (ResultSet row = statement.executeQuery()) {
@@ -89,17 +89,17 @@ public final class JdbcDispatchLimits implements PolarMeridianDispatcher.SendLim
         }
     }
 
-    private void insertCharge(Connection tx, String attemptId, String requestId, String scope,
-            PolarMeridianDispatcher.Workload workload, int recipients, Instant now) throws SQLException {
+    private void insertCharge(Connection tx, String attemptId, String requestId, String sendingQuotaGroup,
+            PolarMeridianDispatcher.Workload workload, int recipientCount, Instant now) throws SQLException {
         try (PreparedStatement statement = statement(tx,
                 "INSERT INTO mail_dispatch_charge " +
-                        "(attempt_id, request_id, quota_scope, workload, recipients, granted_at) " +
+                        "(attempt_id, request_id, sending_quota_group, workload, recipients, granted_at) " +
                         "VALUES (?, ?, ?, ?, ?, ?)")) {
             statement.setString(1, attemptId);
             statement.setString(2, requestId);
-            statement.setString(3, scope);
+            statement.setString(3, sendingQuotaGroup);
             statement.setString(4, workload.name());
-            statement.setInt(5, recipients);
+            statement.setInt(5, recipientCount);
             statement.setTimestamp(6, Timestamp.from(now));
             statement.executeUpdate();
         }

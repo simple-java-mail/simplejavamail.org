@@ -1,12 +1,25 @@
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.email.Email;
+import org.simplejavamail.api.email.EmailPopulatingBuilder;
+import org.simplejavamail.api.email.ExactEmailBuilder;
+import org.simplejavamail.api.email.Recipient;
+import org.simplejavamail.api.email.config.DeliveryStatusNotification;
+import org.simplejavamail.api.mailer.MailRehearsal;
 import org.simplejavamail.api.mailer.MailSend;
+import org.simplejavamail.api.mailer.MailSendOutcome;
 import org.simplejavamail.api.mailer.MailSendRejectedException;
 import org.simplejavamail.api.mailer.MailSubmissionReceipt;
 import org.simplejavamail.api.mailer.Mailer;
+import jakarta.mail.Message.RecipientType;
+import jakarta.mail.internet.InternetHeaders;
 
+import java.io.ByteArrayInputStream;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -29,6 +42,7 @@ import static org.simplejavamail.api.mailer.MailSubmissionStatus.ACCEPTED;
  */
 public final class PolarMeridianDispatcher {
     public enum Workload { URGENT, ROUTINE, BULK }
+    public enum Retention { METADATA_ONLY, EXACT_EML }
 
     private final SimpleJavaMail mail;
     private final MailOutbox outbox;
@@ -76,12 +90,12 @@ public final class PolarMeridianDispatcher {
             try {
                 PreparedMail prepared = prepare(job);
                 if (!limits.tryAcquire(prepared.email.getId(), job.requestId,
-                        prepared.quotaScope, job.workload, prepared.email.getRecipients().size())) {
+                        prepared.sendingQuotaGroup, job.workload, prepared.evidence.recipients.size())) {
                     outbox.defer(job, clock.instant().plusSeconds(1));
                     return;
                 }
                 MailSend<MailSubmissionReceipt> send =
-                        sendArchived(prepared.mailer, job.requestId, prepared.email);
+                        sendArchived(prepared, job.requestId);
                 send.getCompletion()
                         .handleAsync((receipt, failure) -> {
                             recordResult(job, prepared.email.getId(), receipt, unwrap(failure));
@@ -106,19 +120,55 @@ public final class PolarMeridianDispatcher {
 
     PreparedMail prepare(Job job) throws Exception {
         preparation.checkPermissions(job);
-        PreparedMail rendered = preparation.render(job);
-        Email email = mail.emailBuilder()
-                .copying(rendered.email)
-                .fixingMessageId("<" + randomUUID() + "@mail.polarmeridian.com>")
-                .buildEmail();
-        preparation.checkFinalMessage(job, rendered.mailer, email);
-        return new PreparedMail(rendered.mailer, rendered.quotaScope, email);
+        ComposedMail composed = preparation.compose(job);
+        Mailer mailer = composed.mailer;
+
+        EmailPopulatingBuilder attempt = mail.emailBuilder()
+                .copying(composed.email)
+                .fixingMessageId("<" + randomUUID() + "@mail.polarmeridian.com>");
+        if (!composed.email.getOverrideReceivers().isEmpty()) {
+            attempt.withOverrideReceivers(composed.email.getOverrideReceivers());
+        }
+        Email email = attempt.buildEmail();
+
+        MailRehearsal rehearsal = mailer.rehearse(email);
+        preparation.checkFinalMessage(job, mailer, rehearsal);
+        if (!rehearsal.isFullRehearsal() || !Objects.equals(email.getId(), rehearsal.getEmailId())) {
+            throw new IllegalStateException("Preparation must preserve the attempt ID and apply protection");
+        }
+        AttemptEvidence evidence = new AttemptEvidence(rehearsal, composed.retention);
+        Email submission = composed.retention == Retention.EXACT_EML
+                ? exactSubmission(evidence) : email;
+        return new PreparedMail(mailer, composed.sendingQuotaGroup, submission, evidence);
     }
 
     MailSend<MailSubmissionReceipt> sendArchived(
-            Mailer mailer, String requestId, Email email) {
-        archive.insertAttempt(email.getId(), requestId, email);
-        return mailer.async().sendMail(email);
+            PreparedMail prepared, String requestId) {
+        archive.insertAttempt(prepared.email.getId(), requestId, prepared.evidence);
+        return prepared.mailer.async().sendMail(prepared.email);
+    }
+
+    Email exactSubmission(AttemptEvidence evidence) throws Exception {
+        byte[] eml = evidence.getEmlBytes().orElseThrow();
+        InternetHeaders headers = new InternetHeaders(new ByteArrayInputStream(eml));
+        for (String name : List.of("Bcc", "Resent-Bcc", "Content-Length")) {
+            if (headers.getHeader(name) != null) {
+                throw new IllegalArgumentException("Unsafe outbound EML header: " + name);
+            }
+        }
+        if (evidence.envelopeSender == null) {
+            throw new IllegalArgumentException("Retained mail needs an explicit envelope sender (withBounceTo)");
+        }
+        ExactEmailBuilder exact = mail.emailBuilder().startingFromExactEml(eml)
+                .withEnvelopeRecipients(evidence.recipients.toArray(new Recipient[0]))
+                .withEnvelopeSender(evidence.envelopeSender);
+        if (evidence.dsn != null) {
+            exact.withDeliveryStatusNotification(evidence.dsn);
+        }
+        if (evidence.requireTls) {
+            exact.withTlsRequiredForOnwardDelivery();
+        }
+        return exact.buildEmail();
     }
 
     void recordResult(Job job, String attemptId, MailSubmissionReceipt receipt,
@@ -172,16 +222,98 @@ public final class PolarMeridianDispatcher {
         }
     }
 
+    /** Application carrier for SJM objects plus Dispatcher-only limits and retention. */
+    public static final class ComposedMail {
+        public final Mailer mailer;
+        /** Shared database sending-limit group used by SendLimits, not an SJM setting. */
+        public final String sendingQuotaGroup;
+        public final Email email;
+        public final Retention retention;
+
+        public ComposedMail(Mailer mailer, String sendingQuotaGroup, Email email, Retention retention) {
+            this.mailer = mailer;
+            this.sendingQuotaGroup = sendingQuotaGroup;
+            this.email = email;
+            this.retention = Objects.requireNonNull(retention);
+        }
+    }
+
     public static final class PreparedMail {
         public final Mailer mailer;
-        public final String quotaScope;
+        /** Same application limit group selected during composition, not a pool or cluster ID. */
+        public final String sendingQuotaGroup;
         public final Email email;
+        public final AttemptEvidence evidence;
 
-        public PreparedMail(Mailer mailer, String quotaScope, Email email) {
+        PreparedMail(Mailer mailer, String sendingQuotaGroup, Email email, AttemptEvidence evidence) {
             this.mailer = mailer;
-            this.quotaScope = quotaScope;
+            this.sendingQuotaGroup = sendingQuotaGroup;
             this.email = email;
+            this.evidence = evidence;
         }
+    }
+
+    /** Storage input deliberately has no Email, subject, signing keys or rehearsal object. */
+    public static final class AttemptEvidence {
+        public final String envelopeSender;
+        public final List<Recipient> recipients;
+        public final DeliveryStatusNotification dsn;
+        public final boolean requireTls;
+        public final long encodedSize;
+        private final byte[] eml;
+
+        AttemptEvidence(MailRehearsal rehearsal, Retention retention) {
+            envelopeSender = rehearsal.getEnvelopeSender();
+            recipients = envelopeRecipients(rehearsal);
+            dsn = rehearsal.getEffectiveEmail().getDeliveryStatusNotification();
+            requireTls = rehearsal.getEffectiveEmail().isTlsRequiredForOnwardDelivery();
+            eml = retention == Retention.EXACT_EML ? finishSmtpLine(rehearsal.getEmlBytes()) : null;
+            encodedSize = eml == null ? rehearsal.getEncodedSize() : eml.length;
+        }
+
+        public Optional<byte[]> getEmlBytes() {
+            return eml == null ? Optional.empty() : Optional.of(eml.clone());
+        }
+    }
+
+    // SMTP finishes an unterminated last line before its DATA terminator. Do that
+    // explicitly before retaining bytes, without reserializing MIME or repairing bare LF/CR.
+    private static byte[] finishSmtpLine(byte[] eml) {
+        for (int i = 0; i < eml.length; i++) {
+            if ((eml[i] == '\r' && (i + 1 == eml.length || eml[i + 1] != '\n'))
+                    || (eml[i] == '\n' && (i == 0 || eml[i - 1] != '\r'))) {
+                throw new IllegalArgumentException("Outbound EML contains a bare CR or LF");
+            }
+        }
+        if (eml.length >= 2 && eml[eml.length - 2] == '\r' && eml[eml.length - 1] == '\n') {
+            return eml;
+        }
+        byte[] terminated = Arrays.copyOf(eml, eml.length + 2);
+        terminated[eml.length] = '\r';
+        terminated[eml.length + 1] = '\n';
+        return terminated;
+    }
+
+    // Preserve recipient occurrences and their DSN preferences in SMTP envelope order.
+    private static List<Recipient> envelopeRecipients(MailRehearsal rehearsal) {
+        Email effective = rehearsal.getEffectiveEmail();
+        List<Recipient> configured = new ArrayList<>(effective.getOverrideReceivers());
+        if (configured.isEmpty()) {
+            for (RecipientType type : List.of(RecipientType.TO, RecipientType.CC, RecipientType.BCC)) {
+                effective.getRecipients().stream().filter(recipient -> type.equals(recipient.getType()))
+                        .forEach(configured::add);
+            }
+        }
+        List<String> addresses = rehearsal.getEnvelopeRecipients();
+        if (configured.size() != addresses.size()) {
+            throw new IllegalArgumentException("Use recipient builders, not raw recipient headers");
+        }
+        List<Recipient> envelope = new ArrayList<>();
+        for (int i = 0; i < addresses.size(); i++) {
+            envelope.add(new Recipient(null, addresses.get(i), null, null,
+                    configured.get(i).getDeliveryStatusNotificationNotifyOptions()));
+        }
+        return List.copyOf(envelope);
     }
 
     /**
@@ -200,34 +332,47 @@ public final class PolarMeridianDispatcher {
     }
 
     /**
-     * Application security/template adapter, including the article's partnerDirectory.
+     * Application permission/composition adapter, including the article's partnerDirectory.
      * Check current permissions, sender, expiry, recipient approvals and any required
-     * signing/encryption; resolve current trusted certificates when rendering.
-     * checkFinalMessage must include Mailer configuration: this sample requires all
-     * envelope recipients in Email.getRecipients(), with no later additions or rewrites.
-     * It also rejects logging-only Mailers for real jobs. The quota scope is assigned
+     * signing/encryption; resolve current trusted certificates when composing.
+     * compose builds an Email and selects its Mailer and shared sending quota group.
+     * Retention comes from approved message rules, never from traffic priority or
+     * an unchecked request: orders/maintenance retain EML, login codes/bulk do not.
+     * For the concrete order-confirmation path, see OrderConfirmationComposer.
+     * Composition supplies protection settings; rehearsal performs the MIME preparation,
+     * signing and encryption. Neither step contacts SMTP.
+     * checkFinalMessage checks the full rehearsal's effective Email, envelope, size and
+     * protection, including configured recipients. It rejects logging-only Mailers.
+     * Retained mail needs withBounceTo and safe outbound headers; use explicit envelope
+     * recipients instead of Bcc headers. Do not mutate Mailer/Session settings mid-flight.
+     * Metadata-only sends use the same composed inputs/configuration after rehearsal;
+     * their later MIME rendering is not claimed to be byte-identical. The sending quota group is assigned
      * by platform configuration, never supplied unchecked by the requesting application.
      */
     public interface MessagePreparation {
         void checkPermissions(Job job) throws Exception;
-        PreparedMail render(Job job) throws Exception;
-        void checkFinalMessage(Job job, Mailer mailer, Email email) throws Exception;
+        ComposedMail compose(Job job) throws Exception;
+        void checkFinalMessage(Job job, Mailer mailer, MailRehearsal rehearsal) throws Exception;
     }
 
     /** See JdbcDispatchLimits for the database-backed implementation. */
     public interface SendLimits {
-        boolean tryAcquire(String attemptId, String requestId, String scope,
-                Workload workload, int recipients) throws Exception;
+        boolean tryAcquire(String attemptId, String requestId, String sendingQuotaGroup,
+                Workload workload, int recipientCount) throws Exception;
         void complete(String attemptId) throws Exception;
         void releaseUnsent(String attemptId) throws Exception;
     }
 
     /**
-     * Encrypt and commit the approved content before handing it to SMTP; enforce
-     * access/retention controls. The MailSendObserver records outcomes separately.
-     * Email is not necessarily the exact transmitted EML after Mailer processing.
+     * Commit metadata, plus encrypted EML only when present, before SMTP. Enforce
+     * access/retention controls; keep decryption possible for retained protected mail.
+     * Do not persist a body for metadata-only attempts. The observer records outcomes
+     * separately. Stored bytes prove the submitted content, not receipt or legal compliance.
      */
     public interface AttemptArchive {
-        void insertAttempt(String attemptId, String requestId, Email email);
+        void insertAttempt(String attemptId, String requestId, AttemptEvidence evidence);
+
+        /** Update the existing attempt by Message-ID; safe for concurrent or repeated observations. */
+        void recordOutcome(String attemptId, MailSendOutcome outcome);
     }
 }
