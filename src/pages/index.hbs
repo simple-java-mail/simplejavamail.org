@@ -122,7 +122,7 @@ mailer.sync().sendMail(email);</code></pre>
           </div>
           <div class="ladder-step">
             <span>03 · set defaults</span>
-            <code>.withDefaultDkimSigning(dkimConfig)</code>
+            <code>.withEmailDefaults(emailDefaults)</code>
           </div>
           <div class="ladder-step">
             <span>04 · scale</span>
@@ -143,7 +143,7 @@ mailer.sync().sendMail(email);</code></pre>
           <div class="story-index"><span>01</span><code>emailBuilder()</code></div>
           <div class="story-copy">
             <h3>Messages and recipient rules</h3>
-            <p>Compose plain text, HTML, embedded images, attachments, and calendar content. Then centralize validation, defaults, forced overrides, bounce handling, receipts, and per-recipient S/MIME certificates.</p>
+            <p>Compose plain text, HTML, embedded images, attachments, and calendar content. Then centralize validation, defaults, overrides, bounce handling, receipts, and per-recipient S/MIME certificates.</p>
           </div>
           <a href="/features.html#section-attachments" aria-label="Read about content and recipient capabilities">Explore <span aria-hidden="true">→</span></a>
         </article>
