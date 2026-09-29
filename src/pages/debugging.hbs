@@ -23,6 +23,7 @@ description: "Test SMTP connections, inspect the settings in use, route debug ou
 		<li><a href="#section-logging">Logging output</a></li>
 		<li><a href="#section-log4j2" class="indent">Example with Log4j 2</a></li>
 		<li><a href="#section-logback" class="indent">Example with Logback</a></li>
+		<li><a href="#section-conformance">Reproduce the SMTP checks</a></li>
     </ul>
   </section>
 
@@ -648,5 +649,28 @@ try {
     &lt;/root&gt;
 &lt;/configuration&gt;
 </code></pre>
+    </div>
+  </section>
+
+  <a href="#section-conformance" id="section-conformance" class="section-link h2">&sect;</a>
+  <h2>Reproduce the SMTP checks</h2>
+  <section>
+    <div class="view">
+      <p>If you want to check the library itself, the repository includes a
+        <a href="https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/smtp-conformance">reproducible SMTP test suite</a>.
+        Scripted peers exercise failures at protocol boundaries; pinned Postfix and Exim fixtures check actual submissions, envelopes and content.</p>
+      <p>The suite also passes newly signed or encrypted messages through both servers and checks them with independent tools.
+        The results record the source and runtime tested. A passing run covers those scenarios and configurations, not every server or downstream delivery.</p>
+      <p>This is a developer test command, not a Mailer setting. Use <a href="#section-smtp-capabilities">connection probing</a>
+        to inspect your own server without sending an email. The conformance fixtures use synthetic mail and need no real account.</p>
+    </div>
+    <div class="side">
+<pre><code class="language-shell"># From a checkout, without Docker:
+python tools/smtp-conformance/run.py --mode embedded
+
+# Include the real-server matrix (requires Docker):
+python tools/smtp-conformance/run.py --mode all</code></pre>
+      <p>Each run writes a summary and sanitized test results under <code>target/smtp-conformance</code>.
+        Raw captures and fixture keys stay separate from the publishable evidence.</p>
     </div>
   </section>
