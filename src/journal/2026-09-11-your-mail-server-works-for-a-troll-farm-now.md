@@ -219,7 +219,7 @@ Mailer mailer = mailerBuilder
 
 An observer failure is logged without changing the send result, so a failed archive update does not mean the email failed to send.
 
-Next time something goes wrong, they can look up what they tried to send and how each attempt ended. Bodies and attachments stay out of ordinary logs, which only need identifiers and results. Access to the stored messages is restricted and they don't keep them indefinitely. This is still something two developers have to look after; Polar Meridian takes the same idea considerably further.
+Next time something goes wrong, they can look up what they tried to send and how each attempt ended. Bodies and attachments stay out of ordinary logs, which only need identifiers and results. Access to the stored messages is restricted and they don't keep them indefinitely. This is still something two developers have to look after; Polar Meridian takes the same idea further with [exact-message retention](/features.html#section-exact-eml) for selected business correspondence.
 
 ## Give the servers a chance to breathe
 
@@ -598,7 +598,7 @@ mailerBuilder
     .verifyingServerIdentity(true);
 ```
 
-These settings restore 10.0.0's normal [certificate and hostname checks](https://www.rfc-editor.org/rfc/rfc8314.html#section-5.3). The empty `trustingSSLHosts()` call clears host-specific exceptions too. They check Session properties and custom socket factories for other overrides, and add the relay's private CA to the trust store if needed. On the next test run, untrusted certificates, wrong hostnames and missing TLS all stop the send.
+These settings restore the normal [certificate and hostname checks](https://www.rfc-editor.org/rfc/rfc8314.html#section-5.3). The empty `trustingSSLHosts()` call clears host-specific exceptions too. They check Session properties and custom socket factories for other overrides, and add the relay's private CA to the trust store if needed. On the next test run, untrusted certificates, wrong hostnames and missing TLS all stop the send.
 
 Once they've rebuilt the Mailer with those settings, they can repeat connection checks without sending a test email, using the [connection probe](/debugging.html#section-smtp-capabilities):
 
@@ -658,7 +658,7 @@ The dispatcher uses the same archive helper and completion handling as before. I
 
 <img src="/assets/journal/companies/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />
 
-Polar Meridian Systems attaches an encryption certificate to each `Recipient`, so one message can go to several partners with different keys. Staple & Sons keeps it on the email builder for these one-partner exchanges.
+Polar Meridian Systems attaches an encryption certificate to each `Recipient`, so one message can go to several partners with different keys. Staple & Sons keeps it on the email builder for these one-partner exchanges. RelayDesk's wholesale conversations use [OpenPGP](/security.html#section-sending-openpgp) where that is what its customer's partners already use.
 
 ---
 

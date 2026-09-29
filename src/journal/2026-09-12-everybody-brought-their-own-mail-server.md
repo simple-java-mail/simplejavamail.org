@@ -34,7 +34,7 @@ Maya, one of Kestrel's support agents, opens a ticket from a shopper whose parce
 
 Anika, Kestrel's mail administrator, can arrange the replacement credentials. Unfortunately, Sam, the Java developer investigating the failed send at RelayDesk, cannot reach her until Monday. He can fix his own application; he cannot reset somebody else's password.
 
-Let's give Sam a better answer than restarting the application and hoping. RelayDesk, its customers and the people here are fictional; we'll use Simple Java Mail 10.0.0 for the sending work, with customer permissions, job scheduling and configuration changes handled by RelayDesk's application.
+Let's give Sam a better answer than restarting the application and hoping. RelayDesk, its customers and the people here are fictional; we'll use Simple Java Mail for the sending work, with customer permissions, job scheduling and configuration changes handled by RelayDesk's application.
 
 ## The setup
 
@@ -97,7 +97,32 @@ The onboarding checks cover a few different things:
 
 [OWASP's SSRF guidance](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html) includes SMTP among the protocols an attacker can abuse. Validating a hostname once isn't enough, and configuring a secure Mailer doesn't replace the network checks.
 
-Anika also confirms how Kestrel handles SPF, DKIM and DMARC. Its relays already do the required signing, so there's no need to add another signature just because SJM supports it. A requirement for application-side signing or [S/MIME encryption](/security.html#section-sending-smime) would become part of that customer's integration, as it did for Polar Meridian's confidential partner messages.
+Kestrel's relays already handle DKIM; Anika confirms the SPF and DMARC setup too. Its wholesale-support conversations have an additional requirement: business partners exchange commercial attachments using [OpenPGP](/security.html#section-sending-openpgp). Those replies must be signed and encrypted. Maya's parcel reply doesn't need a shopper to install PGP software.
+
+With `openpgp-module` installed, Sam's helper resolves approved keys for the prepared message's actual recipients:
+
+```java
+MailRehearsal draft = mailer.rehearse(reply, false);
+OpenPgpEncryptionConfig.OpenPgpEncryptionConfigBuilder encryption =
+    OpenPgpEncryptionConfig.builder();
+for (String address : draft.getEnvelopeRecipients()) {
+    encryption.addRecipientPublicKeyRing(
+        keys.requireRecipientKey(customerId, address));
+}
+EmailPopulatingBuilder protectedReply = mail.emailBuilder()
+    .copying(draft.getEffectiveEmail())
+    .ignoringDefaults().ignoringOverrides() // already applied before key selection
+    .signWithOpenPgp(keys.requireSigningConfig(customerId))
+    .encryptWithOpenPgp(encryption.build());
+if (!draft.getEffectiveEmail().getOverrideReceivers().isEmpty()) {
+    protectedReply.withOverrideReceivers(draft.getEffectiveEmail().getOverrideReceivers());
+}
+Email encryptedReply = protectedReply.buildEmail();
+```
+
+*Look up each partner's approved key under Kestrel's account, not somebody else's.*
+
+The application's key directory verifies identities and approvals; a missing key holds the reply, with no plaintext fallback. This preliminary rehearsal skips cryptography; sending the protected reply performs it. Protection covers outgoing content, not RelayDesk's stored conversation. [Polar Meridian uses S/MIME](/journal/mail-at-polar-meridian-systems.html#one-protected-message-several-partners) for its partners' different requirements.
 
 ## Maya's reply cannot borrow Juniper's connection
 
@@ -144,6 +169,7 @@ static Mailer createMailer(SimpleJavaMail mail, UUID clusterKey,
         .trustingAllHosts(false)
         .trustingSSLHosts() // clear any host-specific trust exceptions
         .verifyingServerIdentity(true)
+        .withProperty("mail.smtp.sendpartial", true) // inspect results when only some recipients succeed
         .withClusterKey(clusterKey)
         .withConnectionPoolCoreSize(0) // no need to stay connected while quiet
         .withConnectionPoolMaxSize(2) // at most two connections per relay pool
@@ -160,7 +186,27 @@ static Mailer createMailer(SimpleJavaMail mail, UUID clusterKey,
 
 *Quiet customers release idle connections; busy customers still have limits.*
 
-These are illustrative settings for Kestrel, not defaults for every customer. Two relay pools with a maximum of two connections each can open **four connections per dispatch process**. Three such processes could open twelve connections, all counting towards Kestrel's agreed limit. `withConnectionPoolMaxSize(2)` is not a company-wide cap.
+These settings are for Kestrel, not every customer. Its two pools can open **four connections per dispatch process**, or twelve across three processes. `withConnectionPoolMaxSize(2)` is not a company-wide cap. Partial sending is deliberate too: one rejected recipient need not block the others, provided RelayDesk checks their individual results.
+
+Before admitting work, Sam tests each approved endpoint with an [authenticated probe](/debugging.html#section-smtp-capabilities):
+
+```java
+SmtpConnectionReport report = mailer.sync().probeConnection(true);
+if (!report.isSuccessful()) {
+    throw new IllegalStateException("SMTP credential check did not pass: " + report);
+}
+```
+
+*Test Kestrel's credentials without submitting a support reply.*
+
+The probe uses a dedicated connection, outside the pool. It sends no message and doesn't replace the controlled test email. Sam also includes these cases when onboarding a customer's servers:
+
+| Test message | What Sam checks |
+| --- | --- |
+| A large attachment | Rehearsal shows encoded size; the actual send checks the relay's advertised SIZE limit. Missing size information means unknown, not unlimited. |
+| A recipient such as `josé@partner.com` | The mailbox needs SMTPUTF8. An accented display name or MIME-encoded subject alone doesn't. Raw eight-bit content may separately need 8BITMIME. |
+
+SJM checks the capabilities on the actual sending connection. A missing required capability stops submission; Sam doesn't enable [legacy compatibility](/configuration.html#section-legacy-smtp-content) across all customers to make the warning disappear.
 
 Idle expiry only deals with connections. Retiring a whole route means stopping its admission of new work and closing its Mailers after accepted sends finish; deleting a registry entry does neither. We'll use that same process when Anika supplies the replacement password.
 
@@ -213,7 +259,7 @@ MailSendObserver observer = outcome ->
 
 *The SMTP result returns to the attempt that already knows Maya's ticket and configuration revision.*
 
-`attemptResults` is RelayDesk's persistence adapter, not SJM API. Each email has a fixed, unique Message-ID, which remains the lookup key even if the transport reports a different effective ID. The observer receives a terminal `MailSendOutcome`, including the timestamps of the stages the attempt reached; it isn't a stream of live status-change events.
+`attemptResults` is RelayDesk's persistence adapter. The fixed initial Message-ID remains its lookup key even if the transport reports another ID. `MailSendOutcome` includes the stages' timestamps, not live status-change events.
 
 From that evidence, RelayDesk can show something useful in the ticket:
 
@@ -225,9 +271,32 @@ From that evidence, RelayDesk can show something useful in the ticket:
 | Partial or unknown acceptance | Needs investigation; no automatic resend of the whole reply |
 | A later, validated delivery failure report | Bounced after submission |
 
-Those are product labels, not SJM enum names. Maya's ticket leaves out passwords and protocol transcripts; raw diagnostics are for the people investigating the failure. A rejected or partially accepted send also needs recipient-specific [retry decisions](/analyzing-send-results.html#section-retry-decisions), not just a red button labelled “Try again.”
+Those are product labels, not SJM enum names. The authorized ticket can show size facts from a receipt too, without exposing passwords or protocol transcripts:
 
-The helper offloads observation to RelayDesk's bounded `observerWorkers` executor. That executor and the persistence adapter must report failures; a lost database write is not a reason to send the email again. [Polar Meridian's observer example](/journal/mail-at-polar-meridian-systems.html#when-the-archive-is-slower-than-smtp) covers this in more depth. After a worker crash, an unfinished attempt stays unresolved until investigated, rather than being mistaken for a reply that was never submitted.
+```java
+ticket.showMessageSize(receipt.getMessageSize(), receipt.getServerMaximumMessageSize());
+```
+
+*An oversized attachment gets an explanation: encoded message 12 MB, relay maximum 10 MB. Illustrative values; either fact may be unavailable.*
+
+Another support reply includes a buyer, a warehouse contact and a former colleague. With partial sending enabled, its [receipt](/analyzing-send-results.html#section-partial-send) can distinguish all three:
+
+| Recipient | Submission result | Next step |
+| --- | --- | --- |
+| Buyer | Accepted after DATA | Don't resend this copy |
+| Warehouse | Temporarily rejected at RCPT | Eligible for a later attempt |
+| Former colleague | Permanently rejected at RCPT | Correct the contact details |
+
+```java
+ticket.showRecipients(receipt.getRecipientResults());
+ticket.showRetryAdvice(receipt.getRetryDisposition(), receipt.getRetryableRecipients());
+```
+
+*The warehouse can be retried without sending the buyer another copy.*
+
+`ticket` is RelayDesk's UI adapter. These are candidates, not scheduled retries: the dispatcher still checks authorization and backoff. If final acceptance is unknown, the attempt needs investigation. Without partial sending, the recipient rejection would prevent DATA submission for the buyer too.
+
+The bounded `observerWorkers` executor and persistence adapter must report failed writes. [Polar Meridian covers those failures](/journal/mail-at-polar-meridian-systems.html#when-the-archive-is-slower-than-smtp); here too, a missing result after a crash calls for investigation, not an automatic resend.
 
 ## Update Kestrel's settings without stopping Juniper
 
@@ -248,13 +317,13 @@ sequenceDiagram
     registry->>workers: Pause new admission
     workers-->>registry: In-flight sends finished<br/>results accounted for
     registry->>workers: Close old Mailers<br/>build replacement group
-    workers-->>registry: All members built<br/>approved test passes
+    workers-->>registry: Authenticated probes<br/>+ approved test pass
     registry->>workers: Resume eligible jobs<br/>using revision 8
 ```
 
 *Change Kestrel's configuration together; leave the other customers running.*
 
-The pause must cover every dispatch process using this route. A job claim cannot slip through between “no sends left” and closing the Mailers. Once all accepted sends in the group have finished, [`Mailer.close()`](/sending-and-execution.html#section-mailer-lifecycle) retires each member's resources. A partially built or failed replacement stays paused, with any newly created Mailers cleaned up. It doesn't quietly send through the old configuration instead.
+The pause covers every dispatch process using this route: no job may slip in while the old Mailers close. Once admitted sends finish, [`Mailer.close()`](/sending-and-execution.html#section-mailer-lifecycle) retires each member. Sam repeats `probeConnection(true)` on every replacement and the controlled-send test before resuming. A failed replacement stays paused and its new Mailers are closed; it doesn't fall back to the old credentials.
 
 For this password change, the replacement keeps the group's key and pool policy. The **first cluster registration establishes the pool settings**; reusing the key is not a way to change those settings. Closing the last Mailer also mustn't be treated as erasing every retained cluster definition, so allocating a fresh UUID on every edit isn't a complete long-running cleanup strategy.
 
