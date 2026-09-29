@@ -157,7 +157,7 @@ test("journal banner templates preserve custom wording, escape text and have no 
 test("journal navigation sits before and after the content inside the article", () => {
   const template = readFileSync(new URL("../src/_includes/layouts/journal-entry.hbs", import.meta.url), "utf8");
   const handlebars = Handlebars.create();
-  for (const partial of ["head", "site-header", "components/journal-banner", "components/archived-source-dialog", "footer"]) {
+  for (const partial of ["head", "site-header", "components/journal-banner", "components/archived-source-dialog", "components/journal-image-dialog", "footer"]) {
     handlebars.registerPartial(partial, "");
   }
   handlebars.registerPartial("components/journal-entry-navigation", '<nav class="{{className}}" aria-label="{{label}}"></nav>');
@@ -263,6 +263,49 @@ test("site data validation checks navigation and breadcrumb relationships", () =
   );
 });
 
+test("small code fences preserve highlighting, escaped content, captions and following blocks", () => {
+  const markdown = createMarkdownLibrary();
+  for (const language of ["text", "java"]) {
+    for (const caption of ["", "\n*Inspect the result.*\n"]) {
+      for (const newline of ["\n", "\r\n"]) {
+        const source = ('```' + language + ' code-small\n<redacted> & value\n```\n' + caption
+          + '\n```' + language + '\nnormal size\n```\n').replaceAll("\n", newline);
+        const rendered = markdown.render(source);
+        assert.ok(rendered.includes(`<pre class="code-small"><code class="language-${language}">&lt;redacted&gt; &amp; value\n</code></pre>`));
+        assert.ok(rendered.includes(`<pre><code class="language-${language}">normal size\n</code></pre>`));
+        assert.equal((rendered.match(/class="code-small"/g) || []).length, 1);
+        assert.equal(rendered.includes("<figcaption>Inspect the result.</figcaption>"), Boolean(caption));
+      }
+    }
+  }
+});
+
+test("compact code spacing combines with small text and preserves captions and following blocks", () => {
+  const markdown = createMarkdownLibrary();
+  for (const modifiers of ["code-compact", "code-small code-compact", "code-compact code-small code-compact"]) {
+    const classes = modifiers.includes("code-small") ? "code-small code-compact" : "code-compact";
+    for (const caption of ["", "\n*Inspect the result.*\n"]) {
+      for (const newline of ["\n", "\r\n"]) {
+        const source = ('```text ' + modifiers + '\n09:41:06.218 INFO  <redacted>\n```\n' + caption
+          + '\n```java\nnormal spacing\n```\n').replaceAll("\n", newline);
+        const rendered = markdown.render(source);
+        assert.ok(rendered.includes(`<pre class="${classes}"><code class="language-text">09:41:06.218 INFO  &lt;redacted&gt;\n</code></pre>`));
+        assert.equal(rendered.includes('<figure class="journal-captioned">'), Boolean(caption));
+        assert.equal(rendered.includes("<figcaption>Inspect the result.</figcaption>"), Boolean(caption));
+        assert.ok(rendered.includes('<pre><code class="language-java">normal spacing\n</code></pre>'));
+      }
+    }
+  }
+});
+
+test("code styling requires exact fence modifiers and leaves Mermaid sizing alone", () => {
+  const markdown = createMarkdownLibrary();
+  for (const info of ["text", "text not-code-small", "text code-smallish", "text not-code-compact", "text code-compactish"]) {
+    assert.match(markdown.render('```' + info + '\ncode-small\n```\n'), /^<pre><code class="language-text">/);
+  }
+  assert.match(markdown.render('```mermaid code-small code-compact\nflowchart LR\nA --> B\n```\n'), /<pre class="mermaid">/);
+});
+
 test("Markdown Mermaid fences become progressively enhanced journal diagrams", () => {
   const markdown = createMarkdownLibrary();
   const rendered = markdown.render("```mermaid\nflowchart LR\n  A --> B\n  C[<script>]\n```\n");
@@ -334,6 +377,20 @@ test("image captions preserve separate alt text and raw image attributes", () =>
   assert.doesNotMatch(rendered, /<p>\s*<img/);
 });
 
+test("linked image captions retain their original-file link and image title", () => {
+  const markdown = createMarkdownLibrary();
+  const path = "/assets/journal/Polar Meridian - Noor's Kibana Dashboard.png";
+  const rendered = markdown.render(`[![Dashboard description](<${path}> "Noor's dashboard")](<${path}>)\n\n*Synthetic monitoring data; click to enlarge.*\n`);
+  assert.match(rendered, /<figure class="journal-captioned">\s*<a href="[^"]+"><img/);
+  assert.match(rendered, /alt="Dashboard description" title="Noor's dashboard"/);
+  assert.match(rendered, /<\/a>\s*<figcaption>Synthetic monitoring data; click to enlarge\.<\/figcaption>/);
+  const href = rendered.match(/href="([^"]+)"/)[1];
+  const src = rendered.match(/src="([^"]+)"/)[1];
+  assert.equal(href, src);
+  assert.equal(decodeURI(href), path);
+  assert.doesNotMatch(rendered, /<p>\s*<a/);
+});
+
 test("caption recognition leaves ordinary prose, mixed emphasis and nested content alone", () => {
   const markdown = createMarkdownLibrary();
   const samples = [
@@ -342,6 +399,7 @@ test("caption recognition leaves ordinary prose, mixed emphasis and nested conte
     '```java\ncall();\n```\n\n*One* *another*\n',
     '```java\ncall();\n```\n\nAn intervening paragraph.\n\n*An aside.*\n',
     'A paragraph with ![an image](/sample.png).\n\n*An aside.*\n',
+    'A paragraph with [![an image](/sample.png)](/sample.png).\n\n*An aside.*\n',
     '<img src="/one.png"><img src="/two.png">\n\n*An aside.*\n',
     '> ```java\n> call();\n> ```\n>\n> *Quoted prose.*\n',
     '- ![Image](/sample.png)\n\n  *List prose.*\n',

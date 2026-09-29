@@ -1,0 +1,15 @@
+<dialog class="journal-image-dialog" data-image-dialog aria-labelledby="journal-image-title">
+  <div class="journal-image-frame">
+    <header class="journal-image-toolbar">
+      <strong id="journal-image-title" data-image-title>Image preview</strong>
+      <nav aria-label="Image viewer controls">
+        <button type="button" aria-pressed="false" data-image-zoom>Actual size</button>
+        <a href="/" target="_blank" rel="noopener" data-image-original>Open image</a>
+        <button type="button" autofocus data-image-close>Close</button>
+      </nav>
+    </header>
+    <div class="journal-image-viewport" data-image-viewport tabindex="0" role="region" aria-label="Enlarged image">
+      <img alt="" data-image-preview>
+    </div>
+  </div>
+</dialog>

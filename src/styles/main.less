@@ -45,10 +45,11 @@ pre {
   background: @ink-deep;
   border: 1px solid @line-dark;
   color: #E7EFF0;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem * var(--code-font-scale, 1));
   line-height: 1.7;
   tab-size: 4;
 }
+pre.code-small { --code-font-scale: 0.75; }
 pre code { color: inherit; background: none; border: 0; padding: 0; font-size: inherit; overflow-wrap: normal; }
 .copy-code {
   position: absolute;

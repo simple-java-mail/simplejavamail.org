@@ -425,6 +425,13 @@
   text-align: center;
   white-space: pre-wrap;
 }
+// Mermaid measures SVG geometry during rendering. Even the global reduced-motion
+// transition can distort those measurements; keep these diagrams fully static.
+.journal-prose pre.mermaid,
+.journal-prose pre.mermaid * {
+  animation: none !important;
+  transition: none !important;
+}
 .journal-prose pre.mermaid svg { display: block; width: 100% !important; max-width: 640px !important; height: auto !important; margin: auto; }
 .journal-prose pre.mermaid.mermaid-compact svg { flex: 0 1 auto; width: 100% !important; max-height: 900px; }
 .journal-prose .journal-diagram-wide pre.mermaid svg { max-width: 780px !important; }
@@ -455,8 +462,13 @@
 .journal-prose figure { margin: @space-xl 0; }
 .journal-prose figure img { margin: 0; }
 .journal-prose figcaption { margin-top: @space-sm; color: @steel; font-family: @font-mono; font-size: 0.68rem; line-height: 1.5; }
+.journal-prose pre.code-compact,
+.journal-prose .journal-captioned:has(> pre.code-compact) { margin-block: 1.35rem; }
 .journal-prose .journal-captioned > pre { margin: 0; }
 .journal-prose .journal-captioned > img { margin: 0 auto; }
+.journal-prose .journal-captioned > a:has(> img) { display: block; }
+.journal-prose [data-image-lightbox] { display: block; cursor: zoom-in; }
+.journal-prose [data-image-lightbox]:focus-visible { outline: 2px solid @teal-deep; outline-offset: 4px; }
 .journal-prose .journal-captioned > figcaption { margin-top: @space-xs; text-align: center; }
 .journal-prose img.image-align-left { margin-left: 0; margin-right: auto; }
 .journal-prose img.image-align-right { margin-left: auto; margin-right: 0; }
@@ -520,6 +532,53 @@
 .journal-entry-navigation--bottom { margin-top: @space-lg; }
 .journal-entry-navigation .journal-entry-next { grid-column: 2; text-align: right; }
 .journal-entry-navigation .journal-entry-next strong { justify-content: flex-end; }
+
+// Linked journal images retain a normal file link without JavaScript.
+html.journal-image-open { overflow: hidden; scrollbar-gutter: stable; }
+
+.journal-image-dialog {
+  width: calc(100vw - 2rem);
+  height: calc(100dvh - 2rem);
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid @line;
+  border-radius: 2px;
+  background: @white;
+  color: @ink;
+  box-shadow: 0 24px 80px fade(#18212A, 34%);
+}
+
+.journal-image-dialog::backdrop { background: fade(#18212A, 78%); }
+.journal-image-frame { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+.journal-image-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: @space-sm;
+  padding: @space-sm;
+  border-bottom: 1px solid @line;
+  font-size: 0.85rem;
+}
+.journal-image-toolbar nav { display: flex; flex-wrap: wrap; gap: @space-xs; }
+.journal-image-toolbar :is(a, button) {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid @line;
+  background: @white;
+  color: @teal-deep;
+  font: inherit;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.journal-image-toolbar :is(a, button):hover { background: @teal-tint; }
+.journal-image-toolbar :is(a, button):focus-visible { outline: 2px solid @teal-deep; outline-offset: 2px; }
+.journal-image-viewport { display: grid; min-width: 0; min-height: 0; padding: @space-sm; overflow: auto; overscroll-behavior: contain; }
+.journal-image-viewport img { place-self: center; width: auto; height: auto; max-width: 100%; max-height: 100%; margin: 0; }
+.journal-image-dialog.is-zoomed .journal-image-viewport { display: block; }
+.journal-image-dialog.is-zoomed img { place-self: start; max-width: none; max-height: none; }
 
 // Recovered-source dialog
 html.archive-dialog-open { overflow: hidden; }
@@ -1054,6 +1113,8 @@ html.archive-dialog-open { overflow: hidden; }
 }
 
 @media (max-width: 720px) {
+  .journal-image-dialog { width: calc(100vw - 1rem); height: calc(100dvh - 1rem); }
+  .journal-image-toolbar { align-items: flex-start; flex-direction: column; }
   .journal-prose .journal-captioned:has(> .journal-persona-image) {
     float: none;
     width: min(100%, 22rem);

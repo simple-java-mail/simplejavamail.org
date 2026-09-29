@@ -20,8 +20,12 @@ export function createMarkdownLibrary() {
   const defaultFenceRenderer = markdown.renderer.rules.fence;
   markdown.renderer.rules.fence = (tokens, index, options, env, renderer) => {
     const token = tokens[index];
-    const language = token.info.trim().split(/\s+/u, 1)[0];
-    if (language !== "mermaid") return defaultFenceRenderer(tokens, index, options, env, renderer);
+    const [language, ...modifiers] = token.info.trim().split(/\s+/u);
+    if (language !== "mermaid") {
+      const code = defaultFenceRenderer(tokens, index, options, env, renderer);
+      const classes = ["code-small", "code-compact"].filter((modifier) => modifiers.includes(modifier)).join(" ");
+      return classes ? code.replace(/^<pre>/u, `<pre class="${classes}">`) : code;
+    }
     const compactClass = /^\s*%% journal: compact\s*$/mu.test(token.content) ? " mermaid-compact" : "";
     const diagram = `<pre class="mermaid${compactClass}">${markdown.utils.escapeHtml(token.content)}</pre>`;
     // The caption plugin supplies the enclosing figure when a caption is present.

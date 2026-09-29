@@ -152,6 +152,23 @@ Fenced code blocks, tables, blockquotes, lists, links, and raw HTML are supporte
 
 For an image without a border or padding and with normal paragraph spacing, add `class="journal-paragraph-image"` to its `<img>` tag. Images remain centered by default. Add `image-align-left` or `image-align-right` to align any journal image, independently of its other styling. Combine them with, for example, `class="journal-paragraph-image image-align-right"`.
 
+### Code size and spacing
+
+Add `code-small` after the fence's language to render that block at 75% of the normal code font size on the website. Syntax highlighting, copying and captions still work; captions and the Copy button keep their normal size. Other blocks are unchanged.
+
+````markdown
+```text code-small
+INFO  Mail configuration: SMTP connection:
+  simplejavamail.smtp.password = <redacted> (source: secret store)
+```
+
+*Check the configuration without printing its passwords.*
+````
+
+Use it sparingly for dense output. For raw HTML examples, the equivalent is `<pre class="code-small">`; for Mermaid diagrams, use the compact-diagram option above instead.
+
+For a code block that belongs closely with the surrounding prose, add `code-compact` to use normal paragraph spacing above and below it, including its caption. This changes spacing, not font size. Combine both options as `text code-small code-compact` when needed; neither changes other blocks.
+
 ### Image, code and diagram captions
 
 Put an italic-only paragraph immediately after a standalone image or fenced code block, including a Mermaid diagram, separated by a blank line. Typora displays ordinary italic text; the website groups the pair into a `<figure>` with a styled `<figcaption>`. Alt text remains separate from the visible caption.
@@ -163,6 +180,16 @@ Put an italic-only paragraph immediately after a standalone image or fenced code
 ```
 
 This works with Markdown images and standalone `<img>` tags, including their size and alignment classes. Use the same italic line after a code fence or Mermaid diagram; flowcharts and sequence diagrams both support it. Captions can contain links and inline code. Ordinary paragraphs, inline images, lists and blockquotes are unchanged, as are diagrams without a caption.
+
+### Enlarging screenshots
+
+Link a Markdown image to its own file in `/assets/journal/` to open it in a lightbox, with fit-to-screen and actual-size views. Other image links keep their normal destination. Without JavaScript, the link opens the image directly. Captions still work:
+
+```markdown
+[![Dashboard showing urgent mail continuing during a newsletter run](/assets/journal/dashboard.png "Mail dashboard")](/assets/journal/dashboard.png)
+
+*The bulk queue fills while urgent mail keeps moving; click to enlarge.*
+```
 
 ### Expandable source examples
 

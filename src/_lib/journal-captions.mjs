@@ -3,10 +3,15 @@ function mediaEnd(tokens, index) {
   if (token.level !== 0) return null;
   if (token.type === "fence") return index + 1;
   if (token.type === "html_block" && /^\s*<img\b(?:[^<>"']|"[^"]*"|'[^']*')*\/?>\s*$/iu.test(token.content)) return index + 1;
+  const children = tokens[index + 1]?.children;
+  const standaloneImage = children?.length === 1 && children[0].type === "image";
+  const linkedImage = children?.length === 3
+    && children[0].type === "link_open"
+    && children[1].type === "image"
+    && children[2].type === "link_close";
   if (token.type === "paragraph_open"
       && tokens[index + 1]?.type === "inline"
-      && tokens[index + 1].children?.length === 1
-      && tokens[index + 1].children[0].type === "image"
+      && (standaloneImage || linkedImage)
       && tokens[index + 2]?.type === "paragraph_close") return index + 3;
   return null;
 }
