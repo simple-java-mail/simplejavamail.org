@@ -112,6 +112,28 @@ description: "Understand the default Angus provider adapter and choose optional 
       <code class="inline language-java">Transport.sendMessage(...)</code> API.
     </p>
     <p>
+      Exclude the default adapter to remove its transitive Angus implementation, then add your replacement implementation to the runtime path.
+      The Jakarta Mail API alone does not supply the services needed for sending or MIME conversion.
+    </p>
+    <div class="wide full-width-example">
+      <p>Maven:</p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;simple-java-mail&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
+    &lt;exclusions&gt;
+        &lt;exclusion&gt;
+            &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+            &lt;artifactId&gt;angus-mail-provider-module&lt;/artifactId&gt;
+        &lt;/exclusion&gt;
+    &lt;/exclusions&gt;
+&lt;/dependency&gt;</code></pre>
+      <p>Gradle:</p>
+<pre><code class="language-groovy">implementation('org.simplejavamail:simple-java-mail:{{site.version}}') {
+    exclude group: 'org.simplejavamail', module: 'angus-mail-provider-module'
+}</code></pre>
+    </div>
+    <p>
       Implement the public <code class="inline language-java">MailTransportAdapter</code> SPI when the provider must also handle envelope sender or DSN
       options, preserve finalized or protected message bytes, or expose its final SMTP response. The adapter receives an already connected Transport and
       the prepared mail, then returns a provider-neutral <code class="inline language-java">MailTransportResult</code>. Simple Java Mail continues to own
@@ -120,6 +142,20 @@ description: "Understand the default Angus provider adapter and choose optional 
     <p>
       An adapter implements <code class="inline language-java">supports(Transport)</code>, optionally declares which content-preservation requirements it
       supports, and performs the final submission in <code class="inline language-java">sendMessage(Transport, PreparedMail)</code>.
+    </p>
+    <p>
+      Use <code>PreparedMail.getContentRequirement()</code> to distinguish <code>NORMAL</code>, <code>PRESERVE_PROTECTED_CONTENT</code>, and
+      <code>PRESERVE_ALL_BYTES</code>. The adapter must explicitly support the requested preservation level; exact EML requires every supplied byte
+      to survive submission. The deprecated boolean constructor and <code>requiresStableContent()</code> remain compatibility shims, but cannot express
+      the difference between protected content and a fully exact message.
+    </p>
+    <p>
+      Return a non-null <code class="inline language-java">MailTransportResult</code>: use <code>accepted(...)</code> when every submitted recipient was
+      accepted, or <code>unknown(...)</code> for an opaque operation that returned normally but cannot report server acceptance. Use
+      <code>failed(...)</code> for a Jakarta Mail submission failure; it copies available recipient groups from <code>SendFailedException</code> and
+      preserves the original exception. If the final acceptance reply was lost after sending the message data, use
+      <code>failedWithUnknownAcceptance(...)</code>, retaining only recipient facts that remain certain. A lost reply must not become a known rejection
+      or trigger an automatic resend. See <a href="analyzing-send-results.html">submission results and failure handling</a>.
     </p>
     <p>
       For <a href="/features.html#section-dsn-envelope-id">DSN envelope identifiers (ENVID)</a>, also opt in through
