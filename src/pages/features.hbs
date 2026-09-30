@@ -576,7 +576,8 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
   {{#> components/feature-heading-h3 core=true}}Observing completed mail sends{{/components/feature-heading-h3}}
   <section><p class="wide">Configure <code>withMailSendObserver(...)</code> for one reporting point across sends and batches.
     The <a href="/sending-and-execution.html#section-mail-send-observer">observer guide</a> covers inline and executor-backed callbacks,
-    both observer styles, timestamps, and the streaming demo.</p></section>
+    both observer styles, timestamps, and the streaming demo. To see where a slow send spent its time, see
+    <a href="/analyzing-send-results.html#section-send-timings">actual-send timings</a>.</p></section>
 
   <a href="#section-custom-session" id="section-custom-session" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Sending with your own Session instance{{/components/feature-heading-h2}}

@@ -304,6 +304,7 @@ Elapsed: 42ms</code></pre>
           <tr><td>What bytes and envelope will preparation produce?</td><td><code>rehearse(email)</code></td><td>No</td></tr>
           <tr><td>Where did a loaded setting come from?</td><td><a href="#section-config-diagnostics"><code>mail.getConfig().getDiagnostics()</code></a></td><td>No</td></tr>
           <tr><td>What happened to an actual send?</td><td><a href="/analyzing-send-results.html">Submission receipt and mail-send outcome</a></td><td>The send does</td></tr>
+          <tr><td>Where did a slow or failed send spend its time?</td><td><a href="/analyzing-send-results.html#section-send-timings"><code>outcome.getDiagnostics()</code></a> in the existing observer</td><td>No additional connection</td></tr>
         </tbody>
       </table>
       <p>
@@ -460,8 +461,10 @@ Jakarta Mail properties:
       <p>
         This is changing runtime activity. <code>mailer.getOperationalConfig().getAsyncQueueConfig()</code> describes settings, while
         <code>mail.getConfig().getDiagnostics()</code> traces loaded property defaults. The
-        <a href="configuration.html#section-mail-send-observer">mail-send observer</a> reports each attempt's queue delay through
-        <code>readyAt</code> and <code>startedAt</code>. See <a href="sending-and-execution.html#section-async-queue">queue configuration and overflow policies</a>.
+        <a href="sending-and-execution.html#section-mail-send-observer">mail-send observer</a> also provides
+        <a href="analyzing-send-results.html#section-send-timings">actual-send measurements</a>. Its scheduling measurement includes admission and worker waiting,
+        not just queue residence. Existing <code>readyAt</code> and <code>startedAt</code> remain wall-clock timestamps for correlation.
+        See <a href="sending-and-execution.html#section-async-queue">queue configuration and overflow policies</a>.
       </p>
     </div>
     <div class="side">

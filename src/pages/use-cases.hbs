@@ -104,13 +104,14 @@ description: "Find the Simple Java Mail APIs and settings for correct MIME, secu
           <div class="use-case-copy">
             <p class="use-case-coordinate">06 · Troubleshooting</p>
             <h2>Diagnose a send.</h2>
-            <p>Test the exact mailer configuration without sending a message, inspect the effective settings, route Jakarta Mail's protocol output into your logs, and read the SMTP server's submission replies.</p>
+            <p>Test the exact mailer configuration without sending a message, inspect the effective settings, route Jakarta Mail's protocol output into your logs, read the SMTP server's submission replies, and see where a slow send spent its time.</p>
           </div>
           <nav class="use-case-links" aria-label="Delivery diagnostics documentation">
             {{> components/use-case-link href="/features.html#section-connection-test" title="Test a connection" description="Exercise the effective mailer setup" core=true}}
             {{> components/use-case-link href="/debugging.html#section-inspect-mailer-email" title="Inspect mailer and email state" description="See the values in use" core=true}}
             {{> components/use-case-link href="/debugging.html#section-debug-logging" title="Protocol debug output" description="Trace the SMTP conversation" core=true}}
             {{> components/use-case-link href="/debugging.html#section-mailexception" title="Handle failures" description="Read synchronous and async errors" core=true}}
+            {{> components/use-case-link href="/analyzing-send-results.html#section-send-timings" title="Explain a slow send" description="Measure preparation, connection and submission time" core=true}}
           </nav>
         </article>
       </div>

@@ -142,7 +142,7 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
       </p>
       <p>
         Use <a href="debugging.html#section-async-queue">queue snapshots</a> for counts and rejection reasons, and
-        <a href="#section-mail-send-observer">observer timestamps</a> for individual queue delay. For lifecycle behavior, see
+        <a href="/analyzing-send-results.html#section-send-timings">actual-send measurements</a> for individual scheduling delay. For lifecycle behavior, see
         <a href="#section-mailer-lifecycle">graceful shutdown</a>.
       </p>
     </div>
@@ -547,8 +547,10 @@ Mailer mailer = mail.mailerBuilder()
         <code class="inline language-java">requestedAt</code> records when the individual attempt begins,
         <code class="inline language-java">readyAt</code> when preparation finishes,
         <code class="inline language-java">startedAt</code> when execution begins, and
-        <code class="inline language-java">completedAt</code> when the terminal result exists. Ready-to-start is executor queue time; start-to-completion is
-        send execution time. A preparation failure has neither ready nor started time. A scheduling failure has a ready time but no started time.
+        <code class="inline language-java">completedAt</code> when the terminal result exists. These wall-clock values are useful for correlation.
+        For elapsed time, use <a href="/analyzing-send-results.html#section-send-timings"><code>outcome.getDiagnostics()</code></a>, collected automatically
+        with the observer. Its monotonic scheduling measurement includes admission and worker waiting, not just time in a queue.
+        A preparation failure has neither ready nor started time. A scheduling failure has a ready time but no started time.
       </p>
       <p>
         With the default registration, synchronous callbacks run before the call returns and async callbacks before the completion resolves.
@@ -563,7 +565,7 @@ Mailer mailer = mail.mailerBuilder()
       <p>
         The manually runnable
         <a href="https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/modules/simple-java-mail/src/test/java/demo/MailSendObserverDemoApp.java">MailSendObserverDemoApp</a>
-        sends several emails asynchronously and prints each terminal outcome immediately with its Message-ID, queue, send and total time, completion count,
+        sends several emails asynchronously and prints each terminal outcome immediately with its Message-ID, individual measurements and total time, completion count,
         status, and callback thread. Enable <code class="inline language-java">DemoAppBase</code> logging-only mode to try the stream without an SMTP server.
       </p>
     </div>
