@@ -1,19 +1,18 @@
 ---
 title: "Case study: Enterprise Email at Polar Meridian Systems"
-description: "A fictional global manufacturer connects its applications to corporate mail, with reserved capacity, signed and encrypted partner messages, traceable sends and proactive SRE monitoring."
+description: "At fictional manufacturer Polar Meridian Systems, Ravi and Noor build an enterprise application-mail service around Simple Java Mail. They keep login codes ahead of newsletters, protect confidential partner messages, retain exact copies of important correspondence and monitor for trouble before customers notice."
 date: "2026-09-10"
 category: "System design"
 caseStudy:
   company: "Polar Meridian Systems"
   logo: "/assets/journal/companies/polar-meridian-systems.png"
   label: "Enterprise integration"
-  description: "A global manufacturer already has corporate mail infrastructure. Its application teams need to use it well: competing workloads, security, send archives and proactive SRE monitoring."
+  description: "A global manufacturer already has corporate mail infrastructure. Its application teams need a shared service that keeps login codes ahead of newsletters, protects confidential correspondence and spots trouble before customers notice."
   order: 2
 series:
   title: "Case Studies"
   part: 2
   total: 3
-draft: true
 draft-note: "Follow https://github.com/bbottema/simple-java-mail/issues/740 before 10.0.0. Revisit centrally enforced requirements through properties and Email overrides, starting with REQUIRETLS and any approved signing/encryption requirements, plus a policy-conflict rehearsal. Keep connection TLS distinct from onward REQUIRETLS, and add API examples or implementation claims only after verifying what actually lands."
 mermaid: true
 templateEngineOverride: hbs,md
@@ -21,12 +20,19 @@ typora-root-url: ..
 typora-copy-images-to: ../assets/journal
 banner-type: note
 banner-header: "Case Study"
-banner-body: "Welcome to the Case Study series! This time, we'll follow Ravi as he builds a shared mail service with Simple Java Mail on top of Polar Meridian's existing mail infrastructure. Leonie needs her login code and order confirmation, while Noor will help keep the service running. We'll keep Marketing's newsletter from holding up urgent mail, sign and encrypt confidential partner messages, and give Noor the send records and monitoring she needs to spot and investigate trouble."
+banner-body: |-
+  Welcome to the Case Study series!
+
+  I've spent years trying to make email easier to work with. This time, I wanted to give Simple Java Mail a proper enterprise workout: what would I build around it if every application team in the company depended on the result? Take what is useful for your own setup, and feel free to disagree with my choices. I had a lot of fun writing this article, which kept running away from me. I hope you have fun reading it, too.
 ---
+
+<div class="journal-intro">
 
 At Polar Meridian Systems, colleagues are emailing across continents, customers are asking about orders and suppliers are chasing payments. Meanwhile, its applications are sending order confirmations, confidential maintenance updates, login codes and a newsletter that Marketing would very much like to send today. Everyone involved thinks their email is as important as the next.
 
-Well, with roughly **5.2 million email deliveries per working day**, they can't all go first.
+Well, with roughly **5.2 million email deliveries per working day**, they can't all go first. Leonie is about to log in, and her login code needs to get through without waiting for Marketing's newsletter.
+
+</div>
 
 ## Meet the company
 
@@ -562,7 +568,7 @@ flowchart TB
 
 Dispatchers divide urgent requests between the two Mailers, which share a [cluster key](/sending-and-execution.html#section-clustering). That lets either borrow a connection from either registered urgent pool.
 
-Both endpoints must be approved for the same senders and content, with matching transport requirements, so different regional requirements need separate clusters. [RelayDesk](/journal/everybody-brought-their-own-mail-server.html) takes that further: two customers' servers are not interchangeable simply because both speak SMTP.
+Both endpoints must be approved for the same senders and content, with matching transport requirements, so different regional requirements need separate clusters. RelayDesk takes that further: two customers' servers are not interchangeable simply because both speak SMTP.
 
 The three builders below come from `configuredMailerBuilder()` with their approved hosts and credentials. The deployment includes `batch-module` for worker pools and connection pooling:
 
@@ -952,4 +958,4 @@ With a flexible setup built to grow and a structured onboarding process, Ravi an
 
 *The mail is flowing. The branding department got a little carried away.*
 
-*Next is [RelayDesk](/journal/everybody-brought-their-own-mail-server.html), where the customers bring their own mail services and there is no single messaging team to agree all this with.*
+*Next is RelayDesk, where the customers bring their own mail services and there is no single messaging team to agree all this with.*

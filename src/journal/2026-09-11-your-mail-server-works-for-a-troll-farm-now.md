@@ -1,13 +1,13 @@
 ---
 title: "Case study: Your Mail Server Works for a Troll Farm Now"
-description: "Staple & Sons sells office supplies. A troll farm has found another use for its mail servers. A fictional recovery story about parallel sending, email abuse and getting security right."
+description: "Fictional office supplier Staple & Sons runs its own mail servers, and a quotation-sending feature on its customer portal has put them to work for a troll farm. Follow its two developers as they stop the abuse and use Simple Java Mail to get legitimate email moving again, track sends and protect confidential messages."
 date: "2026-09-11"
 category: "Security"
 caseStudy:
   company: "Staple & Sons"
   logo: "/assets/journal/companies/staple-and-sons.png"
   label: "Self-managed SMTP"
-  description: "A small office-supply company scales up its mail servers, then discovers who's using the extra capacity. Parallel sending, recovery from abuse and getting security right."
+  description: "A small office supplier discovers its own mail servers are working for a troll farm. Its developers stop the abuse, bring overloaded servers under control and secure the mail they actually want to send."
   order: 1
 series:
   title: "Case Studies"
@@ -18,7 +18,10 @@ typora-root-url: ..
 typora-copy-images-to: ../assets/journal
 banner-type: note
 banner-header: "Case Study"
-banner-body: "Welcome to the Case Study series! A small company discovers it's sending mail for a troll farm. I'll show you how its mail setup scales up, then how the developers stop the abuse, bring their overloaded servers under control and track what happens to their mail. Then we'll tackle sender spoofing, unsafe connections and protecting confidential messages, with practical Simple Java Mail examples along the way."
+banner-body: |-
+  Welcome to the Case Study series!
+
+  This started with the slightly dubious idea of writing from a spammer's point of view. I ended up following the developers whose application was being abused instead. It gave me a way to connect the mail settings and security features to problems you might actually encounter in your own application. I've given these developers a fairly rough time here. Hopefully you'll honour their suffering by learning from their solutions!
 ---
 
 Staple & Sons sells things that hold other things together. Shelving, packaging, office furniture. There's nothing really special about Staple & Sons, it's all a little boring, really. Little did they know, their business was going to get a little bit less boring very soon.
@@ -97,9 +100,13 @@ Some time later, some operations time out again under the load. An existing retr
 
 So, the developers start digging. A few SQL queries and a look through the relay logs turn up one account that's keeping most of their new servers busy. The recipient addresses and message content they saw are *not* what the sales team had in mind when they greenlit the feature.
 
-<img src="/assets/journal/troll_quotation.png" alt="A Staple & Sons quotation email with a fake shopping-voucher offer in the personal note" class="journal-paragraph-image" style="zoom:75%;" />
-
-*a message from the trolls...*
+<figure class="journal-captioned" style="max-width:815px; margin-inline:auto;">
+  <div class="journal-image-overlay">
+    <img src="/assets/journal/troll_quotation.png" alt="A Staple & Sons quotation email with a fake shopping-voucher offer in the personal note" class="journal-paragraph-image" width="1086" height="814" />
+    <img src="/assets/journal/Troll-Face.svg" alt="" aria-hidden="true" class="journal-paragraph-image journal-image-overlay-mark" style="top:62.5%; right:6%; width:6.5%; transform:scaleX(-1);" />
+  </div>
+  <figcaption>a message from the trolls...</figcaption>
+</figure>
 
 The account belongs to a **troll farm running spam**, harassment and phishing campaigns through other people's services. It's logged in and the quotations belong to it, so both server checks pass. The farm can choose its recipients, fill the personal note with its own message and repeat the exercise as often as it likes. The quotation is just an excuse. Nobody singled out Staple & Sons because of its shelving; its portal simply offered another way to send mail at somebody else's expense.
 

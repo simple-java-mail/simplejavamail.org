@@ -267,7 +267,7 @@
   text-transform: uppercase;
 }
 
-.journal-prose .journal-banner p { margin: 0; padding: @space-md; }
+.journal-prose .journal-banner p { margin: 0; padding: @space-md; white-space: pre-line; }
 
 .journal-banner--note {
   border-color: darken(@amber, 5%);
@@ -298,6 +298,7 @@
 .journal-prose > .journal-banner + *,
 .journal-prose > .journal-entry-navigation--top + * { margin-top: 0; }
 .journal-prose > p:first-child { color: @ink; font-size: 1.13rem; line-height: 1.72; }
+.journal-prose > .journal-intro > p,
 .journal-prose > .journal-banner + p,
 .journal-prose > .journal-entry-navigation--top + p { color: @ink; font-size: 1.13rem; line-height: 1.72; }
 .journal-prose p,
@@ -470,6 +471,9 @@
 .journal-prose [data-image-lightbox] { display: block; cursor: zoom-in; }
 .journal-prose [data-image-lightbox]:focus-visible { outline: 2px solid @teal-deep; outline-offset: 4px; }
 .journal-prose .journal-captioned > figcaption { margin-top: @space-xs; text-align: center; }
+.journal-image-overlay { position: relative; }
+.journal-prose .journal-image-overlay > img { display: block; width: 100%; margin: 0; }
+.journal-prose .journal-image-overlay > img.journal-image-overlay-mark { position: absolute; pointer-events: none; }
 .journal-prose img.image-align-left { margin-left: 0; margin-right: auto; }
 .journal-prose img.image-align-right { margin-left: auto; margin-right: 0; }
 .journal-prose .journal-captioned:has(> img.image-align-left) > figcaption { text-align: left; }
@@ -480,6 +484,14 @@
   margin: @space-2xs 0 @space-md @space-lg;
 }
 .journal-prose img.journal-persona-image { width: 100%; }
+.journal-persona-block { display: flow-root; clear: both; }
+.journal-persona-copy { display: flow-root; }
+@media (min-width: 721px) {
+  .journal-prose .journal-captioned:has(> .journal-persona-image.image-align-left) {
+    float: left;
+    margin: @space-2xs @space-lg @space-md 0;
+  }
+}
 // Portraits wrap alongside prose, leaving headings and technical examples full-width.
 .journal-prose:has(.journal-persona-image) > :not(p) { clear: both; }
 .journal-prose .journal-activity-figure { margin: @space-lg 0; }

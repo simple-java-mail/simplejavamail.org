@@ -1,13 +1,13 @@
 ---
 title: "Case study: Everybody Brought Their Own Mail Server"
-description: "A customer's SMTP password change leaves a support reply waiting. RelayDesk uses Simple Java Mail to keep connections separate, replace credentials safely and trace each attempt."
+description: "At fictional customer-support platform RelayDesk, customers can bring their own mail servers. When a password change leaves Maya's reply waiting, Sam uses Simple Java Mail to keep other customers sending, replace credentials safely and explain what happened to each reply, including those that bounce later."
 date: "2026-09-12"
 category: "System design"
 caseStudy:
   company: "RelayDesk"
   logo: "/assets/journal/companies/relaydesk.png"
   label: "Multi-tenant SaaS"
-  description: "A customer-support SaaS sends through SMTP services chosen by its customers. Separate credentials, slow servers and changing settings make connection reuse a per-customer problem."
+  description: "A customer-support SaaS sends through its customers' mail servers. One customer's changed password mustn't stop everyone else's replies, and support agents need to know whether their messages were submitted, rejected or bounced."
   order: 3
 series:
   title: "Case Studies"
@@ -19,16 +19,63 @@ typora-root-url: ..
 typora-copy-images-to: ../assets/journal
 banner-type: note
 banner-header: "Case Study"
-banner-body: "Welcome to the Case Study series! This time, we'll follow a support reply that gets stuck when a customer changes its SMTP password. RelayDesk can't fix somebody else's mail server, but its other customers still need to send. I'll show you how it uses Simple Java Mail to keep customer connections separate, replace credentials safely and find out what happened to each reply."
+banner-body: |-
+  Welcome to the Case Study series!
+
+  This one grew out of a question: when would you actually need multiple SMTP clusters in one application? Your company's mail infrastructure might already take care of that. But what if your customers insist on using their own mail servers? I wanted to put Simple Java Mail's clustering support to work in that situation and explore what we'd still need to build ourselves. If you've ever been handed somebody else's SMTP settings and told to make it work, this one's for you.
 ---
 
 <!-- TODO: Author review of the narrative, fictional personas and examples; confirm the provisional publication date. -->
 
-At RelayDesk, a support ticket can be resolved before its reply has left the building.
+RelayDesk gives customer-support teams one place to manage tickets, customer history and follow-ups. Agents can hand work to colleagues, track a conversation and reply to customers without leaving the product; email is one of the channels it supports.
 
-RelayDesk sells a multi-tenant SaaS platform for running a customer-support desk. It brings tickets and customer history together so agents can pick up a conversation, route it to the right team and ask colleagues for help without losing context. Workflow rules handle follow-ups and escalations, while reporting helps managers track backlogs, response times and service-level agreements. Email is one of the channels those teams use to talk to customers.
+<div class="journal-diagram-wide">
+
+```mermaid
+%%{init: { "flowchart": { "padding": 10, "wrappingWidth": 280, "nodeSpacing": 24, "rankSpacing": 40 } } }%%
+flowchart TB
+    accTitle: RelayDesk connects support teams with the people they help
+    accDescr: Kestrel Outfitters, Juniper Travel and other companies use RelayDesk to manage support conversations, customer history, assignments, workflows and reporting. Their customers ask for help and continue those conversations. Outgoing email replies travel through each company's approved mail service: Kestrel-controlled servers, Juniper's chosen provider or RelayDesk's default service. This view shows the product and its external relationships, not its internal sending implementation.
+
+    subgraph teams["Companies using RelayDesk"]
+        kestrelAgents(["👤 Kestrel Outfitters<br/>support agents"])
+        juniperAgents(["👤 Juniper Travel<br/>support agents"])
+        otherAgents(["👥 Other companies'<br/>support teams"])
+    end
+
+    relaydesk["RelayDesk · customer-support SaaS<br/>Tickets · customer history<br/>Assignments · workflows · reporting"]
+
+    kestrelMail["Kestrel-controlled<br/>mail service"]
+    juniperMail["Juniper's chosen<br/>mail provider"]
+    defaultMail["RelayDesk's default<br/>mail service"]
+    customers(["👥 Each company's customers<br/>the people asking for help"])
+
+    kestrelAgents -->|manage support| relaydesk
+    juniperAgents -->|manage support| relaydesk
+    otherAgents -->|manage support| relaydesk
+    relaydesk -->|Kestrel replies| kestrelMail
+    relaydesk -->|Juniper replies| juniperMail
+    relaydesk -->|default sending| defaultMail
+    kestrelMail -->|deliver replies| customers
+    juniperMail -->|deliver replies| customers
+    defaultMail -->|deliver replies| customers
+    customers -.->|ask for help<br/>continue conversations| relaydesk
+
+    classDef person fill:#FFFFFF,stroke:#5B6872,color:#13212B
+    classDef product fill:#DCECF6,stroke:#2F6F9F,color:#13212B
+    classDef external fill:#F6F7F3,stroke:#87929A,color:#37474F
+    class kestrelAgents,juniperAgents,otherAgents,customers person
+    class relaydesk product
+    class kestrelMail,juniperMail,defaultMail external
+```
+
+*The teams work in RelayDesk; their replies leave through the mail service each company has approved.*
+
+</div>
 
 Kestrel Outfitters is one of RelayDesk's customers. Its support agents work in RelayDesk, but their replies go out as Kestrel Support. Most tenants use RelayDesk's default sending service; Kestrel requires its replies to pass through Kestrel-controlled SMTP servers, where it already manages domain signing and mail policies.
+
+## Maya has the answer and clicks Send, but the customer hears nothing
 
 <img class="journal-persona-image" src="/assets/journal/personas/relay-desk-maya.jpg" alt="Maya at her Kestrel Outfitters desk, with her customer-support reply marked Waiting to send in RelayDesk." width="1075" height="717" loading="lazy" decoding="async">
 
@@ -36,19 +83,27 @@ Kestrel Outfitters is one of RelayDesk's customers. Its support agents work in R
 
 Maya, one of Kestrel's support agents, opens a ticket from a shopper whose parcel hasn't arrived. The tracking information shows it's waiting at a collection point, so she writes back in RelayDesk to explain where to pick it up. She clicks Send, but the message gets stuck: Kestrel rotated an SMTP password on Friday afternoon, and RelayDesk is still using the old one.
 
-<img class="journal-persona-image" src="/assets/journal/personas/relay-desk-sam.jpg" alt="Sam at his RelayDesk workstation, with Kestrel's authentication failure and Juniper's normal sending status on the dashboard." width="1075" height="717" loading="lazy" decoding="async">
+<div class="journal-persona-block">
+
+<img class="journal-persona-image image-align-left" src="/assets/journal/personas/relay-desk-sam.jpg" alt="Sam at his RelayDesk workstation, with Kestrel's authentication failure and Juniper's normal sending status on the dashboard." width="1075" height="717" loading="lazy" decoding="async">
 
 *Sam maintains RelayDesk's sending code, but he can't reset Kestrel's password.*
 
-Anika, Kestrel's mail administrator, can arrange the replacement credentials. Unfortunately, Sam, the Java developer investigating the failed send at RelayDesk, cannot reach her until Monday. He can fix his own application; he cannot reset somebody else's password.
+<div class="journal-persona-copy">
+
+Sam, the Java developer investigating the failed send at RelayDesk, needs replacement credentials from Anika, Kestrel's mail administrator. Unfortunately, he cannot reach her until Monday. He can fix his own application; he cannot reset somebody else's password.
 
 Let's give Sam a better answer than restarting the application and hoping. RelayDesk, its customers and the people here are fictional; we'll use Simple Java Mail for the sending work, with customer permissions, job scheduling and configuration changes handled by RelayDesk's application.
+
+</div>
+
+</div>
 
 ## The setup
 
 About a dozen engineers maintain RelayDesk's Java backend, deployed in Europe and North America. Kestrel operates in both regions, with a pair of equivalent relays in each. Maya's ticket belongs to its European operation.
 
-Juniper Travel, another RelayDesk tenant, gives RelayDesk one SMTP address to send through; its mail provider manages the servers behind that address. Juniper's agents keep sending replies while Kestrel's mail is stuck. The email part of the setup looks like this:
+Juniper Travel gives RelayDesk one SMTP address to send through; its mail provider manages the servers behind that address. Juniper's agents keep sending replies while Kestrel's mail is stuck. Here's a closer look at the sending code and the services it connects to:
 
 ```mermaid
 %% journal: compact
