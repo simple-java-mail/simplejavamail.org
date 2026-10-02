@@ -7,7 +7,7 @@ title: "Sending and execution"
 navTitle: "Sending and execution"
 section: "Build and configure"
 breadcrumbParent: "/configuration.html"
-description: "Choose send execution, queue limits, deadlines, cancellation, observer dispatch, and SMTP resource ownership."
+description: "Choose send execution, sending rates, queue limits, deadlines, cancellation, observer dispatch, and SMTP resource ownership."
 ---
 <section><p class="wide">Use this page when you need to control how mail work runs. For what a result means, including partial acceptance and
   retry advice, see <a href="/analyzing-send-results.html">Analyzing send results</a>. If another framework owns your Jakarta Mail messages or
@@ -16,6 +16,7 @@ description: "Choose send execution, queue limits, deadlines, cancellation, obse
   <li><a href="#section-send-architecture">Inside a mail send</a></li>
   <li><a href="#section-send-execution">Choose how sends execute</a></li>
   <li><a href="#section-async-queue">Bound the async queue</a></li>
+  <li><a href="#section-sending-limits">Match your SMTP service's sending limits</a></li>
   <li><a href="#section-send-deadlines">Deadlines and cancellation</a></li>
   <li><a href="#section-batch-and-clustering">Connection reuse and clusters</a></li>
   <li><a href="#section-mail-send-observer">Observer dispatch and completed-email progress</a></li>
@@ -148,6 +149,103 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
     </div>
   </section>
 
+
+<a href="#section-sending-limits" id="section-sending-limits" class="section-link h2">&sect;</a>
+{{#> components/feature-heading-h2 core=true}}Match your SMTP service's sending limits{{/components/feature-heading-h2}}
+<section>
+  <div class="view">
+    <p>Your SMTP service allows a certain number of messages or recipients per minute, but several workers are sending at once.
+      Configure those limits on the Mailer instead of putting sleeps around each send. They apply to synchronous and asynchronous sends,
+      simple batches, and <code>withOpenConnection(...)</code>.</p>
+    <p>Sending limits are disabled by default. Choose the count and period to match your service; <strong>30 per minute is just an example</strong>.
+      If you configure both message and recipient limits, both must allow the next email. These are rolling windows, not counters that reset
+      at the start of each clock minute.</p>
+    <p>Connection-pool size still controls concurrent connections, and queue capacity still controls waiting tasks. Neither is a sending rate.
+      These limits do not regulate bandwidth or coordinate your service account across applications.</p>
+  </div>
+  <div class="side">
+<pre><code class="language-java small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 587, "user", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withMessageRateLimit(30, Duration.ofMinutes(1))
+    .withRecipientRateLimit(100, Duration.ofMinutes(1))
+    .withRateLimitGroup("company-account")
+    .withRateLimitBurstsAllowed(false)
+    .buildMailer();
+
+// The same send API; the caller or worker waits when needed.
+mailer.async().sendMail(email);</code></pre>
+    <p>Calling a setter again replaces that rule. Use <code>resetMessageRateLimit()</code> or <code>resetRecipientRateLimit()</code>
+      to remove it. <code>resetRateLimitGroup()</code> restores private allowance, while <code>resetRateLimitBurstsAllowed()</code>
+      restores the default of allowing bursts. These resets affect the next Mailer you build, not an existing Mailer.</p>
+  </div>
+</section>
+<section>
+  <div class="view">
+    <h3>Allow a burst, or spread sends out</h3>
+    <p>Bursts are allowed by default: a 30-per-minute limit can submit 30 messages immediately, then wait for earlier attempts to leave
+      the rolling window. Set <code>withRateLimitBurstsAllowed(false)</code> to spread starts out as well.</p>
+    <p>With spreading, 30 messages per minute means at least two seconds between local submission starts; 120 per minute means half a second.
+      The first can start immediately. A slow submission does not add another full interval after it finishes, and submissions may overlap.
+      Idle time does not build up catch-up credit.</p>
+    <p>Recipients have a weight: sending to ten recipients against a 100-per-minute rule puts at least six seconds before the following
+      submission starts. The rolling-window ceiling still applies. An email with more recipients than the whole configured allowance is
+      rejected clearly, not split up or left waiting forever.</p>
+  </div>
+  <div class="side">
+    <h3>Use properties when the deployment chooses the rate</h3>
+<pre><code class="language-properties small">simplejavamail.smtp.ratelimit.group=company-account
+simplejavamail.smtp.ratelimit.messages.limit=30
+simplejavamail.smtp.ratelimit.messages.period=PT1M
+simplejavamail.smtp.ratelimit.recipients.limit=100
+simplejavamail.smtp.ratelimit.recipients.period=PT1M
+simplejavamail.smtp.ratelimit.allowbursts=false</code></pre>
+    <p>Each rule needs a positive count and a positive ISO-8601 duration, such as <code>PT1M</code> or <code>PT0.5S</code>.
+      Remove both the count and period to leave that rule disabled. See <a href="configuration.html#section-config-properties">configuration precedence</a>,
+      <a href="spring.html#section-spring-sending-limits">Spring configuration</a>, and <a href="cli.html#section-sending-limits">CLI usage</a>.</p>
+  </div>
+</section>
+<section>
+  <div class="view">
+    <h3>Share a service account's allowance deliberately</h3>
+    <p>Keep one <code>SimpleJavaMail</code> factory in application scope. Mailers built from that factory with the same rate-limit group share
+      one allowance, even if they use different connections or pools. Their message rule, recipient rule, and burst setting must agree;
+      conflicting declarations fail when building the Mailer.</p>
+    <p>Without a group name, each registered SMTP configuration has its own allowance. A group is not a pool cluster or hostname.
+      In a connection-pool cluster, the <em>selected SMTP configuration's</em> limits apply, which may differ from those of the Mailer you called.</p>
+    <p>Closing and rebuilding a participant does not reset its named group's recent history. A failed build does not establish new group rules.
+      Another factory, JVM, container, or CLI process has independent history, even with identical properties and group names.
+      Keep any daily, persistent, or account-wide quota outside this in-process limiter.</p>
+    <p>Reusing a caller-owned Session does not transfer one Mailer's limits to another. Within one pool cluster, however, the same Session identifies
+      one pool: reuse that Mailer or its factory's rate-limit group, or use a separate Session for a separately configured participant.</p>
+  </div>
+  <div class="side">
+    <h3>Know what counts</h3>
+    <p>Allowance is reserved before ordinary transport acquisition or proxy startup, then charged when Simple Java Mail invokes the provider.
+      Cancellation, connection failure, or MIME-preparation failure before invocation releases the unused reservation.
+      Once invoked, the attempt stays charged, including rejection, uncertain acceptance, provider-side preflight failure, or later cleanup failure.
+      This is attempted submission, not a count of accepted or delivered mail.</p>
+    <p>Recipient cost follows the intended SMTP envelope, including BCC, additional recipient headers, and envelope overrides.
+      Repeated addresses count as repeated occurrences. Rejected recipients are not refunded.
+      <a href="features.html#section-custom-mailer">CustomMailer</a> counts one callback invocation and the intended envelope; retries or extra sends
+      inside that callback are outside the limit. Validation, rehearsal, connection tests, probing, and logging-only mode consume nothing.</p>
+    <p>Waiting uses the existing caller or worker thread. It responds to cancellation and configured send deadlines, but there is no separate
+      rate-wait timeout. Live waiters are served FIFO, so a large email can hold up smaller ones. Bound the async queue if your producer can
+      outrun this rate; adding workers does not increase a shared allowance.</p>
+  </div>
+</section>
+<section>
+  <p class="wide">Ordinary sends wait without borrowing a connection. Simple batches and <code>withOpenConnection(...)</code> deliberately keep
+    their shared connection open during per-email waits. A long wait can exceed the server's idle timeout; Simple Java Mail does not reconnect
+    or bypass your limit automatically. Prefer ordinary pooled sends when waits are likely to be long. Graceful shutdown also waits for accepted
+    rate-limited work; retain async handles or configure a deadline if you need to bound that wait.</p>
+  <p class="wide">Read the resolved rules through <code>mailer.getOperationalConfig()</code>, trace their sources through
+    <a href="debugging.html#section-config-diagnostics">configuration diagnostics</a>, and inspect deliberate waiting with
+    <a href="analyzing-send-results.html#section-send-timings"><code>MailSendDiagnostics.getRateLimitWait()</code></a>.
+    The rate is based on local provider invocations, not guaranteed arrival times at the server.</p>
+</section>
 
 <a href="#section-send-deadlines" id="section-send-deadlines" class="section-link h2">&sect;</a>
 <h2>Deadlines and cancellation</h2>

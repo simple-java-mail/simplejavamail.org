@@ -35,6 +35,7 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
       <li><a href="#section-how-to-use">How to use</a></li>
       <li><a href="#section-probe" class="indent">Inspect an SMTP connection</a></li>
       <li><a href="#section-daemon" class="indent">Optional background daemon</a></li>
+      <li><a href="#section-sending-limits" class="indent">Sending limits</a></li>
       <li><a href="#section-usage-help" class="indent">Usage help</a></li>
       <li><a href="#section-at-files" class="indent">@-files</a></li>
       <li><a href="#section-config-properties" class="indent">Configuring properties</a></li>
@@ -200,6 +201,27 @@ Elapsed: 142ms</code></pre>
     </p>
   </section>
 
+
+  <a href="#section-sending-limits" id="section-sending-limits" class="section-link h3">&sect;</a>
+  <h3>Sending limits</h3>
+  <section>
+    <p class="wide">The generated CLI options accept the same counts and ISO-8601 periods as the Java API. Add these to your usual send command,
+      or set the equivalent <code>simplejavamail.smtp.ratelimit.*</code> properties:</p>
+<pre><code class="language-text small">--mailer:withMessageRateLimit 30 PT1M
+--mailer:withRecipientRateLimit 100 PT1M
+--mailer:withRateLimitGroup company-account
+--mailer:withRateLimitBurstsAllowed false</code></pre>
+    <p class="wide">These are examples, not implicit limits. Use <code>--mailer:withMessageRateLimit--help</code> for generated help;
+      reset options include <code>--mailer:resetMessageRateLimit</code>, <code>--mailer:resetRecipientRateLimit</code>,
+      <code>--mailer:resetRateLimitGroup</code>, and <code>--mailer:resetRateLimitBurstsAllowed</code>.</p>
+    <p class="wide">A one-shot process starts with fresh local history, so repeating one-shot commands does not enforce a rate across commands.
+      A running daemon retains its factory for the configuration environment. A cached Mailer profile keeps its private allowance while retained;
+      a named group can share allowance across profiles within that factory when their rules agree. Separate environments, daemon instances,
+      or restarts do not share history. This is not an account-wide or durable quota.</p>
+    <p class="wide">The command waits for the send, including any rate wait. Validation, connection tests, probes, and logging-only sends consume
+      nothing. Read <a href="sending-and-execution.html#section-sending-limits">Sending and execution</a> for counting rules, rolling windows,
+      optional spreading, and cancellation/shutdown implications.</p>
+  </section>
 
   <a href="#section-usage-help" id="section-usage-help" class="section-link h3">&sect;</a>
   <h3>Usage Help</h3>

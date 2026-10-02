@@ -527,7 +527,7 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
   <h3>Where did the time go?</h3>
   <section>
     <div class="wide">
-      <p>A send took a second and a half. Was it waiting for a worker, getting a connection, signing the email or submitting it?
+      <p>A send took a second and a half. Was it waiting for a worker or sending allowance, getting a connection, signing the email or submitting it?
         Your existing observer now receives <code>outcome.getDiagnostics()</code> automatically. These measurements describe that particular
         attempt, including failures before SMTP. Nothing is sent or read a second time to collect them.</p>
     </div>
@@ -536,6 +536,8 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
     outcome.getDiagnostics().ifPresent(report -&gt; {
         log.info("{}", report);
 
+        report.getRateLimitWait().getElapsed()
+            .ifPresent(metrics::recordSendingLimitWait);
         report.getConnectionAcquisition().getElapsed()
             .ifPresent(metrics::recordConnectionAcquisition);
         report.getSubmission().getElapsed()
@@ -552,6 +554,7 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
   Total: PT1.4S
   Preparation: PT0.003S
   Scheduling: PT0.28S
+  Sending-limit wait: not measured: No sending limit is configured for this destination.
   Connection acquisition: PT0.9S
   MIME preparation: PT0.034S
   Submission: PT0.165S
@@ -563,12 +566,20 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
         <tbody>
           <tr><td><code>getPreparation()</code></td><td>Email defaults/overrides and validation. MIME conversion comes later.</td></tr>
           <tr><td><code>getScheduling()</code></td><td>Async admission and worker waiting, not just time sitting in the queue.</td></tr>
+          <tr><td><code>getRateLimitWait()</code></td><td>Waiting for configured message or recipient allowance, separately from executor scheduling and connection acquisition.</td></tr>
           <tr><td><code>getConnectionAcquisition()</code></td><td>Getting a usable transport, including proxy startup, pool waiting and any connection setup or validation.</td></tr>
           <tr><td><code>getMimePreparation()</code></td><td>MIME conversion and protection using the selected Session.</td></tr>
           <tr><td><code>getSubmission()</code></td><td>The provider or custom-mailer call, including preflight, deferred reads, serialization, writes and replies. Not just network time.</td></tr>
           <tr><td><code>getCleanup()</code></td><td>Ordinary connection release, disposal or close, and associated proxy teardown. A healthy pool release need not close the socket.</td></tr>
         </tbody>
       </table>
+      <p>If you configured <a href="sending-and-execution.html#section-sending-limits">sending limits</a>, a slow send may simply be waiting its turn.
+        For example, with a spread-out 30-per-minute rule, the next worker might report:</p>
+<pre><code class="language-text small">Sending-limit wait: PT1.8S
+Connection acquisition: PT0.002S
+Submission: PT0.11S</code></pre>
+      <p>The limiter, not SMTP, caused most of that delay. No ordinary pooled connection is borrowed during the rate wait.
+        A configured limit can also produce a measured zero; disabled limits are reported as not measured.</p>
       <p>Each getter returns a <code>MailSendMeasurement</code>. Its <code>getElapsed()</code> is present even when the measured duration is zero.
         Otherwise, <code>getUnavailableReason()</code> explains why it was not measured. For example, a synchronous send has no async scheduling step,
         and logging-only mode has no SMTP submission. Read the explanation as text, not as a status code to parse.</p>
@@ -579,7 +590,8 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
 <pre><code class="language-text small">Connection acquisition: not measured: The shared connection is opened and closed outside this email's attempt.
 Cleanup: not measured: The shared connection is opened and closed outside this email's attempt.</code></pre>
       <p>The shared connection's eventual closing failure cannot be reported in an email outcome that has already been delivered.
-        If opening a batch connection fails before any email is reached, there is no per-email outcome at all.</p>
+        If opening a batch connection fails before any email is reached, there is no per-email outcome at all.
+        Sending-limit waits still belong to each reached email and are measured, even though the batch or open-connection scope keeps its transport open.</p>
       <h4>Accepted by SMTP, then cleanup failed</h4>
       <p><code>isFailureObservedHere()</code> tells you whether the send failed during that step. For example, if submission fails and closing the connection
         also fails, only submission is marked. This identifies the failed step, not the underlying cause. No step is marked if the failure happened between

@@ -16,6 +16,7 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
       <li><a href="#section-spring-installation">Install and inject the Spring beans</a></li>
       <li><a href="#section-spring-beans">Customize Spring-managed beans</a></li>
       <li><a href="#section-spring-oauth2">Provide OAuth2 access tokens</a></li>
+      <li><a href="#section-spring-sending-limits">Configure sending limits</a></li>
       <li><a href="#section-spring-profiles">Configure profiles and dynamic properties</a></li>
     </ul>
   </section>
@@ -256,6 +257,36 @@ OAuth2AccessTokenProvider smtpAccessTokens(
 			</p>
 		</div>
 	</section>
+
+  <a href="#section-spring-sending-limits" id="section-spring-sending-limits" class="section-link h2">&sect;</a>
+  <h2>Configure sending limits</h2>
+  <section>
+    <div class="view">
+      <p>Put your deployment's message and recipient rates in the same Spring configuration as its SMTP server.
+        Plain Spring and the Boot starter both use the shared loader; the metadata model supplies IDE hints, not a separate limiter.</p>
+      <p>These example values are not defaults. Limits are disabled unless configured, and both rules apply when present.
+        <code>allowbursts: false</code> spreads starts out while retaining the rolling-window ceiling.</p>
+      <p>Mailers built from the injected <code>SimpleJavaMail</code> factory can share a named group's allowance when their rules agree.
+        Constructing another factory, starting another application instance, or restarting this one starts independent history.
+        See <a href="sending-and-execution.html#section-sending-limits">sending limits</a> for accounting, resets, clustering, and shutdown behavior.</p>
+    </div>
+    <div class="side">
+<pre><code class="language-yaml small">simplejavamail:
+  smtp:
+    ratelimit:
+      group: company-account
+      messages:
+        limit: 30
+        period: PT1M
+      recipients:
+        limit: 100
+        period: PT1M
+      allowbursts: false</code></pre>
+      <p>The equivalent property names begin with <code>simplejavamail.smtp.ratelimit.</code>.
+        Use the factory's <code>getConfig().getDiagnostics()</code> to trace loaded values and sources;
+        <code>mailer.getOperationalConfig()</code> includes later Java builder choices.</p>
+    </div>
+  </section>
 
 	<a href="#section-spring-profiles" id="section-spring-profiles" class="section-link h2">&sect;</a>
 	<h2>Configure profiles and dynamic properties</h2>

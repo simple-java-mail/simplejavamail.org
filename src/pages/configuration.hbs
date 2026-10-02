@@ -38,7 +38,8 @@ description: "Configure mailers in Java, property files, or environment variable
     <div class="side">
       <p>
         <strong>SimpleJavaMail</strong> is the application-level entry point. It gives you a fresh email or Mailer builder backed by one immutable
-        configuration snapshot.
+        configuration snapshot. Keep the factory when Mailers need to share
+        <a href="sending-and-execution.html#section-sending-limits">sending-limit history</a>; another factory has independent allowance.
       </p>
       <p>
         <strong>ConfigLoader</strong> resolves an ordered set of sources into that snapshot. It has no process-wide registry, so separate factories can
@@ -63,6 +64,7 @@ description: "Configure mailers in Java, property files, or environment variable
       <li><a href="/sending-and-execution.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a></li>
       <li><a href="/sending-and-execution.html#section-batch-and-clustering">Batch and clustering support</a></li>
 	  <li><a href="/sending-and-execution.html#section-async-queue" class="indent">Bound asynchronous work and handle a full queue</a></li>
+	  <li><a href="/sending-and-execution.html#section-sending-limits" class="indent">Match SMTP message and recipient limits</a></li>
 	  <li><a href="/sending-and-execution.html#section-not-reusing-connections" class="indent">How direct connections work</a></li>
 	  <li><a href="/sending-and-execution.html#section-reusing-connections" class="indent">Reusing connections with a pool</a></li>
       <li><a href="/sending-and-execution.html#section-clustering" class="indent">Advanced performance tuning: Clustering with multiple connection pools</a></li>
@@ -554,6 +556,14 @@ simplejavamail.smtp.clienthostname=orders-service.prod.example.com
 simplejavamail.smtp.legacycontentsupport=false
 simplejavamail.smtp.localaddress=203.0.113.10
 simplejavamail.smtp.localport=25252
+
+# Optional sending limits; these example rates are not defaults. Omit a rule's count and period to disable it.
+simplejavamail.smtp.ratelimit.group=company-account
+simplejavamail.smtp.ratelimit.messages.limit=30
+simplejavamail.smtp.ratelimit.messages.period=PT1M
+simplejavamail.smtp.ratelimit.recipients.limit=100
+simplejavamail.smtp.ratelimit.recipients.period=PT1M
+simplejavamail.smtp.ratelimit.allowbursts=false
 
 # Validation, SSL and proxying
 simplejavamail.disable.all.clientvalidation=false

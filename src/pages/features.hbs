@@ -90,6 +90,7 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
 		<li><a href="#section-recipient-builders" class="indent">Dedicated recipient builders</a></li>
 		<li><a href="#authentication" class="indent">Authentication and OAuth2 support</a></li>
 		<li><a href="#section-sending-asynchronously" class="indent">Asynchronous sending, simple batches and clustering</a></li>
+		<li><a href="#section-sending-limits" class="indent">Message and recipient sending limits</a></li>
 		<li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
 		<li><a href="#section-mail-send-observer" class="indent">Observing completed mail sends</a></li>
 		<li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
@@ -551,6 +552,27 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
         your code. Then refer to the <a href="sending-and-execution.html#section-batch-and-clustering">configuration section</a> for Mailer settings.
         Its <a href="sending-and-execution.html#section-mailer-lifecycle">lifecycle section</a> explains how to finish queued work and close each Mailer.
       </p>
+    </div>
+  </section>
+
+  <a href="#section-sending-limits" id="section-sending-limits" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Message and recipient sending limits{{/components/feature-heading-h3}}
+  <section>
+    <div class="view">
+      <p>Configure the rates your SMTP service permits without adding sleeps around concurrent sends or batches.
+        Choose a message count, recipient count, or both, over a configurable rolling period. Allow bursts or spread submission starts out.</p>
+      <p>Named groups share allowance among Mailers from one factory, including across separate connection pools.
+        Limits are disabled by default and count attempted provider invocations, not successful delivery.
+        They do not coordinate separate factories or application instances.</p>
+    </div>
+    <div class="side">
+<pre><code class="language-java small">mailerBuilder
+    .withMessageRateLimit(30, Duration.ofMinutes(1))
+    .withRecipientRateLimit(100, Duration.ofMinutes(1))
+    .withRateLimitGroup("company-account")
+    .withRateLimitBurstsAllowed(false);</code></pre>
+      <p>See <a href="sending-and-execution.html#section-sending-limits">the sending-limit guide</a> for Java, property, Spring, and CLI configuration,
+        plus <a href="analyzing-send-results.html#section-send-timings">per-email wait diagnostics</a>.</p>
     </div>
   </section>
 
