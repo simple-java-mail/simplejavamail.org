@@ -90,7 +90,7 @@ description: "Configure mailers in Java, property files, or environment variable
         a failed TLS upgrade stops the connection. Choose <code class="inline language-java">SMTP_TLS</code> or
         <code class="inline language-java">SMTPS</code> if encryption is required. See the
         <a href="security.html#section-authentication-methods">transport strategy comparison</a> for the differences.
-        In 10.0.0, extra properties that disable mandatory STARTTLS are <a href="migration-notes-10.0.0.html#mandatory-starttls">rejected when building the Mailer</a>.
+        Extra properties that disable mandatory STARTTLS are <a href="migration-notes-10.0.0.html#mandatory-starttls">rejected when building the Mailer</a>.
       </p>
 <pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 
@@ -223,7 +223,7 @@ mailerBuilder.withProperty("mail.smtp.sendpartial", true);
 mailer.getSession().getProperties().setProperty("mail.smtp.sendpartial", true);
 </code></pre>
 <pre><code class="small">
-/* Secure TLS defaults since 9.2.0. These calls are optional. */
+/* Secure TLS defaults. These calls are optional. */
 mailerBuilder.trustingAllHosts(false);
 mailerBuilder.verifyingServerIdentity(true);
 
@@ -767,7 +767,7 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 		<p class="wide">
 			To remove only default DKIM signing while preserving other property defaults, materialize the defaults, copy that Email, call
 			<code>clearDkim()</code>, and pass the result to <code>withEmailDefaults(...)</code>. Materialization still reads any configured signing key.
-			The <a href="migration-notes-10.0.0.html#dkim-defaults">10.0.0 migration example</a> shows both replacing and removing the default signature.
+			The <a href="migration-notes-10.0.0.html#dkim-defaults">migration example</a> shows both replacing and removing the default signature.
 		</p>
 	</section>
 

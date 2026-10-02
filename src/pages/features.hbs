@@ -1095,7 +1095,7 @@ currentEmailBuilder.withEmbeddedImage("brand-logo.png", logoDataSource, "brand-l
 			<p>
 				<strong>Auto resolution is opt-in.</strong> It can read image sources from files, classpath resources and URLs, then embed what it finds.
 				If someone else can edit the HTML, enable only the resolver you need, configure its base, and leave outside-base access disabled.
-				Since 9.2, each configured base is an actual boundary rather than just a lookup hint.
+				Each configured base is an actual boundary rather than just a lookup hint.
 			</p>
 			<p>
 				Without a base, resolution is unrestricted. Turning on an <code class="inline language-java">allowingEmbeddedImageOutsideBase...</code>
@@ -2244,7 +2244,7 @@ CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 	<section>
 		<p class="wide">
 			An <code class="inline language-java">Email</code> can be written with Java's <code class="inline language-java">ObjectOutputStream</code>
-			and restored later. Since 9.2.0, that restored email still contains what it needs to be sent.
+			and restored later with the data needed to send it, subject to the limitations below.
 		</p>
 		<ul class="indent wide">
 			<li>Attachments, embedded images and decrypted attachments are stored with their bytes and MIME metadata.</li>
@@ -2261,9 +2261,8 @@ CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 			Treat the serialized data as sensitive. It can contain the complete message, attachments, credentials, private keys and passwords.
 		</p>
 		<p class="wide">
-			Emails serialized before 9.2.0 can still be opened for their ordinary fields and attachment metadata. Those versions did not store the attachment
-			bytes, forwarded MIME message or S/MIME signing configuration, so that data cannot be recovered from the serialized form. Reading or sending a
-			missing legacy attachment fails with a clear pre-9.2.0 error instead of an unrelated null failure.
+			Legacy serialized forms can lack attachment bytes, forwarded MIME content or S/MIME signing configuration. That missing data cannot be
+			recovered from the serialized form. Reading or sending an unavailable attachment fails with a clear error.
 		</p>
 	</section>
 

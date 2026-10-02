@@ -129,7 +129,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 					</table>
 				</div>
 				<p class="wide">
-					In 10.0.0, <code class="inline language-java">buildMailer()</code> rejects an extra
+					<code class="inline language-java">buildMailer()</code> rejects an extra
 					<code class="inline language-properties">mail.smtp.starttls.required</code> value that disables STARTTLS when you select
 					<code class="inline language-java">SMTP_TLS</code> or <code class="inline language-java">SMTP_OAUTH2</code>.
 					Remove that override to keep mandatory TLS. For opportunistic username/password authentication, choose
@@ -165,8 +165,8 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 		<section>
 			<div>
 				<p class="wide">
-					Whenever TLS is negotiated, Simple Java Mail verifies that the certificate belongs to the SMTP host. From 9.2.0 onward,
-					it also uses the JVM trust store instead of accepting every certificate by default. Both checks can be overridden, but that
+					Whenever TLS is negotiated, Simple Java Mail verifies that the certificate belongs to the SMTP host and uses the JVM trust store.
+					Both checks can be overridden, but that
 					should be reserved for controlled compatibility or test environments.
 				</p>
 				<p class="wide">
@@ -216,7 +216,7 @@ Or with properties:
     .withTransportStrategy(TransportStrategy.SMTPS);</code></pre>
 
 			<p class="wide">
-				Strict certificate validation is the default from 9.2.0 onward. Unless you configure an explicit exception, server certificates must be issued
+				Strict certificate validation is the default. Unless you configure an explicit exception, server certificates must be issued
 			</p>
 			<ol class="indent">
 				<li>by a certificate authority in the JVM trust store; and</li>
@@ -238,7 +238,7 @@ Or with properties:
     .withTransportStrategy(TransportStrategy.SMTP_TLS);</code></pre>
 
 			<p class="wide">
-				Strict certificate validation is the default from 9.2.0 onward. Unless you configure an explicit exception, server certificates must be issued
+				Strict certificate validation is the default. Unless you configure an explicit exception, server certificates must be issued
 			</p>
 			<ol class="indent">
 				<li>by a certificate authority in the JVM trust store; and</li>
@@ -399,7 +399,7 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 		<section>
 			<div class="view">
 				<p>
-					From 9.2.0 onward, Simple Java Mail leaves <code class="inline language-properties">mail.*.ssl.trust</code> unset by default.
+					Simple Java Mail leaves <code class="inline language-properties">mail.*.ssl.trust</code> unset by default.
 					Angus Mail then validates the certificate chain against the JVM trust store.
 				</p>
 				<p>
@@ -416,7 +416,7 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 				<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
 	.withSMTPServer("smtp.example.com", 587)
 	.withTransportStrategy(TransportStrategy.SMTP_TLS)
-	// secure default since 9.2.0; shown explicitly here
+	// secure default; shown explicitly here
 	.trustingAllHosts(false)
 	.verifyingServerIdentity(true);
 
@@ -578,7 +578,7 @@ currentMailerBuilder
 					Use <code class="inline language-properties">file:</code> for a path or
 					<code class="inline language-properties">base64:</code> followed by Base64-encoded key bytes for inline data.
 					A missing explicit file or malformed Base64 value fails during configuration without including the key data in the error.
-					Unprefixed values keep their pre-9.2 interpretation for compatibility.
+					Unprefixed values are also accepted for compatibility.
 				</p>
 			</div>
 		</section>
@@ -990,7 +990,7 @@ mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENC
 					recipients, so your application remains responsible for choosing the right keys.
 				</p>
 				<p>
-					S/MIME and OpenPGP/MIME are alternative content-protection formats in 10.0.0, so one email cannot configure both. DKIM can be combined with
+					S/MIME and OpenPGP/MIME are alternative content-protection formats, so one email cannot configure both. DKIM can be combined with
 					either format and is applied after content protection to the final outgoing message.
 				</p>
 			</div>
@@ -999,7 +999,7 @@ mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENC
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
     &lt;artifactId&gt;openpgp-module&lt;/artifactId&gt;
-    &lt;version&gt;10.0.0&lt;/version&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
 
 				Sign and encrypt:
