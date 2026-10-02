@@ -59,6 +59,8 @@ Map what each section introduces, what it assumes the reader already knows, and 
 
 Choose a progression that fits the article. A troubleshooting story may follow ordinary operation, symptoms, investigation and remedy. A design essay may follow a need, alternatives, trade-offs and a choice. A memoir may follow changing circumstances and the author's responses. Do not impose an incident-and-resolution plot on everything.
 
+Audit a dense opening for the different jobs it is doing: establishing the setting, explaining relationships, introducing people, describing an event and setting up the technical work. Separate those jobs in the order readers need them. A short product or organisational introduction and a context diagram can establish who depends on whom before an incident deserves its own section. Compress a feature catalogue to what makes the subject intelligible; preserve enough context that a fictional business has a reason to exist without the featured technology. Add headings at genuine changes of question, not merely to divide a long passage into equal pieces.
+
 Where it helps, carry a few concrete examples, objects or experiences through successive sections. Each return should develop something the reader already understands. If a section has no connection to the established question or examples, reconsider its place before adding a transition to justify it.
 
 Check local transitions, including across section headings: why does this sentence or paragraph follow the previous one? When moving from a requirement, classification or policy to a concrete example, carry the relevant requirement into the example's opening. Readers should understand why this particular person, request or event is worth following now. A heading such as "Follow one request" or a generic "Let's see what that looks like" does not establish that connection by itself.
@@ -129,6 +131,8 @@ For technical diagrams, favour dependencies, collaboration, topology and resourc
 
 Decide what each visual must establish at this point in the reading: the setting, an interaction, a detailed mechanism or a comparison. A company overview and a close-up of one service have different jobs even when they share nodes. Check that the chosen scope fits what the reader has learned so far.
 
+At context level, show the product or organisation, the people using it and the external services they depend on. Label relationships with meaningful activities, and save internal workers, pools and implementation libraries for a later close-up. When both views are useful, make the change in scope explicit so the second diagram answers a new question instead of repeating the first.
+
 - Introduce a neutral setup before overlaying a problem if the story depends on discovering it.
 - Treat size, colour, position and grouping as claims about importance and relationships. Avoid presenting a small selected part as the whole system's main activity by accident. Prominence should serve the current explanation; it need not be proportional to a traffic count or headcount.
 - In comparable diagrams, retain names, orientation and visual roles so the actual change is easy to spot.
@@ -136,6 +140,8 @@ Decide what each visual must establish at this point in the reading: the setting
 - Redraw the whole system only when the whole system matters. Later diagrams can focus on the affected part.
 - Use labels and annotations to explain the point that colour or arrows alone cannot carry. Do not imply a confirmed compromise when the diagram only shows exposure.
 - Keep diagrams compact and legible, without unnecessary nested containers or one node per sentence. Adjust orientation, label widths and spacing together: shrinking the whole diagram can make cramped text even harder to read.
+
+When recurring people help readers follow a story, introduce each through a concrete action or responsibility. Place a portrait near that person's first substantive contribution, which need not be their first mention; spread the images through the relevant sections instead of building a cast gallery. Captions should connect the person to the task or difficulty at hand. Do not add biographies, extra characters or portraits merely to fill space. Clearly label temporary photo placeholders and mark them for replacement before publication.
 
 Use existing image and caption conventions. Keep alt text descriptive and distinct from the caption. Do not alter an author-supplied image unless that change is requested; flag substantive contradictions rather than silently retouching them.
 
