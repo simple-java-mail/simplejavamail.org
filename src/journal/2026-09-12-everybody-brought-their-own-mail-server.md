@@ -30,7 +30,15 @@ RelayDesk sells a multi-tenant SaaS platform for running a customer-support desk
 
 Kestrel Outfitters is one of RelayDesk's customers. Its support agents work in RelayDesk, but their replies go out as Kestrel Support. Most tenants use RelayDesk's default sending service; Kestrel requires its replies to pass through Kestrel-controlled SMTP servers, where it already manages domain signing and mail policies.
 
+<img class="journal-persona-image" src="/assets/journal/personas/relay-desk-maya.jpg" alt="Maya at her Kestrel Outfitters desk, with her customer-support reply marked Waiting to send in RelayDesk." width="1075" height="717" loading="lazy" decoding="async">
+
+*Maya has found the parcel. Her customer is still waiting for the answer.*
+
 Maya, one of Kestrel's support agents, opens a ticket from a shopper whose parcel hasn't arrived. The tracking information shows it's waiting at a collection point, so she writes back in RelayDesk to explain where to pick it up. She clicks Send, but the message gets stuck: Kestrel rotated an SMTP password on Friday afternoon, and RelayDesk is still using the old one.
+
+<img class="journal-persona-image" src="/assets/journal/personas/relay-desk-sam.jpg" alt="Sam at his RelayDesk workstation, with Kestrel's authentication failure and Juniper's normal sending status on the dashboard." width="1075" height="717" loading="lazy" decoding="async">
+
+*Sam maintains RelayDesk's sending code, but he can't reset Kestrel's password.*
 
 Anika, Kestrel's mail administrator, can arrange the replacement credentials. Unfortunately, Sam, the Java developer investigating the failed send at RelayDesk, cannot reach her until Monday. He can fix his own application; he cannot reset somebody else's password.
 
@@ -85,6 +93,10 @@ The regional workers run where each customer's agreement permits. This picture b
 Unlike the developers at [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), Sam cannot reconfigure Kestrel's mail servers. Nor does he have [Polar Meridian's](/journal/mail-at-polar-meridian-systems.html) single corporate messaging team to agree a common service with. He gets a contact address, a configuration form and occasionally a spreadsheet.
 
 ## The settings screen opens a network connection
+
+<img class="journal-persona-image" src="/assets/journal/personas/relay-desk-anika.jpg" alt="Anika at her Kestrel Outfitters workstation, reviewing RelayDesk's mail integration with masked credentials and TLS required." width="1075" height="717" loading="lazy" decoding="async">
+
+*Anika decides how RelayDesk may use Kestrel's mail servers.*
 
 Anika supplies Kestrel's SMTP settings during onboarding, before the application is allowed to connect to its relays. The SMTP hostname looks harmless enough in a form, but it asks RelayDesk's servers to connect somewhere on the customer's behalf.
 

@@ -94,7 +94,7 @@ Our **Java service handles** 600,000 transactional and operational deliveries, p
 
 There are real examples of this kind of application-mail setup. Retarus describes [BSH bringing about a dozen cloud applications onto one mail platform](https://www.retarus.com/cases/customer-stories/bsh/) and [Solvay sending about 350,000 emails a month from SAP](https://www.retarus.com/cases/customer-stories/solvay/).
 
-<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-ravi.png" alt="Ravi at his desk, with Java code and a mail-dispatch dashboard on his monitors." width="1254" height="1254" loading="lazy" decoding="async">
+<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-ravi.jpg" alt="Ravi at his desk, with Java code and a mail-dispatch dashboard on his monitors." width="878" height="878" loading="lazy" decoding="async">
 
 *Ravi builds the mail service the application teams will share.*
 
@@ -141,7 +141,7 @@ The work we're designing sits before and around those SMTP connections. Which ap
 
 ## Everyone’s email is urgent, but Leonie just wants to log in
 
-<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-leonie.png" alt="Leonie at a distributor's desk, checking her inbox while Polar Meridian's ordering portal waits for a verification code." width="1356" height="1159" loading="lazy" decoding="async">
+<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-leonie.jpg" alt="Leonie at a distributor's desk, checking her inbox while Polar Meridian's ordering portal waits for a verification code." width="949" height="811" loading="lazy" decoding="async">
 
 *Leonie has an order ready. First, she needs that login code.*
 
@@ -433,7 +433,7 @@ The shares must fit the service's agreed allocation, accounting for other sender
 
 ### Size workers for the busy periods
 
-<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-noor.png" alt="Noor discussing relay capacity and connection counts with a colleague." width="1254" height="1254" loading="lazy" decoding="async">
+<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-noor.jpg" alt="Noor discussing relay capacity and connection counts with a colleague." width="878" height="878" loading="lazy" decoding="async">
 
 *Noor checks whether the relays can handle another replica.*
 
@@ -948,7 +948,7 @@ On her next visit, Leonie gets her login code and order confirmation while Marke
 
 With a flexible setup built to grow and a structured onboarding process, Ravi and Noor are ready for the next mail-sending challenge. They won't let another Leonie stare at an empty inbox again.
 
-<img src="/assets/journal/personas/polar-meridian-finale.png" alt="Ravi, Leonie and Noor posing beside a giant SJM logo outside Polar Meridian Systems." width="1449" height="1086" loading="lazy" decoding="async">
+<img src="/assets/journal/personas/polar-meridian-finale.jpg" alt="Ravi, Leonie and Noor posing beside a giant SJM logo outside Polar Meridian Systems." width="1014" height="760" loading="lazy" decoding="async">
 
 *The mail is flowing. The branding department got a little carried away.*
 
