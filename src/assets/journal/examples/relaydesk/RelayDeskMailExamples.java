@@ -7,6 +7,7 @@ import org.simplejavamail.api.email.config.OpenPgpSigningConfig;
 import org.simplejavamail.api.mailer.MailRehearsal;
 import org.simplejavamail.api.mailer.MailRecipientResult;
 import org.simplejavamail.api.mailer.MailRetryDisposition;
+import org.simplejavamail.api.mailer.MailSend;
 import org.simplejavamail.api.mailer.MailSendObserver;
 import org.simplejavamail.api.mailer.MailSendOutcome;
 import org.simplejavamail.api.mailer.Mailer;
@@ -60,6 +61,12 @@ public final class RelayDeskMailExamples {
         return outcome -> attemptResults.record(outcome.getInitialMessageId(), outcome);
     }
 
+    // The dispatcher has admitted the job and durably saved its attempt record.
+    // Reuse the customer's approved Mailer, with its completion observer configured.
+    public static MailSend<MailSubmissionReceipt> submitReply(Mailer customerMailer, Email reply) {
+        return customerMailer.async().sendMail(reply);
+    }
+
     // Destination approval and TLS configuration precede this dedicated, no-message probe.
     // Failure/unsupported inspection keeps onboarding or replacement paused.
     public static SmtpConnectionReport checkCredentials(Mailer mailer) {
@@ -90,6 +97,12 @@ public final class RelayDeskMailExamples {
             protectedReply.withOverrideReceivers(draft.getEffectiveEmail().getOverrideReceivers());
         }
         return protectedReply.buildEmail();
+    }
+
+    // Load the saved outcome only after authorizing access to its customer and ticket.
+    // An attempt without a receipt still retains its failure/status in the attempt record.
+    public static void presentOutcome(MailSendOutcome outcome, TicketFeedback ticket) {
+        outcome.getSubmissionReceipt().ifPresent(receipt -> presentResult(receipt, ticket));
     }
 
     // Render these facts inside the authorized ticket, not in general application logs.

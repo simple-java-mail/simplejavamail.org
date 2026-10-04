@@ -11,6 +11,7 @@ import org.simplejavamail.api.mailer.SmtpConnectionReport;
 import org.simplejavamail.api.mailer.SmtpServerResponse;
 import org.simplejavamail.converter.EmailConverter;
 import org.simplejavamail.api.mailer.MailSendOutcome;
+import org.simplejavamail.api.mailer.MailSend;
 import org.simplejavamail.api.mailer.MailSubmissionReceipt;
 import org.simplejavamail.api.mailer.MailSubmissionStatus;
 import org.simplejavamail.config.ConfigLoader;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.simplejavamail.recipient.RecipientBuilder.to;
@@ -91,6 +93,10 @@ public final class RelayDeskMailExamplesTest {
             now, null, null, now, false, false, null, new IllegalArgumentException("Synthetic preparation failure"));
         assertRecordedUnchanged(first.getId(), preparationFailure);
         check(preparationFailure.getStartedAt().isEmpty(), "A pre-send failure has no start timestamp");
+        Feedback noReceiptFeedback = new Feedback();
+        RelayDeskMailExamples.presentOutcome(preparationFailure, noReceiptFeedback);
+        check(noReceiptFeedback.updates == 0, "No receipt does not invent submission facts for the ticket");
+        submissionTests(first);
         protectionTests(mail, Path.of(args[0]));
         receiptTests();
         probeTests();
@@ -164,7 +170,10 @@ public final class RelayDeskMailExamplesTest {
         MailSubmissionReceipt partial = new MailSubmissionReceipt("<test@relaydesk.com>", null, Instant.now(),
                 MailSubmissionStatus.PARTIALLY_ACCEPTED, recipients, SAFE_TO_RETRY_UNACCEPTED);
         Feedback feedback = new Feedback();
-        RelayDeskMailExamples.presentResult(partial, feedback);
+        Instant now = Instant.now();
+        RelayDeskMailExamples.presentOutcome(new MailSendOutcome("<initial@relaydesk.com>", partial.getEmailId(),
+                now, now, now, now, false, false, partial, new IllegalStateException("Synthetic partial send")), feedback);
+        check(feedback.updates == 3, "A failed attempt can still supply its captured receipt to the ticket");
         check(feedback.recipients.equals(recipients), "Ticket retains each recipient's independent result");
         check(feedback.advice == SAFE_TO_RETRY_UNACCEPTED && feedback.candidates.equals(List.of(recipients.get(1))),
                 "Only the temporary, unsubmitted recipient is a retry candidate");
@@ -186,6 +195,24 @@ public final class RelayDeskMailExamplesTest {
 
     private static MailRecipientResult recipient(String address, MailRecipientDisposition disposition, int code) {
         return new MailRecipientResult(address, address, disposition, true, new SmtpServerResponse(code, null));
+    }
+
+    private static void submissionTests(Email reply) {
+        MailSend<MailSubmissionReceipt> handle = new MailSend<>(new CompletableFuture<>(), () -> {});
+        Mailer.Async async = (Mailer.Async) Proxy.newProxyInstance(Mailer.class.getClassLoader(),
+                new Class<?>[]{Mailer.Async.class}, (proxy, method, args) -> {
+                    check(method.getName().equals("sendMail") && args.length == 1 && args[0] == reply,
+                            "Submit the prepared reply unchanged through SJM's async API");
+                    return handle;
+                });
+        Mailer mailer = (Mailer) Proxy.newProxyInstance(Mailer.class.getClassLoader(), new Class<?>[]{Mailer.class},
+                (proxy, method, args) -> {
+                    if (method.getName().equals("async")) return async;
+                    throw new AssertionError("Unexpected call: " + method.getName());
+                });
+        check(RelayDeskMailExamples.submitReply(mailer, reply) == handle,
+                "Return SJM's send handle without blocking or creating another attempt");
+        check(!handle.getCompletion().isDone(), "Submitting does not wait for the send result");
     }
 
     private static void probeTests() {
@@ -212,12 +239,13 @@ public final class RelayDeskMailExamplesTest {
     }
 
     private static final class Feedback implements RelayDeskMailExamples.TicketFeedback {
+        int updates;
         List<MailRecipientResult> recipients, candidates;
         MailRetryDisposition advice;
         Long messageSize, maximumSize;
-        public void showRecipients(List<MailRecipientResult> values) { recipients = values; }
-        public void showRetryAdvice(MailRetryDisposition value, List<MailRecipientResult> values) { advice = value; candidates = values; }
-        public void showMessageSize(Long size, Long maximum) { messageSize = size; maximumSize = maximum; }
+        public void showRecipients(List<MailRecipientResult> values) { updates++; recipients = values; }
+        public void showRetryAdvice(MailRetryDisposition value, List<MailRecipientResult> values) { updates++; advice = value; candidates = values; }
+        public void showMessageSize(Long size, Long maximum) { updates++; messageSize = size; maximumSize = maximum; }
     }
 
     private static Email reply(SimpleJavaMail mail, UUID conversation, UUID attempt) {
