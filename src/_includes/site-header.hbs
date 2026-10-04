@@ -48,6 +48,10 @@
     </nav>
 
     <div id="header-actions" class="header-actions">
+      <button class="theme-toggle" type="button" aria-label="Dark mode" aria-pressed="false" hidden {{#if (eq theme "cyberpunk")}}disabled title="This article uses its own cyberpunk theme"{{else}}title="Switch to dark mode"{{/if}}>
+        <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20 15.6A8.5 8.5 0 0 1 8.4 4 8.5 8.5 0 1 0 20 15.6Z"/></svg>
+        <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>
+      </button>
       <a class="header-utility" href="{{nav.utility.href}}">{{nav.utility.label}}</a>
       <a class="header-cta {{activeClass nav.cta.href page.url}}" href="{{nav.cta.href}}">{{nav.cta.label}}<span class="cta-arrow" aria-hidden="true">→</span></a>
     </div>

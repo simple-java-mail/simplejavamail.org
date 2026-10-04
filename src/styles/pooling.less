@@ -1,15 +1,15 @@
 @import "tokens.less";
 
-@benefit-green: #087D49;
-@benefit-green-tint: #E4F3EA;
-@benefit-green-line: #A9D5BA;
+@benefit-green: var(--green, #087D49);
+@benefit-green-tint: var(--green-tint, #E4F3EA);
+@benefit-green-line: var(--green-line, #A9D5BA);
 
 .pooling-overview > header { margin-bottom: @space-lg; }
 .legacy-doc-content > .pooling-overview { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
 .pooling-path-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: @space-md; }
-.pooling-path-card { min-width: 0; border: 1px solid @line; border-top: 3px solid @teal; background: @white; transition: border-color 140ms ease, transform 140ms ease; }
+.pooling-path-card { min-width: 0; border: 1px solid @line; border-top: 3px solid @teal; background: @surface; transition: border-color 140ms ease, transform 140ms ease; }
 .pooling-path-card:hover { border-color: @teal; transform: translateY(-2px); }
-.pooling-path-card:focus-within { border-color: @teal; box-shadow: 0 0 0 2px fade(@teal, 22%); }
+.pooling-path-card:focus-within { border-color: @teal; box-shadow: 0 0 0 2px color-mix(in srgb, @teal 22%, transparent); }
 .pooling-path-card > a { display: flex; height: 100%; padding: @space-md; flex-direction: column; color: @ink; text-decoration: none; }
 .pooling-path-card > a:focus-visible { outline: 0; }
 .pooling-path-card header { display: grid; grid-template-columns: 1.7rem minmax(0, 1fr) auto; align-items: center; gap: @space-xs; min-height: 3.75rem; }
@@ -28,7 +28,7 @@
 .pooling-overview-links a:focus-visible { .focus-ring(); }
 
 .pooling-layer-map { max-width: none; margin: @space-lg 0 @space-xl; }
-.pooling-flowchart-wrap { max-width: 100%; overflow: hidden; border: 1px solid @line; background: @white; }
+.pooling-flowchart-wrap { max-width: 100%; overflow: hidden; border: 1px solid @line; background: @surface; }
 .pooling-flowchart { display: block; width: 100%; min-width: 0; height: auto; }
 .pooling-flowchart path, .pooling-flowchart rect { vector-effect: non-scaling-stroke; }
 .pooling-flow-bus { fill: none; stroke: @benefit-green; stroke-width: 1.6; }
@@ -36,16 +36,16 @@
 .pooling-flow-dependency { fill: none; marker-end: url(#pooling-flow-dependency-arrow); stroke: @steel-light; stroke-width: 1.6; stroke-dasharray: 7 6; }
 .pooling-flow-use-arrow { fill: @benefit-green; }
 .pooling-flow-dependency-arrow { fill: @steel-light; }
-.pooling-flow-node rect { fill: @white; stroke: @steel-light; stroke-width: 1.5; }
+.pooling-flow-node rect { fill: @surface; stroke: @steel-light; stroke-width: 1.5; }
 .pooling-flow-node text { fill: @ink; font-family: @font-mono; font-size: 11.5px; font-weight: 600; text-anchor: middle; }
-.pooling-flow-application rect { fill: @ink; stroke: @ink; }
+.pooling-flow-application rect { fill: @strong-surface; stroke: @ink; }
 .pooling-flow-application text { fill: @white; font-family: @font-sans; font-size: 17px; }
 .pooling-flow-no-pool text { fill: @ink; font-family: @font-sans; font-size: 13px; }
 .pooling-flow-no-pool .pooling-flow-no-pool-badge { fill: @amber; stroke: @amber; }
 .pooling-flow-no-pool .pooling-flow-no-pool-badge-text { fill: @white; font-family: @font-mono; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; }
 .pooling-flow-sjm rect { fill: @benefit-green-tint; stroke: @benefit-green; }
 .pooling-flow-sjm text { fill: @benefit-green; }
-.pooling-flow-usecase rect { fill: @white; stroke: @line; stroke-width: 1; transition: fill 140ms ease, stroke 140ms ease; }
+.pooling-flow-usecase rect { fill: @surface; stroke: @line; stroke-width: 1; transition: fill 140ms ease, stroke 140ms ease; }
 .pooling-flow-usecase text { fill: @ink; font-family: @font-sans; font-size: 12px; font-weight: 600; text-anchor: middle; }
 .pooling-flow-usecase .pooling-flow-number { fill: @teal-deep; font-family: @font-mono; font-size: 10px; text-anchor: start; }
 .pooling-flow-usecase:hover rect { fill: @benefit-green-tint; stroke: @benefit-green; }
@@ -56,11 +56,11 @@
 .pool-owner-rule strong { display: block; margin-bottom: @space-xs; color: @ink; font-family: @font-mono; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; }
 
 .ownership-lanes { margin: @space-lg 0 @space-xl; border-top: 1px solid @ink; }
-.ownership-lifecycle { display: grid; grid-template-columns: minmax(235px, 1.05fr) repeat(3, minmax(0, 1fr)); border-bottom: 1px solid @line; background: @white; }
+.ownership-lifecycle { display: grid; grid-template-columns: minmax(235px, 1.05fr) repeat(3, minmax(0, 1fr)); border-bottom: 1px solid @line; background: @surface; }
 .ownership-lifecycle::before { content: ""; }
 .ownership-lifecycle span { position: relative; padding: 0.72rem @space-lg; color: @teal-deep; font-family: @font-mono; font-size: 0.59rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .ownership-lifecycle span:not(:last-child)::after { position: absolute; right: -0.24rem; color: @benefit-green; content: "→"; font-size: 0.8rem; }
-.ownership-lane { display: grid; grid-template-columns: minmax(235px, 1.05fr) minmax(0, 3fr); border-bottom: 1px solid @line; background: @white; }
+.ownership-lane { display: grid; grid-template-columns: minmax(235px, 1.05fr) minmax(0, 3fr); border-bottom: 1px solid @line; background: @surface; }
 .legacy-doc-content .ownership-lane h3 { min-width: 0; margin: 0; padding: 1rem @space-lg 1rem 0; font-size: 0.78rem; line-height: 1.45; }
 .ownership-lane h3 a { display: grid; grid-template-columns: 1.65rem minmax(0, 1fr); color: @ink; text-decoration: none; }
 .ownership-lane h3 a:hover { color: @teal-deep; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
@@ -69,7 +69,7 @@
 .legacy-doc-content .ownership-lane ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: none; margin: 0; padding: 0; list-style: none; }
 .legacy-doc-content .ownership-lane li { position: relative; display: flex; min-width: 0; margin: 0; padding: 1rem @space-lg; align-items: center; }
 .legacy-doc-content .ownership-lane li + li { margin-top: 0; }
-.ownership-lane li:not(:last-child)::after { position: absolute; top: 50%; right: -0.24rem; z-index: 1; padding: 0.12rem 0; background: @white; color: @steel-light; content: "→"; font-family: @font-mono; font-size: 0.72rem; transform: translateY(-50%); }
+.ownership-lane li:not(:last-child)::after { position: absolute; top: 50%; right: -0.24rem; z-index: 1; padding: 0.12rem 0; background: @surface; color: @steel-light; content: "→"; font-family: @font-mono; font-size: 0.72rem; transform: translateY(-50%); }
 .ownership-lane li > b { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .legacy-doc-content .ownership-lane p { max-width: none; margin: 0; color: @steel; font-size: 0.74rem; line-height: 1.5; }
 .ownership-lane p strong { color: @ink; font-weight: 600; }
@@ -77,9 +77,9 @@
 
 .pooling-option { padding-top: @space-sm; }
 .pooling-option-meta { display: flex; flex-wrap: wrap; gap: @space-xs; margin-bottom: @space-md; }
-.pooling-option-meta span { padding: 0.28rem 0.55rem; border: 1px solid @line; background: @white; color: @steel; font-family: @font-mono; font-size: 0.58rem; letter-spacing: 0.03em; text-transform: uppercase; }
-.pooling-option-meta .pooling-owner { border-color: fade(@teal, 55%); background: @teal-tint; color: @teal-deep; }
-.pooling-benefit { position: relative; margin: @space-lg 0 @space-md; padding: @space-md @space-lg @space-md 3.35rem; border: 1px solid @benefit-green-line; border-left: 4px solid @benefit-green; background: linear-gradient(110deg, @benefit-green-tint 0%, fade(@benefit-green-tint, 42%) 100%); box-shadow: 0 4px 0 fade(@benefit-green, 7%); }
+.pooling-option-meta span { padding: 0.28rem 0.55rem; border: 1px solid @line; background: @surface; color: @steel; font-family: @font-mono; font-size: 0.58rem; letter-spacing: 0.03em; text-transform: uppercase; }
+.pooling-option-meta .pooling-owner { border-color: color-mix(in srgb, @teal 55%, transparent); background: @teal-tint; color: @teal-deep; }
+.pooling-benefit { position: relative; margin: @space-lg 0 @space-md; padding: @space-md @space-lg @space-md 3.35rem; border: 1px solid @benefit-green-line; border-left: 4px solid @benefit-green; background: linear-gradient(110deg, @benefit-green-tint 0%, color-mix(in srgb, @benefit-green-tint 42%, transparent) 100%); box-shadow: 0 4px 0 color-mix(in srgb, @benefit-green 7%, transparent); }
 .pooling-benefit::before { position: absolute; top: @space-md; left: @space-md; display: grid; width: 1.35rem; height: 1.35rem; place-items: center; border-radius: 50%; background: @benefit-green; color: @white; content: "✓"; font-family: @font-mono; font-size: 0.72rem; font-weight: 600; }
 .pooling-benefit strong { display: block; margin-bottom: @space-xs; color: @benefit-green; font-family: @font-mono; font-size: 0.64rem; letter-spacing: @tracking-label; text-transform: uppercase; }
 .legacy-doc-content .pooling-benefit p { max-width: none; margin: 0; color: @ink; font-size: 0.84rem; line-height: 1.58; }

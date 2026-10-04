@@ -15,6 +15,7 @@ series:
   total: 3
 draft: true
 mermaid: true
+theme: cyberpunk
 typora-root-url: ..
 typora-copy-images-to: ../assets/journal
 banner-type: note
@@ -23,13 +24,14 @@ banner-body: |-
   Welcome to the Case Study series!
 
   This one grew out of a question: when would you actually need multiple SMTP clusters in one application? Your company's mail infrastructure might already take care of that. But what if your customers insist on using their own mail servers? I wanted to put Simple Java Mail's clustering support to work in that situation and explore what we'd still need to build ourselves. If you've ever been handed somebody else's SMTP settings and told to make it work, this one's for you.
----
 
-<!-- TODO: Author review of the narrative, fictional personas and examples; confirm the provisional publication date. -->
+  Also, it's cyberpunk for some reason.
+---
 
 RelayDesk gives customer-support teams one place to manage tickets, customer history and follow-ups. Agents can hand work to colleagues, track a conversation and reply to customers without leaving the product; email is one of the channels it supports.
 
-<div class="journal-diagram-wide">
+<!-- Editable Mermaid source for the infographic below. Template contents do not display or run. -->
+<template id="relaydesk-support-network-source" data-pagefind-ignore>
 
 ```mermaid
 %%{init: { "flowchart": { "padding": 10, "wrappingWidth": 280, "nodeSpacing": 24, "rankSpacing": 40 } } }%%
@@ -61,31 +63,42 @@ flowchart TB
     defaultMail -->|deliver replies| customers
     customers -.->|ask for help<br/>continue conversations| relaydesk
 
-    classDef person fill:#FFFFFF,stroke:#5B6872,color:#13212B
-    classDef product fill:#DCECF6,stroke:#2F6F9F,color:#13212B
-    classDef external fill:#F6F7F3,stroke:#87929A,color:#37474F
+    classDef person fill:#191F2B,stroke:#9DA9B8,color:#D2D7DF
+    classDef product fill:#20343F,stroke:#7BCBD6,color:#D2D7DF
+    classDef external fill:#252332,stroke:#B99AC8,color:#D2D7DF
     class kestrelAgents,juniperAgents,otherAgents,customers person
     class relaydesk product
     class kestrelMail,juniperMail,defaultMail external
 ```
 
-*The teams work in RelayDesk; their replies leave through the mail service each company has approved.*
+</template>
 
-</div>
+[![RelayDesk connects Kestrel Outfitters, Juniper Travel and other support teams with their customers. Replies use each company's approved mail service.](/assets/journal/relaydesk-support-network.jpg "RelayDesk connects support teams with the people they help")](/assets/journal/relaydesk-support-network.jpg)
+
+*The teams work in RelayDesk; their replies leave through the mail service each company has approved.*
 
 Kestrel Outfitters is one of RelayDesk's customers. Its support agents work in RelayDesk, but their replies go out as Kestrel Support. Most tenants use RelayDesk's default sending service; Kestrel requires its replies to pass through Kestrel-controlled SMTP servers, where it already manages domain signing and mail policies.
 
 ## Maya has the answer and clicks Send, but the customer hears nothing
 
-<img class="journal-persona-image" src="/assets/journal/personas/relay-desk-maya.jpg" alt="Maya at her Kestrel Outfitters desk, with her customer-support reply marked Waiting to send in RelayDesk." width="1075" height="717" loading="lazy" decoding="async">
+<div class="journal-persona-block journal-persona-intro">
+<header class="journal-persona-header"><strong>Maya</strong><span>Support agent · Kestrel Outfitters</span><span class="journal-persona-stats">[+2 Investigation · +1 Diplomacy · −1 Sysadmin]</span></header>
+
+<a href="/assets/journal/personas/relay-desk-maya.jpg"><img class="journal-persona-image" src="/assets/journal/personas/relay-desk-maya.jpg" alt="Maya at her Kestrel Outfitters desk, with her customer-support reply marked Waiting to send in RelayDesk." title="Maya · Kestrel Outfitters" width="1075" height="717" loading="lazy" decoding="async"></a>
 
 *Maya has found the parcel. Her customer is still waiting for the answer.*
 
+<div class="journal-persona-copy">
+
 Maya, one of Kestrel's support agents, opens a ticket from a shopper whose parcel hasn't arrived. The tracking information shows it's waiting at a collection point, so she writes back in RelayDesk to explain where to pick it up. She clicks Send, but the message gets stuck: Kestrel rotated an SMTP password on Friday afternoon, and RelayDesk is still using the old one.
 
-<div class="journal-persona-block">
+</div>
+</div>
 
-<img class="journal-persona-image image-align-left" src="/assets/journal/personas/relay-desk-sam.jpg" alt="Sam at his RelayDesk workstation, with Kestrel's authentication failure and Juniper's normal sending status on the dashboard." width="1075" height="717" loading="lazy" decoding="async">
+<div class="journal-persona-block journal-persona-intro journal-persona-intro--portrait-left">
+<header class="journal-persona-header"><strong>Sam</strong><span>Java developer · RelayDesk</span><span class="journal-persona-stats">[+2 Debugging · +1 Engineering · −1 Admin rights]</span></header>
+
+<a href="/assets/journal/personas/relay-desk-sam.jpg"><img class="journal-persona-image image-align-left" src="/assets/journal/personas/relay-desk-sam.jpg" alt="Sam at his RelayDesk workstation, with Kestrel's authentication failure and Juniper's normal sending status on the dashboard." title="Sam · RelayDesk" width="1075" height="717" loading="lazy" decoding="async"></a>
 
 *Sam maintains RelayDesk's sending code, but he can't reset Kestrel's password.*
 
@@ -93,11 +106,10 @@ Maya, one of Kestrel's support agents, opens a ticket from a shopper whose parce
 
 Sam, the Java developer investigating the failed send at RelayDesk, needs replacement credentials from Anika, Kestrel's mail administrator. Unfortunately, he cannot reach her until Monday. He can fix his own application; he cannot reset somebody else's password.
 
-Let's give Sam a better answer than restarting the application and hoping. RelayDesk, its customers and the people here are fictional; we'll use Simple Java Mail for the sending work, with customer permissions, job scheduling and configuration changes handled by RelayDesk's application.
-
+</div>
 </div>
 
-</div>
+Let's give Sam a better answer than restarting the application and hoping. We'll use Simple Java Mail for the sending work, with customer permissions, job scheduling and configuration changes handled by RelayDesk's application.
 
 ## The setup
 
@@ -107,35 +119,37 @@ Juniper Travel gives RelayDesk one SMTP address to send through; its mail provid
 
 ```mermaid
 %% journal: compact
-%%{init: { "flowchart": { "padding": 8, "wrappingWidth": 220, "nodeSpacing": 24, "rankSpacing": 32 } } }%%
+%%{init: { "flowchart": { "curve": "stepAfter", "padding": 8, "wrappingWidth": 320, "nodeSpacing": 24, "rankSpacing": 32 } } }%%
 flowchart TB
     accTitle: RelayDesk uses the sending service approved by each customer
-    accDescr: Support agents use RelayDesk to save replies. Regional dispatch workers use Simple Java Mail either through RelayDesk's default sending service or through customer-approved mail services. Kestrel has separate European and North American relay pairs; Juniper has one managed endpoint. Anika administers Kestrel's relays, not RelayDesk's workers. The diagram groups deployments logically, not into a cross-region pool.
+    accDescr: Support agents use RelayDesk to save replies. Sam maintains its regional dispatch workers, which use Simple Java Mail either through RelayDesk's default sending service or through customer-approved mail services. Kestrel has separate European and North American relay pairs; Juniper has one managed endpoint. Anika administers Kestrel's relays, not RelayDesk's workers. The diagram groups deployments logically, not into a cross-region pool.
 
-    agents(["👤 Maya and other support agents"])
+    agents(["<span class='diagram-person'><img src='/assets/journal/personas/relay-desk-maya-portrait.jpg' width='56' height='56' alt=''/><span>Maya and other<br/>support agents</span></span>"])
     subgraph relaydesk["RelayDesk · customer-support SaaS"]
-        portal["Support conversations"]
-        store[("Saved replies<br/>+ send attempts")]
-        workers["Regional dispatch workers<br/>Simple Java Mail"]
+        portal@{ img: "/assets/journal/relaydesk-cyberpunk-support-conversations-node.png", label: "Support conversations", h: 85, pos: "b", constraint: "on" }
+        store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>+ send attempts", h: 85, pos: "b", constraint: "on" }
+        workers@{ img: "/assets/journal/relaydesk-cyberpunk-dispatch-workers-node.png", label: "Regional dispatch workers<br/>Simple Java Mail", h: 85, pos: "b", constraint: "on" }
         portal --> store
         store --> workers
     end
     agents --> portal
+    sam(["<span class='diagram-person'><img src='/assets/journal/personas/relay-desk-sam-portrait.jpg' width='56' height='56' alt=''/><span>Sam<br/>RelayDesk developer</span></span>"])
+    sam -.->|maintains| workers
 
-    defaultMail["RelayDesk default<br/>sending service"]
-    kestrel["Kestrel Outfitters<br/>EU relay pair · US relay pair<br/>separate regional groups"]
-    juniper["Juniper Travel<br/>managed SMTP endpoint"]
+    defaultMail@{ img: "/assets/journal/relaydesk-cyberpunk-default-smtp-node.png", label: "RelayDesk default<br/>sending service", h: 85, pos: "b", constraint: "on" }
+    kestrel@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-node.png", label: "Kestrel Outfitters<br/>EU relay pair · US relay pair<br/>separate regional groups", h: 85, pos: "b", constraint: "on" }
+    juniper@{ img: "/assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png", label: "Juniper Travel<br/>managed SMTP endpoint", h: 85, pos: "b", constraint: "on" }
     workers ---> defaultMail
     workers ---> kestrel
     workers ---> juniper
-    anika(["👤 Anika<br/>Kestrel mail administrator"])
+    anika(["<span class='diagram-person'><img src='/assets/journal/personas/relay-desk-anika-portrait.jpg' width='56' height='56' alt=''/><span>Anika<br/>Kestrel mail administrator</span></span>"])
     kestrel -.->|administered by| anika
 
-    classDef person fill:#FFFFFF,stroke:#5B6872,color:#13212B
-    classDef component fill:#DCECF6,stroke:#2F6F9F,color:#13212B
-    classDef storage fill:#E6E8EA,stroke:#757D84,color:#37474F
-    classDef external fill:#F6F7F3,stroke:#87929A,color:#37474F
-    class agents,anika person
+    classDef person fill:#0D232C,stroke:#35D9EF,color:#E4E9EE
+    classDef component fill:none,stroke:none,color:#E4E9EE
+    classDef storage fill:none,stroke:none,color:#E4E9EE
+    classDef external fill:none,stroke:none,color:#E4E9EE
+    class agents,sam,anika person
     class portal,workers component
     class store storage
     class defaultMail,kestrel,juniper external
@@ -143,17 +157,25 @@ flowchart TB
 
 *Maya clicks Send in RelayDesk; Kestrel decides which mail servers can carry her reply.*
 
-The regional workers run where each customer's agreement permits. This picture brings them together for us to look at; it doesn't put their connections into one worldwide pool.
+RelayDesk runs each customer's dispatch workers in the agreed regions, with each deployment maintaining its own connection pools.
 
-Unlike the developers at [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), Sam cannot reconfigure Kestrel's mail servers. Nor does he have [Polar Meridian's](/journal/mail-at-polar-meridian-systems.html) single corporate messaging team to agree a common service with. He gets a contact address, a configuration form and occasionally a spreadsheet.
+Unlike the two developers at [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), Sam cannot reconfigure his customers' mail servers. Nor does he have [Polar Meridian's](/journal/mail-at-polar-meridian-systems.html) dedicated corporate messaging team to agree a common enterprise service with. Instead, he gets a contact address, a configuration form and occasionally a spreadsheet; Sam gets to point the SaaS tenant's outgoing mail at the customer's chosen servers, and that's mostly it. "Work work" and "Job's done!" is more his thing, good little peon that he is.
 
-## The settings screen opens a network connection
+## Sam checks a customer's SMTP settings before connecting
 
-<img class="journal-persona-image" src="/assets/journal/personas/relay-desk-anika.jpg" alt="Anika at her Kestrel Outfitters workstation, reviewing RelayDesk's mail integration with masked credentials and TLS required." width="1075" height="717" loading="lazy" decoding="async">
+<div class="journal-persona-block journal-persona-intro">
+<header class="journal-persona-header"><strong>Anika</strong><span>Mail administrator · Kestrel Outfitters</span><span class="journal-persona-stats">[+2 Sysadmin · +1 Security · −1 Weekend availability]</span></header>
+
+<a href="/assets/journal/personas/relay-desk-anika.jpg"><img class="journal-persona-image" src="/assets/journal/personas/relay-desk-anika.jpg" alt="Anika at her Kestrel Outfitters workstation, reviewing RelayDesk's mail integration with masked credentials and TLS required." title="Anika · Kestrel Outfitters" width="1075" height="717" loading="lazy" decoding="async"></a>
 
 *Anika decides how RelayDesk may use Kestrel's mail servers.*
 
-Anika supplies Kestrel's SMTP settings during onboarding, before the application is allowed to connect to its relays. The SMTP hostname looks harmless enough in a form, but it asks RelayDesk's servers to connect somewhere on the customer's behalf.
+<div class="journal-persona-copy">
+
+When Kestrel first onboarded, Anika supplied its SMTP settings before RelayDesk was allowed to connect to its relays. The SMTP hostname looks harmless enough in a form, but it asks RelayDesk's servers to connect somewhere on the customer's behalf.
+
+</div>
+</div>
 
 The onboarding checks cover a few different things:
 
@@ -164,32 +186,7 @@ The onboarding checks cover a few different things:
 
 [OWASP's SSRF guidance](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html) includes SMTP among the protocols an attacker can abuse. Validating a hostname once isn't enough, and configuring a secure Mailer doesn't replace the network checks.
 
-Kestrel's relays already handle DKIM; Anika confirms the SPF and DMARC setup too. Its wholesale-support conversations have an additional requirement: business partners exchange commercial attachments using [OpenPGP](/security.html#section-sending-openpgp). Those replies must be signed and encrypted. Maya's parcel reply doesn't need a shopper to install PGP software.
-
-With `openpgp-module` installed, Sam's helper resolves approved keys for the prepared message's actual recipients:
-
-```java
-MailRehearsal draft = mailer.rehearse(reply, false);
-OpenPgpEncryptionConfig.OpenPgpEncryptionConfigBuilder encryption =
-    OpenPgpEncryptionConfig.builder();
-for (String address : draft.getEnvelopeRecipients()) {
-    encryption.addRecipientPublicKeyRing(
-        keys.requireRecipientKey(customerId, address));
-}
-EmailPopulatingBuilder protectedReply = mail.emailBuilder()
-    .copying(draft.getEffectiveEmail())
-    .ignoringDefaults().ignoringOverrides() // already applied before key selection
-    .signWithOpenPgp(keys.requireSigningConfig(customerId))
-    .encryptWithOpenPgp(encryption.build());
-if (!draft.getEffectiveEmail().getOverrideReceivers().isEmpty()) {
-    protectedReply.withOverrideReceivers(draft.getEffectiveEmail().getOverrideReceivers());
-}
-Email encryptedReply = protectedReply.buildEmail();
-```
-
-*Look up each partner's approved key under Kestrel's account, not somebody else's.*
-
-The application's key directory verifies identities and approvals; a missing key holds the reply, with no plaintext fallback. This preliminary rehearsal skips cryptography; sending the protected reply performs it. Protection covers outgoing content, not RelayDesk's stored conversation. [Polar Meridian uses S/MIME](/journal/mail-at-polar-meridian-systems.html#one-protected-message-several-partners) for its partners' different requirements.
+Kestrel's relays already handle [DKIM](/journal/your-mail-server-works-for-a-troll-farm-now.html#spf-dkim-and-dmarc); Anika confirms the SPF and DMARC setup too. Its wholesale-support conversations have an additional requirement: business partners exchange commercial attachments using [OpenPGP](/security.html#section-sending-openpgp). Those replies must be signed and encrypted. Maya's parcel reply doesn't need a shopper to install PGP software.
 
 ## Maya's reply cannot borrow Juniper's connection
 
@@ -275,7 +272,35 @@ The probe uses a dedicated connection, outside the pool. It sends no message and
 
 SJM checks the capabilities on the actual sending connection. A missing required capability stops submission; Sam doesn't enable [legacy compatibility](/configuration.html#section-legacy-smtp-content) across all customers to make the warning disappear.
 
-Idle expiry only deals with connections. Retiring a whole route means stopping its admission of new work and closing its Mailers after accepted sends finish; deleting a registry entry does neither. We'll use that same process when Anika supplies the replacement password.
+The Mailers are reusable, but their lifetime needs managing too. Idle expiry only closes connections. To retire a route, RelayDesk stops accepting new jobs for it, waits for admitted sends to finish and closes its Mailers; deleting a registry entry does none of that. We'll use the same process when Anika supplies the replacement password.
+
+### Protect Kestrel's wholesale replies
+
+With Kestrel's Mailers configured, Sam can prepare its wholesale replies for the partners who require OpenPGP. `wholesaleReply` is the `Email` containing their commercial attachments; `keys` is RelayDesk's tenant-specific key directory. With `openpgp-module` installed, the helper uses `kestrelEu1` to resolve the message's actual recipients before looking up their approved keys:
+
+```java
+String customerId = "kestrel";
+MailRehearsal draft = kestrelEu1.rehearse(wholesaleReply, false);
+OpenPgpEncryptionConfig.OpenPgpEncryptionConfigBuilder encryption =
+    OpenPgpEncryptionConfig.builder();
+for (String address : draft.getEnvelopeRecipients()) {
+    encryption.addRecipientPublicKeyRing(
+        keys.requireRecipientKey(customerId, address));
+}
+EmailPopulatingBuilder protectedReply = mail.emailBuilder()
+    .copying(draft.getEffectiveEmail())
+    .ignoringDefaults().ignoringOverrides() // already applied before key selection
+    .signWithOpenPgp(keys.requireSigningConfig(customerId))
+    .encryptWithOpenPgp(encryption.build());
+if (!draft.getEffectiveEmail().getOverrideReceivers().isEmpty()) {
+    protectedReply.withOverrideReceivers(draft.getEffectiveEmail().getOverrideReceivers());
+}
+Email encryptedReply = protectedReply.buildEmail();
+```
+
+*Look up each partner's approved key under Kestrel's account, not somebody else's.*
+
+The application's key directory verifies identities and approvals; a missing key holds the reply, with no plaintext fallback. This preliminary rehearsal skips cryptography; sending the protected reply performs it. Protection covers outgoing content, not RelayDesk's stored conversation. [Polar Meridian uses S/MIME](/journal/mail-at-polar-meridian-systems.html#one-protected-message-several-partners) for its partners' different requirements.
 
 ## Juniper's replies still need to leave
 
@@ -285,31 +310,33 @@ RelayDesk's dispatcher polls a durable job store and gives eligible customers a 
 
 ```mermaid
 %% journal: compact
-%%{init: { "flowchart": { "padding": 8, "wrappingWidth": 220, "nodeSpacing": 32, "rankSpacing": 40 } } }%%
+%%{init: { "flowchart": { "padding": 8, "wrappingWidth": 320, "nodeSpacing": 32, "rankSpacing": 40 } } }%%
 flowchart LR
     accTitle: A blocked customer does not occupy the whole dispatcher
     accDescr: Saved replies wait in durable storage. RelayDesk's dispatcher checks customer limits before submitting work. Kestrel's paused route leaves its replies in storage, while Juniper's eligible replies go to its own Mailer. Simple Java Mail's connection pools do not implement this scheduling policy.
 
-    store[("Saved replies ⛁")]
-    dispatcher["RelayDesk dispatcher<br/>customer turn + available capacity"]
-    kestrel["Kestrel · route paused<br/>keep jobs in storage"]
-    juniper["Juniper · ready<br/>submit through its Mailer"]
+    store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies", h: 85, pos: "b", constraint: "on" }
+    dispatcher@{ img: "/assets/journal/relaydesk-cyberpunk-dispatcher-node.png", label: "RelayDesk dispatcher<br/>customer turn + available capacity", h: 85, pos: "b", constraint: "on" }
+    kestrel@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-node.png", label: "Kestrel · route paused<br/>keep jobs in storage", h: 85, pos: "b", constraint: "on" }
+    juniper@{ img: "/assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png", label: "Juniper · ready<br/>submit through its Mailer", h: 85, pos: "b", constraint: "on" }
     store --> dispatcher
     dispatcher ---> kestrel
     dispatcher ---> juniper
-    classDef waiting fill:#FFF3D8,stroke:#C28A22,color:#3A2A0E
-    classDef ready fill:#E4F1E9,stroke:#427B58,color:#183C27
-    classDef storage fill:#E6E8EA,stroke:#757D84,color:#37474F
+    classDef waiting fill:none,stroke:none,color:#EBA680
+    classDef ready fill:none,stroke:none,color:#A4E7B1
+    classDef storage fill:none,stroke:none,color:#E4E9EE
     class kestrel waiting
     class juniper ready
-    class store storage
+    class store,dispatcher storage
+    linkStyle 1 stroke:#EBA680
+    linkStyle 2 stroke:#A4E7B1
 ```
 
 *Kestrel waits for its administrator. Juniper doesn't have to wait with it.*
 
 The four-entry async queue in the helper is a short local buffer **per Mailer**. When it fills, SJM's [queue-full rejection](/sending-and-execution.html#section-async-queue) means that attempt wasn't admitted. The dispatcher releases its reservation and defers the job; it doesn't spin or fall back to sending on the caller's thread. Other failures need the submission result checked before deciding whether another attempt is safe.
 
-A worker waiting for a connection still uses execution capacity. The claim timeout limits that wait, while the [send deadline](/sending-and-execution.html#section-send-deadlines) limits the attempt as a whole under the supported transport configuration. Neither selects the next customer. RelayDesk's dispatcher does that, taking all of a customer's Mailers and dispatch processes into account.
+A worker waiting for a connection still uses execution capacity. The claim timeout limits that wait, while the [send deadline](/sending-and-execution.html#section-send-deadlines) limits the whole attempt with the managed SMTP transport used here. Neither selects the next customer. RelayDesk's dispatcher does that, taking all of a customer's Mailers and dispatch processes into account.
 
 The dispatcher can also pace Kestrel's backlog when it recovers. Anika doesn't need a second outage caused by recovery from the first.
 
@@ -324,11 +351,23 @@ MailSendObserver observer = outcome ->
     attemptResults.record(outcome.getInitialMessageId(), outcome);
 ```
 
-*The SMTP result returns to the attempt that already knows Maya's ticket and configuration revision.*
+*Connect the send result to the attempt that already knows Maya's ticket and configuration revision.*
 
 `attemptResults` is RelayDesk's persistence adapter. The fixed initial Message-ID remains its lookup key even if the transport reports another ID. `MailSendOutcome` includes the stages' timestamps, not live status-change events.
 
-From that evidence, RelayDesk can show something useful in the ticket:
+Once the dispatcher has admitted Maya's job and saved its attempt record, it submits the prepared `Email reply` through one of Kestrel's European Mailers:
+
+```java
+MailSend<MailSubmissionReceipt> send = kestrelEu1.async().sendMail(reply);
+```
+
+*Submit Maya's reply through Kestrel; the configured observer records how the attempt finished.*
+
+`MailSend` is SJM's asynchronous send handle. Its `getCompletion()` lets a caller await the result; the observer above also captures failed attempts, including those that never produce a submission receipt.
+
+### Show Maya what happened to her attempt
+
+With the attempt result saved, RelayDesk can show Maya something useful in the ticket:
 
 | Evidence in RelayDesk | What Maya sees |
 | --- | --- |
@@ -338,15 +377,18 @@ From that evidence, RelayDesk can show something useful in the ticket:
 | Partial or unknown acceptance | Needs investigation; no automatic resend of the whole reply |
 | A later, validated delivery failure report | Bounced after submission |
 
-Those are product labels, not SJM enum names. The authorized ticket can show size facts from a receipt too, without exposing passwords or protocol transcripts:
+Those are product labels, not SJM enum names. When Maya opens the ticket, RelayDesk loads the saved `MailSendOutcome outcome` for its attempt after checking her access. Its `ticket` UI adapter can show size facts from the optional submission receipt without exposing passwords or protocol transcripts:
 
 ```java
-ticket.showMessageSize(receipt.getMessageSize(), receipt.getServerMaximumMessageSize());
+outcome.getSubmissionReceipt().ifPresent(receipt ->
+    ticket.showMessageSize(receipt.getMessageSize(), receipt.getServerMaximumMessageSize()));
 ```
 
 *An oversized attachment gets an explanation: encoded message 12 MB, relay maximum 10 MB. Illustrative values; either fact may be unavailable.*
 
-Another support reply includes a buyer, a warehouse contact and a former colleague. With partial sending enabled, its [receipt](/analyzing-send-results.html#section-partial-send) can distinguish all three:
+### Retry the warehouse's copy, not the buyer's
+
+Another support reply includes a buyer, a warehouse contact and a former colleague. With partial sending enabled, the [receipt](/analyzing-send-results.html#section-partial-send) in this reply's saved `outcome` can distinguish all three:
 
 | Recipient | Submission result | Next step |
 | --- | --- | --- |
@@ -355,13 +397,15 @@ Another support reply includes a buyer, a warehouse contact and a former colleag
 | Former colleague | Permanently rejected at RCPT | Correct the contact details |
 
 ```java
-ticket.showRecipients(receipt.getRecipientResults());
-ticket.showRetryAdvice(receipt.getRetryDisposition(), receipt.getRetryableRecipients());
+outcome.getSubmissionReceipt().ifPresent(receipt -> {
+    ticket.showRecipients(receipt.getRecipientResults());
+    ticket.showRetryAdvice(receipt.getRetryDisposition(), receipt.getRetryableRecipients());
+});
 ```
 
 *The warehouse can be retried without sending the buyer another copy.*
 
-`ticket` is RelayDesk's UI adapter. These are candidates, not scheduled retries: the dispatcher still checks authorization and backoff. If final acceptance is unknown, the attempt needs investigation. Without partial sending, the recipient rejection would prevent DATA submission for the buyer too.
+These are candidates, not scheduled retries: the dispatcher still checks authorization and backoff. If final acceptance is unknown, the attempt needs investigation. Without partial sending, the recipient rejection would prevent DATA submission for the buyer too.
 
 The bounded `observerWorkers` executor and persistence adapter must report failed writes. [Polar Meridian covers those failures](/journal/mail-at-polar-meridian-systems.html#when-the-archive-is-slower-than-smtp); here too, a missing result after a crash calls for investigation, not an automatic resend.
 
@@ -372,7 +416,10 @@ By Monday, Sam has a definite authentication failure for Maya's attempt and Anik
 RelayDesk's route manager replaces Kestrel's affected European relay group as a unit. During the short pause, Maya can still save replies and Juniper keeps sending:
 
 ```mermaid
-%%{init: { "sequence": { "mirrorActors": false, "actorMargin": 24, "width": 125, "height": 65, "messageMargin": 32 } } }%%
+%%{init: { "sequence": { "mirrorActors": false, "actorMargin": 24, "width": 125, "height": 125, "messageMargin": 32 } } }%%
+%% journal-portrait: admin /assets/journal/personas/relay-desk-anika-portrait.jpg
+%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png
+%% journal-node: workers /assets/journal/relaydesk-cyberpunk-dispatch-workers-node.png
 sequenceDiagram
     accTitle: Replacing Kestrel's approved mail configuration
     accDescr: Anika approves replacement credentials. RelayDesk's route manager stops admitting work to Kestrel EU across its dispatch processes, waits for their in-flight sends, closes the old Mailers, constructs the complete replacement group and tests it. Admission resumes only if the replacement group passes the checks. Other customer routes continue throughout.
@@ -392,15 +439,13 @@ sequenceDiagram
 
 The pause covers every dispatch process using this route: no job may slip in while the old Mailers close. Once admitted sends finish, [`Mailer.close()`](/sending-and-execution.html#section-mailer-lifecycle) retires each member. Sam repeats `probeConnection(true)` on every replacement and the controlled-send test before resuming. A failed replacement stays paused and its new Mailers are closed; it doesn't fall back to the old credentials.
 
-For this password change, the replacement keeps the group's key and pool policy. The **first cluster registration establishes the pool settings**; reusing the key is not a way to change those settings. Closing the last Mailer also mustn't be treated as erasing every retained cluster definition, so allocating a fresh UUID on every edit isn't a complete long-running cleanup strategy.
-
-<!-- TODO: Integration-test route-wide admission/pause races, draining and partial replacement across processes, plus repeated retirement and retained cluster-settings growth, before publishing a complete executable route registry. The helper below configures Mailers; it does not implement that registry. -->
+For this password change, the replacement keeps the group's key and pool policy. The **first cluster registration establishes the pool settings**; changing them requires a separate plan, not just rebuilding under the same key. The [integration notes](/assets/journal/examples/relaydesk/README.md) cover the additional cleanup needed when routes are repeatedly created and retired.
 
 Credential revocation during a security incident would need a different decision about sends already in progress. Here, a visible pause is sufficient. Once the test passes, the dispatcher schedules a **new attempt** for Maya's confirmed authentication failure, linked to the same reply but using revision 8. Any ambiguous attempt remains out of the automatic retry queue.
 
 ### Does this need service discovery?
 
-Juniper's provider can change the servers behind its managed hostname without RelayDesk having to discover them individually. Even if RelayDesk adopts [Spring Cloud refresh scope](https://docs.spring.io/spring-cloud-commons/reference/spring-cloud-commons/application-context-services.html#refresh-scope) to rebuild configured beans, it still needs the admission, drain and replacement process above. For now, applying an approved customer change safely is the useful feature.
+Juniper's provider manages the servers behind its hostname; RelayDesk needn't discover them individually. [Spring Cloud refresh scope](https://docs.spring.io/spring-cloud-commons/reference/spring-cloud-commons/application-context-services.html#refresh-scope) could rebuild configured beans, but wouldn't replace the pause, drain and testing process above.
 
 ## Accepted by SMTP. Then a bounce arrives.
 
@@ -452,4 +497,14 @@ Maya's reply has reached the shopper, and Juniper's support desk has kept sendin
 
 Simple Java Mail handles the [connection reuse](/sending-and-execution.html#section-reusing-connections), [approved pool groups](/sending-and-execution.html#section-clustering), [protected submission](/security.html#section-transport-strategy-tls) and [send results](/analyzing-send-results.html#section-get-receipt). Around it, RelayDesk has a repeatable onboarding and change process for the next customer's mail service. Sam still can't repair somebody else's server, but he can keep its problems from becoming every customer's problem.
 
-RelayDesk sells support software. Its engineers would quite like to get back to that.
+<div class="journal-mission-debrief" role="group" aria-labelledby="relaydesk-run-complete">
+  <p class="journal-mission-title" id="relaydesk-run-complete">RUN COMPLETE</p>
+  <p class="journal-mission-story">With access restored, tensions ease. The sector is at peace again. For the moment.</p>
+  <dl>
+    <dt>Maya</dt><dd class="journal-mission-result"><img class="journal-mission-portrait" src="/assets/journal/personas/relay-desk-maya-portrait.jpg" width="48" height="48" alt="" loading="lazy" decoding="async"><span>Reply delivered. Level up.</span></dd>
+    <dt>Sam</dt><dd class="journal-mission-result"><img class="journal-mission-portrait" src="/assets/journal/personas/relay-desk-sam-portrait.jpg" width="48" height="48" alt="" loading="lazy" decoding="async"><span>Access restored. Level up.</span></dd>
+    <dt>Anika</dt><dd class="journal-mission-result"><img class="journal-mission-portrait" src="/assets/journal/personas/relay-desk-anika-portrait.jpg" width="48" height="48" alt="" loading="lazy" decoding="async"><span>Credentials replaced. Level up.</span></dd>
+    <dt class="journal-mission-reward">REWARD</dt><dd class="journal-mission-reward">10.547 credits &mdash; back to building support software.</dd>
+  </dl>
+  <p class="journal-mission-signoff">&gt; Job's done. Jack out.</p>
+</div>

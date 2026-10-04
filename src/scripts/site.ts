@@ -3,6 +3,24 @@ const navToggle = document.querySelector<HTMLButtonElement>('.nav-toggle');
 const navToggleLabel = navToggle?.querySelector<HTMLElement>('[data-nav-toggle-label]');
 const navSubmenus = Array.from(header?.querySelectorAll<HTMLElement>('.nav-has-submenu') ?? []);
 
+const themeToggle = document.querySelector<HTMLButtonElement>('.theme-toggle');
+const updateThemeToggle = (): void => {
+  const dark = document.documentElement.classList.contains('site-theme-dark');
+  themeToggle?.setAttribute('aria-pressed', String(dark));
+  if (themeToggle && !themeToggle.disabled) themeToggle.title = `Switch to ${dark ? 'light' : 'dark'} mode`;
+};
+updateThemeToggle();
+if (themeToggle) themeToggle.hidden = false;
+themeToggle?.addEventListener('click', () => {
+  const root = document.documentElement;
+  const dark = !root.classList.contains('site-theme-dark');
+  root.classList.toggle('site-theme-dark', dark);
+  root.dataset.themePreference = dark ? 'dark' : 'light';
+  try { localStorage.setItem('sjm-theme', root.dataset.themePreference); } catch { /* Optional persistence. */ }
+  updateThemeToggle();
+  document.dispatchEvent(new Event('site-theme-change'));
+});
+
 const setSubmenuOpen = (submenu: HTMLElement, open: boolean): void => {
   const toggle = submenu.querySelector<HTMLButtonElement>('.nav-submenu-toggle');
   const submenuLabel = toggle?.dataset.submenuLabel ?? 'submenu';
@@ -97,6 +115,7 @@ for (const pre of document.querySelectorAll<HTMLPreElement>('pre')) {
     }
   });
   pre.append(button);
+  pre.classList.add('code-copy-enabled');
 }
 
 const route = document.querySelector<HTMLElement>('.delivery-route');

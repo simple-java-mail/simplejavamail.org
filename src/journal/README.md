@@ -73,6 +73,7 @@ Optional fields:
 - `draft`, which defaults to `false`
 - `banner-type`, `banner-header` and `banner-body`, together defining an article banner
 - `mermaid`, set to `true` when the article contains Mermaid diagrams
+- `theme`, optionally set to `cyberpunk` for a fixed dark article skin; other entries follow the reader's saved light/dark choice from the site header
 - `series`, with a shared `title` and numeric `part`; add `total` when the final number of parts is known
 - `caseStudy`, with a `company`, short `label`, `description` and numeric `order` for the Case studies index
 
@@ -98,6 +99,26 @@ flowchart TB
 ```
 
 Typora treats that line as an ordinary Mermaid comment. The website caps the diagram's height at 900px on desktop, or 600px at viewport widths of 980px and below, and scales it proportionally to fit narrower screens. Captions work the same way as for other diagrams.
+
+For a sequence actor's headshot, keep its normal `actor` declaration and add
+`%% journal-portrait: admin /assets/journal/personas/relay-desk-anika-portrait.jpg`
+inside the fence, where `admin` is that actor's identifier. The website replaces
+the stick figure with the local portrait, keeping the name and lifeline in place;
+Typora still shows the ordinary actor. Only local `*-portrait.jpg` assets in the
+personas directory are accepted. If the image fails to load, the stick figure returns.
+Flowchart person labels can use a `diagram-person` span containing a 56-by-56
+`img` and a text span, as shown in RelayDesk's setup diagram.
+
+Flowchart system icons use native Mermaid image nodes, with an 85px height and a
+separate text label; keep the original proportions using `constraint: "on"`.
+For sequence participants, keep the normal `participant` declaration and add
+`%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png`
+inside the fence. Reserve a 125px sequence-header height for the icon and label.
+The website replaces the participant box with the local icon, keeping its name,
+lifeline and messages. Icons use their source proportions at 85px tall, reduced
+only if the participant header is too narrow or short. Other viewers retain the
+ordinary box. Only local
+`relaydesk-cyberpunk-*-node.png` assets are accepted; failed images restore the box.
 
 Keep the shared flowchart spacing unless a diagram needs a specific adjustment. Use the compact comment to reduce its displayed size rather than squeezing its `rankSpacing`. A longer arrow such as `--->` can reserve extra room for a label where a connection enters a group.
 
@@ -252,6 +273,46 @@ Historical SourceForge project records, discussions, tickets, and mailing-list m
 The standalone pages reproduce the compact SourceForge project UI and open in the same progressive-enhancement viewer from Journal entries. Discussion and ticket text is rendered as Markdown with raw HTML disabled; recovered mail is rendered as escaped preformatted text.
 
 ## Preview and publish
+
+### Discussion
+
+Every rendered Journal article includes the discussion section and makes one
+attempt to connect to the Remark42 service in `src/_data/journalComments.json`.
+There are no launch, development-mode, draft, article opt-out or page-origin
+visibility gates. Network errors, HTTP failures and a widget that fails to
+initialize leave "Comments unavailable." visible. There is no retry button or
+automatic retry. The article stays readable.
+
+The default service URL is `https://comments.simplejavamail.org`, whose DNS alias
+points to the dedicated CloudFront distribution after deployment. API requests,
+widget assets and authentication use that URL rather than the article site's
+root. A relative `host` is resolved against the current page, but requires a
+server-side proxy serving the complete Remark42 service at that path; a redirect
+alone does not provide that routing. Local pages attempt the same configured
+service. Server embedding policy and browser authentication rules still apply.
+
+To use a separate local Remark42 instance, set `JOURNAL_COMMENTS_HOST` to
+`http://localhost:8082` in the process launching `npm run dev`, and open the
+website at `http://localhost:3000` or `http://127.0.0.1:3000`. A configured
+loopback service uses the page's loopback hostname so HTTP guest authentication
+does not cross between `localhost` and `127.0.0.1`. Other service hosts are used
+as configured. This changes the endpoint only; every article
+still renders its discussion. Unset the override before a production build.
+The local Compose recipe and start instructions live in the private infrastructure
+repository at `infra/aws-static-sites/comments/README.md`.
+
+The thread identity remains the article's full canonical URL, including when
+viewed locally. If an article is
+renamed after receiving comments, retain its previous thread explicitly:
+
+```yaml
+commentsUrl: https://www.simplejavamail.org/journal/previous-article-name.html
+```
+
+Thread overrides must stay on the canonical Journal origin and have no query
+string or fragment. The commenting and privacy notice lives at `/commenting.html`.
+
+### Publishing
 
 `npm run dev` includes draft entries in the local journal index and adds `noindex` metadata to their pages. `npm run build` excludes drafts from HTML, the journal index, the RSS feed, and the sitemap.
 

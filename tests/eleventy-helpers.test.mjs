@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { runInNewContext } from "node:vm";
 import Handlebars from "handlebars";
+import ts from "typescript";
+
 import journalData from "../src/journal/journal.11tydata.mjs";
 import { journalCodeExample } from "../src/_lib/journal-code-example.mjs";
 import {
@@ -41,6 +44,262 @@ import {
   loadSourceForgeSources,
   sourceForgeArchiveLink,
 } from "../src/_lib/sourceforge-archive.mjs";
+
+test("theme bootstrap restores the preference before paint and keeps article skins independent", () => {
+  // The blocking bootstrap deliberately uses only plain JavaScript syntax.
+  const source = readFileSync(new URL("../src/scripts/theme-init.ts", import.meta.url), "utf8");
+  const bootstrap = (saved, cyberpunk = false, blocked = false) => {
+    const classes = new Set(cyberpunk ? ["journal-theme-cyberpunk"] : []);
+    const root = { dataset: {}, classList: {
+      contains: (name) => classes.has(name),
+      toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name),
+    } };
+    runInNewContext(source, { document: { documentElement: root }, localStorage: {
+      getItem: () => { if (blocked) throw new Error("Storage blocked"); return saved; },
+    } });
+    return { preference: root.dataset.themePreference, dark: classes.has("site-theme-dark") };
+  };
+  assert.deepEqual(bootstrap(null), { preference: "light", dark: false });
+  assert.deepEqual(bootstrap("dark"), { preference: "dark", dark: true });
+  assert.deepEqual(bootstrap("light"), { preference: "light", dark: false });
+  assert.deepEqual(bootstrap("invalid"), { preference: "light", dark: false });
+  assert.deepEqual(bootstrap("dark", false, true), { preference: "light", dark: false });
+  assert.deepEqual(bootstrap("light", true), { preference: "light", dark: true });
+});
+
+test("Mermaid console palette is article-scoped and uses matching sequence layout fonts", async () => {
+  const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
+  const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const initialize = async (classes) => {
+    let configuration;
+    let complete;
+    const rendered = new Promise((resolve) => { complete = resolve; });
+    runInNewContext(script, {
+      document: {
+        documentElement: { classList: { contains: (name) => classes.includes(name) } },
+        querySelector: () => ({}), querySelectorAll: () => [],
+        fonts: { ready: Promise.resolve() }, addEventListener: () => {},
+      },
+      window: { mermaid: {
+        initialize: (config) => { configuration = config; },
+        run: async () => { complete(); },
+      } }, console,
+    });
+    await rendered;
+    return configuration;
+  };
+  const light = await initialize([]);
+  const dark = await initialize(["site-theme-dark"]);
+  const cyberpunk = await initialize(["site-theme-dark", "journal-theme-cyberpunk"]);
+  assert.equal(light.themeVariables.primaryBorderColor, "#087E8B");
+  assert.equal(dark.themeVariables.primaryBorderColor, "#7BCBD6");
+  assert.equal(cyberpunk.themeVariables.primaryBorderColor, "#F6CB43");
+  assert.equal(cyberpunk.themeVariables.lineColor, "#35D9EF");
+  assert.equal(cyberpunk.themeVariables.noteBorderColor, "#BB80E9");
+  assert.equal(cyberpunk.fontFamily, cyberpunk.themeVariables.fontFamily);
+  assert.equal(String(cyberpunk.fontSize) + "px", cyberpunk.themeVariables.fontSize);
+  assert.equal(light.flowchart.curve, "basis");
+  assert.equal(dark.flowchart.curve, "basis");
+  assert.equal(cyberpunk.flowchart.curve, "stepBefore");
+  assert.equal(cyberpunk.securityLevel, "strict");
+  assert.equal(cyberpunk.layout, "dagre");
+});
+
+test("sequence portraits replace only actor glyphs, retain labels and fall back on image failure", () => {
+  const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
+  const functionSource = source.slice(source.indexOf("function applyActorPortraits"), source.indexOf("if (mermaid &&"));
+  const script = ts.transpileModule(functionSource, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const graphic = (box, attributes = {}) => ({
+    getBBox: () => box,
+    getAttribute: (name) => attributes[name],
+    style: { visibility: "", removeProperty(name) { delete this[name]; } },
+  });
+  const head = graphic({ x: 45, y: -5, width: 30, height: 30 }, { cx: "60" });
+  const body = graphic({ x: 45, y: 25, width: 30, height: 35 });
+  const added = [];
+  const actor = {
+    getAttribute: (name) => name === "name" ? "admin" : null,
+    querySelector: () => head,
+    querySelectorAll: (selector) => {
+      assert.equal(selector, ":scope > circle, :scope > line");
+      return [head, body];
+    },
+    append: (...nodes) => added.push(...nodes),
+  };
+  const context = {
+    document: { createElementNS: (namespace, tag) => {
+      assert.equal(namespace, "http://www.w3.org/2000/svg");
+      return { tag, attrs: {}, events: {}, removed: false,
+        setAttribute(name, value) { this.attrs[name] = value; },
+        addEventListener(name, callback) { this.events[name] = callback; },
+        remove() { this.removed = true; },
+      };
+    } },
+  };
+  runInNewContext(script, context);
+  const element = { querySelectorAll: () => [actor] };
+  context.applyActorPortraits(element, "%% journal-portrait: admin https://unapproved.example/portrait.jpg");
+  context.applyActorPortraits(element, "%% journal-portrait: admin /assets/journal/personas/../secret-portrait.jpg");
+  context.applyActorPortraits(element, "%% journal-portrait: other /assets/journal/personas/relay-desk-anika-portrait.jpg");
+  assert.equal(added.length, 0);
+  context.applyActorPortraits(element, "%% journal-portrait: admin /assets/journal/personas/relay-desk-anika-portrait.jpg");
+  assert.equal(added.length, 2);
+  const [image, frame] = added;
+  assert.equal(image.attrs.href, "/assets/journal/personas/relay-desk-anika-portrait.jpg");
+  assert.equal(image.attrs.width, "60");
+  assert.equal(image.attrs.height, "60");
+  assert.equal(image.attrs.x, "30");
+  assert.equal(image.attrs.y, "-2.5");
+  assert.equal(frame.attrs.class, "diagram-person-frame");
+  assert.equal(head.style.visibility, "hidden");
+  assert.equal(body.style.visibility, "hidden");
+  image.events.error();
+  assert.equal(image.removed, true);
+  assert.equal(frame.removed, true);
+  assert.equal(head.style.visibility, undefined);
+  assert.equal(body.style.visibility, undefined);
+});
+
+test("sequence system images preserve proportions, labels and lifelines with a native-box fallback", async () => {
+  const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
+  const functionSource = source.slice(source.indexOf("async function applySequenceNodeImages"), source.indexOf("if (mermaid &&"));
+  const script = ts.transpileModule(functionSource, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const label = { attrs: { y: "50" }, getAttribute(name) { return this.attrs[name] ?? null; },
+    setAttribute(name, value) { this.attrs[name] = value; }, removeAttribute(name) { delete this.attrs[name]; } };
+  const added = [];
+  let headerWidth = 160;
+  let artworkWidth = 256;
+  let artworkHeight = 171;
+  let failDecode = false;
+  const box = {
+    getAttribute: (name) => name === "name" ? "registry" : null,
+    getBBox: () => ({ x: 192, y: 0, width: headerWidth, height: 125 }),
+    style: { removeProperty(name) { delete this[name]; } },
+    parentElement: { querySelector: () => label, append: (node) => added.push(node) },
+  };
+  const context = { Image: class {
+    get naturalWidth() { return artworkWidth; }
+    get naturalHeight() { return artworkHeight; }
+    async decode() { if (failDecode) throw new Error("Missing artwork"); }
+  }, document: { createElementNS: (namespace, tag) => {
+    assert.equal(namespace, "http://www.w3.org/2000/svg");
+    return { tag, attrs: {}, events: {}, removed: false,
+      setAttribute(name, value) { this.attrs[name] = value; },
+      addEventListener(name, callback) { this.events[name] = callback; },
+      remove() { this.removed = true; },
+    };
+  } } };
+  runInNewContext(script, context);
+  const element = { querySelectorAll: (selector) => {
+    assert.equal(selector, "rect.actor"); return [box];
+  } };
+  for (const path of ["https://unapproved.example/node.png", "/assets/journal/../private-node.png", "/assets/journal/personas/relay-desk-sam-portrait.jpg"]) {
+    await context.applySequenceNodeImages(element, `%% journal-node: registry ${path}`);
+  }
+  await context.applySequenceNodeImages(element, "%% journal-node: other /assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  assert.equal(added.length, 0);
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  assert.equal(added.length, 1);
+  const [image] = added;
+  assert.equal(image.attrs.href, "/assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  const workerWidth = 85 * 256 / 171;
+  assert.ok(Math.abs(Number(image.attrs.x) - (192 + (160 - workerWidth) / 2)) < 0.001);
+  assert.equal(image.attrs.y, "4");
+  assert.ok(Math.abs(Number(image.attrs.width) - workerWidth) < 0.001);
+  assert.equal(image.attrs.height, "85");
+  assert.equal(image.attrs.preserveAspectRatio, "xMidYMid meet");
+  assert.equal(label.attrs.y, "109");
+  assert.equal(box.style.visibility, "hidden");
+  image.events.error();
+  assert.equal(image.removed, true);
+  assert.equal(box.style.visibility, undefined);
+  assert.equal(label.attrs.y, "50");
+  // The route-manager icon is also wider than tall; both fit at full height.
+  artworkHeight = 220;
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  assert.equal(added.at(-1).attrs.height, "85");
+  assert.ok(Math.abs(Number(added.at(-1).attrs.width) - 85 * 256 / 220) < 0.001);
+  added.at(-1).events.error();
+  // Portrait-shaped artwork retains its height; narrow headers reduce both axes.
+  artworkWidth = 245;
+  artworkHeight = 256;
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png");
+  assert.equal(added.at(-1).attrs.height, "85");
+  assert.equal(Number(added.at(-1).attrs.width), 85 * 245 / 256);
+  added.at(-1).events.error();
+  headerWidth = 60;
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png");
+  assert.equal(Number(added.at(-1).attrs.width), 60);
+  assert.ok(Math.abs(Number(added.at(-1).attrs.height) - 60 * 256 / 245) < 0.001);
+  added.at(-1).events.error();
+  const count = added.length;
+  failDecode = true;
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  assert.equal(added.length, count);
+  assert.equal(box.style.visibility, undefined);
+  assert.equal(label.attrs.y, "50");
+});
+
+test("RelayDesk diagrams use local portraits and system icons while the infographic source stays editable", () => {
+  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  for (const person of ["maya", "sam", "anika"]) {
+    const filename = `relay-desk-${person}-portrait.jpg`;
+    assert.ok(article.includes(`src='/assets/journal/personas/${filename}'`));
+    assert.ok(readFileSync(new URL(`../src/assets/journal/personas/${filename}`, import.meta.url)).length > 0);
+  }
+  assert.ok(article.includes("actor admin as Anika"));
+  assert.ok(article.includes('store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>+ send attempts", h: 85, pos: "b", constraint: "on" }'));
+  assert.ok(article.includes('store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies", h: 85, pos: "b", constraint: "on" }'));
+  const imageNodes = [...article.matchAll(/\w+@\{ img: "\/assets\/journal\/relaydesk-cyberpunk-[^\n]+/g)];
+  assert.equal(imageNodes.length, 10);
+  assert.ok(imageNodes.every(([node]) => node.includes('h: 85, pos: "b", constraint: "on"')));
+  assert.ok(readFileSync(new URL("../src/assets/journal/relaydesk-cyberpunk-database-node.png", import.meta.url)).length > 0);
+  for (const node of ["support-conversations", "dispatch-workers", "dispatcher", "kestrel-smtp", "juniper-smtp", "default-smtp", "route-manager"]) {
+    const filename = `relaydesk-cyberpunk-${node}-node.png`;
+    assert.ok(article.includes(`/assets/journal/${filename}`));
+    assert.ok(readFileSync(new URL(`../src/assets/journal/${filename}`, import.meta.url)).length > 0);
+  }
+  assert.ok(article.includes("%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png"));
+  assert.ok(article.includes("%% journal-node: workers /assets/journal/relaydesk-cyberpunk-dispatch-workers-node.png"));
+  assert.ok(article.includes("linkStyle 1 stroke:#EBA680"));
+  assert.ok(article.includes("linkStyle 2 stroke:#A4E7B1"));
+  assert.ok(article.includes("%% journal-portrait: admin /assets/journal/personas/relay-desk-anika-portrait.jpg"));
+  assert.ok(article.includes('"curve": "stepAfter"'));
+  assert.ok(article.includes('<template id="relaydesk-support-network-source"'));
+});
+
+test("copy controls stay on the frame while the code remains the unmodified copy source", async () => {
+  const site = readFileSync(new URL("../src/scripts/site.ts", import.meta.url), "utf8");
+  const source = site.slice(site.indexOf("const copyLabel ="), site.indexOf("const route ="));
+  const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const original = "// a long line\nSystem.out.println(\"<value>\");\n";
+  const code = { textContent: original };
+  const classes = new Set();
+  let button;
+  let click;
+  let clipboard;
+  const pre = {
+    querySelector: () => code, closest: () => null,
+    classList: { add: (name) => classes.add(name) },
+    append: (element) => { button = element; },
+  };
+  const skipped = { querySelector: () => code, closest: () => ({}) };
+  runInNewContext(script, {
+    document: {
+      querySelectorAll: () => [pre, skipped],
+      createElement: () => ({ setAttribute: () => {}, addEventListener: (_, handler) => { click = handler; } }),
+    },
+    navigator: { clipboard: { writeText: async (text) => { clipboard = text; } } },
+    window: { setTimeout: () => {} },
+  });
+  assert.ok(classes.has("code-copy-enabled"));
+  assert.equal(button.className, "copy-code");
+  assert.equal(button.type, "button");
+  await click();
+  assert.equal(clipboard, original);
+  assert.equal(code.textContent, original);
+  assert.equal(button.textContent, "Copied");
+});
 
 test("expandable Java code omits imports from its body and preview without changing the download", () => {
   const source = readFileSync(new URL("../src/assets/journal/examples/polar-meridian/PolarMeridianDispatcher.java", import.meta.url), "utf8");
@@ -157,12 +416,16 @@ test("journal banner templates preserve custom wording, escape text and have no 
 test("journal navigation sits before and after the content inside the article", () => {
   const template = readFileSync(new URL("../src/_includes/layouts/journal-entry.hbs", import.meta.url), "utf8");
   const handlebars = Handlebars.create();
-  for (const partial of ["head", "site-header", "components/journal-banner", "components/archived-source-dialog", "components/journal-image-dialog", "footer"]) {
+  for (const partial of ["head", "site-header", "components/journal-banner", "components/journal-comments", "components/archived-source-dialog", "components/journal-image-dialog", "footer"]) {
     handlebars.registerPartial(partial, "");
   }
   handlebars.registerPartial("components/journal-entry-navigation", '<nav class="{{className}}" aria-label="{{label}}"></nav>');
   handlebars.registerHelper("journalHeadings", () => []);
-  const html = handlebars.compile(template)({ content: "<p>Article text.</p>" });
+  handlebars.registerHelper("eq", (left, right) => left === right);
+  const render = handlebars.compile(template);
+  const html = render({ content: "<p>Article text.</p>" });
+  assert.doesNotMatch(html, /journal-theme-cyberpunk/);
+  assert.match(render({ theme: "cyberpunk" }), /<html[^>]*class="[^"]*journal-theme-cyberpunk/);
   const article = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/)?.[1];
   assert.ok(article, "The layout should render an article element");
   assert.match(article, /journal-entry-navigation--top[\s\S]*<p>Article text\.<\/p>[\s\S]*journal-entry-navigation--bottom/);
@@ -389,6 +652,57 @@ test("linked image captions retain their original-file link and image title", ()
   assert.equal(href, src);
   assert.equal(decodeURI(href), path);
   assert.doesNotMatch(rendered, /<p>\s*<a/);
+});
+
+test("linked raw persona images retain captions, attributes and their lightbox opt-in", () => {
+  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const html = createMarkdownLibrary().render(article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, ""));
+  for (const name of ["maya", "sam", "anika"]) {
+    const pattern = new RegExp(`<figure class="journal-captioned">\\s*<a href="(/assets/journal/personas/relay-desk-${name}\\.jpg)"><img([^>]+)></a>\\s*<figcaption>([^<]+)</figcaption>\\s*</figure>`, "u");
+    const figure = html.match(pattern);
+    assert.ok(figure, `${name} keeps the portrait and caption together`);
+    assert.ok(figure[2].includes(`src="${figure[1]}"`), "Self-link uses the original image as its destination");
+    assert.match(figure[2], /class="journal-persona-image(?: image-align-left)?"/);
+    assert.match(figure[2], /width="1075" height="717" loading="lazy" decoding="async"/);
+    assert.match(figure[2], /title="[^\"]+"/);
+    if (name === "sam") assert.match(figure[2], /image-align-left/);
+  }
+  const mixed = '<a href="/assets/journal/test.jpg"><img src="/assets/journal/test.jpg">Extra prose</a>\n\n*An aside.*\n';
+  assert.doesNotMatch(createMarkdownLibrary().render(mixed), /journal-captioned|figcaption/);
+});
+
+test("RelayDesk closes with a readable mission debrief rather than a copyable code example", () => {
+  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const html = createMarkdownLibrary().render(article.slice(article.indexOf("## Back to Maya's support ticket")));
+  assert.match(html, /class="journal-mission-debrief" role="group" aria-labelledby="relaydesk-run-complete"/);
+  assert.match(html, /id="relaydesk-run-complete">RUN COMPLETE<\/p>/);
+  assert.match(html, /With access restored, tensions ease\. The sector is at peace again\. For the moment\./);
+  for (const [name, result] of [["Maya", "Reply delivered"], ["Sam", "Access restored"], ["Anika", "Credentials replaced"]]) {
+    const row = html.match(new RegExp(`<dt>${name}</dt><dd class="journal-mission-result">([\\s\\S]*?)</dd>`));
+    assert.ok(row, `${name} keeps a name and result row`);
+    assert.ok(row[1].includes(`src="/assets/journal/personas/relay-desk-${name.toLowerCase()}-portrait.jpg"`));
+    assert.ok(row[1].includes('class="journal-mission-portrait"'));
+    assert.ok(row[1].includes(`<span>${result}. Level up.</span>`));
+    assert.ok(row[1].indexOf("<img") < row[1].indexOf("<span"), "portrait sits before the result");
+  }
+  assert.match(html, /10\.547 credits &mdash; back to building support software\./);
+  assert.match(html, /&gt; Job's done\. Jack out\./);
+  assert.doesNotMatch(html, /<pre|<code|RelayDesk sells support software/);
+});
+
+test("RelayDesk keeps its editable Mermaid source in an inert template beside the infographic", () => {
+  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const body = article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, "");
+  const html = createMarkdownLibrary().render(body);
+  const source = html.match(/<template id="relaydesk-support-network-source" data-pagefind-ignore>([\s\S]*?)<\/template>/u);
+  assert.ok(source, "The original diagram remains in a native, inert template");
+  assert.match(source[1], /<pre class="mermaid">/);
+  assert.match(source[1], /accTitle: RelayDesk connects support teams with the people they help/);
+  assert.match(source[1], /kestrelAgents --&gt;/);
+  const visibleHtml = html.replace(source[0], "");
+  assert.equal((visibleHtml.match(/<pre class="mermaid(?: mermaid-compact)?">/gu) || []).length, 3);
+  assert.match(visibleHtml, /<a href="\/assets\/journal\/relaydesk-support-network\.jpg"><img[^>]+src="\/assets\/journal\/relaydesk-support-network\.jpg"/);
+  assert.match(visibleHtml, /<figcaption>The teams work in RelayDesk;/);
 });
 
 test("caption recognition leaves ordinary prose, mixed emphasis and nested content alone", () => {

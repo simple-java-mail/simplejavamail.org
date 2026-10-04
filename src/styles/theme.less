@@ -1,0 +1,100 @@
+@import "tokens.less";
+
+html { color-scheme: light; }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid @line;
+  background: transparent;
+  color: @steel;
+  cursor: pointer;
+}
+.theme-toggle:hover { color: @ink; border-color: @teal; }
+.theme-toggle[hidden] { display: none; }
+.theme-toggle:disabled { cursor: default; opacity: 0.65; }
+.theme-toggle svg { width: 18px; height: 18px; }
+.theme-toggle .theme-icon-sun { display: none; }
+.site-theme-dark .theme-toggle .theme-icon-sun { display: block; }
+.site-theme-dark .theme-toggle .theme-icon-moon { display: none; }
+
+// Shared palette. Components retain their existing layout and typography.
+.site-theme-dark,
+.journal-theme-cyberpunk {
+  --paper: #11151D;
+  --surface: #191F2B;
+  --strong-surface: #202735;
+  --ink: #D2D7DF;
+  --steel: #9DA9B8;
+  --steel-light: #9DA9B8;
+  --line: #354354;
+  --teal: #7BCBD6;
+  --teal-deep: #7BCBD6;
+  --teal-solid: #254859;
+  --teal-tint: #20343F;
+  --amber-tint: #342D22;
+  --danger: #E6A4A4;
+  --green: #91BDA1;
+  --green-tint: #23382E;
+  --green-line: #4B6C59;
+  --blue: #9CBFDF;
+  --blue-tint: #203040;
+  --blue-line: #496784;
+  color-scheme: dark;
+
+  ::selection { background: #365363; color: #EEF1F5; }
+  body { color: @ink; }
+  a:hover { color: #B0DEE5; }
+  :is(a, button, summary, [tabindex]):focus-visible { outline-color: @teal; }
+  .brand-logo { filter: brightness(0) invert(1); opacity: 0.88; }
+  .header-cta { border-color: @teal; }
+  .button-light { border-color: @line; }
+  .legacy-doc-content :is(input, select) { color: @ink; }
+
+  pre:not(.mermaid) { background: #0E131B; }
+  .copy-code { background: @surface; color: @ink; opacity: 0.65; }
+  .site-footer { background: #0E131B; border-top: 1px solid @line; }
+  .install-band { background: #173D46; }
+  .profile-list .profile-primary .profile-status { background: #2C6847; }
+  .dependency-primary .dependency-parts .dependency-focus { color: var(--green); }
+  .pooling-benefit::before { background: #2C6847; }
+
+  .journal-article-hero { background: none; }
+  .journal-prose :is(h1, h2, h3, h4, h5, h6) { color: #E1E5EB; }
+  .journal-prose .journal-banner { color: @ink; }
+  .journal-banner--note .journal-banner-header { color: #D9BA83; }
+  .journal-prose .journal-banner--note { border-color: #8B7044; }
+  .journal-prose pre.mermaid { background: @surface; color: @ink; }
+  .journal-prose table { background: @surface; }
+  .journal-prose th { background: #202735; color: @ink; }
+  .journal-prose tbody tr:nth-child(even) { background: #161C26; }
+  .journal-entry-navigation a:hover { background: @teal-tint; }
+  .journal-image-dialog,
+  .journal-image-toolbar :is(a, button) { background: @surface; border-color: @line; color: @ink; }
+  .journal-image-toolbar { border-color: @line; }
+  .journal-image-toolbar :is(a, button):hover { background: @teal-tint; }
+
+  // Keep historical source reproductions faithful, including inside lightboxes.
+  [data-archived-source] { color-scheme: light; }
+  .archive-dialog {
+    color-scheme: light;
+    --paper: #F6F7F3;
+    --surface: #FFFFFF;
+    --ink: #13212B;
+    --steel: #5B6872;
+    --steel-light: #87939B;
+    --line: #D7DCD9;
+    --teal: #087E8B;
+    --teal-deep: #05616B;
+    --teal-tint: #E4F2F2;
+  }
+}
+
+@media (max-width: 1080px) {
+  .nav-open .header-actions { grid-template-columns: 44px repeat(2, minmax(0, 1fr)); }
+  .nav-open .theme-toggle { width: 44px; height: 48px; }
+}

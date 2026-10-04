@@ -1,17 +1,24 @@
+const rawImagePattern = /^\s*<img\b(?:[^<>"']|"[^"]*"|'[^']*')*\/?>\s*$/iu;
+
 function mediaEnd(tokens, index) {
   const token = tokens[index];
   if (token.level !== 0) return null;
   if (token.type === "fence") return index + 1;
-  if (token.type === "html_block" && /^\s*<img\b(?:[^<>"']|"[^"]*"|'[^']*')*\/?>\s*$/iu.test(token.content)) return index + 1;
+  if (token.type === "html_block" && rawImagePattern.test(token.content)) return index + 1;
   const children = tokens[index + 1]?.children;
   const standaloneImage = children?.length === 1 && children[0].type === "image";
   const linkedImage = children?.length === 3
     && children[0].type === "link_open"
     && children[1].type === "image"
     && children[2].type === "link_close";
+  const linkedRawImage = children?.length === 3
+    && children.every((child) => child.type === "html_inline")
+    && /^<a\b(?:[^<>"']|"[^"]*"|'[^']*')*>$/iu.test(children[0].content)
+    && rawImagePattern.test(children[1].content)
+    && /^<\/a>$/iu.test(children[2].content);
   if (token.type === "paragraph_open"
       && tokens[index + 1]?.type === "inline"
-      && (standaloneImage || linkedImage)
+      && (standaloneImage || linkedImage || linkedRawImage)
       && tokens[index + 2]?.type === "paragraph_close") return index + 3;
   return null;
 }

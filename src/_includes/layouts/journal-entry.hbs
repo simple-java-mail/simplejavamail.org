@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="language-java">
+<html lang="en" class="language-java{{#if (eq theme "cyberpunk")}} journal-theme-cyberpunk{{/if}}">
   <head>
     {{> head}}
   </head>
@@ -72,6 +72,7 @@
           }}
         </article>
       </div>
+      {{> components/journal-comments}}
     </main>
 
     {{> components/archived-source-dialog}}

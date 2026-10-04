@@ -5,8 +5,101 @@ interface MermaidApi {
 
 const mermaid = (window as Window & { mermaid?: MermaidApi }).mermaid;
 
+// Sequence actors do not support image glyphs. Keep a normal actor in the
+// editable source (and other Markdown viewers), then replace only its drawing.
+function applyActorPortraits(element: HTMLElement, source: string): void {
+  const svgNamespace = 'http://www.w3.org/2000/svg';
+  const portraits = source.matchAll(/^\s*%% journal-portrait: ([\w-]+) (\/assets\/journal\/personas\/[\w-]+-portrait\.jpg)\s*$/gm);
+  for (const [, actorId, imagePath] of portraits) {
+    for (const actor of element.querySelectorAll<SVGGElement>('g.actor-man')) {
+      if (actor.getAttribute('name') !== actorId) continue;
+      const head = actor.querySelector<SVGCircleElement>('circle');
+      const glyphs = Array.from(actor.querySelectorAll<SVGGraphicsElement>(':scope > circle, :scope > line'));
+      if (!head || !glyphs.length) continue;
+      const bounds = glyphs.map((glyph) => glyph.getBBox());
+      const top = Math.min(...bounds.map((box) => box.y));
+      const bottom = Math.max(...bounds.map((box) => box.y + box.height));
+      const size = Math.min(60, bottom - top);
+      const x = Number(head.getAttribute('cx')) - size / 2;
+      const y = top + (bottom - top - size) / 2;
+      const image = document.createElementNS(svgNamespace, 'image');
+      const frame = document.createElementNS(svgNamespace, 'rect');
+      for (const node of [image, frame]) {
+        node.setAttribute('x', String(x));
+        node.setAttribute('y', String(y));
+        node.setAttribute('width', String(size));
+        node.setAttribute('height', String(size));
+        node.setAttribute('aria-hidden', 'true');
+      }
+      image.setAttribute('href', imagePath);
+      image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      image.setAttribute('class', 'diagram-person-portrait');
+      frame.setAttribute('class', 'diagram-person-frame');
+      // Leave the actor's name, lifeline and message positions untouched.
+      glyphs.forEach((glyph) => { glyph.style.visibility = 'hidden'; });
+      image.addEventListener('error', () => {
+        image.remove();
+        frame.remove();
+        glyphs.forEach((glyph) => { glyph.style.removeProperty('visibility'); });
+      }, { once: true });
+      actor.append(image, frame);
+    }
+  }
+}
+
+// Sequence participants keep native boxes in other Markdown viewers. On the
+// website, use local node artwork inside the space reserved for their headers.
+async function applySequenceNodeImages(element: HTMLElement, source: string): Promise<void> {
+  const nodes = source.matchAll(/^\s*%% journal-node: ([\w-]+) (\/assets\/journal\/relaydesk-cyberpunk-[\w-]+-node\.png)\s*$/gm);
+  for (const [, participantId, imagePath] of nodes) {
+    const artwork = new Image();
+    artwork.src = imagePath;
+    try {
+      await artwork.decode();
+    } catch {
+      // Keep the native participant when its artwork cannot be loaded.
+      continue;
+    }
+    if (!artwork.naturalWidth || !artwork.naturalHeight) continue;
+    const aspectRatio = artwork.naturalWidth / artwork.naturalHeight;
+    for (const box of element.querySelectorAll<SVGRectElement>('rect.actor')) {
+      if (box.getAttribute('name') !== participantId) continue;
+      const label = box.parentElement?.querySelector<SVGTextElement>('text.actor');
+      if (!label) continue;
+      const bounds = box.getBBox();
+      const height = Math.min(85, bounds.height - 32, bounds.width / aspectRatio);
+      const width = height * aspectRatio;
+      if (height <= 0) continue;
+      const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      image.setAttribute('x', String(bounds.x + (bounds.width - width) / 2));
+      image.setAttribute('y', String(bounds.y + 4));
+      image.setAttribute('width', String(width));
+      image.setAttribute('height', String(height));
+      image.setAttribute('href', imagePath);
+      image.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      image.setAttribute('aria-hidden', 'true');
+      image.setAttribute('class', 'diagram-system-image');
+      const originalLabelY = label.getAttribute('y');
+      label.setAttribute('y', String(bounds.y + bounds.height - 16));
+      box.style.visibility = 'hidden';
+      image.addEventListener('error', () => {
+        image.remove();
+        box.style.removeProperty('visibility');
+        if (originalLabelY === null) label.removeAttribute('y');
+        else label.setAttribute('y', originalLabelY);
+      }, { once: true });
+      box.parentElement?.append(image);
+    }
+  }
+}
+
 if (mermaid && document.querySelector('.mermaid')) {
-  mermaid.initialize({
+  const cyberpunk = document.documentElement.classList.contains('journal-theme-cyberpunk');
+  const sources = Array.from(document.querySelectorAll<HTMLElement>('.mermaid')).map((element) => ({
+    element,
+    source: element.textContent ?? '',
+  }));
+  const initialize = (): void => mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
     // Mermaid 12 defaults to ELK and its new "neo" look. Keep the established
@@ -14,6 +107,8 @@ if (mermaid && document.querySelector('.mermaid')) {
     layout: 'dagre',
     look: 'classic',
     theme: 'base',
+    // Sequence layout measures with these top-level font settings too.
+    ...(cyberpunk ? { fontFamily: '"IBM Plex Mono", monospace', fontSize: 13 } : {}),
     themeVariables: {
       background: '#FFFFFF',
       primaryColor: '#E4F2F2',
@@ -25,9 +120,69 @@ if (mermaid && document.querySelector('.mermaid')) {
       textColor: '#13212B',
       fontFamily: '"IBM Plex Sans", "Segoe UI", sans-serif',
       fontSize: '14px',
+      ...(document.documentElement.classList.contains('site-theme-dark') ? {
+        darkMode: true,
+        background: '#191F2B',
+        primaryColor: '#20343F',
+        primaryBorderColor: '#7BCBD6',
+        primaryTextColor: '#D2D7DF',
+        secondaryColor: '#252332',
+        tertiaryColor: '#191F2B',
+        lineColor: '#9DA9B8',
+        textColor: '#D2D7DF',
+        clusterBkg: '#141A24',
+        clusterBorder: '#354354',
+        edgeLabelBackground: '#191F2B',
+        actorBkg: '#20343F',
+        actorBorder: '#7BCBD6',
+        actorTextColor: '#D2D7DF',
+        actorLineColor: '#9DA9B8',
+        signalColor: '#9DA9B8',
+        signalTextColor: '#D2D7DF',
+        labelBoxBkgColor: '#252332',
+        labelBoxBorderColor: '#354354',
+        labelTextColor: '#D2D7DF',
+        loopTextColor: '#D2D7DF',
+        noteBkgColor: '#252332',
+        noteBorderColor: '#B99AC8',
+        noteTextColor: '#D2D7DF',
+        activationBkgColor: '#252332',
+        activationBorderColor: '#B99AC8',
+      } : {}),
+      ...(cyberpunk ? {
+        darkMode: true,
+        background: '#08171D',
+        primaryColor: '#20251A',
+        primaryBorderColor: '#F6CB43',
+        primaryTextColor: '#E4E9EE',
+        secondaryColor: '#221C30',
+        tertiaryColor: '#0D232C',
+        lineColor: '#35D9EF',
+        textColor: '#E4E9EE',
+        fontFamily: '"IBM Plex Mono", monospace',
+        fontSize: '13px',
+        clusterBkg: '#0B1D25',
+        clusterBorder: '#35D9EF',
+        edgeLabelBackground: '#08171D',
+        actorBkg: '#20251A',
+        actorBorder: '#F6CB43',
+        actorTextColor: '#E4E9EE',
+        actorLineColor: '#718D99',
+        signalColor: '#35D9EF',
+        signalTextColor: '#E4E9EE',
+        labelBoxBkgColor: '#221C30',
+        labelBoxBorderColor: '#BB80E9',
+        labelTextColor: '#E4E9EE',
+        loopTextColor: '#E4E9EE',
+        noteBkgColor: '#221C30',
+        noteBorderColor: '#BB80E9',
+        noteTextColor: '#E4E9EE',
+        activationBkgColor: '#0D232C',
+        activationBorderColor: '#35D9EF',
+      } : {}),
     },
     flowchart: {
-      curve: 'basis',
+      curve: cyberpunk ? 'stepBefore' : 'basis',
       diagramPadding: 4,
       htmlLabels: true,
       nodeSpacing: 32,
@@ -38,9 +193,25 @@ if (mermaid && document.querySelector('.mermaid')) {
   });
 
   // Mermaid measures labels during layout; wait for their web fonts to avoid clipping.
-  void document.fonts.ready
-    .then(() => mermaid.run({ querySelector: '.mermaid' }))
-    .catch((error: unknown) => {
+  let rendering: Promise<void> = Promise.resolve();
+  const render = (): void => {
+    // Serialize redraws, including clicks while the initial render is in flight.
+    rendering = rendering.then(async () => {
+      await document.fonts.ready;
+      initialize();
+      for (const { element, source } of sources) {
+        element.removeAttribute('data-processed');
+        element.textContent = source;
+      }
+      await mermaid.run({ querySelector: '.mermaid' });
+      for (const { element, source } of sources) {
+        applyActorPortraits(element, source);
+        await applySequenceNodeImages(element, source);
+      }
+    }).catch((error: unknown) => {
       console.error('Unable to render Mermaid diagram.', error);
     });
+  };
+  document.addEventListener('site-theme-change', render);
+  render();
 }

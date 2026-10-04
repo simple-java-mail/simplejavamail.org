@@ -1,5 +1,6 @@
 import path from "node:path";
 import { z } from "zod";
+import { journalCommentConfig, validateCommentsUrl } from "../_lib/journal-comments.mjs";
 import { formatDate, isoDate, isJournalArticleFilename, journalArticleUrl } from "../_lib/eleventy-helpers.mjs";
 
 const nonBlankText = z.string().trim().min(1);
@@ -20,10 +21,12 @@ const articleData = z.object({
   author: nonBlankText.optional(),
   updated: dateValue.optional(),
   draft: z.boolean().optional(),
+  commentsUrl: z.string().url().optional(),
   "banner-type": z.enum(["note", "info", "tip"]).optional(),
   "banner-header": nonBlankText.optional(),
   "banner-body": nonBlankText.optional(),
   mermaid: z.boolean().optional(),
+  theme: z.enum(["cyberpunk"]).optional(),
   series: articleSeries.optional(),
   caseStudy: z.object({
     company: nonBlankText,
@@ -48,12 +51,14 @@ export default {
   breadcrumbParent: "/engineering-journal.html",
   eleventyDataSchema(data) {
     articleData.parse(data);
+    validateCommentsUrl(data.commentsUrl, data.site);
     const filename = path.basename(data.page.inputPath);
     if (!isJournalArticleFilename(filename)) {
       throw new Error(`[journal] Article filenames must use lowercase kebab-case: ${filename}`);
     }
   },
   eleventyComputed: {
+    commentConfig: (data) => journalCommentConfig(data),
     permalink: (data) => journalArticleUrl(data.site, data.page.fileSlug),
     author: (data) => data.author || data.site.journal.author,
     summary: (data) => data.description,
