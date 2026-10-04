@@ -17,7 +17,8 @@ description: "Configure mailers in Java, property files, or environment variable
         {{> components/doc-overview-card href="#section-programmatic-api-common" kicker="Java API" title="SMTP connection" description="Configure the server, credentials, transport, timeouts, proxy, and reusable mailer in Java." core=true}}
         {{> components/doc-overview-card href="#section-config-properties" kicker="Files & environment" title="Properties" description="Load settings from property files, system properties, or environment variables." core=true}}
         {{> components/doc-overview-card href="/spring.html" kicker="Framework integration" title="Spring" description="Build and inject a Simple Java Mail mailer from Spring's environment and profiles." spring=true}}
-        {{> components/doc-overview-card href="#section-config-mailer" kicker="Message policy" title="Defaults & overrides" description="Fill in missing message values or enforce shared recipients, headers, validation, and signing." core=true}}
+        {{> components/doc-overview-card href="#section-config-mailer" kicker="Shared message settings" title="Defaults & overrides" description="Fill in missing message values or apply shared recipients, headers, validation, and signing." core=true}}
+        {{> components/doc-overview-card href="#section-locked-configuration" kicker="Central configuration" title="Locked settings" description="Keep selected settings fixed within a factory, such as the company relay, TLS, or an archive recipient." core=true}}
         {{> components/doc-overview-card href="/sending-and-execution.html#section-batch-and-clustering" kicker="Throughput" title="Pools & clusters" description="Reuse SMTP connections and give different workloads their own pools and server sets." batch=true}}
       </div>
     </section>
@@ -32,7 +33,8 @@ description: "Configure mailers in Java, property files, or environment variable
     <div class="view">
       <p>
         The Java API and configuration files work together. A configuration snapshot resolves its sources in the order you list them, with later
-        non-blank values winning. Calls on a builder then win over the snapshot values copied into that builder.
+        non-blank values winning. Calls on a builder then win over ordinary snapshot values copied into that builder.
+        <a href="#section-locked-configuration">Locked settings</a> are the exception: a conflicting customization is rejected.
       </p>
     </div>
     <div class="side">
@@ -57,6 +59,7 @@ description: "Configure mailers in Java, property files, or environment variable
 	  <li><a href="#section-config-snapshot" class="indent">When changes take effect</a></li>
 	  <li><a href="#section-environment-variables" class="indent">Environment variable names</a></li>
       <li><a href="#section-available-properties" class="indent">Available properties</a></li>
+      <li><a href="#section-locked-configuration">Keep centrally supplied settings fixed</a></li>
       <li><a href="#section-config-mailer">Mailer level email defaults and overrides</a></li>
       <li><a href="#section-combine-config">Combining everything for multiple environments</a></li>
       <li><a href="/spring.html">Spring integration</a></li>
@@ -71,6 +74,81 @@ description: "Configure mailers in Java, property files, or environment variable
     </ul>
   </section>
 
+
+  <a href="#section-locked-configuration" id="section-locked-configuration" class="section-link h2">&sect;</a>
+  <h2>Keep centrally supplied settings fixed</h2>
+  <section>
+    <div class="view">
+      <p>Suppose your application should always use the company relay and include an archive mailbox, while individual jobs choose their own
+        subjects and recipients. Put the fixed values under <code>simplejavamail.locked.</code>, followed by the existing property's name.
+        The value is the actual setting, not a true/false marker saying whether it is locked.</p>
+      <p>Every Mailer created from the same factory inherits these restrictions. An ordinary property cannot replace its locked counterpart,
+        even when the ordinary property comes from a higher-priority source. Competing locked entries still follow normal source precedence;
+        a blank entry does not clear an earlier value. Supplying the same parsed value in Java is allowed; a conflicting customization fails.</p>
+    </div>
+    <div class="side">
+<pre><code class="language-properties small"># Still customizable by application code:
+simplejavamail.smtp.port=587
+
+# Fixed for this factory:
+simplejavamail.locked.smtp.host=relay.company.com
+simplejavamail.locked.transportstrategy=SMTP_TLS
+simplejavamail.locked.defaults.bcc.address=archive@company.com
+
+# Optional, if the server supports onward REQUIRETLS:
+# simplejavamail.locked.defaults.requiretls=true</code></pre>
+      <p>Environment variables follow the existing naming convention, for example <code>SIMPLEJAVAMAIL_LOCKED_SMTP_HOST</code>.
+        Spring supports the same values through <a href="spring.html#section-spring-locked-configuration">nested YAML or properties</a>.</p>
+    </div>
+  </section>
+  <section>
+    <div class="view">
+<pre><code class="language-java small">SimpleJavaMail mail = SimpleJavaMail.withConfig(
+    ConfigLoader.builder().withPropertiesFile(Path.of("mail.properties")).load());
+
+try (Mailer mailer = mail.mailerBuilder().buildMailer()) {
+    Email email = mail.emailBuilder().startingBlank()
+        .from("orders@company.com")
+        .withRecipients(RecipientBuilder.to(null, "customer@example.org"))
+        .withSubject("Your order")
+        .withPlainText("Thanks for your order.")
+        .buildEmail();
+    mailer.sync().sendMail(email); // Also includes archive@company.com.
+}
+
+// Fails when building the Mailer, before opening a connection:
+mail.mailerBuilder().withSMTPServerHost("another-relay.example.org").buildMailer();</code></pre>
+    </div>
+    <div class="side">
+      <p>The archive recipient is additive. Your other recipients remain, and an explicit delivery-recipient override still includes the archive.
+        Repeated preparation does not keep adding another copy. Ignoring defaults or overrides, replacing a template, or completing an Email early
+        does not remove locked settings.</p>
+      <p>Conflicts name the locked property and its source without printing either value. The factory's
+        <code>getConfig().getDiagnostics()</code> shows winning locked entries with their original source and normal secret redaction.
+        See <a href="debugging.html#section-config-diagnostics">configuration provenance</a> for examples.</p>
+    </div>
+  </section>
+  <section>
+    <h3>What a lock does, and what it does not do</h3>
+    <p class="wide">A lock prevents accidental changes within this factory. It is not a security sandbox: application code can deliberately create
+      an independently configured factory or use another transport. It also cannot guarantee final delivery, an arriving DSN, or downstream compliance.</p>
+    <ul>
+      <li>Exact EML keeps its bytes. Compatible envelope additions, such as an archive BCC, are allowed; a lock that would require changing preserved
+        content is rejected. Matching readable headers can satisfy a lock without rewriting them. Duplicate Subject, From, or Reply-To fields make a
+        lock on that field ambiguous and are rejected; a single Reply-To field can still contain multiple addresses. Existing opaque signatures are
+        not treated as proof that a required signing configuration was used.</li>
+      <li>Clusters check the selected SMTP configuration as well as the invoking Mailer's restrictions. A different destination cannot silently weaken
+        them. Ordinary sends, batches, and open-connection sends all retain the message requirements.</li>
+      <li>A caller-owned Session must agree with the applicable locks. If the SMTP username or password is locked, use this factory's
+        <code>mailerBuilder()</code> without supplying a Session. Even a matching visible username cannot rule out cached credentials or an
+        Authenticator choosing another account. Custom TLS handling is also rejected when it prevents checking the applicable locks.
+        Do not mutate a Mailer's Session while it is in use.</li>
+      <li><code>CustomMailer</code> receives the governed message, but owns its transport and delivery envelope. Locks on those settings, including archive
+        recipients, are rejected with that callback. Content settings that Simple Java Mail prepares still apply.</li>
+      <li>Locked DSN requests require explicit provider support and an SMTP server advertising DSN. A third-party adapter cannot silently fall back to
+        best-effort behavior. Connection TLS and onward REQUIRETLS remain separate requirements.</li>
+    </ul>
+  </section>
 
   <a href="#section-programmatic-api-common" id="section-programmatic-api-common" class="section-link h2">&sect;</a>
   <h2>Programmatic API - common settings</h2>

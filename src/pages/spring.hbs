@@ -18,6 +18,7 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
       <li><a href="#section-spring-oauth2">Provide OAuth2 access tokens</a></li>
       <li><a href="#section-spring-sending-limits">Configure sending limits</a></li>
       <li><a href="#section-spring-profiles">Configure profiles and dynamic properties</a></li>
+      <li><a href="#section-spring-locked-configuration">Keep selected settings fixed</a></li>
     </ul>
   </section>
 
@@ -285,6 +286,32 @@ OAuth2AccessTokenProvider smtpAccessTokens(
       <p>The equivalent property names begin with <code>simplejavamail.smtp.ratelimit.</code>.
         Use the factory's <code>getConfig().getDiagnostics()</code> to trace loaded values and sources;
         <code>mailer.getOperationalConfig()</code> includes later Java builder choices.</p>
+    </div>
+  </section>
+
+  <a href="#section-spring-locked-configuration" id="section-spring-locked-configuration" class="section-link h2">&sect;</a>
+  <h2>Keep selected settings fixed</h2>
+  <section>
+    <div class="view">
+      <p>A central configuration can supply <a href="configuration.html#section-locked-configuration">locked settings</a> alongside ordinary defaults.
+        All Mailers built from the injected factory inherit them. This example permits Java customization of the port, but not a different relay or
+        a weaker transport strategy. The archive BCC remains in the actual delivery envelope.</p>
+      <p>The shared loader reads both namespaces through Spring's <code>Environment</code>, including profiles, aliases and placeholders.
+        Diagnostics name the underlying source that declared the property. IDE hints reuse the ordinary property types; there are no wrapped
+        <code>value</code>/<code>locked</code> objects and no second runtime binder.</p>
+      <p>Adopting this factory is the boundary. Creating another Mailer from it retains the locks; deliberately creating an independent factory does not.</p>
+    </div>
+    <div class="side">
+<pre><code class="language-yaml small">simplejavamail:
+  smtp:
+    port: 587
+  locked:
+    smtp:
+      host: relay.company.com
+    transportstrategy: SMTP_TLS
+    defaults:
+      bcc:
+        address: archive@company.com</code></pre>
     </div>
   </section>
 

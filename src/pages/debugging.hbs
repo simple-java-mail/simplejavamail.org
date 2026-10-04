@@ -5,12 +5,13 @@ tags:
   - "publicPage"
 title: "Diagnostics"
 section: "Protect and operate"
-description: "Test SMTP connections, inspect the settings in use, route debug output, understand failures, and read server replies."
+description: "Choose a diagnostic tool, inspect prepared messages and SMTP connections, trace configuration, and understand send failures."
 ---
   <section><p class="wide">For a visual map of the queue, connection pool, SMTP transport, and observer callback, see
     <a href="/sending-and-execution.html#section-send-architecture">Inside a mail send</a>. The sections below cover the diagnostics available at those boundaries.</p></section>
   <section class="toc">
     <ul>
+		<li><a href="#section-choose-diagnostic">Choose a diagnostic tool</a></li>
 		<li><a href="#section-debug-mode">Logging emails instead of sending</a></li>
 		<li><a href="#section-override-receivers">Override envelope-level receivers</a></li>
 		<li><a href="#section-debug-logging">Enable Jakarta Mail debug logging</a></li>
@@ -28,23 +29,54 @@ description: "Test SMTP connections, inspect the settings in use, route debug ou
   </section>
 
 
+  <a href="#section-choose-diagnostic" id="section-choose-diagnostic" class="section-link h2">&sect;</a>
+  <h2>Choose a diagnostic tool</h2>
+
+  <section>
+    <div class="wide">
+      <p>Choose by the question you need to answer. Preparing a message, running an application's send flow, and inspecting an SMTP connection reveal different information.</p>
+      <div class="doc-table-wrap" role="region" aria-label="Diagnostic tools by question" tabindex="0">
+        <table>
+          <thead><tr><th scope="col">Question</th><th scope="col">Use</th><th scope="col">What you get</th><th scope="col">Connects to SMTP?</th></tr></thead>
+          <tbody>
+            <tr><td>Will this email pass preparation?</td><td><a href="/features.html#section-email-validation"><code>mailer.validate(email)</code></a></td><td>Success or an exception from the same preparation used by full rehearsal</td><td>No</td></tr>
+            <tr><td>What message will this Mailer prepare?</td><td><a href="/features.html#section-email-validation"><code>mailer.rehearse(email)</code></a></td><td>A snapshot with EML bytes, encoded size, effective Email, Message-ID and envelope addresses</td><td>No</td></tr>
+            <tr><td>Does my application's send flow behave correctly without delivery?</td><td><a href="#section-debug-mode">Logging-only mode</a></td><td>Email and MIME logs, plus normal send completion and observer callbacks; outcomes identify logging-only mode</td><td>No, for simulated sends</td></tr>
+            <tr><td>Which messages does my application submit, so I can capture or assert them?</td><td><a href="/features.html#section-custom-mailer">A capturing <code>CustomMailer</code></a></td><td>Your implementation records invocations and the supplied Email and MIME message</td><td>No, when your implementation only captures</td></tr>
+            <tr><td>Can the configured connection path open?</td><td><a href="/features.html#section-connection-test"><code>mailer.sync().testConnection()</code></a></td><td>Success or an exception, including configured authentication and connection cleanup</td><td>Yes</td></tr>
+            <tr><td>What did this endpoint advertise and negotiate?</td><td><a href="#section-smtp-capabilities"><code>mailer.sync().probeConnection()</code></a></td><td>A report with available greeting, capability, TLS and failure details; authentication is opt-in</td><td>Yes, on a fresh dedicated connection</td></tr>
+            <tr><td>Where did a loaded setting come from?</td><td><a href="#section-config-diagnostics"><code>mail.getConfig().getDiagnostics()</code></a></td><td>Resolved configuration values and their sources, with sensitive values redacted</td><td>No</td></tr>
+            <tr><td>What happened to an actual send?</td><td><a href="/analyzing-send-results.html">Submission receipt and mail-send outcome</a></td><td>Available server responses, recipient results and the send's success or failure</td><td>The send does</td></tr>
+            <tr><td>Where did a slow or failed send spend its time?</td><td><a href="/analyzing-send-results.html#section-send-timings"><code>outcome.getDiagnostics()</code></a> in the observer</td><td>Available per-phase measurements and where a failure was observed</td><td>No additional connection</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The connection rows describe the built-in SMTP path. Both calls also have async equivalents and intentionally connect even in logging-only mode.
+        With a <code>CustomMailer</code>, <code>testConnection()</code> delegates to your implementation and <code>probeConnection()</code> reports that inspection is unsupported.
+        Neither a successful connection test nor a successful probe proves that a particular email will be accepted or reach an inbox.
+      </p>
+    </div>
+  </section>
+
+
   <a href="#section-debug-mode" id="section-debug-mode" class="section-link h2">&sect;</a>
   <h2>Logging emails instead of sending</h2>
 
   <section>
 	  <div class="view">
 		  <p>
-			  You can configure the <code>Mailer</code> to log emails instead of sending them.
+			  Configure the <code>Mailer</code> to log emails instead of sending them when you want to run existing application send calls in development or QA.
+			  Message preparation, async scheduling, completion handling and mail-send observers still run.
 		  </p>
 		  <p>
-			  Note: normally emails are always logged on <code>Level.DEBUG</code> level, but in logging mode emails are logged in <code>Level.INFO</code>.
+			  The Email and MIME representation are logged at <code>INFO</code> in this mode, instead of the normal <code>TRACE</code> level.
 		  </p>
 	  </div>
 
 	  <div class="side">
 <pre><code>Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
-    .withTransportModeLoggingOnly()
-    .(...)
+    .withTransportModeLoggingOnly(true)
     .buildMailer();
 
 mailer.sync().sendMail(email); // <-- this email will be logged but not sent
@@ -53,6 +85,29 @@ mailer.sync().sendMail(email); // <-- this email will be logged but not sent
 		  <pre><code class="language-properties">simplejavamail.transport.mode.logging.only=true
 </code></pre>
 	  </div>
+  </section>
+
+  <section>
+    <div class="wide">
+      <p>
+        For programmatic inspection of one message, use <a href="/features.html#section-email-validation"><code>mailer.rehearse(email)</code></a>.
+        It returns the prepared snapshot without changing the supplied Email or running the send queue, completion callbacks or mail-send observer.
+        Use the snapshot for previews, EML exports and assertions about the prepared content. A later composed send prepares again, so generated
+        dates, boundaries, Message-IDs and cryptographic output can differ.
+      </p>
+      <p>
+        Use a capturing <a href="/features.html#section-custom-mailer"><code>CustomMailer</code></a> when tests need to record which messages the application
+        actually hands to its individual or simple-batch send calls, or retain those messages in your own storage. Your implementation receives the
+        prepared Email and MIME message. A pure no-op only discards them; capturing or asserting them is what makes this useful for diagnostics.
+        A capturing implementation replaces submission and therefore does not test SMTP connectivity, TLS or server acceptance.
+      </p>
+      <p>
+        Logging-only mode identifies simulated sends through <code>MailSendOutcome.isLoggingOnly()</code>; a capturing custom mailer uses ordinary
+        custom-send outcomes. Both can complete successfully without server acceptance information, and application completion handlers still run.
+        Logging-only mode also supports <code>withOpenConnection(...)</code> callbacks and configured total send deadlines; a <code>CustomMailer</code>
+        supports neither. For connection diagnostics, use the explicit <code>testConnection()</code> or <code>probeConnection()</code> calls described above.
+      </p>
+    </div>
   </section>
 
 
@@ -295,18 +350,6 @@ Elapsed: 42ms</code></pre>
 
   <section>
     <div class="wide">
-      <table>
-        <thead><tr><th>Question</th><th>Use</th><th>Connects to SMTP?</th></tr></thead>
-        <tbody>
-          <tr><td>Can the normal connection path open?</td><td><code>mailer.sync().testConnection()</code> or its async equivalent</td><td>Yes</td></tr>
-          <tr><td>What did this endpoint advertise and negotiate?</td><td><code>mailer.sync().probeConnection()</code> or its async equivalent</td><td>Yes, on a fresh dedicated connection</td></tr>
-          <tr><td>Will this email pass preparation?</td><td><code>validate(email)</code></td><td>No</td></tr>
-          <tr><td>What bytes and envelope will preparation produce?</td><td><code>rehearse(email)</code></td><td>No</td></tr>
-          <tr><td>Where did a loaded setting come from?</td><td><a href="#section-config-diagnostics"><code>mail.getConfig().getDiagnostics()</code></a></td><td>No</td></tr>
-          <tr><td>What happened to an actual send?</td><td><a href="/analyzing-send-results.html">Submission receipt and mail-send outcome</a></td><td>The send does</td></tr>
-          <tr><td>Where did a slow or failed send spend its time?</td><td><a href="/analyzing-send-results.html#section-send-timings"><code>outcome.getDiagnostics()</code></a> in the existing observer</td><td>No additional connection</td></tr>
-        </tbody>
-      </table>
       <p>
         A successful probe proves neither future message acceptance nor inbox delivery. Capabilities may change between connections and
         endpoints. Run the manual

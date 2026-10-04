@@ -258,6 +258,11 @@ mail.mailerBuilder()
 		<code class="inline language-java">EmailGovernance</code> instance.
 	</p>
     <p class="wide">
+      Need the company relay or an archive BCC to stay fixed while jobs customize their messages?
+      <a href="configuration.html#section-locked-configuration">Locked configuration</a> keeps selected values fixed across Mailers from the same factory.
+      Conflicting customization fails; required recipients stay in the delivery envelope even when a message ignores ordinary defaults or overrides.
+    </p>
+    <p class="wide">
       <code class="inline language-java">mail.mailerBuilder()</code> returns the full Mailer builder API. Pass your own Session to
       <code class="inline language-java">mail.mailerBuilder(session)</code> for the reduced Session-based API.<br/>
       <strong>If you provide your own session, a lot of properties are presumed to be preconfigured</strong>, such as SMTP server details.
@@ -1589,6 +1594,9 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
           The healthy connection remains reusable. Clear the preference if best-effort shared Email settings are sufficient.</li>
       </ul>
       <h4>Automatic original-recipient metadata</h4>
+      <p>A factory can also <a href="configuration.html#section-locked-configuration">lock its notification settings</a>.
+        Email and recipient preferences must then agree with the configured events, and even a shared request requires usable DSN support.
+        This prevents accidentally dropping the request; it does not guarantee that a notification will arrive.</p>
       <p>The managed Angus transport adds ORCPT whenever the connection supports DSN, even without a NOTIFY setting.
         It records the actual envelope recipient, including BCC and override receivers, not the visible To header. Duplicate occurrences remain separate.
         This adds command parameters, not extra SMTP round trips, and does not change notification preferences or MIME bytes.</p>

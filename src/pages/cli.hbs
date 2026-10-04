@@ -298,6 +298,12 @@ Elapsed: 142ms</code></pre>
       override environment variables. A daemon captures these startup sources once; restart that daemon after changing them. Explicit options on each
       command still participate in selecting its reusable Mailer.
     </p>
+    <p class="wide">
+      <a href="configuration.html#section-locked-configuration">Locked configuration</a> uses the same startup sources, for example
+      <code>simplejavamail.locked.smtp.host=relay.company.com</code>. There is no separate lock flag: a conflicting builder option such as
+      <code>--mailer:withSMTPServer another-relay.example.org 587</code> fails before connecting. The local daemon retains the locked snapshot;
+      restart it when changing centrally supplied settings. A command cannot remove an archive recipient required by that snapshot.
+    </p>
 	  <img data-src="../../assets/sjm etc.png"
 	       data-src-webp="../../assets/sjm etc.png.webp"
 		   alt="Folder where to put Simple Java Mail properties and logging config for use in CLI">
