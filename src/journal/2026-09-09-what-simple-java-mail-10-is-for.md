@@ -5,7 +5,7 @@ date: "2026-09-09"
 category: "Maintainer practice"
 draft: true
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/what-simple-java-mail-10-is-for
 banner-type: note
 banner-header: "AI-Assisted"
 banner-body: "This draft began as an AI-assisted outline for a future Engineering Journal article."

@@ -5,7 +5,7 @@ date: "2026-09-11"
 category: "Security"
 caseStudy:
   company: "Staple & Sons"
-  logo: "/assets/journal/companies/staple-and-sons.png"
+  logo: "/assets/journal/company-logos/staple-and-sons.png"
   label: "Self-managed SMTP"
   description: "A small office supplier discovers its own mail servers are working for a troll farm. Its developers stop the abuse, bring overloaded servers under control and secure the mail they actually want to send."
   order: 1
@@ -15,7 +15,7 @@ series:
   total: 3
 mermaid: true
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/staple-and-sons
 banner-type: note
 banner-header: "Case Study"
 banner-body: |-
@@ -73,13 +73,13 @@ A customer creates a quotation in the portal. The application saves it, puts a n
 
 Some time ago, a customer asked whether they could email a quotation to a colleague. Sales liked the idea. The developers added a recipient field and a personal note. It saved everyone forwarding PDFs around. Later, someone asked for several recipients and a more flexible note. Customers must sign in and can only share quotations from their own account.
 
-<img src="/assets/journal/Stapel & Sons User Story.png" alt="Staple & Sons user story: customers can email their quotations to colleagues with a personal note" class="journal-paragraph-image" style="zoom:65%;" />
+<img src="/assets/journal/articles/staple-and-sons/Stapel & Sons User Story.png" alt="Staple & Sons user story: customers can email their quotations to colleagues with a personal note" class="journal-paragraph-image" style="zoom:65%;" />
 
 ## Apparently, we need more servers
 
 It's a Tuesday and the first complaints start coming in. The first one is about invoices arriving late. Then password resets. The database queue is growing, and the developers can see that the sending workers are busy. Not to worry, they just increase the worker count. It's a good sign right, the company is growing!
 
-<img src="/assets/journal/Troll-Face.svg" alt="Trollface" class="journal-paragraph-image image-align-left" style="width:40px;" />
+<img src="/assets/journal/articles/staple-and-sons/Troll-Face.svg" alt="Trollface" class="journal-paragraph-image image-align-left" style="width:40px;" />
 
 That helps briefly. They increase the connection-pool limits too, so workers can handle more load at the same time. When the relay struggles, the hosting provider supplies another one, and a new deployment is wired up with its own sending configuration; they're running a cluster now. Before long, the small company has several SMTP pools and enough infrastructure to look impressive in a diagram.
 
@@ -102,8 +102,8 @@ So, the developers start digging. A few SQL queries and a look through the relay
 
 <figure class="journal-captioned" style="max-width:815px; margin-inline:auto;">
   <div class="journal-image-overlay">
-    <img src="/assets/journal/troll_quotation.png" alt="A Staple & Sons quotation email with a fake shopping-voucher offer in the personal note" class="journal-paragraph-image" width="1086" height="814" />
-    <img src="/assets/journal/Troll-Face.svg" alt="" aria-hidden="true" class="journal-paragraph-image journal-image-overlay-mark" style="top:62.5%; right:6%; width:6.5%; transform:scaleX(-1);" />
+    <img src="/assets/journal/articles/staple-and-sons/troll_quotation.png" alt="A Staple & Sons quotation email with a fake shopping-voucher offer in the personal note" class="journal-paragraph-image" width="1086" height="814" />
+    <img src="/assets/journal/articles/staple-and-sons/Troll-Face.svg" alt="" aria-hidden="true" class="journal-paragraph-image journal-image-overlay-mark" style="top:62.5%; right:6%; width:6.5%; transform:scaleX(-1);" />
   </div>
   <figcaption>a message from the trolls...</figcaption>
 </figure>
@@ -450,11 +450,11 @@ They compare the timing figures while adjusting limits and watching the relays. 
 
 ### What changes at RelayDesk and Polar Meridian?
 
-<img src="/assets/journal/companies/relaydesk.png" alt="RelayDesk" class="journal-paragraph-image image-align-left" style="width:200px;" />
+<img src="/assets/journal/company-logos/relaydesk.png" alt="RelayDesk" class="journal-paragraph-image image-align-left" style="width:200px;" />
 
 RelayDesk's quiet customer routes also suit a core size of zero. For a busy support team, though, `withConnectionPoolCoreSize(1)` could be worth keeping a connection ready, saving repeated connection, TLS and authentication setup between bursts. That costs a connection per pool and worker replica, so it would be a choice for that route, not a default for every customer.
 
-<img src="/assets/journal/companies/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />
+<img src="/assets/journal/company-logos/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />
 
 Polar Meridian budgets workers and connections across its deployments and reserves capacity by workload. Its urgent service notices and bulk runs don't get the same allocation. Where Staple & Sons starts small and watches its relays, Polar Meridian sizes those allocations against submission targets and load tests. A larger pool has to earn its keep there too.
 
@@ -464,7 +464,7 @@ Polar Meridian budgets workers and connections across its deployments and reserv
 
 Not long after, a recipient forwards another suspicious email to Sales. Then another. They're spam and still appear to come from Staple & Sons. Wasn't that account suspended?
 
-<img src="/assets/journal/Troll-Face.svg" alt="Trollface" class="journal-paragraph-image image-align-left" style="width:40px;" />
+<img src="/assets/journal/articles/staple-and-sons/Troll-Face.svg" alt="Trollface" class="journal-paragraph-image image-align-left" style="width:40px;" />
 
 ### Where is the mail coming from?
 
@@ -663,7 +663,7 @@ The dispatcher uses the same archive helper and completion handling as before. I
 
 ---
 
-<img src="/assets/journal/companies/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />
+<img src="/assets/journal/company-logos/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />
 
 Polar Meridian Systems attaches an encryption certificate to each `Recipient`, so one message can go to several partners with different keys. Staple & Sons keeps it on the email builder for these one-partner exchanges. RelayDesk's wholesale conversations use [OpenPGP](/security.html#section-sending-openpgp) where that is what its customer's partners already use.
 

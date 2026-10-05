@@ -9,13 +9,13 @@ series:
   part: 1
 draft: true
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/set-phasers-to-synchronize
 banner-type: note
 banner-header: "AI-Assisted"
 banner-body: "This draft began as an AI-assisted outline for a future Engineering Journal article."
 ---
 
-![A retro-futurist space officer fires a beam that brings floating clocks into sync.](/assets/journal/set-phasers-to-synchronize.png)
+![A retro-futurist space officer fires a beam that brings floating clocks into sync.](/assets/journal/articles/set-phasers-to-synchronize/set-phasers-to-synchronize.png)
 
 I studied concurrent programming models in Computer Science at school, where I learned the basics such as latches, semaphores, barriers, but never did I think I would actually have to use this foundation in my own projects. I mean sure, everything works on threads, but the kind of work I did for my job was mostly on top of servlets with Spring or J2EE, where this kind of thing is mostly managed (don't get me started on inherited/nested ThreadLocal holders, though).
 

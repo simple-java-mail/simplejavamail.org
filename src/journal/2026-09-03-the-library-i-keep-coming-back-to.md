@@ -9,7 +9,7 @@ series:
   total: 3
 draft: true
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/the-library-i-keep-coming-back-to
 banner-type: note
 banner-header: "AI-Assisted"
 banner-body: "This article is from a set of three that emerged from a deep AI-assisted archaeology dig. Due to the long history and sheer number of references unearthed, this article was also streamlined using AI and wouldn't have been possible otherwise."
@@ -23,7 +23,7 @@ Case in point: the repository contains no commits at all in 2013 and 2014. There
 
 <figure class="journal-activity-figure" data-pagefind-ignore>
   <div class="journal-activity-chart">
-    <img src="/assets/journal/simple-java-mail-ecosystem-code-activity.svg" width="960" height="286" alt="Monthly stacked bars of code activity across eleven repositories from April 2009 through August 2026. The graph nearly flatlines during the 2012 to 2015 and 2025 to 2026 sabbaticals, then peaks in mid-2026.">
+    <img src="/assets/journal/articles/the-library-i-keep-coming-back-to/simple-java-mail-ecosystem-code-activity.svg" width="960" height="286" alt="Monthly stacked bars of code activity across eleven repositories from April 2009 through August 2026. The graph nearly flatlines during the 2012 to 2015 and 2025 to 2026 sabbaticals, then peaks in mid-2026.">
   </div>
   <figcaption>Monthly activity across eleven repositories. Each bar counts repository-weeks in which GitHub recorded additions or deletions</figcaption>
 </figure>

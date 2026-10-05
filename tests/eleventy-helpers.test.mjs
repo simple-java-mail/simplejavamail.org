@@ -154,13 +154,13 @@ test("sequence portraits replace only actor glyphs, retain labels and fall back 
   runInNewContext(script, context);
   const element = { querySelectorAll: () => [actor] };
   context.applyActorPortraits(element, "%% journal-portrait: admin https://unapproved.example/portrait.jpg");
-  context.applyActorPortraits(element, "%% journal-portrait: admin /assets/journal/personas/../secret-portrait.jpg");
-  context.applyActorPortraits(element, "%% journal-portrait: other /assets/journal/personas/relay-desk-anika-portrait.jpg");
+  context.applyActorPortraits(element, "%% journal-portrait: admin /assets/journal/articles/relaydesk/personas/../secret-portrait.jpg");
+  context.applyActorPortraits(element, "%% journal-portrait: other /assets/journal/articles/relaydesk/personas/relay-desk-anika-portrait.jpg");
   assert.equal(added.length, 0);
-  context.applyActorPortraits(element, "%% journal-portrait: admin /assets/journal/personas/relay-desk-anika-portrait.jpg");
+  context.applyActorPortraits(element, "%% journal-portrait: admin /assets/journal/articles/relaydesk/personas/relay-desk-anika-portrait.jpg");
   assert.equal(added.length, 2);
   const [image, frame] = added;
-  assert.equal(image.attrs.href, "/assets/journal/personas/relay-desk-anika-portrait.jpg");
+  assert.equal(image.attrs.href, "/assets/journal/articles/relaydesk/personas/relay-desk-anika-portrait.jpg");
   assert.equal(image.attrs.width, "60");
   assert.equal(image.attrs.height, "60");
   assert.equal(image.attrs.x, "30");
@@ -208,15 +208,15 @@ test("sequence system images preserve proportions, labels and lifelines with a n
   const element = { querySelectorAll: (selector) => {
     assert.equal(selector, "rect.actor"); return [box];
   } };
-  for (const path of ["https://unapproved.example/node.png", "/assets/journal/../private-node.png", "/assets/journal/personas/relay-desk-sam-portrait.jpg"]) {
+  for (const path of ["https://unapproved.example/node.png", "/assets/journal/../private-node.png", "/assets/journal/articles/relaydesk/personas/relay-desk-sam-portrait.jpg"]) {
     await context.applySequenceNodeImages(element, `%% journal-node: registry ${path}`);
   }
-  await context.applySequenceNodeImages(element, "%% journal-node: other /assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  await context.applySequenceNodeImages(element, "%% journal-node: other /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-route-manager-node.png");
   assert.equal(added.length, 0);
-  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-route-manager-node.png");
   assert.equal(added.length, 1);
   const [image] = added;
-  assert.equal(image.attrs.href, "/assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  assert.equal(image.attrs.href, "/assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-route-manager-node.png");
   const workerWidth = 85 * 256 / 171;
   assert.ok(Math.abs(Number(image.attrs.x) - (192 + (160 - workerWidth) / 2)) < 0.001);
   assert.equal(image.attrs.y, "4");
@@ -231,65 +231,86 @@ test("sequence system images preserve proportions, labels and lifelines with a n
   assert.equal(label.attrs.y, "50");
   // The route-manager icon is also wider than tall; both fit at full height.
   artworkHeight = 220;
-  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-route-manager-node.png");
   assert.equal(added.at(-1).attrs.height, "85");
   assert.ok(Math.abs(Number(added.at(-1).attrs.width) - 85 * 256 / 220) < 0.001);
   added.at(-1).events.error();
   // Portrait-shaped artwork retains its height; narrow headers reduce both axes.
   artworkWidth = 245;
   artworkHeight = 256;
-  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png");
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-juniper-smtp-node.png");
   assert.equal(added.at(-1).attrs.height, "85");
   assert.equal(Number(added.at(-1).attrs.width), 85 * 245 / 256);
   added.at(-1).events.error();
   headerWidth = 60;
-  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png");
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-juniper-smtp-node.png");
   assert.equal(Number(added.at(-1).attrs.width), 60);
   assert.ok(Math.abs(Number(added.at(-1).attrs.height) - 60 * 256 / 245) < 0.001);
   added.at(-1).events.error();
   const count = added.length;
   failDecode = true;
-  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png");
+  await context.applySequenceNodeImages(element, "%% journal-node: registry /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-route-manager-node.png");
   assert.equal(added.length, count);
   assert.equal(box.style.visibility, undefined);
   assert.equal(label.attrs.y, "50");
+});
+
+test("Journal paste targets keep assets with their article rather than in shared buckets", () => {
+  const articles = [
+    ["2026-08-29-simple-java-mails-origin-story.md", "origin-story"],
+    ["2026-09-01-twenty-years-of-simple-java-mail.md", "twenty-years-of-simple-java-mail"],
+    ["2026-09-02-the-libraries-behind-simple-java-mail.md", "the-libraries-behind-simple-java-mail"],
+    ["2026-09-03-the-library-i-keep-coming-back-to.md", "the-library-i-keep-coming-back-to"],
+    ["2026-09-08-set-phasers-to-synchronize.md", "set-phasers-to-synchronize"],
+    ["2026-09-09-what-simple-java-mail-10-is-for.md", "what-simple-java-mail-10-is-for"],
+    ["2026-09-10-mail-at-polar-meridian-systems.md", "polar-meridian"],
+    ["2026-09-11-when-one-email-becomes-a-million.md", "when-one-email-becomes-a-million"],
+    ["2026-09-11-your-mail-server-works-for-a-troll-farm-now.md", "staple-and-sons"],
+    ["2026-09-12-everybody-brought-their-own-mail-server.md", "relaydesk"],
+  ];
+  for (const [filename, slug] of articles) {
+    const article = readFileSync(new URL(`../src/journal/${filename}`, import.meta.url), "utf8");
+    assert.ok(article.includes(`typora-copy-images-to: ../assets/journal/articles/${slug}`), filename);
+    assert.ok(article.includes("typora-root-url: .."), filename);
+    assert.doesNotMatch(article, /\/assets\/journal\/(?:personas|companies|examples)\//u);
+  }
 });
 
 test("RelayDesk diagrams use local portraits and system icons while the infographic source stays editable", () => {
   const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
   for (const person of ["maya", "sam", "anika"]) {
     const filename = `relay-desk-${person}-portrait.jpg`;
-    assert.ok(article.includes(`src='/assets/journal/personas/${filename}'`));
-    assert.ok(readFileSync(new URL(`../src/assets/journal/personas/${filename}`, import.meta.url)).length > 0);
+    assert.ok(article.includes(`src='/assets/journal/articles/relaydesk/personas/${filename}'`));
+    assert.ok(readFileSync(new URL(`../src/assets/journal/articles/relaydesk/personas/${filename}`, import.meta.url)).length > 0);
   }
   assert.ok(article.includes("actor admin as Anika"));
-  assert.ok(article.includes('store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>+ send attempts", h: 85, pos: "b", constraint: "on" }'));
-  assert.ok(article.includes('store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>&nbsp;", h: 85, pos: "b", constraint: "on" }'));
-  const imageNodes = [...article.matchAll(/\w+@\{ img: "\/assets\/journal\/relaydesk-cyberpunk-[^\n]+/g)];
+  assert.ok(article.includes('store@{ img: "/assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>+ send attempts", h: 85, pos: "b", constraint: "on" }'));
+  assert.ok(article.includes('store@{ img: "/assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>&nbsp;", h: 85, pos: "b", constraint: "on" }'));
+  const imageNodes = [...article.matchAll(/\w+@\{ img: "\/assets\/journal\/articles\/relaydesk\/nodes\/relaydesk-cyberpunk-[^\n]+/g)];
   assert.equal(imageNodes.length, 11);
   assert.ok(imageNodes.every(([node]) =>
     node.includes(`h: ${/^(workers|dispatcher)@/.test(node) ? 150 : 85}, pos: "b", constraint: "on"`)),
   "Both views emphasize the dispatch workers without enlarging the surrounding nodes");
-  assert.ok(readFileSync(new URL("../src/assets/journal/relaydesk-cyberpunk-database-node.png", import.meta.url)).length > 0);
+  assert.ok(readFileSync(new URL("../src/assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-database-node.png", import.meta.url)).length > 0);
   for (const node of ["support-conversations", "dispatch-workers", "kestrel-smtp", "kestrel-smtp-eu", "kestrel-smtp-us", "juniper-smtp", "default-smtp", "route-manager"]) {
     const filename = `relaydesk-cyberpunk-${node}-node.png`;
-    assert.ok(article.includes(`/assets/journal/${filename}`));
-    assert.ok(readFileSync(new URL(`../src/assets/journal/${filename}`, import.meta.url)).length > 0);
+    assert.ok(article.includes(`/assets/journal/articles/relaydesk/nodes/${filename}`));
+    assert.ok(readFileSync(new URL(`../src/assets/journal/articles/relaydesk/nodes/${filename}`, import.meta.url)).length > 0);
   }
-  assert.ok(article.includes('kestrel@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-node.png", label: "Kestrel Outfitters<br/>EU relay pair · US relay pair<br/>separate regional groups"'));
-  assert.ok(article.includes('kestrel@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-eu-node.png", label: "Kestrel EU · route paused<br/>keep jobs in storage"'));
-  assert.ok(article.includes('kestrelUs@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-us-node.png", label: "Kestrel US · ready<br/>submit through its Mailers"'));
+  assert.ok(article.includes('kestrel@{ img: "/assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-kestrel-smtp-node.png", label: "Kestrel Outfitters<br/>EU relay pair · US relay pair<br/>separate regional groups"'));
+  assert.ok(article.includes('kestrel@{ img: "/assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-kestrel-smtp-eu-node.png", label: "Kestrel EU · route paused<br/>keep jobs in storage"'));
+  assert.ok(article.includes('kestrelUs@{ img: "/assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-kestrel-smtp-us-node.png", label: "Kestrel US · ready<br/>submit through its Mailers"'));
   assert.ok(article.includes("%% journal-image-branch: dispatchKestrelUs dispatcher kestrelUs"));
   assert.ok(article.includes("%% journal-image-branch: dispatchKestrel dispatcher kestrel center"));
   assert.ok(article.includes("class kestrelUs,juniper ready"));
   const workersImage = article.match(/workers@\{ img: "([^"]+)"/)[1];
   const dispatcherImage = article.match(/dispatcher@\{ img: "([^"]+)"/)[1];
   assert.equal(dispatcherImage, workersImage, "The scheduling view reuses the setup's dispatch-worker image");
-  assert.ok(article.includes("%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png"));
-  assert.ok(article.includes("%% journal-node: workers /assets/journal/relaydesk-cyberpunk-dispatch-workers-node.png"));
+  assert.ok(article.includes("%% journal-node: registry /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-route-manager-node.png"));
+  assert.ok(article.includes("%% journal-node: workers /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-dispatch-workers-node.png"));
   assert.ok(article.includes("linkStyle 1,3 stroke:#A4E7B1"));
   assert.ok(article.includes("linkStyle 2 stroke:#EBA680"));
-  assert.ok(article.includes("%% journal-portrait: admin /assets/journal/personas/relay-desk-anika-portrait.jpg"));
+  assert.ok(article.includes("%% journal-portrait: admin /assets/journal/articles/relaydesk/personas/relay-desk-anika-portrait.jpg"));
   assert.ok(article.includes('"curve": "stepAfter"'));
   assert.ok(article.includes('<template id="relaydesk-support-network-source"'));
 });
@@ -485,14 +506,16 @@ test("copy controls stay on the frame while the code remains the unmodified copy
 });
 
 test("expandable Java code omits imports from its body and preview without changing the download", () => {
-  const source = readFileSync(new URL("../src/assets/journal/examples/polar-meridian/PolarMeridianDispatcher.java", import.meta.url), "utf8");
-  const example = journalCodeExample("polar-meridian/PolarMeridianDispatcher.java");
+  const source = readFileSync(new URL("../src/assets/journal/articles/polar-meridian/examples/PolarMeridianDispatcher.java", import.meta.url), "utf8");
+  const example = journalCodeExample("polar-meridian/examples/PolarMeridianDispatcher.java");
   assert.equal(example.source, source.slice(source.indexOf("/**")));
   assert.doesNotMatch(example.source, /^import /mu);
   assert.deepEqual(example.previewLines, example.source.split(/\r?\n/u).slice(0, 6));
-  assert.equal(readFileSync(new URL("../src/assets/journal/examples/polar-meridian/PolarMeridianDispatcher.java", import.meta.url), "utf8"), source);
+  assert.equal(readFileSync(new URL("../src/assets/journal/articles/polar-meridian/examples/PolarMeridianDispatcher.java", import.meta.url), "utf8"), source);
   assert.equal(example.language, "java");
   assert.throws(() => journalCodeExample("../../../_data/site.json"), /must stay inside/);
+  assert.throws(() => journalCodeExample("polar-meridian/personas/polar-meridian-ravi.jpg"), /must stay inside/);
+  assert.throws(() => journalCodeExample("polar-meridian/examples/../personas/polar-meridian-ravi.jpg"), /must stay inside/);
   assert.throws(() => journalCodeExample(import.meta.filename), /must use a path relative/);
 });
 
@@ -505,7 +528,7 @@ test("Handlebars source disclosure survives Markdown rendering without rewriting
   const body = article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, "");
   const html = createMarkdownLibrary().render(handlebars.compile(body)({}));
   // Markdown normalizes line endings, including escaped source inside raw HTML.
-  const source = journalCodeExample("polar-meridian/PolarMeridianDispatcher.java").source.replace(/\r\n/gu, "\n");
+  const source = journalCodeExample("polar-meridian/examples/PolarMeridianDispatcher.java").source.replace(/\r\n/gu, "\n");
   assert.match(html, /<details class="journal-code-disclosure" data-pagefind-ignore>/);
   assert.doesNotMatch(html, /<details[^>]*\bopen\b/);
   assert.ok(html.includes(`<pre><code class="language-java">${Handlebars.escapeExpression(source)}</code></pre>`));
@@ -546,7 +569,7 @@ test("case studies require a company, label, index description and positive disp
   const validate = (value) => journalData.eleventyDataSchema({ ...data, caseStudy: value });
   assert.doesNotThrow(() => validate(undefined));
   assert.doesNotThrow(() => validate(caseStudy));
-  assert.doesNotThrow(() => validate({ ...caseStudy, logo: "/assets/journal/companies/staple-and-sons.png" }));
+  assert.doesNotThrow(() => validate({ ...caseStudy, logo: "/assets/journal/company-logos/staple-and-sons.png" }));
   assert.throws(() => validate({ ...caseStudy, logo: " " }));
   assert.throws(() => validate({ ...caseStudy, logo: "https://example.com/logo.png" }));
   assert.throws(() => validate({ ...caseStudy, company: " " }));
@@ -556,7 +579,7 @@ test("case studies require a company, label, index description and positive disp
   assert.throws(() => validate({ ...caseStudy, order: 0 }));
   assert.throws(() => validate({ ...caseStudy, order: 1.5 }));
   assert.throws(() => validate(true));
-  const spotlight = { image: "/assets/journal/personas/relay-desk-sam.jpg", heading: "A repair gig", description: "Customer SMTP integration" };
+  const spotlight = { image: "/assets/journal/articles/relaydesk/personas/relay-desk-sam.jpg", heading: "A repair gig", description: "Customer SMTP integration" };
   assert.doesNotThrow(() => validate({ ...caseStudy, spotlight }));
   assert.throws(() => validate({ ...caseStudy, spotlight: { ...spotlight, image: "https://example.com/sam.jpg" } }));
   for (const field of Object.keys(spotlight)) {
@@ -573,7 +596,7 @@ test("case-study spotlights reuse their article metadata on the index and homepa
   handlebars.registerPartial("components/module-badges", "");
   const ordinary = (company, order) => ({ url: `/journal/company-${order}.html`, data: { title: `Case study: ${company}`, caseStudy: { company, order, label: "SMTP integration", description: "An ordinary case study" } } });
   const featured = ordinary("RelayDesk", 3);
-  featured.data.caseStudy.spotlight = { image: "/assets/journal/personas/relay-desk-sam.jpg", heading: "Sam's <repair> gig", description: "Customer-owned mail servers" };
+  featured.data.caseStudy.spotlight = { image: "/assets/journal/articles/relaydesk/personas/relay-desk-sam.jpg", heading: "Sam's <repair> gig", description: "Customer-owned mail servers" };
   const renderPage = (name, entries) => {
     const source = readFileSync(new URL(`../src/pages/${name}.hbs`, import.meta.url), "utf8").replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, "");
     return handlebars.compile(source)({ collections: { caseStudies: entries }, site: { journal: { indexUrl: "/engineering-journal.html" } } });
@@ -586,7 +609,7 @@ test("case-study spotlights reuse their article metadata on the index and homepa
   assert.match(index, /id="case-study-relaydesk-3-heading">Sam&#x27;s &lt;repair&gt; gig/);
   assert.match(index, /Cyberpunk case study/);
   assert.match(index, /class="case-study-spotlight-logo">RelayDesk<\/span>/);
-  assert.match(index, /src="\/assets\/journal\/personas\/relay-desk-sam.jpg" alt=""[^>]+loading="lazy"/);
+  assert.match(index, /src="\/assets\/journal\/articles\/relaydesk\/personas\/relay-desk-sam.jpg" alt=""[^>]+loading="lazy"/);
   const home = renderPage("index", entries);
   assert.equal((home.match(/class="case-study-spotlight"/g) || []).length, 1);
   assert.match(home, /aria-labelledby="home-relaydesk-3-heading"/);
@@ -861,7 +884,7 @@ test("image captions preserve separate alt text and raw image attributes", () =>
 
 test("linked image captions retain their original-file link and image title", () => {
   const markdown = createMarkdownLibrary();
-  const path = "/assets/journal/Polar Meridian - Noor's Kibana Dashboard.png";
+  const path = "/assets/journal/articles/polar-meridian/Polar Meridian - Noor's Kibana Dashboard.png";
   const rendered = markdown.render(`[![Dashboard description](<${path}> "Noor's dashboard")](<${path}>)\n\n*Synthetic monitoring data; click to enlarge.*\n`);
   assert.match(rendered, /<figure class="journal-captioned">\s*<a href="[^"]+"><img/);
   assert.match(rendered, /alt="Dashboard description" title="Noor's dashboard"/);
@@ -877,7 +900,7 @@ test("linked raw persona images retain captions, attributes and their lightbox o
   const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
   const html = createMarkdownLibrary().render(article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, ""));
   for (const name of ["maya", "sam", "anika"]) {
-    const pattern = new RegExp(`<figure class="journal-captioned">\\s*<a href="(/assets/journal/personas/relay-desk-${name}\\.jpg)"><img([^>]+)></a>\\s*<figcaption>([^<]+)</figcaption>\\s*</figure>`, "u");
+    const pattern = new RegExp(`<figure class="journal-captioned">\\s*<a href="(/assets/journal/articles/relaydesk/personas/relay-desk-${name}\\.jpg)"><img([^>]+)></a>\\s*<figcaption>([^<]+)</figcaption>\\s*</figure>`, "u");
     const figure = html.match(pattern);
     assert.ok(figure, `${name} keeps the portrait and caption together`);
     assert.ok(figure[2].includes(`src="${figure[1]}"`), "Self-link uses the original image as its destination");
@@ -896,15 +919,15 @@ test("RelayDesk closes with a readable mission debrief rather than a copyable co
   assert.match(html, /class="journal-mission-debrief" role="group" aria-labelledby="relaydesk-run-complete"/);
   assert.match(html, /id="relaydesk-run-complete">RUN COMPLETE<\/p>/);
   assert.match(html, /Back at the bar, Sam orders a fresh beer\.<br>\s*This time, his pad stays in his jacket\.<br>\s*For the moment\./);
-  assert.match(html, /<div class="journal-mission-opening">[\s\S]*?<img class="journal-mission-mascot" src="\/assets\/journal\/relaydesk-spiderbot-mascotte\.png" width="400" height="210" alt="" loading="lazy" decoding="async">\s*<\/div>\s*<dl>/);
-  assert.ok(readFileSync(new URL("../src/assets/journal/relaydesk-spiderbot-mascotte.png", import.meta.url)).length > 0);
+  assert.match(html, /<div class="journal-mission-opening">[\s\S]*?<img class="journal-mission-mascot" src="\/assets\/journal\/articles\/relaydesk\/relaydesk-spiderbot-mascotte\.png" width="400" height="210" alt="" loading="lazy" decoding="async">\s*<\/div>\s*<dl>/);
+  assert.ok(readFileSync(new URL("../src/assets/journal/articles/relaydesk/relaydesk-spiderbot-mascotte.png", import.meta.url)).length > 0);
   const styles = readFileSync(new URL("../src/styles/journal.less", import.meta.url), "utf8");
   assert.match(styles, /img\.journal-mission-mascot \{[^}]*top: 50%;[^}]*right: calc\(@space-lg \+ \(100% - \(@space-lg \* 2\)\) \* 0\.225\);[^}]*border: 0;[^}]*transform: translate\(50%, -50%\);/);
   assert.match(styles, /@media \(max-width: 640px\) \{\s*\.journal-mission-opening \{\s*position: relative;\s*margin-bottom: 96px;/);
   for (const [name, result] of [["Maya", "Reply delivered"], ["Sam", "Access restored"], ["Anika", "Credentials replaced"]]) {
     const row = html.match(new RegExp(`<dt>${name}</dt><dd class="journal-mission-result">([\\s\\S]*?)</dd>`));
     assert.ok(row, `${name} keeps a name and result row`);
-    assert.ok(row[1].includes(`src="/assets/journal/personas/relay-desk-${name.toLowerCase()}-portrait.jpg"`));
+    assert.ok(row[1].includes(`src="/assets/journal/articles/relaydesk/personas/relay-desk-${name.toLowerCase()}-portrait.jpg"`));
     assert.ok(row[1].includes('class="journal-mission-portrait"'));
     assert.ok(row[1].includes(`<span>${result}. Level up.</span>`));
     assert.ok(row[1].indexOf("<img") < row[1].indexOf("<span"), "portrait sits before the result");
@@ -925,7 +948,7 @@ test("RelayDesk keeps its editable Mermaid source in an inert template beside th
   assert.match(source[1], /kestrelAgents --&gt;/);
   const visibleHtml = html.replace(source[0], "");
   assert.equal((visibleHtml.match(/<pre class="mermaid(?: mermaid-compact)?">/gu) || []).length, 3);
-  assert.match(visibleHtml, /<a href="\/assets\/journal\/relaydesk-support-network\.jpg"><img[^>]+src="\/assets\/journal\/relaydesk-support-network\.jpg"/);
+  assert.match(visibleHtml, /<a href="\/assets\/journal\/articles\/relaydesk\/relaydesk-support-network\.jpg"><img[^>]+src="\/assets\/journal\/articles\/relaydesk\/relaydesk-support-network\.jpg"/);
   assert.match(visibleHtml, /<figcaption>Customer support is one use of RelayDesk;/);
 });
 

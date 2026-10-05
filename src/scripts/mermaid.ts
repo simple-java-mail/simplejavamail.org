@@ -9,7 +9,7 @@ const mermaid = (window as Window & { mermaid?: MermaidApi }).mermaid;
 // editable source (and other Markdown viewers), then replace only its drawing.
 function applyActorPortraits(element: HTMLElement, source: string): void {
   const svgNamespace = 'http://www.w3.org/2000/svg';
-  const portraits = source.matchAll(/^\s*%% journal-portrait: ([\w-]+) (\/assets\/journal\/personas\/[\w-]+-portrait\.jpg)\s*$/gm);
+  const portraits = source.matchAll(/^\s*%% journal-portrait: ([\w-]+) (\/assets\/journal\/articles\/[a-z0-9-]+\/personas\/[\w-]+-portrait\.jpg)\s*$/gm);
   for (const [, actorId, imagePath] of portraits) {
     for (const actor of element.querySelectorAll<SVGGElement>('g.actor-man')) {
       if (actor.getAttribute('name') !== actorId) continue;
@@ -50,7 +50,7 @@ function applyActorPortraits(element: HTMLElement, source: string): void {
 // Sequence participants keep native boxes in other Markdown viewers. On the
 // website, use local node artwork inside the space reserved for their headers.
 async function applySequenceNodeImages(element: HTMLElement, source: string): Promise<void> {
-  const nodes = source.matchAll(/^\s*%% journal-node: ([\w-]+) (\/assets\/journal\/relaydesk-cyberpunk-[\w-]+-node\.png)\s*$/gm);
+  const nodes = source.matchAll(/^\s*%% journal-node: ([\w-]+) (\/assets\/journal\/articles\/relaydesk\/nodes\/relaydesk-cyberpunk-[\w-]+-node\.png)\s*$/gm);
   for (const [, participantId, imagePath] of nodes) {
     const artwork = new Image();
     artwork.src = imagePath;

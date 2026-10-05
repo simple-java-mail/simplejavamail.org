@@ -43,7 +43,7 @@ The companion `tests/journal-examples/RelayDeskMailExamplesTest.java` checks mes
 $exampleClasses = New-Item -ItemType Directory -Path (Join-Path ([IO.Path]::GetTempPath()) ('relaydesk-example-' + [Guid]::NewGuid().ToString('N')))
 # Set $exampleClasspath to the current 10.0.0 development classes and dependencies.
 javac -proc:none --release 11 -cp $exampleClasspath -d $exampleClasses.FullName `
-  src/assets/journal/examples/relaydesk/RelayDeskMailExamples.java `
+  src/assets/journal/articles/relaydesk/examples/RelayDeskMailExamples.java `
   tests/journal-examples/RelayDeskMailExamplesTest.java
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
 java -cp "$($exampleClasses.FullName);$exampleClasspath" RelayDeskMailExamplesTest `

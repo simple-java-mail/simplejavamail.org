@@ -23,10 +23,36 @@ Keep these two Typora-only settings in each entry:
 
 ```yaml
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/your-article-slug
 ```
 
-`typora-root-url` lets Typora preview site-root image paths such as `/assets/journal/example.png`. `typora-copy-images-to` sends images pasted or dragged into the document to `src/assets/journal/` instead of leaving them beside the article. These settings are authoring metadata only and are not rendered into the website.
+`typora-root-url` lets Typora preview site-root image paths such as `/assets/journal/articles/your-article-slug/example.png`. Set `typora-copy-images-to` to that article's asset folder, replacing `your-article-slug` with its stable short name. Images pasted or dragged into the document then stay with the article instead of accumulating in a shared folder. These settings are authoring metadata only and are not rendered into the website.
+
+### Asset organization
+
+Keep Journal assets grouped by their purpose:
+
+```text
+src/assets/journal/
+├── articles/
+│   ├── origin-story/
+│   ├── the-library-i-keep-coming-back-to/
+│   ├── set-phasers-to-synchronize/
+│   ├── staple-and-sons/
+│   ├── polar-meridian/
+│   │   ├── personas/
+│   │   └── examples/
+│   └── relaydesk/
+│       ├── personas/
+│       ├── nodes/
+│       └── examples/
+├── common/
+└── company-logos/
+```
+
+Each article folder holds its screenshots, illustrations and chart data, with optional `personas`, `nodes` and `examples` subfolders. Use `common` for reusable artwork such as SJM branding, and `company-logos` for company identities shared by articles, the Case studies page and the homepage. An article-specific asset remains in its article folder even when another page features it; reference it rather than copying it. Articles without assets do not need an empty folder checked into Git. Existing non-Journal website and documentation assets remain outside this tree.
+
+Move files without changing their bytes, and update their article links, Mermaid image declarations, front matter, styles, tests and download instructions together. Corel Auto-Preserve backups are ignored and must not be checked in.
 
 Once in Typora, open **Preferences → Editor → Image Insert**, enable **Allow copy images to given folder** and **Use relative path if possible**, and leave **Ensure `./` prefix** disabled. This is a one-time application preference; the target folder itself comes from each article's front matter. Typora documents this workflow in [Images in Typora](https://support.typora.io/Images/).
 
@@ -52,7 +78,7 @@ date: "2026-08-26"
 category: "Maintainer practice"
 draft: true
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/what-belongs-in-simple-java-mail
 ---
 ```
 
@@ -101,24 +127,24 @@ flowchart TB
 Typora treats that line as an ordinary Mermaid comment. The website caps the diagram's height at 900px on desktop, or 600px at viewport widths of 980px and below, and scales it proportionally to fit narrower screens. Captions work the same way as for other diagrams.
 
 For a sequence actor's headshot, keep its normal `actor` declaration and add
-`%% journal-portrait: admin /assets/journal/personas/relay-desk-anika-portrait.jpg`
+`%% journal-portrait: admin /assets/journal/articles/relaydesk/personas/relay-desk-anika-portrait.jpg`
 inside the fence, where `admin` is that actor's identifier. The website replaces
 the stick figure with the local portrait, keeping the name and lifeline in place;
 Typora still shows the ordinary actor. Only local `*-portrait.jpg` assets in the
-personas directory are accepted. If the image fails to load, the stick figure returns.
+article's `personas` directory are accepted. If the image fails to load, the stick figure returns.
 Flowchart person labels can use a `diagram-person` span containing a 56-by-56
 `img` and a text span, as shown in RelayDesk's setup diagram.
 
 Flowchart system icons use native Mermaid image nodes, with an 85px height and a
 separate text label; keep the original proportions using `constraint: "on"`.
 For sequence participants, keep the normal `participant` declaration and add
-`%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png`
+`%% journal-node: registry /assets/journal/articles/relaydesk/nodes/relaydesk-cyberpunk-route-manager-node.png`
 inside the fence. Reserve a 125px sequence-header height for the icon and label.
 The website replaces the participant box with the local icon, keeping its name,
 lifeline and messages. Icons use their source proportions at 85px tall, reduced
 only if the participant header is too narrow or short. Other viewers retain the
 ordinary box. Only local
-`relaydesk-cyberpunk-*-node.png` assets are accepted; failed images restore the box.
+`relaydesk-cyberpunk-*-node.png` assets in RelayDesk's `nodes` directory are accepted; failed images restore the box.
 
 Keep the shared flowchart spacing unless a diagram needs a specific adjustment. Use the compact comment to reduce its displayed size rather than squeezing its `rankSpacing`. A longer arrow such as `--->` can reserve extra room for a label where a connection enters a group.
 
@@ -171,7 +197,7 @@ The category describes the entry's main lens, not its tone. For a personal accou
 
 The page template provides the article title, so begin the Markdown body with prose or an `##` heading. Any Markdown construct that produces an `h1` fails the build. Headings from `h2` through `h6` receive permalinks; only top-level article sections (`##` / `h2`) appear in the table of contents.
 
-Fenced code blocks, tables, blockquotes, lists, links, and raw HTML are supported. Raw HTML is trusted and is not sanitized, so only use content maintained in this repository. Put journal images in `src/assets/journal/`. Absolute site paths such as `/assets/journal/example.png` and document-relative paths such as `../assets/journal/example.png` both resolve to the same published asset.
+Fenced code blocks, tables, blockquotes, lists, links, and raw HTML are supported. Raw HTML is trusted and is not sanitized, so only use content maintained in this repository. Put article images in `src/assets/journal/articles/<article-slug>/`. Absolute site paths such as `/assets/journal/articles/staple-and-sons/example.png` and document-relative paths such as `../assets/journal/articles/staple-and-sons/example.png` both resolve to the same published asset.
 
 For an image without a border or padding and with normal paragraph spacing, add `class="journal-paragraph-image"` to its `<img>` tag. Images remain centered by default. Add `image-align-left` or `image-align-right` to align any journal image, independently of its other styling. Combine them with, for example, `class="journal-paragraph-image image-align-right"`.
 
@@ -197,7 +223,7 @@ For a code block that belongs closely with the surrounding prose, add `code-comp
 Put an italic-only paragraph immediately after a standalone image or fenced code block, including a Mermaid diagram, separated by a blank line. Typora displays ordinary italic text; the website groups the pair into a `<figure>` with a styled `<figcaption>`. Alt text remains separate from the visible caption.
 
 ```markdown
-![Example quotation email](/assets/journal/example-email.png)
+![Example quotation email](/assets/journal/articles/staple-and-sons/example-email.png)
 
 *The quotation is just an excuse to deliver the personal note.*
 ```
@@ -209,7 +235,7 @@ This works with Markdown images and standalone `<img>` tags, including their siz
 Link a Markdown image to its own file in `/assets/journal/` to open it in a lightbox, with fit-to-screen and actual-size views. Other image links keep their normal destination. Without JavaScript, the link opens the image directly. Captions still work:
 
 ```markdown
-[![Dashboard showing urgent mail continuing during a newsletter run](/assets/journal/dashboard.png "Mail dashboard")](/assets/journal/dashboard.png)
+[![Dashboard showing urgent mail continuing during a newsletter run](/assets/journal/articles/polar-meridian/dashboard.png "Mail dashboard")](/assets/journal/articles/polar-meridian/dashboard.png)
 
 *The bulk queue fills while urgent mail keeps moving; click to enlarge.*
 ```
@@ -219,10 +245,10 @@ Link a Markdown image to its own file in `/assets/journal/` to open it in a ligh
 To show a complete downloadable example without repeating its source in the article, add `templateEngineOverride: hbs,md` to that article's front matter and include the existing Handlebars component:
 
 ```handlebars
-{{> components/journal-code-disclosure (journalCodeExample "polar-meridian/PolarMeridianDispatcher.java") title="Dispatcher"}}
+{{> components/journal-code-disclosure (journalCodeExample "polar-meridian/examples/PolarMeridianDispatcher.java") title="Dispatcher"}}
 ```
 
-Paths are relative to `src/assets/journal/examples/`. Eleventy reads and escapes the file at build time; the page shows a short faded preview with a native expand/collapse control, and the expanded code has the usual Copy button. No browser fetch is needed. Typora shows the include expression rather than the full example; use the website preview to inspect it. Only articles opting into the override process Handlebars expressions; escape literal `{{` sequences in those articles with a backslash if needed.
+Paths are relative to `src/assets/journal/articles/` and must select a file inside an article's `examples` directory. Eleventy reads and escapes the file at build time; the page shows a short faded preview with a native expand/collapse control, and the expanded code has the usual Copy button. No browser fetch is needed. Typora shows the include expression rather than the full example; use the website preview to inspect it. Only articles opting into the override process Handlebars expressions; escape literal `{{` sequences in those articles with a backslash if needed.
 
 Java import blocks at the start of a file are omitted from both the preview and the expanded display. The downloadable source file keeps its imports.
 

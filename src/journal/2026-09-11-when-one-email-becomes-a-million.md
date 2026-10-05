@@ -5,7 +5,7 @@ date: "2026-09-11"
 category: "System design"
 draft: true
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/when-one-email-becomes-a-million
 banner-type: note
 banner-header: "AI-Assisted"
 banner-body: "This draft began as an AI-assisted outline for a future Engineering Journal article."

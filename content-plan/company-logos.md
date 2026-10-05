@@ -6,9 +6,9 @@ The originals below are transparent 2172 × 724 PNGs (3:1), copied without modif
 
 | Company | Profile | Website asset |
 | --- | --- | --- |
-| Staple & Sons | Small, practical trade supplier; forest-green shelving bracket and slab serif | [staple-and-sons.png](../src/assets/journal/companies/staple-and-sons.png) |
-| Polar Meridian Systems | Corporate industrial manufacturer; navy engineering emblem | [polar-meridian-systems.png](../src/assets/journal/companies/polar-meridian-systems.png) |
-| RelayDesk | Modern cloud support SaaS; cobalt and aqua connected conversations | [relaydesk.png](../src/assets/journal/companies/relaydesk.png) |
+| Staple & Sons | Small, practical trade supplier; forest-green shelving bracket and slab serif | [staple-and-sons.png](../src/assets/journal/company-logos/staple-and-sons.png) |
+| Polar Meridian Systems | Corporate industrial manufacturer; navy engineering emblem | [polar-meridian-systems.png](../src/assets/journal/company-logos/polar-meridian-systems.png) |
+| RelayDesk | Modern cloud support SaaS; cobalt and aqua connected conversations | [relaydesk.png](../src/assets/journal/company-logos/relaydesk.png) |
 
 ## Generation prompts
 

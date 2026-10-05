@@ -123,7 +123,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/lib": "assets/lib" });
   eleventyConfig.addPassthroughCopy({ "node_modules/mermaid/dist/mermaid.min.js": "assets/lib/mermaid.min.js" });
   eleventyConfig.addPassthroughCopy({ "src/static": "." });
-  eleventyConfig.ignores.add("src/assets/journal/examples/**/README.md");
+  eleventyConfig.ignores.add("src/assets/journal/articles/*/examples/README.md");
   eleventyConfig.ignores.add("src/journal/README.md");
   eleventyConfig.ignores.add("src/journal/article-template.md");
   eleventyConfig.ignores.add("src/styles/tokens.less");

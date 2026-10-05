@@ -5,7 +5,7 @@ date: "2026-09-10"
 category: "System design"
 caseStudy:
   company: "Polar Meridian Systems"
-  logo: "/assets/journal/companies/polar-meridian-systems.png"
+  logo: "/assets/journal/company-logos/polar-meridian-systems.png"
   label: "Enterprise integration"
   description: "A global manufacturer already has corporate mail infrastructure. Its application teams need a shared service that keeps login codes ahead of newsletters, protects confidential correspondence and spots trouble before customers notice."
   order: 2
@@ -17,7 +17,7 @@ draft-note: "Follow https://github.com/bbottema/simple-java-mail/issues/740 befo
 mermaid: true
 templateEngineOverride: hbs,md
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/polar-meridian
 banner-type: note
 banner-header: "Case Study"
 banner-body: |-
@@ -36,7 +36,7 @@ Well, with roughly **5.2 million email deliveries per working day**, they can't 
 
 ## Meet the company
 
-<img src="/assets/journal/companies/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />
+<img src="/assets/journal/company-logos/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />
 
 Polar Meridian Systems sells and distributes industrial equipment and replacement parts around the world. It runs its own factories and regional distribution centres, with field-service teams that install the equipment and keep it running.
 
@@ -100,7 +100,7 @@ Our **Java service handles** 600,000 transactional and operational deliveries, p
 
 There are real examples of this kind of application-mail setup. Retarus describes [BSH bringing about a dozen cloud applications onto one mail platform](https://www.retarus.com/cases/customer-stories/bsh/) and [Solvay sending about 350,000 emails a month from SAP](https://www.retarus.com/cases/customer-stories/solvay/).
 
-<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-ravi.jpg" alt="Ravi at his desk, with Java code and a mail-dispatch dashboard on his monitors." width="878" height="878" loading="lazy" decoding="async">
+<img class="journal-persona-image" src="/assets/journal/articles/polar-meridian/personas/polar-meridian-ravi.jpg" alt="Ravi at his desk, with Java code and a mail-dispatch dashboard on his monitors." width="878" height="878" loading="lazy" decoding="async">
 
 *Ravi builds the mail service the application teams will share.*
 
@@ -147,7 +147,7 @@ The work we're designing sits before and around those SMTP connections. Which ap
 
 ## Everyone’s email is urgent, but Leonie just wants to log in
 
-<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-leonie.jpg" alt="Leonie at a distributor's desk, checking her inbox while Polar Meridian's ordering portal waits for a verification code." width="949" height="811" loading="lazy" decoding="async">
+<img class="journal-persona-image" src="/assets/journal/articles/polar-meridian/personas/polar-meridian-leonie.jpg" alt="Leonie at a distributor's desk, checking her inbox while Polar Meridian's ordering portal waits for a verification code." width="949" height="811" loading="lazy" decoding="async">
 
 *Leonie has an order ready. First, she needs that login code.*
 
@@ -418,7 +418,7 @@ if (!limits.tryAcquire(prepared.email.getId(), job.requestId,
 
 *Marketing's next job stays in the database; urgent polling carries on.*
 
-Ravi's [application-side limiter](/assets/journal/examples/polar-meridian/JdbcDispatchLimits.java) uses a shared database. The `sendingQuotaGroup` argument and `workload` select a row in `mail_dispatch_limit`. The limiter locks that row with [`SELECT ... FOR UPDATE`](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS), then checks and charges usage in that transaction:
+Ravi's [application-side limiter](/assets/journal/articles/polar-meridian/examples/JdbcDispatchLimits.java) uses a shared database. The `sendingQuotaGroup` argument and `workload` select a row in `mail_dispatch_limit`. The limiter locks that row with [`SELECT ... FOR UPDATE`](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS), then checks and charges usage in that transaction:
 
 ```java
 Limit limit = lockLimit(tx, sendingQuotaGroup, workload);
@@ -435,11 +435,11 @@ tx.commit();
 
 *Two dispatcher instances cannot both spend the same remaining share.*
 
-The shares must fit the service's agreed allocation, accounting for other senders too. Count every recipient, including CC and BCC. Async queues can still bunch up SMTP attempts, so relays enforce their own limits. The [accounting notes](/assets/journal/examples/polar-meridian/README.md) cover unfinished attempts, rolling windows and database costs.
+The shares must fit the service's agreed allocation, accounting for other senders too. Count every recipient, including CC and BCC. Async queues can still bunch up SMTP attempts, so relays enforce their own limits. The [accounting notes](/assets/journal/articles/polar-meridian/examples/README.md) cover unfinished attempts, rolling windows and database costs.
 
 ### Size workers for the busy periods
 
-<img class="journal-persona-image" src="/assets/journal/personas/polar-meridian-noor.jpg" alt="Noor discussing relay capacity and connection counts with a colleague." width="878" height="878" loading="lazy" decoding="async">
+<img class="journal-persona-image" src="/assets/journal/articles/polar-meridian/personas/polar-meridian-noor.jpg" alt="Noor discussing relay capacity and connection counts with a colleague." width="878" height="878" loading="lazy" decoding="async">
 
 *Noor checks whether the relays can handle another replica.*
 
@@ -810,7 +810,7 @@ Ravi has the application's monitoring adapters emit selected timings, results an
 
 The dashboard groups charts by region, workload and application, while recipient addresses, request IDs and detailed exceptions stay in restricted investigation records, out of metric labels.
 
-[![Noor's Kibana dashboard showing the newsletter backlog draining while urgent-mail latency stays low, alongside a separate Asia-Pacific relay slowdown.](</assets/journal/Polar Meridian - Noor%27s Kibana Dashboard.png> "Noor's Kibana dashboard")](</assets/journal/Polar Meridian - Noor%27s Kibana Dashboard.png>)
+[![Noor's Kibana dashboard showing the newsletter backlog draining while urgent-mail latency stays low, alongside a separate Asia-Pacific relay slowdown.](</assets/journal/articles/polar-meridian/Polar Meridian - Noor%27s Kibana Dashboard.png> "Noor's Kibana dashboard")](</assets/journal/articles/polar-meridian/Polar Meridian - Noor%27s Kibana Dashboard.png>)
 
 *Marketing fills the bulk queue, but Leonie's login code doesn't have to wait behind it. An illustrative Kibana dashboard with synthetic data; click to enlarge.*
 
@@ -942,9 +942,9 @@ flowchart TB
 
 </div>
 
-Expand the complete Dispatcher below, or [download the Java file](/assets/journal/examples/polar-meridian/PolarMeridianDispatcher.java). The [adapter contracts and database code](/assets/journal/examples/polar-meridian/README.md) explain how to connect it to your application.
+Expand the complete Dispatcher below, or [download the Java file](/assets/journal/articles/polar-meridian/examples/PolarMeridianDispatcher.java). The [adapter contracts and database code](/assets/journal/articles/polar-meridian/examples/README.md) explain how to connect it to your application.
 
-{{> components/journal-code-disclosure (journalCodeExample "polar-meridian/PolarMeridianDispatcher.java") title="Dispatcher"}}
+{{> components/journal-code-disclosure (journalCodeExample "polar-meridian/examples/PolarMeridianDispatcher.java") title="Dispatcher"}}
 
 ## Bringing the applications along
 
@@ -954,7 +954,7 @@ On her next visit, Leonie gets her login code and order confirmation while Marke
 
 With a flexible setup built to grow and a structured onboarding process, Ravi and Noor are ready for the next mail-sending challenge. They won't let another Leonie stare at an empty inbox again.
 
-<img src="/assets/journal/personas/polar-meridian-finale.jpg" alt="Ravi, Leonie and Noor posing beside a giant SJM logo outside Polar Meridian Systems." width="1014" height="760" loading="lazy" decoding="async">
+<img src="/assets/journal/articles/polar-meridian/personas/polar-meridian-finale.jpg" alt="Ravi, Leonie and Noor posing beside a giant SJM logo outside Polar Meridian Systems." width="1014" height="760" loading="lazy" decoding="async">
 
 *The mail is flowing. The branding department got a little carried away.*
 

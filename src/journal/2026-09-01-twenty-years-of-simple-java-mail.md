@@ -9,7 +9,7 @@ series:
   total: 3
 draft: true
 typora-root-url: ..
-typora-copy-images-to: ../assets/journal
+typora-copy-images-to: ../assets/journal/articles/twenty-years-of-simple-java-mail
 banner-type: note
 banner-header: "AI-Assisted"
 banner-body: "This article is from a set of three that emerged from a deep AI-assisted archaeology dig. Due to the long history and sheer number of references unearthed, this article was also streamlined using AI and wouldn't have been possible otherwise."
