@@ -120,11 +120,14 @@ Juniper Travel gives RelayDesk one SMTP address to send through; its mail provid
 ```mermaid
 %% journal: compact
 %%{init: { "flowchart": { "curve": "stepAfter", "padding": 8, "wrappingWidth": 320, "nodeSpacing": 24, "rankSpacing": 32 } } }%%
+%% journal-portrait-link: agentsToPortal agents source bottom
+%% journal-portrait-link: samMaintenance sam source left
+%% journal-portrait-link: kestrelAdmin anika target top
 flowchart TB
     accTitle: RelayDesk uses the sending service approved by each customer
     accDescr: Support agents use RelayDesk to save replies. Sam maintains its regional dispatch workers, which use Simple Java Mail either through RelayDesk's default sending service or through customer-approved mail services. Kestrel has separate European and North American relay pairs; Juniper has one managed endpoint. Anika administers Kestrel's relays, not RelayDesk's workers. The diagram groups deployments logically, not into a cross-region pool.
 
-    agents(["<span class='diagram-person'><img src='/assets/journal/personas/relay-desk-maya-portrait.jpg' width='56' height='56' alt=''/><span>Maya and other<br/>support agents</span></span>"])
+    agents@{ shape: rect, label: "<span class='diagram-person diagram-person-hex'><span class='diagram-person-portrait'><img src='/assets/journal/personas/relay-desk-maya-portrait.jpg' width='58' height='66' alt=''/></span><span class='diagram-person-copy'><strong>Maya</strong><span>and other support agents</span></span></span>" }
     subgraph relaydesk["RelayDesk · customer-support SaaS"]
         portal@{ img: "/assets/journal/relaydesk-cyberpunk-support-conversations-node.png", label: "Support conversations", h: 85, pos: "b", constraint: "on" }
         store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>+ send attempts", h: 85, pos: "b", constraint: "on" }
@@ -132,20 +135,23 @@ flowchart TB
         portal --> store
         store --> workers
     end
-    agents --> portal
-    sam(["<span class='diagram-person'><img src='/assets/journal/personas/relay-desk-sam-portrait.jpg' width='56' height='56' alt=''/><span>Sam<br/>RelayDesk developer</span></span>"])
-    sam -.->|maintains| workers
+    agents agentsToPortal@--> portal
+    sam@{ shape: rect, label: "<span class='diagram-person diagram-person-hex'><span class='diagram-person-portrait'><img src='/assets/journal/personas/relay-desk-sam-portrait.jpg' width='58' height='66' alt=''/></span><span class='diagram-person-copy'><strong>Sam</strong><span>RelayDesk developer</span></span></span>" }
+    sam samMaintenance@-.->|maintains| workers
 
     defaultMail@{ img: "/assets/journal/relaydesk-cyberpunk-default-smtp-node.png", label: "RelayDesk default<br/>sending service", h: 85, pos: "b", constraint: "on" }
     kestrel@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-node.png", label: "Kestrel Outfitters<br/>EU relay pair · US relay pair<br/>separate regional groups", h: 85, pos: "b", constraint: "on" }
-    juniper@{ img: "/assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png", label: "Juniper Travel<br/>managed SMTP endpoint", h: 85, pos: "b", constraint: "on" }
+    juniper@{ img: "/assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png", label: "Juniper Nomad<br/>managed SMTP endpoint", h: 85, pos: "b", constraint: "on" }
     workers ---> defaultMail
     workers ---> kestrel
     workers ---> juniper
-    anika(["<span class='diagram-person'><img src='/assets/journal/personas/relay-desk-anika-portrait.jpg' width='56' height='56' alt=''/><span>Anika<br/>Kestrel mail administrator</span></span>"])
-    kestrel -.->|administered by| anika
+    anika@{ shape: rect, label: "<span class='diagram-person diagram-person-hex'><span class='diagram-person-portrait'><img src='/assets/journal/personas/relay-desk-anika-portrait.jpg' width='58' height='66' alt=''/></span><span class='diagram-person-copy'><strong>Anika</strong><span>Kestrel mail administrator</span></span></span>" }
+    kestrel kestrelAdmin@-.->|administered by| anika
+    agentsToPortal@{ curve: basis }
+    samMaintenance@{ curve: basis }
+    kestrelAdmin@{ curve: basis }
 
-    classDef person fill:#0D232C,stroke:#35D9EF,color:#E4E9EE
+    classDef person fill:none,stroke:none,color:#BECBD0
     classDef component fill:none,stroke:none,color:#E4E9EE
     classDef storage fill:none,stroke:none,color:#E4E9EE
     classDef external fill:none,stroke:none,color:#E4E9EE
@@ -311,6 +317,8 @@ RelayDesk's dispatcher polls a durable job store and gives eligible customers a 
 ```mermaid
 %% journal: compact
 %%{init: { "flowchart": { "padding": 8, "wrappingWidth": 320, "nodeSpacing": 32, "rankSpacing": 40 } } }%%
+%% journal-image-branch: dispatchKestrel dispatcher kestrel
+%% journal-image-branch: dispatchJuniper dispatcher juniper
 flowchart LR
     accTitle: A blocked customer does not occupy the whole dispatcher
     accDescr: Saved replies wait in durable storage. RelayDesk's dispatcher checks customer limits before submitting work. Kestrel's paused route leaves its replies in storage, while Juniper's eligible replies go to its own Mailer. Simple Java Mail's connection pools do not implement this scheduling policy.
@@ -320,8 +328,8 @@ flowchart LR
     kestrel@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-node.png", label: "Kestrel · route paused<br/>keep jobs in storage", h: 85, pos: "b", constraint: "on" }
     juniper@{ img: "/assets/journal/relaydesk-cyberpunk-juniper-smtp-node.png", label: "Juniper · ready<br/>submit through its Mailer", h: 85, pos: "b", constraint: "on" }
     store --> dispatcher
-    dispatcher ---> kestrel
-    dispatcher ---> juniper
+    dispatcher dispatchKestrel@---> kestrel
+    dispatcher dispatchJuniper@---> juniper
     classDef waiting fill:none,stroke:none,color:#EBA680
     classDef ready fill:none,stroke:none,color:#A4E7B1
     classDef storage fill:none,stroke:none,color:#E4E9EE

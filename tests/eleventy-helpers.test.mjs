@@ -268,6 +268,142 @@ test("RelayDesk diagrams use local portraits and system icons while the infograp
   assert.ok(article.includes('<template id="relaydesk-support-network-source"'));
 });
 
+test("RelayDesk flowchart uses hexagonal portrait badges without enclosing cards or changing the sequence actor", () => {
+  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../src/styles/journal.less", import.meta.url), "utf8");
+  for (const [id, name] of [["agents", "Maya"], ["sam", "Sam"], ["anika", "Anika"]]) {
+    assert.ok(article.includes(`${id}@{ shape: rect, label:`));
+    assert.ok(article.includes(`<strong>${name}</strong><span>`));
+    assert.ok(!article.includes(`${id}(["<span class='diagram-person'`));
+  }
+  assert.equal((article.match(/diagram-person diagram-person-hex/g) ?? []).length, 3);
+  assert.equal((article.match(/class='diagram-person-portrait'/g) ?? []).length, 3);
+  assert.ok(!article.includes("diagram-person-hud"));
+  assert.ok(article.includes("classDef person fill:none,stroke:none,color:#BECBD0"));
+  assert.ok(article.includes("actor admin as Anika"));
+  assert.ok(article.includes("sam samMaintenance@-.->|maintains| workers"));
+  assert.ok(article.includes("kestrel kestrelAdmin@-.->|administered by| anika"));
+  assert.ok(article.includes("%% journal-portrait-link: samMaintenance sam source left"));
+  assert.ok(article.includes("%% journal-portrait-link: kestrelAdmin anika target top"));
+  for (const edge of ["agentsToPortal", "samMaintenance", "kestrelAdmin"]) {
+    assert.ok(article.includes(`${edge}@{ curve: basis }`));
+  }
+  const cyberpunkStyles = styles.slice(styles.indexOf(".journal-theme-cyberpunk {"));
+  assert.ok(cyberpunkStyles.includes(".diagram-person-hex"));
+  assert.ok(cyberpunkStyles.includes(".diagram-person-copy strong"));
+  assert.match(cyberpunkStyles, /\.diagram-person-portrait \{[^}]*background: #638E98;[^}]*clip-path: polygon\(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%\);/);
+  assert.match(cyberpunkStyles, /\.diagram-person-portrait img \{[^}]*width: 58px !important;[^}]*height: 66px;[^}]*border: 0;[^}]*clip-path: polygon/);
+  assert.match(cyberpunkStyles, /\.diagram-person-copy strong \{[^}]*color: #9DC3CD;/);
+  assert.match(cyberpunkStyles, /\.diagram-person-copy > span \{\s*color: #BECBD0;/);
+  assert.ok(cyberpunkStyles.includes(".diagram-person-hex .diagram-person-portrait {"));
+  assert.ok(!cyberpunkStyles.includes("pre.mermaid .diagram-person-portrait {"));
+});
+
+test("portrait links anchor to badge edges, preserve arrowheads and move their labels with the curve", () => {
+  const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
+  const functions = source.slice(source.indexOf("type DiagramPoint"), source.indexOf("if (mermaid &&"));
+  const script = ts.transpileModule(functions, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const label = {
+    classList: { contains: (name) => name === "edgeLabel" },
+    attrs: {}, setAttribute(name, value) { this.attrs[name] = value; },
+  };
+  const edge = {
+    attrs: { "marker-end": "url(#arrowhead)" },
+    getScreenCTM: () => ({ inverse: () => ({ scale: 2, x: 10, y: 20 }) }),
+    getTotalLength: () => 200,
+    getPointAtLength: (length) => ({ x: 300 - length, y: 300 + length }),
+    setAttribute(name, value) { this.attrs[name] = value; },
+  };
+  const portrait = { getBoundingClientRect: () => ({ left: 100, top: 200, width: 64, height: 72 }) };
+  const node = {
+    id: "mermaid-123-flowchart-sam-4",
+    querySelector: (selector) => selector === ".diagram-person-hex .diagram-person-portrait" ? portrait : null,
+  };
+  const element = {
+    querySelectorAll: (selector) => selector === "g.node" ? [node] : [],
+    querySelector: (selector) => {
+      if (selector === 'path.flowchart-link[data-id="samMaintenance"]') return edge;
+      if (selector === 'g.label[data-id="samMaintenance"]') return { parentElement: label };
+      return null;
+    },
+  };
+  const context = { DOMPoint: class {
+    constructor(x, y) { this.x = x; this.y = y; }
+    matrixTransform(matrix) { return { x: this.x * matrix.scale + matrix.x, y: this.y * matrix.scale + matrix.y }; }
+  } };
+  runInNewContext(script, context);
+  context.applyPortraitLinks(element, "%% journal-portrait-link: samMaintenance sam source left");
+  assert.ok(edge.attrs.d.startsWith("M210,492C"));
+  assert.ok(edge.attrs.d.endsWith("100,500"));
+  assert.equal(edge.attrs["marker-end"], "url(#arrowhead)");
+  assert.equal(label.attrs.transform, "translate(200, 400)");
+
+  context.applyPortraitLinks(element, "%% journal-portrait-link: samMaintenance sam target top");
+  assert.ok(edge.attrs.d.startsWith("M300,300C"));
+  assert.ok(edge.attrs.d.endsWith("274,416")); // Top anchor minus the four-unit arrowhead.
+  const unchanged = edge.attrs.d;
+  context.applyPortraitLinks(element, "%% journal-portrait-link: absent sam source left");
+  context.applyPortraitLinks(element, "%% journal-portrait-link: samMaintenance unknown source left");
+  context.applyPortraitLinks(element, "%% journal-portrait-link: samMaintenance sam source invalid");
+  assert.equal(edge.attrs.d, unchanged);
+  portrait.getBoundingClientRect = () => ({ left: 100, top: 200, width: 0, height: 0 });
+  context.applyPortraitLinks(element, "%% journal-portrait-link: samMaintenance sam source left");
+  assert.equal(edge.attrs.d, unchanged);
+});
+
+test("portrait Bézier curves leave and approach their anchors in the chosen directions", () => {
+  const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
+  const functions = source.slice(source.indexOf("type DiagramPoint"), source.indexOf("if (mermaid &&"));
+  const context = {};
+  runInNewContext(ts.transpileModule(functions, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, context);
+  assert.equal(context.portraitLinkPath({ x: 200, y: 100 }, { x: 0, y: 200 }, { x: -1, y: 0 }, { x: 0, y: -1 }),
+    "M200,100C99.37694101250946,100 0,99.37694101250946 0,200");
+  assert.equal(context.portraitLinkPath({ x: 0, y: 0 }, { x: 0, y: 1000 }, { x: 0, y: 1 }, { x: 0, y: -1 }),
+    "M0,0C0,120 0,880 0,1000");
+});
+
+test("image branches leave the artwork, keep angular elbows out of captions and preserve arrow styles", () => {
+  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  assert.ok(article.includes("%% journal-image-branch: dispatchKestrel dispatcher kestrel"));
+  assert.ok(article.includes("%% journal-image-branch: dispatchJuniper dispatcher juniper"));
+  assert.ok(article.includes("dispatcher dispatchKestrel@---> kestrel"));
+  assert.ok(article.includes("dispatcher dispatchJuniper@---> juniper"));
+  const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
+  const functions = source.slice(source.indexOf("function applyImageBranchLinks"), source.indexOf("if (mermaid &&"));
+  const images = {
+    dispatcher: { getBoundingClientRect: () => ({ right: 100, top: 100, width: 80, height: 100 }) },
+    kestrel: { getBoundingClientRect: () => ({ left: 300, top: 0, width: 80, height: 100 }) },
+    juniper: { getBoundingClientRect: () => ({ left: 300, top: 200, width: 80, height: 100 }) },
+  };
+  const edge = { attrs: { stroke: "green", "marker-end": "url(#arrow)" },
+    getScreenCTM: () => ({ inverse: () => ({ scale: 2 }) }),
+    setAttribute(name, value) { this.attrs[name] = value; },
+  };
+  const element = {
+    querySelectorAll: (selector) => selector === 'g.image-shape'
+      ? Object.entries(images).map(([id, image]) => ({ id: `mermaid-123-flowchart-${id}-0`, querySelector: () => image }))
+      : [],
+    querySelector: (selector) => selector === 'path.flowchart-link[data-id="branch"]' ? edge : null,
+  };
+  const context = { DOMPoint: class {
+    constructor(x, y) { this.x = x; this.y = y; }
+    matrixTransform(matrix) { return { x: this.x * matrix.scale, y: this.y * matrix.scale }; }
+  } };
+  runInNewContext(ts.transpileModule(functions, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, context);
+  context.applyImageBranchLinks(element, "%% journal-image-branch: branch dispatcher kestrel");
+  assert.equal(edge.attrs.d, "M200,260L398,260L398,100L596,100");
+  context.applyImageBranchLinks(element, "%% journal-image-branch: branch dispatcher juniper");
+  assert.equal(edge.attrs.d, "M200,340L398,340L398,500L596,500");
+  assert.equal(edge.attrs.stroke, "green");
+  assert.equal(edge.attrs["marker-end"], "url(#arrow)");
+  const unchanged = edge.attrs.d;
+  context.applyImageBranchLinks(element, "%% journal-image-branch: missing dispatcher juniper");
+  context.applyImageBranchLinks(element, "%% journal-image-branch: branch absent juniper");
+  images.juniper.getBoundingClientRect = () => ({ left: 50, top: 200, width: 80, height: 100 });
+  context.applyImageBranchLinks(element, "%% journal-image-branch: branch dispatcher juniper");
+  assert.equal(edge.attrs.d, unchanged);
+});
+
 test("copy controls stay on the frame while the code remains the unmodified copy source", async () => {
   const site = readFileSync(new URL("../src/scripts/site.ts", import.meta.url), "utf8");
   const source = site.slice(site.indexOf("const copyLabel ="), site.indexOf("const route ="));

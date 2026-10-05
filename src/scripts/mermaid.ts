@@ -93,6 +93,95 @@ async function applySequenceNodeImages(element: HTMLElement, source: string): Pr
   }
 }
 
+type DiagramPoint = { x: number; y: number };
+
+function portraitLinkPath(start: DiagramPoint, end: DiagramPoint, startDirection: DiagramPoint, endDirection: DiagramPoint): string {
+  const reach = Math.min(120, Math.max(24, Math.hypot(end.x - start.x, end.y - start.y) * 0.45));
+  return `M${start.x},${start.y}C${start.x + startDirection.x * reach},${start.y + startDirection.y * reach} ${end.x + endDirection.x * reach},${end.y + endDirection.y * reach} ${end.x},${end.y}`;
+}
+
+// Mermaid reserves a rectangle for each portrait plus its adjacent text. Keep
+// that layout space, but attach opted-in links to the visible hexagon instead.
+function applyPortraitLinks(element: HTMLElement, source: string): void {
+  const directions: Record<string, DiagramPoint> = {
+    top: { x: 0, y: -1 }, bottom: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 },
+  };
+  const links = source.matchAll(/^\s*%% journal-portrait-link: ([\w-]+) ([\w-]+) (source|target) (top|bottom|left|right)\s*$/gm);
+  for (const [, edgeId, nodeId, endpoint, side] of links) {
+    const edge = element.querySelector<SVGPathElement>(`path.flowchart-link[data-id="${edgeId}"]`);
+    const node = Array.from(element.querySelectorAll<SVGGElement>('g.node'))
+      .find((candidate) => candidate.id.match(/-flowchart-(.+)-\d+$/)?.[1] === nodeId);
+    const portrait = node?.querySelector<HTMLElement>('.diagram-person-hex .diagram-person-portrait');
+    const matrix = edge?.getScreenCTM();
+    if (!edge || !portrait || !matrix) continue;
+    const bounds = portrait.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) continue;
+    const direction = directions[side];
+    const inverse = matrix.inverse();
+    const anchor = new DOMPoint(
+      bounds.left + bounds.width * (1 + direction.x) / 2,
+      bounds.top + bounds.height * (1 + direction.y) / 2,
+    ).matrixTransform(inverse);
+    const length = edge.getTotalLength();
+    if (!length) continue;
+    const start = edge.getPointAtLength(0);
+    const end = edge.getPointAtLength(length);
+    const tangent = (a: DiagramPoint, b: DiagramPoint): DiagramPoint => {
+      const distance = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      return { x: (b.x - a.x) / distance, y: (b.y - a.y) / distance };
+    };
+    let startDirection = tangent(start, edge.getPointAtLength(Math.min(1, length)));
+    let endDirection = tangent(end, edge.getPointAtLength(Math.max(0, length - 1)));
+    if (endpoint === 'source') {
+      start.x = anchor.x;
+      start.y = anchor.y;
+      startDirection = direction;
+    } else {
+      // Mermaid's arrowhead extends four SVG units past the path endpoint.
+      end.x = anchor.x + direction.x * 4;
+      end.y = anchor.y + direction.y * 4;
+      endDirection = direction;
+    }
+    edge.setAttribute('d', portraitLinkPath(start, end, startDirection, endDirection));
+    const label = element.querySelector<SVGGElement>(`g.label[data-id="${edgeId}"]`)?.parentElement;
+    if (label?.classList.contains('edgeLabel')) {
+      const midpoint = edge.getPointAtLength(edge.getTotalLength() / 2);
+      label.setAttribute('transform', `translate(${midpoint.x}, ${midpoint.y})`);
+    }
+  }
+}
+
+// Image nodes include their captions in Mermaid's routing outline. For opted-in
+// left-to-right branches, use the artwork's right edge and keep elbows in the
+// gap between the icons, not in the source caption.
+function applyImageBranchLinks(element: HTMLElement, source: string): void {
+  const nodes = Array.from(element.querySelectorAll<SVGGElement>('g.image-shape'));
+  const imageFor = (id: string): SVGImageElement | null | undefined => nodes
+    .find((node) => node.id.match(/-flowchart-(.+)-\d+$/)?.[1] === id)
+    ?.querySelector<SVGImageElement>('image');
+  const branches = source.matchAll(/^\s*%% journal-image-branch: ([\w-]+) ([\w-]+) ([\w-]+)\s*$/gm);
+  for (const [, edgeId, sourceId, targetId] of branches) {
+    const edge = element.querySelector<SVGPathElement>(`path.flowchart-link[data-id="${edgeId}"]`);
+    const sourceImage = imageFor(sourceId);
+    const targetImage = imageFor(targetId);
+    const matrix = edge?.getScreenCTM();
+    if (!edge || !sourceImage || !targetImage || !matrix) continue;
+    const from = sourceImage.getBoundingClientRect();
+    const to = targetImage.getBoundingClientRect();
+    if (!from.width || !from.height || !to.width || !to.height || to.left <= from.right) continue;
+    const sourceMiddle = from.top + from.height / 2;
+    const targetMiddle = to.top + to.height / 2;
+    const inverse = matrix.inverse();
+    const start = new DOMPoint(from.right, sourceMiddle + Math.sign(targetMiddle - sourceMiddle) * from.height * 0.2)
+      .matrixTransform(inverse);
+    const end = new DOMPoint(to.left, targetMiddle).matrixTransform(inverse);
+    // Stop short of the target image by the arrowhead's four SVG units.
+    end.x -= 4;
+    const elbowX = (start.x + end.x) / 2;
+    edge.setAttribute('d', `M${start.x},${start.y}L${elbowX},${start.y}L${elbowX},${end.y}L${end.x},${end.y}`);
+  }
+}
+
 if (mermaid && document.querySelector('.mermaid')) {
   const cyberpunk = document.documentElement.classList.contains('journal-theme-cyberpunk');
   const sources = Array.from(document.querySelectorAll<HTMLElement>('.mermaid')).map((element) => ({
@@ -205,6 +294,8 @@ if (mermaid && document.querySelector('.mermaid')) {
       }
       await mermaid.run({ querySelector: '.mermaid' });
       for (const { element, source } of sources) {
+        applyPortraitLinks(element, source);
+        applyImageBranchLinks(element, source);
         applyActorPortraits(element, source);
         await applySequenceNodeImages(element, source);
       }
