@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import Handlebars from "handlebars";
+import less from "less";
 import ts from "typescript";
 
 import journalData from "../src/journal/journal.11tydata.mjs";
@@ -65,6 +67,19 @@ test("theme bootstrap restores the preference before paint and keeps article ski
   assert.deepEqual(bootstrap("invalid"), { preference: "light", dark: false });
   assert.deepEqual(bootstrap("dark", false, true), { preference: "light", dark: false });
   assert.deepEqual(bootstrap("light", true), { preference: "light", dark: true });
+});
+
+test("dark company-logo treatment targets only the two flat logos and preserves light-mode originals", async () => {
+  const stylesheetPath = new URL("../src/styles/theme.less", import.meta.url);
+  const { css } = await less.render(readFileSync(stylesheetPath, "utf8"), { filename: fileURLToPath(stylesheetPath) });
+  const rules = [...css.matchAll(/([^{}]+)\{\s*filter: brightness\(0\) invert\(0\.9\);\s*\}/g)];
+  assert.equal(rules.length, 1);
+  const selectors = rules[0][1];
+  assert.match(selectors, /\.site-theme-dark img:is\(/);
+  assert.match(selectors, /\.journal-theme-cyberpunk img:is\(/);
+  assert.match(selectors, /staple-and-sons\.png/);
+  assert.match(selectors, /polar-meridian-systems\.png/);
+  assert.doesNotMatch(selectors, /relaydesk|\.case-study-logo|\.journal-company-logo/);
 });
 
 test("Mermaid console palette is article-scoped and uses matching sequence layout fonts", async () => {
@@ -541,6 +556,42 @@ test("case studies require a company, label, index description and positive disp
   assert.throws(() => validate({ ...caseStudy, order: 0 }));
   assert.throws(() => validate({ ...caseStudy, order: 1.5 }));
   assert.throws(() => validate(true));
+  const spotlight = { image: "/assets/journal/personas/relay-desk-sam.jpg", heading: "A repair gig", description: "Customer SMTP integration" };
+  assert.doesNotThrow(() => validate({ ...caseStudy, spotlight }));
+  assert.throws(() => validate({ ...caseStudy, spotlight: { ...spotlight, image: "https://example.com/sam.jpg" } }));
+  for (const field of Object.keys(spotlight)) {
+    assert.throws(() => validate({ ...caseStudy, spotlight: { ...spotlight, [field]: " " } }));
+    assert.throws(() => validate({ ...caseStudy, spotlight: { ...spotlight, [field]: undefined } }));
+  }
+});
+
+test("case-study spotlights reuse their article metadata on the index and homepage", () => {
+  const handlebars = Handlebars.create();
+  handlebars.registerHelper("url", () => { throw new Error("A URL field must not invoke Eleventy's url helper"); });
+  handlebars.registerHelper("eq", (left, right) => left === right);
+  handlebars.registerPartial("components/case-study-spotlight", readFileSync(new URL("../src/_includes/components/case-study-spotlight.hbs", import.meta.url), "utf8"));
+  handlebars.registerPartial("components/module-badges", "");
+  const ordinary = (company, order) => ({ url: `/journal/company-${order}.html`, data: { title: `Case study: ${company}`, caseStudy: { company, order, label: "SMTP integration", description: "An ordinary case study" } } });
+  const featured = ordinary("RelayDesk", 3);
+  featured.data.caseStudy.spotlight = { image: "/assets/journal/personas/relay-desk-sam.jpg", heading: "Sam's <repair> gig", description: "Customer-owned mail servers" };
+  const renderPage = (name, entries) => {
+    const source = readFileSync(new URL(`../src/pages/${name}.hbs`, import.meta.url), "utf8").replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, "");
+    return handlebars.compile(source)({ collections: { caseStudies: entries }, site: { journal: { indexUrl: "/engineering-journal.html" } } });
+  };
+  const entries = [ordinary("Staple & Sons", 1), ordinary("Polar Meridian", 2), featured];
+  const index = renderPage("case-studies", entries);
+  assert.equal((index.match(/class="case-study-card"/g) || []).length, 2);
+  assert.equal((index.match(/class="case-study-spotlight"/g) || []).length, 1);
+  assert.match(index, /aria-labelledby="case-study-relaydesk-3-heading"/);
+  assert.match(index, /id="case-study-relaydesk-3-heading">Sam&#x27;s &lt;repair&gt; gig/);
+  assert.match(index, /Cyberpunk case study/);
+  assert.match(index, /class="case-study-spotlight-logo">RelayDesk<\/span>/);
+  assert.match(index, /src="\/assets\/journal\/personas\/relay-desk-sam.jpg" alt=""[^>]+loading="lazy"/);
+  const home = renderPage("index", entries);
+  assert.equal((home.match(/class="case-study-spotlight"/g) || []).length, 1);
+  assert.match(home, /aria-labelledby="home-relaydesk-3-heading"/);
+  assert.match(home, /href="\/journal\/company-3.html"/);
+  assert.doesNotMatch(renderPage("index", entries.slice(0, 2)), /home-case-study|case-study-spotlight/);
 });
 
 test("journal banners are optional but require a supported type, header and body together", () => {
@@ -845,6 +896,11 @@ test("RelayDesk closes with a readable mission debrief rather than a copyable co
   assert.match(html, /class="journal-mission-debrief" role="group" aria-labelledby="relaydesk-run-complete"/);
   assert.match(html, /id="relaydesk-run-complete">RUN COMPLETE<\/p>/);
   assert.match(html, /Back at the bar, Sam orders a fresh beer\.<br>\s*This time, his pad stays in his jacket\.<br>\s*For the moment\./);
+  assert.match(html, /<div class="journal-mission-opening">[\s\S]*?<img class="journal-mission-mascot" src="\/assets\/journal\/relaydesk-spiderbot-mascotte\.png" width="400" height="210" alt="" loading="lazy" decoding="async">\s*<\/div>\s*<dl>/);
+  assert.ok(readFileSync(new URL("../src/assets/journal/relaydesk-spiderbot-mascotte.png", import.meta.url)).length > 0);
+  const styles = readFileSync(new URL("../src/styles/journal.less", import.meta.url), "utf8");
+  assert.match(styles, /img\.journal-mission-mascot \{[^}]*top: 50%;[^}]*right: calc\(@space-lg \+ \(100% - \(@space-lg \* 2\)\) \* 0\.225\);[^}]*border: 0;[^}]*transform: translate\(50%, -50%\);/);
+  assert.match(styles, /@media \(max-width: 640px\) \{\s*\.journal-mission-opening \{\s*position: relative;\s*margin-bottom: 96px;/);
   for (const [name, result] of [["Maya", "Reply delivered"], ["Sam", "Access restored"], ["Anika", "Credentials replaced"]]) {
     const row = html.match(new RegExp(`<dt>${name}</dt><dd class="journal-mission-result">([\\s\\S]*?)</dd>`));
     assert.ok(row, `${name} keeps a name and result row`);

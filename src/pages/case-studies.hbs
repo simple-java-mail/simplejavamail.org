@@ -18,6 +18,9 @@ description: "Worked email-system designs with fictional companies: self-managed
 
         <div class="case-study-grid">
           {{#each collections.caseStudies}}
+            {{#if data.caseStudy.spotlight}}
+              {{> components/case-study-spotlight this id="case-study-relaydesk"}}
+            {{else}}
             <article class="case-study-card">
               <a class="case-study-card-link" href="{{this.url}}" aria-labelledby="case-study-company-{{@index}}" aria-describedby="case-study-label-{{@index}}">
                 <span class="case-study-label" id="case-study-label-{{@index}}">{{data.caseStudy.label}}</span>
@@ -35,6 +38,7 @@ description: "Worked email-system designs with fictional companies: self-managed
                 </span>
               </a>
             </article>
+            {{/if}}
           {{else}}
             <p>The first case studies are still being written. In the meantime, you can read the <a href="{{site.journal.indexUrl}}">Engineering Journal</a> or find a guide for <a href="/use-cases.html">common email jobs</a>.</p>
           {{/each}}

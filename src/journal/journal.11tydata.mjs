@@ -34,6 +34,11 @@ const articleData = z.object({
     label: nonBlankText,
     description: nonBlankText,
     order: z.number().int().positive(),
+    spotlight: z.object({
+      image: nonBlankText.startsWith("/assets/"),
+      heading: nonBlankText,
+      description: nonBlankText,
+    }).optional(),
   }).optional(),
 }).refine((data) => {
   const fields = [data["banner-type"], data["banner-header"], data["banner-body"]];

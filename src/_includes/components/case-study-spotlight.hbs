@@ -1,0 +1,19 @@
+<article class="case-study-spotlight">
+  <a class="case-study-spotlight-link" href="{{this.url}}" aria-labelledby="{{id}}-{{data.caseStudy.order}}-heading" aria-describedby="{{id}}-{{data.caseStudy.order}}-label">
+    <div class="case-study-spotlight-art">
+      <img src="{{data.caseStudy.spotlight.image}}" alt="" width="1536" height="1024" loading="lazy" decoding="async">
+      <span class="case-study-spotlight-tag" aria-hidden="true">REPAIR GIG · RELAYDESK</span>
+    </div>
+    <div class="case-study-spotlight-copy">
+      <p class="case-study-spotlight-label" id="{{id}}-{{data.caseStudy.order}}-label">Cyberpunk case study</p>
+      {{#if data.caseStudy.logo}}
+        <img class="case-study-spotlight-logo" src="{{data.caseStudy.logo}}" alt="{{data.caseStudy.company}}" width="1002" height="236" loading="lazy" decoding="async">
+      {{else}}
+        <span class="case-study-spotlight-logo">{{data.caseStudy.company}}</span>
+      {{/if}}
+      <h2 id="{{id}}-{{data.caseStudy.order}}-heading">{{data.caseStudy.spotlight.heading}}</h2>
+      <p class="case-study-spotlight-description">{{data.caseStudy.spotlight.description}}</p>
+      <span class="case-study-spotlight-action">Take the gig <span aria-hidden="true">→</span></span>
+    </div>
+  </a>
+</article>

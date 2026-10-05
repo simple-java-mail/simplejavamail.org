@@ -155,6 +155,8 @@ caseStudy:
 
 `label` is the short badge identifying the kind of setup, such as "Self-managed SMTP" or "Enterprise integration". `order` controls only the Case studies index, not the Journal's reading order. The company profile is separate from the article's title and description; the index links to the existing Journal URL. Draft case studies appear in local preview and are excluded from the production index, just like other Journal drafts.
 
+RelayDesk also has a `caseStudy.spotlight` object with a local `/assets/` image, `heading` and `description`. It selects the wide cyberpunk card on the Case studies page and the matching homepage feature; both use the same article metadata and URL. Its draft status still controls production visibility. Other case studies keep their ordinary cards.
+
 ### Categories
 
 Use one of these exact values:

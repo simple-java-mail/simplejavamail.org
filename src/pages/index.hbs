@@ -196,6 +196,16 @@ mailer.sync().sendMail(email);</code></pre>
       </div>
     </section>
 
+    {{#each collections.caseStudies}}
+      {{#if data.caseStudy.spotlight}}
+        <section class="home-case-study ruled-section" aria-label="Featured case study">
+          <div class="shell">
+            {{> components/case-study-spotlight this id="home-relaydesk"}}
+          </div>
+        </section>
+      {{/if}}
+    {{/each}}
+
     <section class="comparison-teaser ruled-section">
       <div class="shell comparison-grid">
         <div>

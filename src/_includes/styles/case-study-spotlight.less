@@ -1,0 +1,90 @@
+// A small piece of RelayDesk's console, shared by its index card and homepage feature.
+.case-study-spotlight { min-width: 0; }
+.case-study-spotlight-link {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  border: 1px solid #275363;
+  border-top: 2px solid #F6CB43;
+  background: #08171D;
+  color: #DCEAF0;
+  text-decoration: none;
+}
+.case-study-spotlight-link::after {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 17px;
+  height: 17px;
+  border-right: 2px solid #35D9EF;
+  border-bottom: 2px solid #35D9EF;
+  content: "";
+  pointer-events: none;
+}
+.case-study-spotlight-link:hover { border-color: #35D9EF; }
+.case-study-spotlight-link:focus-visible { outline: 3px solid #F6CB43; outline-offset: 5px; }
+.case-study-spotlight-art { position: relative; min-width: 0; }
+.case-study-spotlight-art > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 36% center;
+}
+.case-study-spotlight-tag {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  padding: 0.6rem 0.85rem;
+  border-top: 1px solid #275363;
+  border-right: 1px solid #275363;
+  background: #08171D;
+  color: #9FC2CB;
+  font-family: @font-mono;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+}
+.case-study-spotlight-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: @space-md;
+  padding: clamp(1.4rem, 3vw, 2.4rem);
+}
+.case-study-spotlight-label {
+  margin: 0;
+  color: #C79BDC;
+  font-family: @font-mono;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.case-study-spotlight-logo { display: block; width: min(100%, 240px); height: auto; }
+.case-study-spotlight-copy h2 {
+  color: #DCEAF0;
+  font-family: @font-mono;
+  font-size: clamp(1.35rem, 2.3vw, 1.8rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.3;
+  text-wrap: pretty;
+}
+.case-study-spotlight-description { margin: 0; color: #B5CDD5; font-size: 0.95rem; line-height: 1.65; }
+.case-study-spotlight-action {
+  display: flex;
+  justify-content: space-between;
+  align-self: stretch;
+  gap: @space-sm;
+  margin-top: auto;
+  padding-top: @space-sm;
+  border-top: 1px solid #275363;
+  color: #F6CB43;
+  font-family: @font-mono;
+  font-size: 0.8rem;
+}
+@media (max-width: 640px) {
+  .case-study-spotlight-link { grid-template-columns: minmax(0, 1fr); }
+  .case-study-spotlight-art { aspect-ratio: 3 / 2; }
+  .case-study-spotlight-copy { gap: 1rem; }
+}

@@ -1,4 +1,5 @@
 @import "tokens.less";
+@import "../_includes/styles/case-study-spotlight.less";
 
 @journal-green: var(--green, #087D49);
 @journal-green-tint: var(--green-tint, #E4F3EA);
@@ -87,12 +88,17 @@
 // Case studies index
 .case-study-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: @space-md;
   margin-top: @space-xl;
 }
 
 .case-study-card { min-width: 0; }
+.case-study-grid > .case-study-spotlight { grid-column: 1 / -1; }
+
+@media (max-width: 640px) {
+  .case-study-grid { grid-template-columns: minmax(0, 1fr); }
+}
 
 .case-study-card-link {
   position: relative;
@@ -1562,10 +1568,31 @@ html.archive-dialog-open { overflow: hidden; }
     gap: @space-xs @space-sm;
     margin: 0;
   }
+  .journal-mission-opening {
+    margin-bottom: @space-md;
+    padding-right: 220px;
+  }
   .journal-prose .journal-mission-story {
-    margin: 0 0 @space-md;
+    margin: 0;
     color: inherit;
     font-size: inherit;
+  }
+  .journal-prose img.journal-mission-mascot {
+    position: absolute;
+    top: 50%;
+    // Center in the unused right-hand portion, rather than against the card edge.
+    right: calc(@space-lg + (100% - (@space-lg * 2)) * 0.225);
+    display: block;
+    width: 160px;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    transform: translate(50%, -50%);
+    pointer-events: none;
   }
   .journal-mission-debrief dt,
   .journal-mission-debrief dd { margin: 0; }
@@ -1575,6 +1602,7 @@ html.archive-dialog-open { overflow: hidden; }
     grid-template-columns: clamp(36px, 6vw, 48px) minmax(0, 1fr);
     align-items: center;
     gap: @space-sm;
+    padding-right: 220px;
   }
   .journal-prose img.journal-mission-portrait {
     display: block;
@@ -1595,6 +1623,20 @@ html.archive-dialog-open { overflow: hidden; }
     margin: @space-md 0 0;
     color: #A4E7B1;
     font-size: inherit;
+  }
+  @media (max-width: 640px) {
+    .journal-mission-opening {
+      position: relative;
+      margin-bottom: 96px;
+      padding-right: 0;
+    }
+    .journal-prose img.journal-mission-mascot {
+      top: calc(100% + 48px);
+      right: 0;
+      width: 112px;
+      transform: translateY(-50%);
+    }
+    .journal-mission-result { padding-right: 0; }
   }
 }
 @import "journal-comments";

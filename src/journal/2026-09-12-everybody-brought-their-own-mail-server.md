@@ -9,6 +9,10 @@ caseStudy:
   label: "Multi-tenant communications"
   description: "An old, trusted case platform connects fixers, brokers and businesses through their own mail services. An AI coordinator has the answer, but a customer's changed password blocks her reply. A freelance developer must repair the integration without interrupting everyone else."
   order: 3
+  spotlight:
+    image: "/assets/journal/personas/relay-desk-sam.jpg"
+    heading: "An orc, a missing spider-bot, and somebody else's SMTP settings."
+    description: "Sam picks up a repair gig when Kestrel's password change strands Maya's reply. Follow the crew through customer-owned mail servers, isolated SMTP pools and a safe credential change—with Simple Java Mail behind the neon."
 series:
   title: "Case Studies"
   part: 3
@@ -527,9 +531,12 @@ The next fixer can bring another customer, and another contract for Sam. This ti
 
 <div class="journal-mission-debrief" role="group" aria-labelledby="relaydesk-run-complete">
   <p class="journal-mission-title" id="relaydesk-run-complete">RUN COMPLETE</p>
+  <div class="journal-mission-opening">
   <p class="journal-mission-story">Back at the bar, Sam orders a fresh beer.<br>
     This time, his pad stays in his jacket.<br>
     For the moment.</p>
+  <img class="journal-mission-mascot" src="/assets/journal/relaydesk-spiderbot-mascotte.png" width="400" height="210" alt="" loading="lazy" decoding="async">
+  </div>
   <dl>
     <dt>Maya</dt><dd class="journal-mission-result"><img class="journal-mission-portrait" src="/assets/journal/personas/relay-desk-maya-portrait.jpg" width="48" height="48" alt="" loading="lazy" decoding="async"><span>Reply delivered. Level up.</span></dd>
     <dt>Sam</dt><dd class="journal-mission-result"><img class="journal-mission-portrait" src="/assets/journal/personas/relay-desk-sam-portrait.jpg" width="48" height="48" alt="" loading="lazy" decoding="async"><span>Access restored. Level up.</span></dd>
