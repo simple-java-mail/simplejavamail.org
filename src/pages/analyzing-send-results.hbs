@@ -188,26 +188,42 @@ REJECTED: content=12345678 bytes, server limit=10000000 bytes</code></pre>
   </section>
 
   <a href="#section-partial-send" id="section-partial-send" class="section-link h2">&sect;</a>
-  <h2>Follow one partially successful send</h2>
+  <h2>Choose what happens when a recipient is rejected</h2>
   <section>
     <div class="view">
       <p>
         Suppose an email is addressed to Alice, Bob and Carol, in that order. The server accepts Alice's address, temporarily rejects Bob's, and
-        permanently rejects Carol's. With partial sending enabled, the message data is then submitted for Alice alone.
+        permanently rejects Carol's. You can stop there without sending content to anyone, or continue for Alice alone.
+        This is one choice for the whole Email, not a separate preference on each recipient.
       </p>
       <p>
-        For the default Angus provider, enable this behavior with <code>mail.smtp.sendpartial</code> through the mailer builder, before building
-        the Mailer. This example uses <code>SMTP_TLS</code>; <code>SMTPS</code> uses <code>mail.smtps.sendpartial</code> instead.
-        Without partial sending, a recipient rejection stops submission of the message data, so Alice would remain unsent too.
+        Use <code>withSendingToAcceptedRecipients(true)</code> to continue, or <code>false</code> to withhold content after a known recipient rejection.
+        Continuing does not turn this into a successful send: Bob and Carol were still rejected, so the operation fails with its partial receipt.
+        Stopping is not atomic delivery and cannot prevent a later bounce after an otherwise accepted submission.
       </p>
     </div>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-partial-config">Mailer mailer = mail.mailerBuilder()
     .withSMTPServer("smtp.example.org", 587, "username", "password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .withProperty("mail.smtp.sendpartial", true)
     .buildMailer();
 
+Email email = mail.emailBuilder().startingBlank()
+    .from("sender@example.org")
+    .withRecipients(to("Alice", "alice@example.org"), to("Bob", "bob@example.org"),
+        to("Carol", "carol@example.org"))
+    .withSubject("An update for all three recipients")
+    .withPlainText("The message content")
+    .withSendingToAcceptedRecipients(true)
+    .buildEmail();
+
+try {
+    printReceipt(mailer.sync().sendMail(email));
+} catch (MailSubmissionException failure) {
+    printReceipt(failure.getSubmissionReceipt());
+}
+
+// Use false instead to stop after a recipient rejection.
 // Reuse the Mailer for your workload; close it when finished.</code></pre>
 <pre><code class="language-text small">RCPT TO:&lt;alice@example.org&gt;  → 250 2.1.5 Recipient OK
 RCPT TO:&lt;bob@example.org&gt;    → 450 4.2.0 Try again later
@@ -218,8 +234,23 @@ DATA                         → 354 Send message data
   </section>
   <section>
     <div class="wide">
+      <p>With <code>false</code>, the same recipient replies produce no <code>DATA</code> command. Alice's positive address reply is retained,
+        but her content remains unsent. The call still throws <code>MailSubmissionException</code>, this time with a <code>REJECTED</code> receipt:</p>
+<pre><code class="language-text small">withSendingToAcceptedRecipients(false):
+Submission: REJECTED
+Retry: SAFE_TO_RETRY_UNACCEPTED
+alice@example.org: rcpt=ACCEPTED (250), submitted=VALID_UNSENT
+bob@example.org: rcpt=TEMPORARILY_REJECTED (450), submitted=VALID_UNSENT
+carol@example.org: rcpt=PERMANENTLY_REJECTED (550), submitted=INVALID
+[no message content transmitted]</code></pre>
+      <p>A later retry may include Alice and Bob, not Carol's unchanged address. When all recipients are rejected, neither choice sends content.
+        Neither choice retries automatically, splits the Email or removes addresses from its visible headers.</p>
+    </div>
+  </section>
+  <section>
+    <div class="wide">
       <p>
-        The final <code>250</code> confirms that Alice's submission was accepted. It does not undo Bob's or Carol's rejection. The call throws
+        Back to the <code>true</code> case: the final <code>250</code> confirms that Alice's submission was accepted. It does not undo Bob's or Carol's rejection. The call throws
         <code>MailSubmissionException</code> with a <code>PARTIALLY_ACCEPTED</code> receipt. The earlier catch block passes that receipt to this method:
       </p>
     </div>
@@ -258,6 +289,35 @@ carol@example.org: rcpt=PERMANENTLY_REJECTED (550), submitted=INVALID</code></pr
         available as immutable address lists derived from the same recipient results. Prefer the individual results when the reason matters:
         being in <code>getValidUnsentRecipients()</code> does not, on its own, make an address retryable.
       </p>
+      <p>The same failed-completion contract applies to <code>mailer.async().sendMail(email)</code>. Your mail-send observer receives
+        <code>isSuccessful() == false</code> and the same receipt. A simple batch still stops at its first failed email, even when that email was
+        partially accepted. A lost final server reply can still mean <code>UNKNOWN</code>; permission to continue does not remove duplicate risk.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wide">
+      <h3>Defaults, clearing and provider compatibility</h3>
+      <p>The setting on the Email starts unset. Calling <code>withSendingToAcceptedRecipients(...)</code> replaces the value on its builder;
+        <code>clearSendingToAcceptedRecipients()</code> removes that value rather than choosing false.
+        The existing <a href="configuration.html#section-config-mailer">Email defaults and overrides</a> can then supply
+        a choice. Property-specific template suppression uses <code>EmailProperty.SENDING_TO_ACCEPTED_RECIPIENTS</code>.</p>
+<pre><code class="language-properties small"># A customizable default:
+simplejavamail.defaults.sendtoacceptedrecipients=true
+
+# Alternatively, keep the choice fixed within this factory:
+simplejavamail.locked.defaults.sendtoacceptedrecipients=false</code></pre>
+      <p>A <a href="configuration.html#section-locked-configuration">locked property</a> survives clearing, suppression and replacement templates.
+        An equal explicit choice is allowed; a conflicting one fails. Exact Emails use the same setter as envelope-only metadata: they bypass ordinary
+        templates but retain applicable locks, without changing their authoritative bytes.</p>
+      <p>If the choice stays unset, existing provider settings remain in control. Angus's advanced <code>mail.smtp.sendpartial=true</code>
+        (or <code>mail.smtps.sendpartial=true</code>) cannot be overridden by one Email choosing false. That clash fails before <code>MAIL FROM</code>.
+        Remove the advanced property and use an Email default or the ordinary property above, so individual emails can still opt out.</p>
+      <p>The bundled Angus adapter supports both choices. Another provider needs an adapter that explicitly supports them; otherwise the send fails
+        before submission. <a href="features.html#section-custom-mailer">CustomMailer</a> receives the governed choice on Email and owns honoring it,
+        but is incompatible with a factory lock on this setting because Simple Java Mail cannot check its internal recipient handling.</p>
+      <p>See the <a href="spring.html#section-spring-recipient-rejection">Spring configuration example</a> and
+        <a href="cli.html#section-cli-recipient-rejection">CLI options</a>.</p>
     </div>
   </section>
 

@@ -295,11 +295,17 @@ mailerBuilder.clearEmailValidator();
 // set custom properties
 mailerBuilder.withProperties(new Properties());
 mailerBuilder.withProperties(new HashMap());
-mailerBuilder.withProperty("mail.smtp.sendpartial", true);
+mailerBuilder.withProperty("mail.smtp.timeout", 10000);
 
 // or directly modify the internal Session instance:
-mailer.getSession().getProperties().setProperty("mail.smtp.sendpartial", true);
+mailer.getSession().getProperties().setProperty("mail.smtp.timeout", "10000");
 </code></pre>
+      <p>For recipient-rejection handling, prefer the Email API over a raw provider property:
+        <code>emailBuilder.withSendingToAcceptedRecipients(true)</code> continues for accepted recipients, and <code>false</code> withholds content after
+        a known recipient rejection. Configure <code>simplejavamail.defaults.sendtoacceptedrecipients</code> for an ordinary Email default, or
+        <code>simplejavamail.locked.defaults.sendtoacceptedrecipients</code> to keep the choice fixed within this factory. Ordinary defaults can be
+        overridden or suppressed; a lock cannot. See <a href="analyzing-send-results.html#section-partial-send">both choices and their resulting receipts</a>,
+        including why an advanced <code>sendpartial=true</code> property conflicts with an Email choosing false.</p>
 <pre><code class="small">
 /* Secure TLS defaults. These calls are optional. */
 mailerBuilder.trustingAllHosts(false);
@@ -680,6 +686,8 @@ simplejavamail.defaults.bcc.address=bcc1@default.com;bcc2@default.com
 simplejavamail.defaults.delivery.status.notification.notify=FAILURE,DELAY
 simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
 simplejavamail.defaults.requiretls=true
+# Optional recipient-rejection choice; omitted leaves existing provider behavior in control:
+simplejavamail.defaults.sendtoacceptedrecipients=true
 
 # Content-Transfer-Encoding defaults
 simplejavamail.defaults.content.transfer.encoding=QUOTED_PRINTABLE

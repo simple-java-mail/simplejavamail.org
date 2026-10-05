@@ -825,6 +825,11 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
       <p>Managed Angus sends also check the prepared email against the connected server's SIZE limit before submission.
         Receipts retain the <a href="/analyzing-send-results.html#section-message-size">measured content size and advertised server maximum</a>
         when known, including on a local oversized rejection. This is automatic and separate from your own local size limit.</p>
+      <p>Choose <code>emailBuilder.withSendingToAcceptedRecipients(true)</code> to continue for accepted recipients after another address is rejected,
+        or <code>false</code> to withhold content for everyone after a known rejection. Continuing still fails the overall operation with a partial receipt.
+        Leaving the choice unset preserves defaults and existing provider settings. The
+        <a href="/analyzing-send-results.html#section-partial-send">three-recipient walkthrough</a> shows both choices, their receipts, defaults,
+        locks and provider compatibility. Exact Emails carry this preference without rewriting their EML.</p>
     </div>
 
     <div class="side">

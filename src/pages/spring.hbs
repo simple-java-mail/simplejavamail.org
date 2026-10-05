@@ -17,6 +17,7 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
       <li><a href="#section-spring-beans">Customize Spring-managed beans</a></li>
       <li><a href="#section-spring-oauth2">Provide OAuth2 access tokens</a></li>
       <li><a href="#section-spring-sending-limits">Configure sending limits</a></li>
+      <li><a href="#section-spring-recipient-rejection">Choose how recipient rejections are handled</a></li>
       <li><a href="#section-spring-profiles">Configure profiles and dynamic properties</a></li>
       <li><a href="#section-spring-locked-configuration">Keep selected settings fixed</a></li>
     </ul>
@@ -286,6 +287,26 @@ OAuth2AccessTokenProvider smtpAccessTokens(
       <p>The equivalent property names begin with <code>simplejavamail.smtp.ratelimit.</code>.
         Use the factory's <code>getConfig().getDiagnostics()</code> to trace loaded values and sources;
         <code>mailer.getOperationalConfig()</code> includes later Java builder choices.</p>
+    </div>
+  </section>
+
+  <a href="#section-spring-recipient-rejection" id="section-spring-recipient-rejection" class="section-link h2">&sect;</a>
+  <h2>Choose how recipient rejections are handled</h2>
+  <section>
+    <div class="view">
+      <p>Plain Spring and the Boot starter load the same Boolean Email default. This example permits sending to accepted recipients when another
+        recipient is rejected. Individual emails may choose false with <code>withSendingToAcceptedRecipients(false)</code>; clearing leaves the default
+        available again. Partial acceptance still fails the operation with its receipt.</p>
+      <p>To keep the choice fixed within the injected factory, move the property under <code>locked.defaults</code> instead.
+        For example, <code>simplejavamail.locked.defaults.sendtoacceptedrecipients=false</code> requires stopping on known recipient rejection.
+        Equal explicit choices are allowed; conflicting ones fail. See the
+        <a href="analyzing-send-results.html#section-partial-send">complete walkthrough and provider compatibility</a>.</p>
+    </div>
+    <div class="side">
+<pre><code class="language-yaml small">simplejavamail:
+  defaults:
+    sendtoacceptedrecipients: true</code></pre>
+      <p>Omitted means no configured choice. Runtime resolution stays in the shared loader; Spring metadata only provides IDE hints.</p>
     </div>
   </section>
 

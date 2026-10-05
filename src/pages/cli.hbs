@@ -35,6 +35,7 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
       <li><a href="#section-probe" class="indent">Inspect an SMTP connection</a></li>
       <li><a href="#section-daemon" class="indent">Optional background daemon</a></li>
       <li><a href="#section-sending-limits" class="indent">Sending limits</a></li>
+      <li><a href="#section-cli-recipient-rejection" class="indent">Recipient rejections</a></li>
       <li><a href="#section-usage-help" class="indent">Usage help</a></li>
       <li><a href="#section-at-files" class="indent">@-files</a></li>
       <li><a href="#section-config-properties" class="indent">Configuring properties</a></li>
@@ -95,6 +96,20 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
     </p>
   </section>
 
+
+  <a href="#section-cli-recipient-rejection" id="section-cli-recipient-rejection" class="section-link h3">&sect;</a>
+  <h3>Choose whether a recipient rejection stops sending</h3>
+  <section>
+    <div class="wide">
+      <p>Add <code>--email:withSendingToAcceptedRecipients true</code> to continue for accepted recipients when another address is rejected,
+        or use <code>false</code> to withhold content after a known rejection. Exact EML uses
+        <code>--email:withExactSendingToAcceptedRecipients true</code> (or <code>false</code>); its bytes remain unchanged.</p>
+      <p>Omit the option to retain defaults and advanced-provider behavior. Fresh request builders start unset, so there is no CLI clear option.
+        The ordinary and locked properties also work through the CLI's configuration-file loading. Partial acceptance still has a failed exit status;
+        these options do not split messages or retry them. See
+        <a href="analyzing-send-results.html#section-partial-send">both choices, receipts and the advanced sendpartial conflict</a>.</p>
+    </div>
+  </section>
 
   <a href="#section-legacy-smtp-content" id="section-legacy-smtp-content" class="section-link h3">&sect;</a>
   <h3>Use a verified legacy SMTP route</h3>
