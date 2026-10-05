@@ -2,6 +2,8 @@
 
 Companion to **Case study: Everybody Brought Their Own Mail Server**. These are small Java application helpers targeting the Simple Java Mail **10.0.0 development API**, with the batch and OpenPGP modules. They are not a complete multi-tenant dispatcher or a library feature called RelayDesk.
 
+RelayDesk is the story's multi-party case platform. Maya is its AI coordinator within Kestrel's authorized workspace; Sam repairs the integration under contract. AI and human case agents are subject to the same tenant, sender and recipient permissions. The ticket UI helpers below present saved evidence to human staff; they are not an AI decision engine or an automatic retry policy.
+
 ## Use the pieces together
 
 1. Approve the customer, region, endpoints, authentication and return addresses. Enforce destination restrictions in application and network policy, including DNS changes. The helper does not validate user-supplied hosts or provide an SSRF defense.

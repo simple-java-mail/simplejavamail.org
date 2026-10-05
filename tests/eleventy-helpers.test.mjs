@@ -249,20 +249,31 @@ test("RelayDesk diagrams use local portraits and system icons while the infograp
   }
   assert.ok(article.includes("actor admin as Anika"));
   assert.ok(article.includes('store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>+ send attempts", h: 85, pos: "b", constraint: "on" }'));
-  assert.ok(article.includes('store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies", h: 85, pos: "b", constraint: "on" }'));
+  assert.ok(article.includes('store@{ img: "/assets/journal/relaydesk-cyberpunk-database-node.png", label: "Saved replies<br/>&nbsp;", h: 85, pos: "b", constraint: "on" }'));
   const imageNodes = [...article.matchAll(/\w+@\{ img: "\/assets\/journal\/relaydesk-cyberpunk-[^\n]+/g)];
-  assert.equal(imageNodes.length, 10);
-  assert.ok(imageNodes.every(([node]) => node.includes('h: 85, pos: "b", constraint: "on"')));
+  assert.equal(imageNodes.length, 11);
+  assert.ok(imageNodes.every(([node]) =>
+    node.includes(`h: ${/^(workers|dispatcher)@/.test(node) ? 150 : 85}, pos: "b", constraint: "on"`)),
+  "Both views emphasize the dispatch workers without enlarging the surrounding nodes");
   assert.ok(readFileSync(new URL("../src/assets/journal/relaydesk-cyberpunk-database-node.png", import.meta.url)).length > 0);
-  for (const node of ["support-conversations", "dispatch-workers", "dispatcher", "kestrel-smtp", "juniper-smtp", "default-smtp", "route-manager"]) {
+  for (const node of ["support-conversations", "dispatch-workers", "kestrel-smtp", "kestrel-smtp-eu", "kestrel-smtp-us", "juniper-smtp", "default-smtp", "route-manager"]) {
     const filename = `relaydesk-cyberpunk-${node}-node.png`;
     assert.ok(article.includes(`/assets/journal/${filename}`));
     assert.ok(readFileSync(new URL(`../src/assets/journal/${filename}`, import.meta.url)).length > 0);
   }
+  assert.ok(article.includes('kestrel@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-node.png", label: "Kestrel Outfitters<br/>EU relay pair · US relay pair<br/>separate regional groups"'));
+  assert.ok(article.includes('kestrel@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-eu-node.png", label: "Kestrel EU · route paused<br/>keep jobs in storage"'));
+  assert.ok(article.includes('kestrelUs@{ img: "/assets/journal/relaydesk-cyberpunk-kestrel-smtp-us-node.png", label: "Kestrel US · ready<br/>submit through its Mailers"'));
+  assert.ok(article.includes("%% journal-image-branch: dispatchKestrelUs dispatcher kestrelUs"));
+  assert.ok(article.includes("%% journal-image-branch: dispatchKestrel dispatcher kestrel center"));
+  assert.ok(article.includes("class kestrelUs,juniper ready"));
+  const workersImage = article.match(/workers@\{ img: "([^"]+)"/)[1];
+  const dispatcherImage = article.match(/dispatcher@\{ img: "([^"]+)"/)[1];
+  assert.equal(dispatcherImage, workersImage, "The scheduling view reuses the setup's dispatch-worker image");
   assert.ok(article.includes("%% journal-node: registry /assets/journal/relaydesk-cyberpunk-route-manager-node.png"));
   assert.ok(article.includes("%% journal-node: workers /assets/journal/relaydesk-cyberpunk-dispatch-workers-node.png"));
-  assert.ok(article.includes("linkStyle 1 stroke:#EBA680"));
-  assert.ok(article.includes("linkStyle 2 stroke:#A4E7B1"));
+  assert.ok(article.includes("linkStyle 1,3 stroke:#A4E7B1"));
+  assert.ok(article.includes("linkStyle 2 stroke:#EBA680"));
   assert.ok(article.includes("%% journal-portrait: admin /assets/journal/personas/relay-desk-anika-portrait.jpg"));
   assert.ok(article.includes('"curve": "stepAfter"'));
   assert.ok(article.includes('<template id="relaydesk-support-network-source"'));
@@ -281,7 +292,7 @@ test("RelayDesk flowchart uses hexagonal portrait badges without enclosing cards
   assert.ok(!article.includes("diagram-person-hud"));
   assert.ok(article.includes("classDef person fill:none,stroke:none,color:#BECBD0"));
   assert.ok(article.includes("actor admin as Anika"));
-  assert.ok(article.includes("sam samMaintenance@-.->|maintains| workers"));
+  assert.ok(article.includes("sam samMaintenance@-.->|handles this update gig| workers"));
   assert.ok(article.includes("kestrel kestrelAdmin@-.->|administered by| anika"));
   assert.ok(article.includes("%% journal-portrait-link: samMaintenance sam source left"));
   assert.ok(article.includes("%% journal-portrait-link: kestrelAdmin anika target top"));
@@ -368,6 +379,10 @@ test("image branches leave the artwork, keep angular elbows out of captions and 
   assert.ok(article.includes("%% journal-image-branch: dispatchJuniper dispatcher juniper"));
   assert.ok(article.includes("dispatcher dispatchKestrel@---> kestrel"));
   assert.ok(article.includes("dispatcher dispatchJuniper@---> juniper"));
+  assert.ok(article.includes("%% journal-image-branch: savedReplies store dispatcher center"));
+  assert.ok(article.includes("store savedReplies@--> dispatcher"));
+  assert.ok(article.includes("%% journal-image-inlet: storedJobs workers"));
+  assert.ok(article.includes("store storedJobs@--> workers"));
   const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
   const functions = source.slice(source.indexOf("function applyImageBranchLinks"), source.indexOf("if (mermaid &&"));
   const images = {
@@ -377,6 +392,8 @@ test("image branches leave the artwork, keep angular elbows out of captions and 
   };
   const edge = { attrs: { stroke: "green", "marker-end": "url(#arrow)" },
     getScreenCTM: () => ({ inverse: () => ({ scale: 2 }) }),
+    getTotalLength: () => 200,
+    getPointAtLength: () => ({ x: 200, y: 260 }),
     setAttribute(name, value) { this.attrs[name] = value; },
   };
   const element = {
@@ -394,6 +411,8 @@ test("image branches leave the artwork, keep angular elbows out of captions and 
   assert.equal(edge.attrs.d, "M200,260L398,260L398,100L596,100");
   context.applyImageBranchLinks(element, "%% journal-image-branch: branch dispatcher juniper");
   assert.equal(edge.attrs.d, "M200,340L398,340L398,500L596,500");
+  context.applyImageBranchLinks(element, "%% journal-image-branch: branch dispatcher juniper center");
+  assert.equal(edge.attrs.d, "M200,300L398,300L398,500L596,500");
   assert.equal(edge.attrs.stroke, "green");
   assert.equal(edge.attrs["marker-end"], "url(#arrow)");
   const unchanged = edge.attrs.d;
@@ -402,6 +421,19 @@ test("image branches leave the artwork, keep angular elbows out of captions and 
   images.juniper.getBoundingClientRect = () => ({ left: 50, top: 200, width: 80, height: 100 });
   context.applyImageBranchLinks(element, "%% journal-image-branch: branch dispatcher juniper");
   assert.equal(edge.attrs.d, unchanged);
+  images.juniper.getBoundingClientRect = () => ({ left: 300, top: 200, width: 80, height: 100 });
+  context.applyImageBranchLinks(element, "%% journal-image-inlet: branch juniper");
+  assert.equal(edge.attrs.d, "M200,260L200,500L596,500");
+  assert.equal(edge.attrs.stroke, "green");
+  assert.equal(edge.attrs["marker-end"], "url(#arrow)");
+  const inletPath = edge.attrs.d;
+  context.applyImageBranchLinks(element, "%% journal-image-inlet: missing juniper");
+  context.applyImageBranchLinks(element, "%% journal-image-inlet: branch absent");
+  images.juniper.getBoundingClientRect = () => ({ left: 50, top: 200, width: 80, height: 100 });
+  context.applyImageBranchLinks(element, "%% journal-image-inlet: branch juniper");
+  images.juniper.getBoundingClientRect = () => ({ left: 300, top: 200, width: 0, height: 100 });
+  context.applyImageBranchLinks(element, "%% journal-image-inlet: branch juniper");
+  assert.equal(edge.attrs.d, inletPath);
 });
 
 test("copy controls stay on the frame while the code remains the unmodified copy source", async () => {
@@ -812,7 +844,7 @@ test("RelayDesk closes with a readable mission debrief rather than a copyable co
   const html = createMarkdownLibrary().render(article.slice(article.indexOf("## Back to Maya's support ticket")));
   assert.match(html, /class="journal-mission-debrief" role="group" aria-labelledby="relaydesk-run-complete"/);
   assert.match(html, /id="relaydesk-run-complete">RUN COMPLETE<\/p>/);
-  assert.match(html, /With access restored, tensions ease\. The sector is at peace again\. For the moment\./);
+  assert.match(html, /Back at the bar, Sam orders a fresh beer\.<br>\s*This time, his pad stays in his jacket\.<br>\s*For the moment\./);
   for (const [name, result] of [["Maya", "Reply delivered"], ["Sam", "Access restored"], ["Anika", "Credentials replaced"]]) {
     const row = html.match(new RegExp(`<dt>${name}</dt><dd class="journal-mission-result">([\\s\\S]*?)</dd>`));
     assert.ok(row, `${name} keeps a name and result row`);
@@ -821,7 +853,7 @@ test("RelayDesk closes with a readable mission debrief rather than a copyable co
     assert.ok(row[1].includes(`<span>${result}. Level up.</span>`));
     assert.ok(row[1].indexOf("<img") < row[1].indexOf("<span"), "portrait sits before the result");
   }
-  assert.match(html, /10\.547 credits &mdash; back to building support software\./);
+  assert.match(html, /10\.547 credits &mdash; contract complete\./);
   assert.match(html, /&gt; Job's done\. Jack out\./);
   assert.doesNotMatch(html, /<pre|<code|RelayDesk sells support software/);
 });
@@ -833,12 +865,12 @@ test("RelayDesk keeps its editable Mermaid source in an inert template beside th
   const source = html.match(/<template id="relaydesk-support-network-source" data-pagefind-ignore>([\s\S]*?)<\/template>/u);
   assert.ok(source, "The original diagram remains in a native, inert template");
   assert.match(source[1], /<pre class="mermaid">/);
-  assert.match(source[1], /accTitle: RelayDesk connects support teams with the people they help/);
+  assert.match(source[1], /accTitle: Customer support is one use of RelayDesk's multi-party case platform/);
   assert.match(source[1], /kestrelAgents --&gt;/);
   const visibleHtml = html.replace(source[0], "");
   assert.equal((visibleHtml.match(/<pre class="mermaid(?: mermaid-compact)?">/gu) || []).length, 3);
   assert.match(visibleHtml, /<a href="\/assets\/journal\/relaydesk-support-network\.jpg"><img[^>]+src="\/assets\/journal\/relaydesk-support-network\.jpg"/);
-  assert.match(visibleHtml, /<figcaption>The teams work in RelayDesk;/);
+  assert.match(visibleHtml, /<figcaption>Customer support is one use of RelayDesk;/);
 });
 
 test("caption recognition leaves ordinary prose, mixed emphasis and nested content alone", () => {

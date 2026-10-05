@@ -153,14 +153,16 @@ function applyPortraitLinks(element: HTMLElement, source: string): void {
 
 // Image nodes include their captions in Mermaid's routing outline. For opted-in
 // left-to-right branches, use the artwork's right edge and keep elbows in the
-// gap between the icons, not in the source caption.
+// gap between the icons, not in the source caption. A center modifier removes
+// the vertical source offset used to separate outgoing branches. Inlets retain the native
+// source anchor (below its caption) and enter the target artwork from the left.
 function applyImageBranchLinks(element: HTMLElement, source: string): void {
   const nodes = Array.from(element.querySelectorAll<SVGGElement>('g.image-shape'));
   const imageFor = (id: string): SVGImageElement | null | undefined => nodes
     .find((node) => node.id.match(/-flowchart-(.+)-\d+$/)?.[1] === id)
     ?.querySelector<SVGImageElement>('image');
-  const branches = source.matchAll(/^\s*%% journal-image-branch: ([\w-]+) ([\w-]+) ([\w-]+)\s*$/gm);
-  for (const [, edgeId, sourceId, targetId] of branches) {
+  const branches = source.matchAll(/^\s*%% journal-image-branch: ([\w-]+) ([\w-]+) ([\w-]+)(?: (center))?\s*$/gm);
+  for (const [, edgeId, sourceId, targetId, alignment] of branches) {
     const edge = element.querySelector<SVGPathElement>(`path.flowchart-link[data-id="${edgeId}"]`);
     const sourceImage = imageFor(sourceId);
     const targetImage = imageFor(targetId);
@@ -172,13 +174,28 @@ function applyImageBranchLinks(element: HTMLElement, source: string): void {
     const sourceMiddle = from.top + from.height / 2;
     const targetMiddle = to.top + to.height / 2;
     const inverse = matrix.inverse();
-    const start = new DOMPoint(from.right, sourceMiddle + Math.sign(targetMiddle - sourceMiddle) * from.height * 0.2)
+    const sourceOffset = alignment === 'center' ? 0 : Math.sign(targetMiddle - sourceMiddle) * from.height * 0.2;
+    const start = new DOMPoint(from.right, sourceMiddle + sourceOffset)
       .matrixTransform(inverse);
     const end = new DOMPoint(to.left, targetMiddle).matrixTransform(inverse);
     // Stop short of the target image by the arrowhead's four SVG units.
     end.x -= 4;
     const elbowX = (start.x + end.x) / 2;
     edge.setAttribute('d', `M${start.x},${start.y}L${elbowX},${start.y}L${elbowX},${end.y}L${end.x},${end.y}`);
+  }
+  const inlets = source.matchAll(/^\s*%% journal-image-inlet: ([\w-]+) ([\w-]+)\s*$/gm);
+  for (const [, edgeId, targetId] of inlets) {
+    const edge = element.querySelector<SVGPathElement>(`path.flowchart-link[data-id="${edgeId}"]`);
+    const targetImage = imageFor(targetId);
+    const matrix = edge?.getScreenCTM();
+    if (!edge || !targetImage || !matrix || !edge.getTotalLength()) continue;
+    const bounds = targetImage.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) continue;
+    const start = edge.getPointAtLength(0);
+    const end = new DOMPoint(bounds.left, bounds.top + bounds.height / 2).matrixTransform(matrix.inverse());
+    end.x -= 4; // Leave room for Mermaid's arrowhead.
+    if (start.x >= end.x || start.y >= end.y) continue;
+    edge.setAttribute('d', `M${start.x},${start.y}L${start.x},${end.y}L${end.x},${end.y}`);
   }
 }
 
