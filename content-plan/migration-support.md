@@ -8,7 +8,7 @@ Primary audience: upgraders, contributors, and developers who are stuck
 
 ### Visible structure
 
-- Current major route first: 10.0 migration.
+- Current major route first: 10.0.0 migration.
 - Historical routes: 9.x, 8.x, 7.x, 6.x, 5.x.
 - Each entry states source version range, type of breaking change, and approximate work category without inventing an effort estimate.
 - Link to release history and GitHub releases for changes that do not require migration prose.
@@ -25,7 +25,19 @@ Preserve content and anchors, but add consistent chrome:
 - verification checklist;
 - next migration or current docs.
 
-The 10.0 page is deliberately narrower than release notes. It covers only public-facing breaks and behavior that would be easy to miss while upgrading:
+Migration notes contain only breaking API changes and changes to existing behavior, compared against released versions. Before adding an entry, check:
+
+- Which released call or behavior changes? Verify it against the relevant release tag, not an intermediate API from the unreleased branch.
+- What can fail to compile, behave differently, or invalidate an existing test after upgrading?
+- Does every example explain a necessary replacement or a remedy for that change? Move feature tutorials and optional new settings to current documentation.
+- Would existing applications be unaffected unless they opt into the new feature? If so, describe it in feature documentation and release notes, not here.
+
+New automatic behavior can belong here even without a Java API break. For example, a stricter SMTP content check can reject a previously working send.
+Do not add "nothing breaks" sections, tours of new getters, or migrations between APIs that were never released.
+
+Keep historical URLs and anchors for retained migration entries. Remove feature-only sections from the current unreleased guide, and check incoming links when removing their anchors.
+
+The 10.0.0 page follows this scope. Examples of changes that can affect existing applications include:
 
 - the main dependency still brings Angus at runtime, but Angus types are no longer part of its compile or JPMS API surface;
 - converted MIME is provider-neutral, so code must not cast it to an Angus SMTP message subtype;
@@ -37,8 +49,8 @@ The page links to OpenPGP documentation but does not repeat the new-feature tuto
 
 Migration pages are upgrade records, not substitutes for current reference documentation. Evergreen feature and module pages state current behavior directly. They may link to the migration index as an upgrade route, but they do not send readers to an old version-specific note to understand how the current API works.
 
-The 8.0 page covers the email-governance overhaul and its related validation, conversion, DKIM, S/MIME, and parser changes. The 9.0 page foregrounds
-the recipient-builder change and relevant new behavior from the current release history.
+The 8.0.0 page covers the email-governance overhaul and its related validation, conversion, DKIM, S/MIME, and parser changes. The 9.0.0 page foregrounds
+the recipient-builder change and changes to existing behavior from that release history.
 
 ## Help and contribute: `/contact.html`
 
