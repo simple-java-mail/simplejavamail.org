@@ -1,0 +1,76 @@
+// Engineering Journal index
+.journal-index {
+  padding: @space-2xl 0 @space-3xl;
+}
+
+.journal-index-inner { max-width: 920px; }
+
+.journal-index-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: @space-lg;
+  padding-bottom: @space-lg;
+  border-bottom: 1px solid @line;
+}
+
+.journal-index-header h1 {
+  font-size: clamp(2.25rem, 4vw, 3rem);
+  letter-spacing: -0.035em;
+}
+
+.journal-index-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: @space-md;
+}
+
+.journal-index-link {
+  color: @steel;
+  font-size: 0.82rem;
+  text-underline-offset: 0.2em;
+}
+
+.journal-index-link:hover { color: @teal-deep; }
+
+.journal-index-intro {
+  max-width: 760px;
+  margin: @space-lg 0 0;
+  color: @steel;
+}
+
+.journal-entry-row {
+  padding: @space-xl 0;
+  border-bottom: 1px solid @line;
+}
+
+.journal-entry-row-copy { max-width: 760px; }
+.journal-entry-row-copy h2 { font-size: clamp(1.65rem, 3.6vw, 2.35rem); }
+.journal-entry-row-copy h2 a { color: @ink; text-decoration-thickness: 1px; text-decoration-color: transparent; text-underline-offset: 0.14em; }
+.journal-entry-row-copy h2 a:hover { color: @teal-deep; text-decoration-color: currentColor; }
+.journal-entry-row-copy > p { margin: @space-sm 0 0; color: @steel; }
+
+.journal-series-label {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 @space-md;
+  color: @teal-deep;
+  font-family: @font-mono;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: @tracking-label;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.journal-series-part { color: @steel; }
+.journal-entry-row-copy > .journal-series-label--index { margin: 0 0 @space-sm; color: @teal-deep; font-size: 0.62rem; }
+
+.journal-entry-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+}

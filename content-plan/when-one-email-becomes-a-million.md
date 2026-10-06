@@ -1,9 +1,17 @@
+# When One Email Becomes a Million: workload field-guide planning
+
+This outline is planning material, not a Journal entry or a generated website page.
+The agreed direction is a scenario-based reference guide, grouped by design pattern.
+Readers should find their situation through a lookup directory and read each entry
+independently, with concrete objectives, useful examples and measurable verification.
+Total length is secondary to clear navigation and brisk individual scenarios.
+The original outline below is retained as source material for the planned guide.
+
 ---
 title: "When One Email Becomes a Million"
 description: "How to reason about extreme-volume SMTP submission using bounded concurrency, advanced pooling, backpressure, fairness, retries, and failure isolation."
 date: "2026-09-11"
 category: "System design"
-draft: true
 typora-root-url: ..
 typora-copy-images-to: ../assets/journal/articles/when-one-email-becomes-a-million
 banner-type: note

@@ -1,0 +1,76 @@
+// Recovered-source dialog
+html.archive-dialog-open { overflow: hidden; }
+
+.archive-dialog {
+  width: min(1080px, calc(100vw - 2rem));
+  max-width: none;
+  height: min(820px, calc(100dvh - 2rem));
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #7E8998;
+  border-radius: 2px;
+  background: #FFFFFF;
+  color: #3C4043;
+  box-shadow: 0 24px 80px fade(#18212A, 34%);
+}
+
+.archive-dialog::backdrop { background: fade(#18212A, 68%); }
+
+.archive-dialog-frame {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+}
+
+.archive-dialog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 54px;
+  padding: 0.55rem 0.7rem 0.55rem 1rem;
+  border-bottom: 1px solid #BCC8D8;
+  background: #E8EEF7;
+  color: #3C4043;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.25;
+}
+
+.archive-dialog-toolbar > div { display: flex; min-width: 0; flex-direction: column; gap: 0.12rem; }
+.archive-dialog-toolbar strong { font-size: 0.78rem; }
+.archive-dialog-toolbar [data-archive-dialog-title] { overflow: hidden; color: #5F6368; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
+.archive-dialog-toolbar nav { display: flex; flex: 0 0 auto; align-items: center; gap: 0.45rem; }
+.archive-dialog-toolbar a,
+.archive-dialog-toolbar button {
+  padding: 0.38rem 0.62rem;
+  border: 1px solid #AAB7C8;
+  border-radius: 2px;
+  background: #FFFFFF;
+  color: #174EA6;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+  cursor: pointer;
+}
+.archive-dialog-toolbar a:hover,
+.archive-dialog-toolbar button:hover { border-color: #7E8998; background: #F6F8FB; color: #0B57D0; }
+
+.archive-dialog-viewport {
+  min-height: 0;
+  padding: clamp(0.75rem, 2vw, 1.35rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: #F6F8FB;
+  scrollbar-color: #98A6B8 #E8EEF7;
+}
+
+.archive-dialog-status {
+  margin: 2rem auto;
+  color: #5F6368;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.82rem;
+  text-align: center;
+}

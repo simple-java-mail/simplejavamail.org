@@ -1,0 +1,32 @@
+.journal-entry-navigation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid @line;
+  border-left: 1px solid @line;
+}
+
+.journal-entry-navigation a {
+  display: flex;
+  min-height: 86px;
+  padding: @space-sm @space-md;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: @space-xs;
+  border-right: 1px solid @line;
+  border-bottom: 1px solid @line;
+  color: @ink;
+  text-decoration: none;
+}
+
+.journal-entry-navigation a:hover { background: @teal-tint; }
+.journal-entry-navigation span { color: @steel; font-family: @font-mono; font-size: 0.56rem; text-transform: uppercase; }
+.journal-entry-navigation strong { display: flex; align-items: flex-start; justify-content: space-between; gap: @space-md; font-size: 0.78rem; line-height: 1.35; }
+.journal-entry-navigation b { color: @teal-deep; font-weight: 400; }
+.journal-entry-navigation .journal-entry-previous { text-align: left; }
+.journal-entry-navigation .journal-entry-previous strong { justify-content: flex-start; }
+
+.journal-entry-navigation--top { margin-bottom: @space-lg; }
+.journal-entry-navigation--bottom { margin-top: @space-lg; }
+.journal-entry-navigation .journal-entry-next { grid-column: 2; text-align: right; }
+.journal-entry-navigation .journal-entry-next strong { justify-content: flex-end; }

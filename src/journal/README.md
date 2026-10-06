@@ -1,5 +1,9 @@
 # Engineering Journal authoring
 
+The Journal contains personal project history, engineering decisions and maintainer
+perspectives. Worked company designs live separately in [Case studies](../case-studies/README.md).
+Both sections reuse the same long-form layout and authoring features below.
+
 Write each journal entry as a Markdown file in this directory, prefixed with a sorting date in `YYYY-MM-DD` format. This keeps the files in reading order when Typora or a file browser sorts them alphabetically:
 
 ```text
@@ -169,7 +173,9 @@ For alphabetical file sorting, give the parts consecutive filename dates while k
 
 ### Case studies
 
-Case studies are Journal articles with an additional entry on `/case-studies.html`. Add this metadata to include one:
+Case studies are independent articles in `src/case-studies`, published under
+`/case-studies/` and listed on `/case-studies.html`. See the
+[case-study authoring reference](../case-studies/README.md). Their metadata remains:
 
 ```yaml
 caseStudy:
@@ -179,9 +185,9 @@ caseStudy:
   order: 1
 ```
 
-`label` is the short badge identifying the kind of setup, such as "Self-managed SMTP" or "Enterprise integration". `order` controls only the Case studies index, not the Journal's reading order. The company profile is separate from the article's title and description; the index links to the existing Journal URL. Draft case studies appear in local preview and are excluded from the production index, just like other Journal drafts.
+`label` is the short badge identifying the kind of setup, such as "Self-managed SMTP" or "Enterprise integration". `order` controls the Case studies index and its article navigation. The company profile is separate from the article's title and description; the index links to the company's case-study URL. Draft case studies appear in local preview and are excluded from production. They never enter the Journal index or RSS feed.
 
-RelayDesk also has a `caseStudy.spotlight` object with a local `/assets/` image, `heading` and `description`. It selects the wide cyberpunk card on the Case studies page and the matching homepage feature; both use the same article metadata and URL. Its draft status still controls production visibility. Other case studies keep their ordinary cards.
+RelayDesk also has a `caseStudy.spotlight` object with a local `/assets/` image, `heading` and `description`. It selects the wide cyberpunk card on the Case studies page and the matching homepage feature; both use the same article metadata and URL. Its draft status controls production visibility. Other case studies keep their ordinary cards.
 
 ### Categories
 
@@ -304,7 +310,7 @@ The standalone pages reproduce the compact SourceForge project UI and open in th
 
 ### Discussion
 
-Every rendered Journal article includes the discussion section and makes one
+Every rendered Journal article and case study includes the discussion section and makes one
 attempt to connect to the Remark42 service in `src/_data/journalComments.json`.
 There are no launch, development-mode, draft, article opt-out or page-origin
 visibility gates. Network errors, HTTP failures and a widget that fails to
@@ -338,7 +344,8 @@ commentsUrl: https://www.simplejavamail.org/journal/previous-article-name.html
 ```
 
 Thread overrides must stay on the canonical Journal origin and have no query
-string or fragment. The commenting and privacy notice lives at `/commenting.html`.
+string or fragment. Overrides can also use canonical `/case-studies/` URLs.
+The commenting and privacy notice lives at `/commenting.html`.
 
 ### Publishing
 

@@ -263,10 +263,6 @@ test("Journal paste targets keep assets with their article rather than in shared
     ["2026-09-03-the-library-i-keep-coming-back-to.md", "the-library-i-keep-coming-back-to"],
     ["2026-09-08-set-phasers-to-synchronize.md", "set-phasers-to-synchronize"],
     ["2026-09-09-what-simple-java-mail-10-is-for.md", "what-simple-java-mail-10-is-for"],
-    ["2026-09-10-mail-at-polar-meridian-systems.md", "polar-meridian"],
-    ["2026-09-11-when-one-email-becomes-a-million.md", "when-one-email-becomes-a-million"],
-    ["2026-09-11-your-mail-server-works-for-a-troll-farm-now.md", "staple-and-sons"],
-    ["2026-09-12-everybody-brought-their-own-mail-server.md", "relaydesk"],
   ];
   for (const [filename, slug] of articles) {
     const article = readFileSync(new URL(`../src/journal/${filename}`, import.meta.url), "utf8");
@@ -274,10 +270,15 @@ test("Journal paste targets keep assets with their article rather than in shared
     assert.ok(article.includes("typora-root-url: .."), filename);
     assert.doesNotMatch(article, /\/assets\/journal\/(?:personas|companies|examples)\//u);
   }
+  for (const slug of ["polar-meridian", "staple-and-sons", "relaydesk"]) {
+    const article = readFileSync(new URL(`../src/case-studies/${slug}.md`, import.meta.url), "utf8");
+    assert.ok(article.includes(`typora-copy-images-to: ../assets/journal/articles/${slug}`));
+    assert.ok(article.includes("typora-root-url: .."));
+  }
 });
 
 test("RelayDesk diagrams use local portraits and system icons while the infographic source stays editable", () => {
-  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const article = readFileSync(new URL("../src/case-studies/relaydesk.md", import.meta.url), "utf8");
   for (const person of ["maya", "sam", "anika"]) {
     const filename = `relay-desk-${person}-portrait.jpg`;
     assert.ok(article.includes(`src='/assets/journal/articles/relaydesk/personas/${filename}'`));
@@ -316,8 +317,8 @@ test("RelayDesk diagrams use local portraits and system icons while the infograp
 });
 
 test("RelayDesk flowchart uses hexagonal portrait badges without enclosing cards or changing the sequence actor", () => {
-  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
-  const styles = readFileSync(new URL("../src/styles/journal.less", import.meta.url), "utf8");
+  const article = readFileSync(new URL("../src/case-studies/relaydesk.md", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../src/_includes/styles/articles/cyberpunk.less", import.meta.url), "utf8");
   for (const [id, name] of [["agents", "Maya"], ["sam", "Sam"], ["anika", "Anika"]]) {
     assert.ok(article.includes(`${id}@{ shape: rect, label:`));
     assert.ok(article.includes(`<strong>${name}</strong><span>`));
@@ -410,7 +411,7 @@ test("portrait Bézier curves leave and approach their anchors in the chosen dir
 });
 
 test("image branches leave the artwork, keep angular elbows out of captions and preserve arrow styles", () => {
-  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const article = readFileSync(new URL("../src/case-studies/relaydesk.md", import.meta.url), "utf8");
   assert.ok(article.includes("%% journal-image-branch: dispatchKestrel dispatcher kestrel"));
   assert.ok(article.includes("%% journal-image-branch: dispatchJuniper dispatcher juniper"));
   assert.ok(article.includes("dispatcher dispatchKestrel@---> kestrel"));
@@ -524,7 +525,7 @@ test("Handlebars source disclosure survives Markdown rendering without rewriting
   handlebars.registerHelper("journalCodeExample", journalCodeExample);
   handlebars.registerPartial("components/journal-code-disclosure", readFileSync(
     new URL("../src/_includes/components/journal-code-disclosure.hbs", import.meta.url), "utf8"));
-  const article = readFileSync(new URL("../src/journal/2026-09-10-mail-at-polar-meridian-systems.md", import.meta.url), "utf8");
+  const article = readFileSync(new URL("../src/case-studies/polar-meridian.md", import.meta.url), "utf8");
   const body = article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, "");
   const html = createMarkdownLibrary().render(handlebars.compile(body)({}));
   // Markdown normalizes line endings, including escaped source inside raw HTML.
@@ -594,7 +595,7 @@ test("case-study spotlights reuse their article metadata on the index and homepa
   handlebars.registerHelper("eq", (left, right) => left === right);
   handlebars.registerPartial("components/case-study-spotlight", readFileSync(new URL("../src/_includes/components/case-study-spotlight.hbs", import.meta.url), "utf8"));
   handlebars.registerPartial("components/module-badges", "");
-  const ordinary = (company, order) => ({ url: `/journal/company-${order}.html`, data: { title: `Case study: ${company}`, caseStudy: { company, order, label: "SMTP integration", description: "An ordinary case study" } } });
+  const ordinary = (company, order) => ({ url: `/case-studies/company-${order}.html`, data: { title: `Case study: ${company}`, caseStudy: { company, order, label: "SMTP integration", description: "An ordinary case study" } } });
   const featured = ordinary("RelayDesk", 3);
   featured.data.caseStudy.label = "Multi-tenant communications";
   featured.data.caseStudy.spotlight = { image: "/assets/journal/articles/relaydesk/personas/relay-desk-sam.jpg", heading: "Sam's <repair> gig", description: "Customer-owned mail servers" };
@@ -617,7 +618,7 @@ test("case-study spotlights reuse their article metadata on the index and homepa
   assert.equal((home.match(/class="case-study-spotlight"/g) || []).length, 1);
   assert.match(home, /aria-labelledby="home-relaydesk-3-heading"/);
   assert.match(home, /id="home-relaydesk-3-distinction">Multi-tenant communications<\/span>/);
-  assert.match(home, /href="\/journal\/company-3.html"/);
+  assert.match(home, /href="\/case-studies\/company-3.html"/);
   assert.doesNotMatch(renderPage("index", entries.slice(0, 2)), /home-case-study|case-study-spotlight/);
 });
 
@@ -660,12 +661,12 @@ test("journal banner templates preserve custom wording, escape text and have no 
 });
 
 test("journal navigation sits before and after the content inside the article", () => {
-  const template = readFileSync(new URL("../src/_includes/layouts/journal-entry.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../src/_includes/layouts/article.hbs", import.meta.url), "utf8");
   const handlebars = Handlebars.create();
   for (const partial of ["head", "site-header", "components/journal-banner", "components/journal-comments", "components/archived-source-dialog", "components/journal-image-dialog", "footer"]) {
     handlebars.registerPartial(partial, "");
   }
-  handlebars.registerPartial("components/journal-entry-navigation", '<nav class="{{className}}" aria-label="{{label}}"></nav>');
+  handlebars.registerPartial("components/article-navigation", '<nav class="{{className}}" aria-label="{{label}}"></nav>');
   handlebars.registerHelper("journalHeadings", () => []);
   handlebars.registerHelper("eq", (left, right) => left === right);
   const render = handlebars.compile(template);
@@ -901,7 +902,7 @@ test("linked image captions retain their original-file link and image title", ()
 });
 
 test("linked raw persona images retain captions, attributes and their lightbox opt-in", () => {
-  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const article = readFileSync(new URL("../src/case-studies/relaydesk.md", import.meta.url), "utf8");
   const html = createMarkdownLibrary().render(article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, ""));
   for (const name of ["maya", "sam", "anika"]) {
     const pattern = new RegExp(`<figure class="journal-captioned">\\s*<a href="(/assets/journal/articles/relaydesk/personas/relay-desk-${name}\\.jpg)"><img([^>]+)></a>\\s*<figcaption>([^<]+)</figcaption>\\s*</figure>`, "u");
@@ -918,14 +919,14 @@ test("linked raw persona images retain captions, attributes and their lightbox o
 });
 
 test("RelayDesk closes with a readable mission debrief rather than a copyable code example", () => {
-  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const article = readFileSync(new URL("../src/case-studies/relaydesk.md", import.meta.url), "utf8");
   const html = createMarkdownLibrary().render(article.slice(article.indexOf("## Back to Maya's support ticket")));
   assert.match(html, /class="journal-mission-debrief" role="group" aria-labelledby="relaydesk-run-complete"/);
   assert.match(html, /id="relaydesk-run-complete">RUN COMPLETE<\/p>/);
   assert.match(html, /Back at the bar, Sam orders a fresh beer\.<br>\s*This time, his pad stays in his jacket\.<br>\s*For the moment\./);
   assert.match(html, /<div class="journal-mission-opening">[\s\S]*?<img class="journal-mission-mascot" src="\/assets\/journal\/articles\/relaydesk\/relaydesk-spiderbot-mascotte\.png" width="400" height="210" alt="" loading="lazy" decoding="async">\s*<\/div>\s*<dl>/);
   assert.ok(readFileSync(new URL("../src/assets/journal/articles/relaydesk/relaydesk-spiderbot-mascotte.png", import.meta.url)).length > 0);
-  const styles = readFileSync(new URL("../src/styles/journal.less", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../src/_includes/styles/articles/cyberpunk.less", import.meta.url), "utf8");
   assert.match(styles, /img\.journal-mission-mascot \{[^}]*top: 50%;[^}]*right: calc\(@space-lg \+ \(100% - \(@space-lg \* 2\)\) \* 0\.225\);[^}]*border: 0;[^}]*transform: translate\(50%, -50%\);/);
   assert.match(styles, /@media \(max-width: 640px\) \{\s*\.journal-mission-opening \{\s*position: relative;\s*margin-bottom: 96px;/);
   for (const [name, result] of [["Maya", "Reply delivered"], ["Sam", "Access restored"], ["Anika", "Credentials replaced"]]) {
@@ -942,7 +943,7 @@ test("RelayDesk closes with a readable mission debrief rather than a copyable co
 });
 
 test("RelayDesk keeps its editable Mermaid source in an inert template beside the infographic", () => {
-  const article = readFileSync(new URL("../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md", import.meta.url), "utf8");
+  const article = readFileSync(new URL("../src/case-studies/relaydesk.md", import.meta.url), "utf8");
   const body = article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, "");
   const html = createMarkdownLibrary().render(body);
   const source = html.match(/<template id="relaydesk-support-network-source" data-pagefind-ignore>([\s\S]*?)<\/template>/u);

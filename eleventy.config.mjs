@@ -12,13 +12,10 @@ import site from "./src/_data/site.json" with { type: "json" };
 import {
   collectionSchema,
   createMarkdownLibrary,
-  enforceJournalTodoPolicy,
   formatDate,
-  hasMarkdownHeading,
   hardenExternalLinks,
   headingsFromHtml,
   isoDate,
-  isJournalArticleFilename,
   journalNeighbor,
   navItemForUrl,
   orderJournalEntries,
@@ -32,9 +29,11 @@ import {
 } from "./src/_lib/google-code-archive.mjs";
 import { createSourceForgeMarkupLibrary, decodeSourceForgeEntities } from "./src/_lib/sourceforge-archive.mjs";
 import { journalCodeExample } from "./src/_lib/journal-code-example.mjs";
+import { articleNeighbor, orderCaseStudies } from "./src/_lib/article-context.mjs";
+import { enforceArticlePolicy } from "./src/_lib/article-policy.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const articlePath = /[\\/]src[\\/]journal[\\/][^\\/]+\.md$/i;
+const articlePath = /[\\/]src[\\/](?:journal|case-studies)[\\/][^\\/]+\.md$/i;
 
 function runPagefind(outputDirectory) {
   const runner = path.join(root, "node_modules", "pagefind", "lib", "runner", "bin.cjs");
@@ -67,6 +66,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addFilter("upper", (value) => String(value ?? "").toUpperCase());
   eleventyConfig.addFilter("journalHeadings", headingsFromHtml);
   eleventyConfig.addFilter("journalNeighbor", journalNeighbor);
+  eleventyConfig.addFilter("articleNeighbor", articleNeighbor);
   eleventyConfig.addFilter("journalCollectionSchema", collectionSchema);
   eleventyConfig.addFilter("absoluteUrl", (url, base) => new URL(url, base).toString());
   eleventyConfig.addFilter("googleCodeComment", (value) => googleCodeComments.render(decodeGoogleCodeEntities(value || "")));
@@ -88,23 +88,13 @@ export default function (eleventyConfig) {
   eleventyConfig.addCollection("publishedJournal", (collectionApi) => orderJournalEntries(collectionApi
     .getFilteredByTag("journal")
     .filter((entry) => !entry.data.draft), true));
-  eleventyConfig.addCollection("caseStudies", (collectionApi) => collectionApi
-    .getFilteredByTag("journal")
-    .filter((entry) => entry.data.caseStudy)
-    .sort((left, right) => left.data.caseStudy.order - right.data.caseStudy.order));
+  eleventyConfig.addCollection("caseStudies", (collectionApi) => orderCaseStudies(collectionApi
+    .getFilteredByTag("caseStudy")));
 
-  eleventyConfig.addPreprocessor("journal-policy", "md", function (data, content) {
+  eleventyConfig.addPreprocessor("article-policy", "md", function (data, content) {
     if (!articlePath.test(this.inputPath)) return;
     const filename = path.basename(this.inputPath);
-    if (!isJournalArticleFilename(filename)) {
-      throw new Error(`[journal] Article filenames must use lowercase kebab-case: ${filename}`);
-    }
-    if (!data.draft && hasMarkdownHeading(markdown, content, 1)) {
-      throw new Error(`[journal] Use the front matter title instead of an H1 heading in ${filename}`);
-    }
-    if (!content.trim()) throw new Error(`[journal] Article body is empty in ${filename}`);
-    enforceJournalTodoPolicy(markdown, content, filename, data.draft);
-    if (data.draft && process.env.ELEVENTY_RUN_MODE === "build") return false;
+    return enforceArticlePolicy(markdown, content, filename, data.draft, process.env.ELEVENTY_RUN_MODE);
   });
 
   eleventyConfig.addTemplateFormats("less");
@@ -126,6 +116,7 @@ export default function (eleventyConfig) {
   eleventyConfig.ignores.add("src/assets/journal/articles/*/examples/README.md");
   eleventyConfig.ignores.add("src/journal/README.md");
   eleventyConfig.ignores.add("src/journal/article-template.md");
+  eleventyConfig.ignores.add("src/case-studies/README.md");
   eleventyConfig.ignores.add("src/styles/tokens.less");
 
   eleventyConfig.addTransform("external-link-safety", function (content) {

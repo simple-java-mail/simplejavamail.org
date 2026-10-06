@@ -1,6 +1,6 @@
 # Polar Meridian's dispatcher
 
-This is the assembled application example for the [Polar Meridian case study](/journal/mail-at-polar-meridian-systems.html), using the Simple Java Mail 10.0.0 API. It is not an SJM feature or a ready-to-deploy mail service.
+This is the assembled application example for the [Polar Meridian case study](/case-studies/polar-meridian.html), using the Simple Java Mail 10.0.0 API. It is not an SJM feature or a ready-to-deploy mail service.
 
 - [PolarMeridianDispatcher.java](PolarMeridianDispatcher.java): polling, permission checks, message preparation, dispatch decisions, attempt insertion, submission, result handling and stopping the polls.
 - [OrderConfirmationComposer.java](OrderConfirmationComposer.java): the article's concrete conversion of a stored order-confirmation request into an SJM Email, with its Mailer and retention choice.

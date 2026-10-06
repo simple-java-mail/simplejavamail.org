@@ -7,11 +7,16 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 
 const rootDir = path.resolve(__dirname, "..");
-const distDir = path.join(rootDir, "dist");
+const outputIndex = process.argv.indexOf("--output-dir");
+if (outputIndex >= 0 && (!process.argv[outputIndex + 1] || process.argv[outputIndex + 1].startsWith("--"))) {
+  console.error("--output-dir requires a directory");
+  process.exit(2);
+}
+const distDir = outputIndex >= 0 ? path.resolve(rootDir, process.argv[outputIndex + 1]) : path.join(rootDir, "dist");
 const ownHosts = new Set(["simplejavamail.org", "www.simplejavamail.org"]);
 const ignoredSchemes = /^(mailto|tel|javascript|data):/i;
 const mode = process.argv[2] || "all";
-const skipBuild = process.argv.includes("--no-build");
+const skipBuild = process.argv.includes("--no-build") || outputIndex >= 0;
 const failOnRedirect = process.argv.includes("--fail-on-redirect");
 const requestTimeoutMs = 15000;
 const maxConcurrentRequests = 6;
@@ -21,7 +26,7 @@ const acceptedRedirects = [
 ];
 
 if (!["all", "internal", "external"].includes(mode)) {
-	console.error("Usage: node scripts/verify-links.js [all|internal|external] [--no-build] [--fail-on-redirect]");
+	console.error("Usage: node scripts/verify-links.js [all|internal|external] [--no-build] [--output-dir DIRECTORY] [--fail-on-redirect]");
 	process.exit(2);
 }
 

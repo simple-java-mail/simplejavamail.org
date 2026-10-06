@@ -1,0 +1,50 @@
+.journal-banner {
+  display: grid;
+  grid-template-columns: 10.5rem minmax(0, 1fr);
+  margin: 0 0 @space-xl;
+  border: 1px solid;
+  border-left-width: 4px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.journal-banner-header {
+  display: flex;
+  align-items: center;
+  padding: @space-md;
+  border-right: 1px solid;
+  border-color: inherit;
+  font-family: @font-mono;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: @tracking-label;
+  text-transform: uppercase;
+}
+
+.journal-prose .journal-banner p { margin: 0; padding: @space-md; white-space: pre-line; }
+
+.journal-banner--note {
+  border-color: darken(@amber, 5%);
+  background: @amber-tint;
+}
+
+.journal-banner--note .journal-banner-header {
+  color: darken(@amber, 22%);
+}
+
+.journal-banner--info {
+  border-color: @journal-blue-line;
+  background: @journal-blue-tint;
+}
+
+.journal-banner--info .journal-banner-header { color: @journal-blue; }
+
+.journal-banner--tip {
+  border-color: @journal-green-line;
+  background: @journal-green-tint;
+}
+
+.journal-banner--tip .journal-banner-header {
+  color: @journal-green;
+}

@@ -1,6 +1,6 @@
 # Case study: Everybody Brought Their Own Mail Server
 
-Editorial outline for the [RelayDesk Journal draft](../src/journal/2026-09-12-everybody-brought-their-own-mail-server.md). The article is unpublished and uses a provisional sorting/publication date. Write from a completed Simple Java Mail 10.0.0 perspective, while distinguishing its existing client facilities from application integrations we still need to design and test.
+Editorial outline for the [RelayDesk case-study draft](../src/case-studies/relaydesk.md). The article is unpublished and uses a provisional publication date. Write from a completed Simple Java Mail 10.0.0 perspective, while distinguishing its existing client facilities from application integrations we still need to design and test.
 
 ## Company name and profile
 

@@ -182,7 +182,7 @@ flowchart TB
 
 RelayDesk runs each customer's dispatch workers in the agreed regions, with each deployment maintaining its own connection pools.
 
-Unlike the two developers at [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), Sam cannot reconfigure his customers' mail servers. Nor does he have [Polar Meridian's](/journal/mail-at-polar-meridian-systems.html) dedicated corporate messaging team to agree a common enterprise service with. Instead, he gets a contact address, a configuration form and occasionally a spreadsheet; he gets to point the tenant's outgoing mail at the customer's chosen servers, and that's mostly it. "Work work" and "Job's done!" is more his thing, good little peon that he is.
+Unlike the two developers at [Staple & Sons](/case-studies/staple-and-sons.html), Sam cannot reconfigure his customers' mail servers. Nor does he have [Polar Meridian's](/case-studies/polar-meridian.html) dedicated corporate messaging team to agree a common enterprise service with. Instead, he gets a contact address, a configuration form and occasionally a spreadsheet; he gets to point the tenant's outgoing mail at the customer's chosen servers, and that's mostly it. "Work work" and "Job's done!" is more his thing, good little peon that he is.
 
 ## Sam checks a customer's SMTP settings before connecting
 
@@ -209,7 +209,7 @@ The onboarding checks cover a few different things:
 
 [OWASP's SSRF guidance](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html) includes SMTP among the protocols an attacker can abuse. Validating a hostname once isn't enough, and configuring a secure Mailer doesn't replace the network checks.
 
-Kestrel's relays already handle [DKIM](/journal/your-mail-server-works-for-a-troll-farm-now.html#spf-dkim-and-dmarc); Anika confirms the SPF and DMARC setup too. Its wholesale-support conversations have an additional requirement: business partners exchange commercial attachments using [OpenPGP](/security.html#section-sending-openpgp). Those replies must be signed and encrypted. Maya's spider-bot reply doesn't need a shopper to install PGP software.
+Kestrel's relays already handle [DKIM](/case-studies/staple-and-sons.html#spf-dkim-and-dmarc); Anika confirms the SPF and DMARC setup too. Its wholesale-support conversations have an additional requirement: business partners exchange commercial attachments using [OpenPGP](/security.html#section-sending-openpgp). Those replies must be signed and encrypted. Maya's spider-bot reply doesn't need a shopper to install PGP software.
 
 ## Maya's reply cannot borrow Juniper's connection
 
@@ -323,7 +323,7 @@ Email encryptedReply = protectedReply.buildEmail();
 
 *Look up each partner's approved key under Kestrel's account, not somebody else's.*
 
-The application's key directory verifies identities and approvals; a missing key holds the reply, with no plaintext fallback. This preliminary rehearsal skips cryptography; sending the protected reply performs it. Protection covers outgoing content, not RelayDesk's stored conversation. [Polar Meridian uses S/MIME](/journal/mail-at-polar-meridian-systems.html#one-protected-message-several-partners) for its partners' different requirements.
+The application's key directory verifies identities and approvals; a missing key holds the reply, with no plaintext fallback. This preliminary rehearsal skips cryptography; sending the protected reply performs it. Protection covers outgoing content, not RelayDesk's stored conversation. [Polar Meridian uses S/MIME](/case-studies/polar-meridian.html#one-protected-message-several-partners) for its partners' different requirements.
 
 ## Juniper's replies still need to leave
 
@@ -437,7 +437,7 @@ outcome.getSubmissionReceipt().ifPresent(receipt -> {
 
 These are candidates, not scheduled retries: the dispatcher still checks authorization and backoff. If final acceptance is unknown, the attempt needs investigation. Without partial sending, the recipient rejection would prevent DATA submission for the buyer too.
 
-The bounded `observerWorkers` executor and persistence adapter must report failed writes. [Polar Meridian covers those failures](/journal/mail-at-polar-meridian-systems.html#when-the-archive-is-slower-than-smtp); here too, a missing result after a crash calls for investigation, not an automatic resend.
+The bounded `observerWorkers` executor and persistence adapter must report failed writes. [Polar Meridian covers those failures](/case-studies/polar-meridian.html#when-the-archive-is-slower-than-smtp); here too, a missing result after a crash calls for investigation, not an automatic resend.
 
 ## Update Kestrel's settings without stopping Juniper
 

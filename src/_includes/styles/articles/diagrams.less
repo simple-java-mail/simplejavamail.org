@@ -1,0 +1,71 @@
+.journal-prose .journal-diagram { margin: @space-lg 0; }
+.journal-prose h2 + .journal-diagram { margin-top: 0; }
+.journal-prose pre.mermaid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: @space-sm @space-md;
+  overflow-x: auto;
+  border: 1px solid @line;
+  border-top: 3px solid @teal;
+  background: @surface;
+  color: @steel;
+  line-height: 1.5;
+  text-align: center;
+  white-space: pre-wrap;
+}
+// Mermaid measures SVG geometry during rendering. Even the global reduced-motion
+// transition can distort those measurements; keep these diagrams fully static.
+.journal-prose pre.mermaid,
+.journal-prose pre.mermaid * {
+  animation: none !important;
+  transition: none !important;
+}
+.journal-prose pre.mermaid svg { display: block; width: 100% !important; max-width: 640px !important; height: auto !important; margin: auto; }
+.journal-prose pre.mermaid .diagram-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.journal-prose pre.mermaid .diagram-person img {
+  display: block;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid @teal;
+  border-radius: 3px;
+  object-fit: cover;
+}
+.journal-prose pre.mermaid .diagram-person-frame {
+  fill: none;
+  stroke: @teal;
+  stroke-width: 1.5px;
+  pointer-events: none;
+}
+.journal-prose pre.mermaid.mermaid-compact svg { flex: 0 1 auto; width: 100% !important; max-height: 900px; }
+.journal-prose .journal-diagram-wide pre.mermaid svg { max-width: 780px !important; }
+.journal-prose .polar-meridian-estate-map pre.mermaid .polar-estate-label {
+  display: inline-block;
+  width: 13.5rem;
+}
+.journal-prose .polar-meridian-estate-map pre.mermaid .polar-activity-label {
+  display: inline-block;
+  width: 28rem;
+}
+.journal-prose pre.mermaid .mailbox-audience {
+  display: inline-grid;
+  grid-template-columns: 1.25rem auto;
+  column-gap: .25rem;
+  width: 7.25rem;
+  align-items: center;
+  text-align: left;
+}
+.journal-prose pre.mermaid .mailbox-actor { text-align: center; }
+.journal-prose .polar-meridian-estate-map pre.mermaid .mailbox-audience { width: 10.75rem; }
+.journal-diagram-single-lane { max-width: 280px; margin-inline: auto; }
+.journal-prose .journal-diagram-single-lane pre.mermaid svg { flex: 0 1 auto; width: 100% !important; }

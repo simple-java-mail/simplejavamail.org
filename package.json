@@ -13,10 +13,10 @@
     "dev:site": "eleventy --config=eleventy.config.mjs --serve",
     "dev:scripts": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "clean": "rimraf dist",
-    "check": "concurrently --kill-others-on-fail \"eleventy --config=eleventy.config.mjs --dryrun\" \"tsc -p tsconfig.json --noEmit\" \"node --test tests/eleventy-helpers.test.mjs tests/journal-comments.test.mjs\"",
+    "check": "concurrently --kill-others-on-fail \"eleventy --config=eleventy.config.mjs --dryrun\" \"tsc -p tsconfig.json --noEmit\" \"node --test tests/eleventy-helpers.test.mjs tests/journal-comments.test.mjs tests/article-migration.test.mjs\"",
     "check:templates": "eleventy --config=eleventy.config.mjs --dryrun",
     "check:scripts": "tsc -p tsconfig.json --noEmit",
-    "check:helpers": "node --test tests/eleventy-helpers.test.mjs tests/journal-comments.test.mjs",
+    "check:helpers": "node --test tests/eleventy-helpers.test.mjs tests/journal-comments.test.mjs tests/article-migration.test.mjs",
     "verifyLinks": "node scripts/verify-links.js all",
     "verifyLinks:internal": "node scripts/verify-links.js internal",
     "verifyLinks:external": "node scripts/verify-links.js external"

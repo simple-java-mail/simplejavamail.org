@@ -1,0 +1,108 @@
+// Individual journal entry
+.journal-article-hero {
+  padding: clamp(3.5rem, 7vw, 7rem) 0 @space-2xl;
+  border-bottom: 1px solid @line;
+}
+
+.journal-article-hero-inner { max-width: 1080px; }
+
+.journal-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: @space-2xl;
+  color: @steel;
+  font-family: @font-mono;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.journal-back-link:hover { color: @teal-deep; }
+
+.journal-company-logo {
+  display: block;
+  width: min(100%, 24rem);
+  height: auto;
+  margin: 0 0 @space-md;
+}
+
+.journal-article-hero h1 {
+  max-width: 1020px;
+  font-size: clamp(3rem, 6.6vw, 5.8rem);
+}
+
+.journal-article-subtitle {
+  margin: @space-md 0 0;
+  color: @steel;
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  line-height: 1.4;
+}
+
+.journal-article-lede {
+  max-width: 850px;
+  margin: @space-lg 0 0;
+  color: @steel;
+  font-size: clamp(1.12rem, 2.2vw, 1.4rem);
+  line-height: 1.55;
+}
+
+.journal-byline {
+  margin: @space-lg 0 0;
+  color: @steel;
+  font-family: @font-mono;
+  font-size: 0.7rem;
+}
+
+.journal-byline strong { color: @ink; }
+
+.journal-article-grid {
+  display: grid;
+  grid-template-columns: 230px minmax(0, @reading);
+  justify-content: center;
+  gap: clamp(3rem, 7vw, 7rem);
+  padding-top: @space-2xl;
+  padding-bottom: @space-3xl;
+}
+
+.journal-record-rail {
+  position: sticky;
+  top: calc(@header-h + @space-lg);
+  align-self: start;
+  border: 1px solid @line;
+  border-top: 3px solid @teal;
+  background: @surface;
+}
+
+.journal-record-rail dt,
+.journal-entry-toc > span {
+  color: @teal-deep;
+  font-family: @font-mono;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: @tracking-label;
+  text-transform: uppercase;
+}
+
+.journal-record-rail dl { margin: 0; }
+.journal-record-rail dl > div { padding: @space-md; border-bottom: 1px solid @line; }
+.journal-record-rail dt,
+.journal-record-rail dd { margin: 0; }
+.journal-record-rail dd { margin-top: 0.28rem; color: @steel; font-size: 0.76rem; line-height: 1.45; }
+.journal-record-rail dd ul { margin: 0; padding: 0; list-style: none; }
+.journal-record-rail dd li + li { margin-top: 0.2rem; }
+
+.journal-entry-toc { padding: @space-md; }
+.journal-entry-toc ol { margin: @space-sm 0 0; padding: 0; list-style: none; }
+.journal-entry-toc li + li { margin-top: 0.45rem; }
+.journal-entry-toc a { display: block; color: @steel; font-size: 0.71rem; line-height: 1.35; text-decoration: none; }
+.journal-entry-toc a:hover { color: @teal-deep; }
+.journal-entry-toc .journal-toc-depth-3 { padding-left: @space-sm; }
+
+.journal-prose {
+  min-width: 0;
+  color: @ink;
+  font-size: 1.03rem;
+  line-height: 1.78;
+}

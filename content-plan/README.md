@@ -126,8 +126,10 @@ The **Engineering Journal** is a secondary editorial route linked from the foote
 | --- | --- | --- | --- |
 | `/` and `/index.html` | Home | Minimal send plus depth reveal | rebuild |
 | `/why-simple-java-mail.html` | Why Simple Java Mail | Explain what the library handles and why | add |
-| `/engineering-journal.html` | Engineering Journal | Whole-system approaches, project archaeology, and maintainer perspectives | add |
+| `/engineering-journal.html` | Engineering Journal | Personal project history, engineering decisions, and maintainer perspectives | add |
 | `/journal/*.html` | Journal entry | Build-time rendering of maintainer-authored Markdown | generate |
+| `/case-studies.html` | Case studies | Worked designs with fictional companies | maintain |
+| `/case-studies/*.html` | Company case study | Independent Markdown articles using the shared long-form renderer | generate |
 | `/docs.html` | Documentation | Task-oriented wayfinding | add |
 | `/features.html` | Capabilities | Complete capability reference | restructure; preserve anchors |
 | `/configuration.html` | Configuration | Builder, property, Spring, recipient-rule, and pool reference | restructure; preserve anchors |
@@ -285,7 +287,7 @@ The relaunch does not invent support SLAs, compatibility promises, a vulnerabili
 - Jakarta Mail is named as the lower-level foundation, not misrepresented as obsolete or useless.
 - DKIM, S/MIME, and OpenPGP/MIME are presented together where security capabilities are listed. OpenPGP does not get a special homepage section merely because it is new.
 - Migration pages cover public breaking changes and non-obvious behavior changes. New-feature tutorials stay in the feature and security documentation.
-- Reference documentation explains current behavior. The Engineering Journal records context, decisions, system-level approaches, and perspectives that may change over time.
+- Reference documentation explains current behavior. Case studies demonstrate complete worked designs. The Engineering Journal records personal context, decisions, history, and perspectives that may change over time.
 - Journal entries are maintainer-authored Markdown rendered to static HTML at build time. Drafts never enter production HTML, the journal index, RSS, or the sitemap.
 - Planning files are source material only and are never copied into `dist/`.
 

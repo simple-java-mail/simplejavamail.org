@@ -10,7 +10,7 @@
     <main id="main-content" data-pagefind-body>
       <header class="journal-article-hero">
         <div class="shell journal-article-hero-inner">
-          <a class="journal-back-link" href="{{site.journal.indexUrl}}"><span aria-hidden="true">←</span> Engineering Journal</a>
+          <a class="journal-back-link" href="{{articleSection.indexUrl}}"><span aria-hidden="true">←</span> {{articleSection.label}}</a>
           {{#if series}}
             <p class="journal-series-label">
               <span>{{series.title}}</span>
@@ -48,8 +48,8 @@
           </dl>
 
           {{#if (journalHeadings content)}}
-            <nav class="journal-entry-toc" aria-label="In this entry">
-              <span>In this entry</span>
+            <nav class="journal-entry-toc" aria-label="{{articleSection.tocLabel}}">
+              <span>{{articleSection.tocLabel}}</span>
               <ol>
                 {{#each (journalHeadings content)}}
                   <li class="journal-toc-depth-{{depth}}"><a href="#{{id}}">{{text}}</a></li>
@@ -60,13 +60,13 @@
         </aside>
 
         <article id="journal-article" class="journal-prose">
-          {{> components/journal-entry-navigation
+          {{> components/article-navigation
             className="journal-entry-navigation journal-entry-navigation--top"
             label="Article navigation before entry"
           }}
           {{> components/journal-banner}}
           {{{content}}}
-          {{> components/journal-entry-navigation
+          {{> components/article-navigation
             className="journal-entry-navigation journal-entry-navigation--bottom"
             label="Article navigation after entry"
           }}

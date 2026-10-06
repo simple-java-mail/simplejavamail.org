@@ -1,0 +1,204 @@
+// Recovered Google Code issues
+.google-code-source-page { min-width: 300px; background: #F6F8FB; color: #3C4043; }
+
+.gca-source-masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 52px;
+  padding: 0.65rem max(1rem, calc((100vw - 1120px) / 2));
+  border-bottom: 1px solid #BCC8D8;
+  background: #FFFFFF;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.75rem;
+}
+.gca-source-masthead a { color: #174EA6; font-weight: 600; text-decoration: none; }
+.gca-source-masthead a:hover { color: #0B57D0; text-decoration: underline; }
+.gca-source-masthead span { color: #5F6368; }
+.gca-source-main { width: min(1120px, calc(100% - 2rem)); margin-inline: auto; padding: 1.5rem 0 3rem; }
+
+.gca-issue {
+  width: 100%;
+  border: 1px solid #BCC8D8;
+  border-top: 4px solid #0B57D0;
+  border-radius: 2px;
+  background: #FFFFFF;
+  color: #3C4043;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px fade(#243447, 9%);
+}
+
+.gca-issue a { color: #174EA6; text-underline-offset: 0.12em; }
+.gca-issue a:hover { color: #0B57D0; }
+
+.gca-project-strip {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.52rem 0.8rem;
+  border-bottom: 1px solid #C8D3E1;
+  background: #E8EEF7;
+  color: #5F6368;
+  font-size: 12px;
+}
+.gca-project-strip strong { color: #0B57D0; font-size: 14px; letter-spacing: -0.02em; }
+.gca-project-strip span:nth-of-type(1) { color: #3C4043; font-weight: 600; }
+
+.gca-issue-heading { padding: 1rem 1.15rem 1.05rem; border-bottom: 1px solid #C8D3E1; }
+.gca-issue-heading p { margin: 0 0 0.2rem; color: #5F6368; font-size: 11px; }
+.gca-issue-heading h1 {
+  margin: 0;
+  color: #202124;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.15rem, 2.5vw, 1.55rem);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  text-wrap: wrap;
+}
+
+.gca-issue-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  align-items: start;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.gca-comments { min-width: 0; }
+.gca-comment {
+  scroll-margin-block: 1rem;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.gca-comment + .gca-comment { margin-top: 0.9rem; }
+.gca-comment:target,
+.gca-comment.is-citation-target {
+  border-color: #E6A700;
+  background: #FFFDF1;
+  box-shadow: inset 4px 0 #F9AB00, 0 0 0 3px fade(#F9AB00, 16%);
+}
+
+.gca-comment-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.42rem 0.65rem;
+  border-bottom: 1px solid #CBD5E1;
+  background: #EEF3FA;
+}
+.gca-comment-heading > a { flex: 0 0 auto; font-size: 12px; font-weight: 600; text-decoration: none; }
+.gca-comment-heading > a:hover { text-decoration: underline; }
+.gca-comment-heading span { color: #68717D; font-size: 11px; text-align: right; }
+.gca-comment-heading i { color: #3C4043; font-style: normal; font-weight: 600; }
+
+.gca-comment-body { padding: 0.78rem 0.72rem; overflow-wrap: anywhere; }
+.gca-comment-body > :first-child { margin-top: 0; }
+.gca-comment-body > :last-child { margin-bottom: 0; }
+.gca-comment-body p { margin: 0 0 0.72rem; }
+.gca-comment-body ul,
+.gca-comment-body ol { margin: 0 0 0.72rem; padding-left: 1.4rem; }
+.gca-comment-body blockquote { margin: 0.7rem 0; padding: 0.15rem 0 0.15rem 0.7rem; border-left: 3px solid #AAB7C8; color: #5F6368; }
+.gca-comment-body pre {
+  margin: 0.7rem 0;
+  padding: 0.65rem 0.72rem;
+  overflow: auto;
+  border: 1px solid #D7DEE8;
+  background: #F7F8FA;
+  color: #202124;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.gca-comment-body code { border: 0; background: #F1F3F4; color: #202124; font-family: Consolas, "Courier New", monospace; font-size: 0.92em; }
+.gca-comment-body pre code { padding: 0; background: transparent; font-size: inherit; overflow-wrap: normal; }
+
+.gca-attachments { padding: 0.6rem 0.72rem; border-top: 1px solid #D7DEE8; background: #FAFBFC; font-size: 11px; }
+.gca-attachments strong { color: #5F6368; }
+.gca-attachments ul { margin: 0.25rem 0 0; padding-left: 1.2rem; }
+.gca-attachments span { color: #68717D; }
+
+.gca-issue-meta {
+  border: 1px solid #CBD5E1;
+  background: #F7F9FC;
+  color: #3C4043;
+}
+.gca-issue-meta dl { margin: 0; }
+.gca-issue-meta dl > div { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; padding: 0.45rem 0.58rem; border-bottom: 1px solid #D7DEE8; }
+.gca-issue-meta dt { color: #5F6368; }
+.gca-issue-meta dd { margin: 0; font-weight: 600; }
+.gca-issue-meta h2 { margin: 0; padding: 0.58rem 0.58rem 0.28rem; color: #5F6368; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0; line-height: 1.3; text-transform: uppercase; }
+.gca-issue-meta ul { display: flex; flex-wrap: wrap; gap: 0.28rem; margin: 0; padding: 0 0.58rem 0.65rem; list-style: none; }
+.gca-issue-meta li { padding: 0.1rem 0.32rem; border: 1px solid #B8C5D6; background: #E8EEF7; color: #44546A; font-size: 10px; }
+
+.gca-provenance {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.72rem 1rem;
+  border-top: 1px solid #C8D3E1;
+  background: #F7F9FC;
+  color: #68717D;
+  font-size: 11px;
+}
+.gca-provenance p { margin: 0; }
+.gca-provenance a { flex: 0 0 auto; }
+
+.gca-project-summary {
+  max-width: 52rem;
+  margin: 0.5rem 0 0 !important;
+  color: #5F6368 !important;
+  font-size: 13px !important;
+  line-height: 1.45;
+}
+
+.gca-project-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  align-items: start;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.gca-project-description,
+.gca-wiki-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gca-project-description > :first-child,
+.gca-wiki-body > :first-child { margin-top: 0; }
+.gca-project-description > :last-child,
+.gca-wiki-body > :last-child { margin-bottom: 0; }
+.gca-project-description h1,
+.gca-project-description h2,
+.gca-project-description h3,
+.gca-wiki-body h1,
+.gca-wiki-body h2,
+.gca-wiki-body h3,
+.gca-wiki-body h4 { margin: 1.45rem 0 0.55rem; color: #202124; font-family: Arial, Helvetica, sans-serif; line-height: 1.25; }
+.gca-project-description h1,
+.gca-wiki-body h1 { font-size: 1.35rem; }
+.gca-project-description h2,
+.gca-wiki-body h2 { font-size: 1.15rem; }
+.gca-project-description h3,
+.gca-wiki-body h3 { font-size: 1rem; }
+.gca-project-description p,
+.gca-wiki-body p { margin: 0 0 0.8rem; }
+.gca-project-description ul,
+.gca-project-description ol,
+.gca-wiki-body ul,
+.gca-wiki-body ol { margin: 0 0 0.85rem; padding-left: 1.45rem; }
+.gca-project-description pre,
+.gca-wiki-body pre { margin: 0.8rem 0; padding: 0.7rem; overflow: auto; border: 1px solid #D7DEE8; background: #F7F8FA; font: 11px/1.45 Consolas, "Courier New", monospace; white-space: pre; }
+.gca-project-description code,
+.gca-wiki-body code,
+.gca-wiki-body tt { font-family: Consolas, "Courier New", monospace; font-size: 0.92em; }
+.gca-wiki-byline { margin-top: 0.45rem !important; }
+.gca-wiki-body { padding: 1.1rem; }

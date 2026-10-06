@@ -1,0 +1,126 @@
+// Recovered SourceForge projects, discussions, tickets and mailing-list messages
+.sourceforge-source-page { min-width: 300px; background: #E8EBED; color: #222222; }
+
+.sfa-source-masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 48px;
+  padding: 0.55rem max(1rem, calc((100vw - 1100px) / 2));
+  border-bottom: 1px solid #B6BEC4;
+  background: #F7F7F7;
+  color: #67727B;
+  font: 12px/1.3 Arial, Helvetica, sans-serif;
+}
+.sfa-source-masthead a { color: #245B87; font-weight: 700; text-decoration: none; }
+.sfa-source-masthead a:hover { text-decoration: underline; }
+.sfa-source-main { width: min(1100px, calc(100% - 2rem)); margin-inline: auto; padding: 1.5rem 0 3rem; }
+
+.sfa-source {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #AEB6BC;
+  background: #FFFFFF;
+  color: #222222;
+  font: 13px/1.5 Arial, Helvetica, sans-serif;
+  box-shadow: 0 2px 9px fade(#273038, 14%);
+}
+.sfa-source a { color: #145C9E; text-underline-offset: 0.1em; }
+.sfa-source a:hover { color: #E65F16; }
+
+.sfa-site-header {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  min-height: 70px;
+  padding: 0.8rem 1rem;
+  border-top: 5px solid #F36C21;
+  border-bottom: 1px solid #313941;
+  background: #4D5861;
+  color: #FFFFFF;
+}
+.sfa-wordmark { flex: 0 0 auto; color: #FFFFFF; font-size: 23px; letter-spacing: -0.07em; line-height: 1; }
+.sfa-wordmark span { font-weight: 400; }
+.sfa-wordmark strong { color: #FF7A28; font-weight: 700; }
+.sfa-wordmark small { margin-left: 0.08rem; color: #D8DDE0; font-size: 10px; letter-spacing: 0; }
+.sfa-site-header > div:last-child { min-width: 0; padding-left: 1.2rem; border-left: 1px solid #707A82; }
+.sfa-site-header p { margin: 0; overflow: hidden; font-size: 17px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.sfa-site-header > div:last-child small { color: #D8DDE0; font-size: 11px; }
+
+.sfa-project-tabs {
+  display: flex;
+  min-height: 35px;
+  overflow-x: auto;
+  border-bottom: 1px solid #B9C0C5;
+  background: #E6E8EA;
+  color: #47515A;
+  white-space: nowrap;
+}
+.sfa-project-tabs span { display: flex; align-items: center; padding: 0.48rem 0.75rem; border-right: 1px solid #C4CACF; font-size: 11px; font-weight: 700; }
+.sfa-project-tabs span.is-current { margin-bottom: -1px; border-bottom: 3px solid #F36C21; background: #FFFFFF; color: #252B30; }
+
+.sfa-project-heading,
+.sfa-content-heading { padding: 1rem 1.2rem; border-bottom: 1px solid #C8CED2; background: #F6F7F8; }
+.sfa-project-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.sfa-project-heading p,
+.sfa-content-heading p { margin: 0; color: #65717A; font-size: 11px; }
+.sfa-project-heading h1,
+.sfa-content-heading h1 { margin: 0.16rem 0 0.35rem; color: #20262B; font: 700 clamp(1.2rem, 2.6vw, 1.65rem)/1.2 Arial, Helvetica, sans-serif; letter-spacing: -0.02em; }
+.sfa-project-heading > div > p:last-child { max-width: 48rem; color: #4C565E; font-size: 13px; }
+.sfa-project-status { flex: 0 0 auto; padding: 0.24rem 0.48rem; border: 1px solid #9EB6C8; background: #E8F0F6; color: #35586F; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+
+.sfa-project-layout,
+.sfa-ticket-layout { display: grid; grid-template-columns: minmax(0, 1fr) 245px; align-items: start; gap: 1rem; padding: 1rem; }
+.sfa-project-layout > section,
+.sfa-ticket-layout > section { min-width: 0; }
+.sfa-project-layout h2,
+.sfa-ticket-layout h2,
+.sfa-meta h2 { margin: 0 0 0.55rem; color: #3F4A52; font-size: 12px; font-weight: 700; }
+.sfa-meta { border: 1px solid #BBC3C9; background: #F4F5F6; }
+.sfa-meta > h2 { margin: 0; padding: 0.48rem 0.58rem; border-bottom: 1px solid #BBC3C9; background: #DCE1E4; }
+.sfa-meta dl { margin: 0; }
+.sfa-meta dl > div { padding: 0.5rem 0.58rem; border-bottom: 1px solid #D6DBDE; }
+.sfa-meta dt { color: #66717A; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.sfa-meta dd { margin: 0.08rem 0 0; overflow-wrap: anywhere; }
+.sfa-meta ul { margin: 0; padding: 0.55rem 0.7rem 0.7rem 1.7rem; }
+.sfa-meta small { color: #68747D; }
+
+.sfa-discussion { padding: 1rem; background: #F1F3F4; }
+.sfa-post {
+  margin-left: min(calc((var(--post-depth, 1) - 1) * 1.35rem), 5.4rem);
+  scroll-margin-block: 1rem;
+  border: 1px solid #AEB8BF;
+  background: #FFFFFF;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.sfa-post + .sfa-post { margin-top: 0.72rem; }
+.sfa-post:target,
+.sfa-post.is-citation-target,
+.sfa-citation-block:target,
+.sfa-citation-block.is-citation-target { border-color: #E56A20; background: #FFF9F3; box-shadow: inset 4px 0 #F36C21, 0 0 0 3px fade(#F36C21, 14%); }
+.sfa-post > header { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; padding: 0.42rem 0.6rem; border-bottom: 1px solid #C4CBD0; background: #E7EAEC; }
+.sfa-post > header a { font-weight: 700; text-decoration: none; }
+.sfa-post > header a:hover { text-decoration: underline; }
+.sfa-post > header span { color: #68737B; font-size: 10px; text-align: right; }
+.sfa-markup { padding: 0.72rem; overflow-wrap: anywhere; }
+.sfa-markup > :first-child { margin-top: 0; }
+.sfa-markup > :last-child { margin-bottom: 0; }
+.sfa-markup p { margin: 0 0 0.72rem; }
+.sfa-markup ul,
+.sfa-markup ol { margin: 0 0 0.72rem; padding-left: 1.4rem; }
+.sfa-markup blockquote { margin: 0.7rem 0; padding-left: 0.75rem; border-left: 3px solid #BBC3C9; color: #59646C; }
+.sfa-markup pre { margin: 0.7rem 0; padding: 0.65rem; overflow: auto; border: 1px solid #CBD1D5; background: #F6F7F8; font: 11px/1.45 Consolas, "Courier New", monospace; white-space: pre-wrap; }
+.sfa-markup code { font-family: Consolas, "Courier New", monospace; font-size: 0.92em; }
+
+.sfa-citation-block { scroll-margin-block: 1rem; transition: background-color 180ms ease, box-shadow 180ms ease; }
+.sfa-ticket-layout { min-height: 250px; }
+.sfa-mail-headers { margin: 0; padding: 0.8rem 1rem; border-bottom: 1px solid #C5CCD1; background: #F7F8F8; }
+.sfa-mail-headers > div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 0.65rem; padding: 0.18rem 0; }
+.sfa-mail-headers dt { color: #616C74; font-weight: 700; text-align: right; }
+.sfa-mail-headers dd { margin: 0; overflow-wrap: anywhere; }
+.sfa-mail-body { margin: 0; padding: 1rem; overflow: auto; background: #FFFFFF; color: #222222; font: 12px/1.55 Consolas, "Courier New", monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sfa-attachment { margin: 0; padding: 0.65rem 1rem; border-top: 1px solid #D0D5D8; background: #F3F5F6; font-size: 11px; }
+.sfa-provenance { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.68rem 1rem; border-top: 1px solid #AEB6BC; background: #E6E9EB; color: #606B73; font-size: 10px; }
+.sfa-provenance p { margin: 0; }
+.sfa-provenance a { flex: 0 0 auto; }

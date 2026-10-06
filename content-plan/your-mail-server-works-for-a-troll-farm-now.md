@@ -2,7 +2,7 @@
 
 Planning outline for an unpublished Engineering Journal article, written from the perspective of a completed Simple Java Mail 10.0.0 release. This is a recovery story, with security choices emerging from specific incidents. Polar Meridian carries the deeper infrastructure, monitoring and alerting examples; keep pooling and observability lightweight here.
 
-The narrative draft is now in [the Journal authoring directory](../src/journal/2026-09-11-your-mail-server-works-for-a-troll-farm-now.md). The outline below remains the editorial brief.
+The narrative draft is now in [the case-study authoring directory](../src/case-studies/staple-and-sons.md). The outline below remains the editorial brief.
 
 ## Company profile
 

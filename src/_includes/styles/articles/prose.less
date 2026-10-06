@@ -1,0 +1,51 @@
+.journal-prose > :first-child { margin-top: 0; }
+.journal-prose > .journal-banner + *,
+.journal-prose > .journal-entry-navigation--top + * { margin-top: 0; }
+.journal-prose > p:first-child { color: @ink; font-size: 1.13rem; line-height: 1.72; }
+.journal-prose > .journal-intro > p,
+.journal-prose > .journal-banner + p,
+.journal-prose > .journal-entry-navigation--top + p { color: @ink; font-size: 1.13rem; line-height: 1.72; }
+.journal-prose p,
+.journal-prose img.journal-paragraph-image { margin-block: 0 1.35rem; }
+
+.journal-prose h2,
+.journal-prose h3,
+.journal-prose h4,
+.journal-prose h5,
+.journal-prose h6 { position: relative; scroll-margin-top: calc(@header-h + @space-lg); }
+.journal-prose h2 { margin: @space-2xl 0 @space-lg; font-size: clamp(2rem, 4vw, 3rem); }
+.journal-prose h3 { margin: @space-xl 0 @space-md; font-size: clamp(1.4rem, 2.4vw, 1.85rem); }
+.journal-prose h4 { margin: @space-xl 0 @space-sm; font-size: 1.18rem; }
+
+.journal-heading-anchor {
+  position: absolute;
+  right: 100%;
+  width: 1.5rem;
+  color: @teal;
+  font-family: @font-mono;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  opacity: 0;
+}
+
+.journal-prose h2:hover .journal-heading-anchor,
+.journal-prose h3:hover .journal-heading-anchor,
+.journal-prose h4:hover .journal-heading-anchor,
+.journal-prose h5:hover .journal-heading-anchor,
+.journal-prose h6:hover .journal-heading-anchor,
+.journal-heading-anchor:focus { opacity: 1; }
+
+.journal-prose ul,
+.journal-prose ol { margin: 0 0 1.35rem; padding-left: 1.45rem; }
+.journal-prose li + li { margin-top: 0.35rem; }
+.journal-prose blockquote {
+  margin: @space-xl 0;
+  padding: @space-lg;
+  border: 1px solid darken(@amber, 5%);
+  border-left: 5px solid @amber;
+  background: @amber-tint;
+  color: @ink;
+}
+.journal-prose blockquote > :last-child { margin-bottom: 0; }
+.journal-prose pre { margin: @space-xl 0; }

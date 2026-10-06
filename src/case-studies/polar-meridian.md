@@ -42,7 +42,7 @@ Polar Meridian Systems sells and distributes industrial equipment and replacemen
 
 Let's give Polar Meridian 150,000 employees worldwide, with about 100,000 regular users of corporate email. That puts its workforce somewhere between ING's roughly 64,000 employees in 2025 and HCLTech's 223,000 in its 2024–25 annual report. The staff estimate allows roughly forty received emails a day per regular user on average, and much less for infrequent users. Some teams receive far more than others.
 
-Unlike [Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html), this company has a messaging-platform team, SREs and security engineers. Email has enough volume and enough competing users to warrant proper orchestration. A mistake in one application should not make several continents wait for password resets.
+Unlike [Staple & Sons](/case-studies/staple-and-sons.html), this company has a messaging-platform team, SREs and security engineers. Email has enough volume and enough competing users to warrant proper orchestration. A mistake in one application should not make several continents wait for password resets.
 
 <div class="journal-diagram-wide polar-meridian-estate-map">
 
@@ -339,7 +339,7 @@ The platform and messaging teams agree on three things before connecting the mai
 - **Credentials:** keep them in deployment secrets and rehearse rotation. These servers use STARTTLS/password; OAuth2 authentication would use `SMTP_OAUTH2` and a thread-safe token provider via `withOAuth2AccessTokenProvider(...)`.
 - **Sending domains:** the domain team manages SPF and DMARC; corporate relays add DKIM after their final message changes. Check the resulting signatures and alignment.
 
-[Staple & Sons](/journal/your-mail-server-works-for-a-troll-farm-now.html#spf-dkim-and-dmarc) had to learn those lessons during an incident, but Polar Meridian gets to make them onboarding requirements.
+[Staple & Sons](/case-studies/staple-and-sons.html#spf-dkim-and-dmarc) had to learn those lessons during an incident, but Polar Meridian gets to make them onboarding requirements.
 
 ### One protected message, several partners
 
@@ -477,7 +477,7 @@ Four replicas:
 
 The worker and queue limits need load testing. A [bounded async queue](/sending-and-execution.html#section-async-queue) counts waiting tasks, so the platform also limits request size and concurrent preparation to control memory use.
 
-Unlike [Staple & Sons' single queue](/journal/your-mail-server-works-for-a-troll-farm-now.html#the-dispatcher-in-full), Ravi's separate polls keep urgent work moving when bulk is waiting. His dispatcher's `recordResult()` defers rejected jobs; we'll [fill that in during the relay rehearsal](#noor-takes-a-relay-offline-does-urgent-mail-keep-moving).
+Unlike [Staple & Sons' single queue](/case-studies/staple-and-sons.html#the-dispatcher-in-full), Ravi's separate polls keep urgent work moving when bulk is waiting. His dispatcher's `recordResult()` defers rejected jobs; we'll [fill that in during the relay rehearsal](#noor-takes-a-relay-offline-does-urgent-mail-keep-moving).
 
 ## Ravi puts the onboarding agreements into code
 
@@ -824,7 +824,7 @@ When Noor gets paged, she wants a reason to interrupt what she's doing and a use
 | A partner certificate nearing expiry, or a maintenance update held by its certificate checks | Contact the partner integration team; renew and test the affected certificate |
 | A slow newsletter within its agreed window | Keep watching; no urgent page just because it is slower |
 
-The SREs test alert thresholds under load and run synthetic checks during quiet periods. They receive pages through an independent incident channel. The [timing logs that helped Staple & Sons investigate](/journal/your-mail-server-works-for-a-troll-farm-now.html#where-the-time-goes) now contribute to alerts with request ages, queue pressure and a first response already agreed.
+The SREs test alert thresholds under load and run synthetic checks during quiet periods. They receive pages through an independent incident channel. The [timing logs that helped Staple & Sons investigate](/case-studies/staple-and-sons.html#where-the-time-goes) now contribute to alerts with request ages, queue pressure and a first response already agreed.
 
 ## Noor takes a relay offline. Does urgent mail keep moving?
 

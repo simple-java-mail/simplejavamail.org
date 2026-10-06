@@ -16,7 +16,7 @@
   "foundationUrl": "https://eclipse-ee4j.github.io/angus-mail/",
   "journal": {
     "title": "Engineering Journal",
-    "description": "Whole-system email design, project archaeology, and maintainer perspectives from the development of Simple Java Mail.",
+    "description": "Project history, engineering decisions, and maintainer perspectives from the development of Simple Java Mail.",
     "author": "Benny Bottema",
     "indexUrl": "/engineering-journal.html",
     "urlPrefix": "/journal/",
