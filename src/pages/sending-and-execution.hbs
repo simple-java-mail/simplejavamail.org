@@ -292,6 +292,10 @@ simplejavamail.defaults.mailsend.timeout=PT30S</code></pre>
       still apply. A simple batch has one budget for its whole iteration, excluding observer work between emails.
       An open-connection operation gives connection establishment and each sender invocation separate budgets;
       arbitrary application work between sends and final scope cleanup are not charged to a send.</p>
+    <p>Write-timeout scheduling on an owned managed Angus Session uses one lazy daemon worker shared by its physical connections.
+      Returning a healthy connection to the pool or aborting its raw socket does not release that connection's scheduler reference;
+      complete disposal does. The last disposal stops the worker, and a later connection can start a new one.
+      Application-supplied timeout schedulers are not shut down by the Mailer. See <a href="configuration.html#section-programmatic-api-other">configuration options</a>.</p>
     <p>Supported SJM-owned Angus Sessions capture the socket before connection establishment, including TLS and supported proxy paths.
       Cancellation closes that socket without waiting for Angus's SMTP monitor. A pooled abort invalidates its lease and waits for disposal;
       a retired request cannot reach a later borrower. Queued cancellation removes owned queue work and releases its waiting slot.
@@ -724,6 +728,12 @@ observationWorkers.shutdown(); // application owns this executor
         Closing a Mailer stops new work on its built-in executor, waits for accepted tasks to finish, and then closes its connection-pool registration.
         It also tracks sends accepted through a caller-owned executor and its private completion worker, without shutting down the caller's executor.
         It waits for observer handoff attempts, not executor-backed callbacks or external downstream processing.
+      </p>
+      <p class="wide">
+        Enabled write timeouts also need a background monitoring thread. Connections from each Angus Session created by Simple Java Mail share that thread;
+        it stops when the last connection closes, not when a reusable connection goes back to the pool. You do not need to manage it yourself.
+        If you supplied your own timeout scheduler, it remains yours to close. See the
+        <a href="configuration.html#section-config-mailer">socket-timeout configuration</a> for the details.
       </p>
 
       <table>

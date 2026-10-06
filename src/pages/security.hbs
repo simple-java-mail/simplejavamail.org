@@ -378,8 +378,16 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 		<section>
 			<div class="view">
 				<p>
-					Furthermore, you can take complete control of SSL connections by providing your own SSL connection factory:
+					Supply your own SSL connection factory when you need custom connection code, for example to use a client certificate or your own certificate checks.
 				</p>
+				<p>With an Angus Session created by Simple Java Mail, a failure in your factory stops the connection attempt. It does not quietly try
+					Java's standard factory instead: that factory might not use your client certificate or custom certificate checks.
+					You can explicitly allow that fallback, as shown below, if the standard factory is also acceptable for your deployment.</p>
+				<p>If your factory fails while adding encryption to an already-open connection, Simple Java Mail closes that connection so it is not left hanging.
+					Your original factory still controls certificate validation and any trusted-server checks. The cleanup does not add cancellation support
+					for a custom factory. Sessions you create and supply yourself keep their existing behavior.</p>
+				<p>A class-based factory needs a public static <code>getDefault()</code> method. In a modular application, export its package to
+					<code>org.simplejavamail.mailprovider.angus</code>, or supply an instance instead. Factory initialization stays lazy.</p>
 			</div>
 			<div class="side">
 <pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
@@ -388,7 +396,21 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 	.buildMailer();
 </code></pre>
 				Or with property default:
-				<pre><code class="language-properties small">simplejavamail.custom.sslfactory.class=you.project.YourSSLSocketFactory</code></pre>
+				<pre><code class="language-properties small">simplejavamail.custom.sslfactory.class=your.project.YourSSLSocketFactory</code></pre>
+			</div>
+		</section>
+		<section>
+			<div class="wide">
+				<h3>Explicitly allow the standard factory as a fallback</h3>
+				<p>This uses an existing advanced Angus property, not another builder method. Set it only when a connection made without your custom factory's
+					settings is acceptable. For <code>SMTP</code> and <code>SMTP_TLS</code>:</p>
+<pre><code class="language-java">mailerBuilder.withProperty("mail.smtp.socketFactory.fallback", "true");</code></pre>
+				<p>Or in your Simple Java Mail properties file or Spring configuration:</p>
+<pre><code class="language-properties">simplejavamail.extraproperties.mail.smtp.socketFactory.fallback=true</code></pre>
+				<p>For <code>SMTPS</code>, use <code>mail.smtps.socketFactory.fallback</code> in Java or
+					<code>simplejavamail.extraproperties.mail.smtps.socketFactory.fallback</code> in external configuration.
+					An explicit <code>false</code> keeps fallback disabled. This setting concerns your custom factory failing;
+					it does not allow retrying in plaintext after a failed STARTTLS upgrade.</p>
 			</div>
 		</section>
 

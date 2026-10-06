@@ -278,6 +278,13 @@ mailerBuilder.withTransportModeLoggingOnly(true);
 mailerBuilder.withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
 mailerBuilder.withCustomSSLFactoryInstance(mySSLFactoryInstance);
 </code></pre>
+      <p>If your custom factory fails, the connection attempt fails too when Simple Java Mail creates the Angus Session. It does not quietly switch to
+        the standard factory, which might not use your client certificate or custom certificate checks. To deliberately allow that fallback, use the
+        existing advanced property:</p>
+<pre><code class="language-java small">mailerBuilder.withProperty("mail.smtp.socketFactory.fallback", "true");</code></pre>
+      <p>The property-file and Spring key is <code>simplejavamail.extraproperties.mail.smtp.socketFactory.fallback</code>.
+        For SMTPS, replace <code>mail.smtp</code> with <code>mail.smtps</code> in either form. Only enable this if the standard factory is acceptable.
+        See <a href="security.html#section-custom-ssl-factory">custom SSL factories</a> for connection cleanup and module-access details.</p>
       <pre><code class="small">
 // change email validation strategy
 mailerBuilder.withEmailValidator(
@@ -344,6 +351,14 @@ mailerBuilder.resetAsyncQueue()
 		  <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
 mailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
 </code></pre>
+      <p>When write timeouts are enabled, Simple Java Mail shares one background timeout-monitoring thread across the connections from each Angus Session
+        it creates, rather than using a thread for every connection. This thread watches for writes that take too long; it does not send emails.
+        It stops when the last connection is closed. Returning a connection to the pool keeps it open, so the monitoring thread stays available too.
+        A later connection starts the thread again when needed.</p>
+      <p>If you supply your own scheduler through <code>mail.smtp.executor.writetimeout</code> or <code>mail.smtps.executor.writetimeout</code>,
+        Simple Java Mail does not shut it down; close it when your application is finished with it.
+        Sessions you supply yourself and other mail providers keep their own timeout handling. These timeouts cover individual socket operations,
+        not the total time taken to send an email.</p>
 		  <pre><code class="small">// bind the outgoing SMTP socket to a local/source address
 // the local port is advanced and usually should be omitted
 mailerBuilder.withLocalBindAddress("203.0.113.10");
