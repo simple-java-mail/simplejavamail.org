@@ -185,9 +185,9 @@ caseStudy:
   order: 1
 ```
 
-`label` is the short badge identifying the kind of setup, such as "Self-managed SMTP" or "Enterprise integration". `order` controls the Case studies index and its article navigation. The company profile is separate from the article's title and description; the index links to the company's case-study URL. Draft case studies appear in local preview and are excluded from production. They never enter the Journal index or RSS feed.
+`label` is the short badge identifying the kind of setup, such as "Self-managed SMTP" or "Enterprise integration". `order` controls the Case studies index and its article navigation. The company profile is separate from the article's title and description; the index links to the company's case-study URL. Case studies appear in both preview and production builds. They never enter the Journal index or RSS feed.
 
-RelayDesk also has a `caseStudy.spotlight` object with a local `/assets/` image, `heading` and `description`. It selects the wide cyberpunk card on the Case studies page and the matching homepage feature; both use the same article metadata and URL. Its draft status controls production visibility. Other case studies keep their ordinary cards.
+RelayDesk also has a `caseStudy.spotlight` object with a local `/assets/` image, `heading` and `description`. It selects the wide cyberpunk card on the Case studies page and the matching homepage feature; both use the same article metadata and URL. Other case studies keep their ordinary cards.
 
 ### Categories
 

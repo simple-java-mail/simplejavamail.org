@@ -17,6 +17,19 @@ exercise format. A lookup directory and local category indexes let readers enter
 directly rather than read an essay in order.
 Further scenarios can grow within that pattern; total word count is not a limit.
 
+Only Engineering Journal entries use per-page draft publication controls. Case
+studies and field guides are included in preview and production builds alike.
+
+### Polar Meridian follow-up
+
+Follow [#740](https://github.com/bbottema/simple-java-mail/issues/740) before
+10.0.0. Revisit centrally enforced requirements through properties and Email
+overrides, starting with REQUIRETLS and any approved signing/encryption
+requirements, plus a policy-conflict rehearsal. Keep connection TLS distinct
+from onward REQUIRETLS, and add API examples or implementation claims only after
+verifying what actually lands. This was formerly an article front-matter note;
+it is a content follow-up, not a publication switch.
+
 This plan leads; the templates follow. Changes to the public story, route hierarchy, visible section order, or claims are made here before they are made in HTML.
 
 ## Brief

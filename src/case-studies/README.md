@@ -15,9 +15,9 @@ the optional `spotlight` object contains a local image, heading and description
 for the wide index card and homepage feature.
 
 Keep the existing title, description, category, author, date, series and banner
-fields. `draft: true` includes a case study in local preview with noindex metadata,
-but excludes its page, card, navigation entry, spotlight and sitemap entry from
-production. Case studies never join the Journal collection or its RSS feed.
+fields. Case studies, their cards, navigation, spotlights and sitemap entries
+appear in both preview and production builds. Per-page draft controls belong
+only to the Engineering Journal; case studies never join its collection or RSS feed.
 
 The Markdown and image tools are shared with the Journal. See the
 [authoring reference](../journal/README.md) for Mermaid, captions, lightboxes,

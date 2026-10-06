@@ -14,13 +14,12 @@ const groups = directory.guideGroups;
 const markdown = createMarkdownLibrary();
 const html = markdown.render(body);
 
-test("field guides are independent references and retain preview-only draft publication", () => {
+test("field guides are independent references without per-page draft publication controls", () => {
   assert.deepEqual(guideData.tags, ["fieldGuide", "publicPage"]);
   assert.equal(guideData.layout, "layouts/field-guide.hbs");
   assert.match(source, /permalink: "\/email-workload-field-guide.html"/);
-  assert.match(source, /draft: true/);
-  assert.equal(enforceArticlePolicy(markdown, body, "email-workloads.md", true, "build"), false);
-  assert.equal(enforceArticlePolicy(markdown, body, "email-workloads.md", true, "serve"), undefined);
+  assert.doesNotMatch(source, /^draft(?:-note)?:/m);
+  assert.equal(enforceArticlePolicy(markdown, body, "email-workloads.md"), undefined);
   assert.doesNotMatch(body, /\/journal\/when-one-email/);
 });
 
@@ -35,7 +34,7 @@ test("every directory group and scenario resolves to its own matching heading", 
 });
 
 test("directory validation rejects ambiguous anchors and missing scenario targets", () => {
-  const valid = { title: "Guide", description: "Workload patterns", draft: true, ...directory };
+  const valid = { title: "Guide", description: "Workload patterns", ...directory };
   assert.doesNotThrow(() => guideData.eleventyDataSchema(valid));
   const duplicate = structuredClone(valid);
   duplicate.guideGroups[0].scenarios[0].id = duplicate.guideGroups[0].id;
@@ -49,7 +48,7 @@ test("the lookup lists scenarios while the reading rail keeps top-level anchors 
   const layout = readFileSync(new URL("../src/_includes/layouts/field-guide.hbs", import.meta.url), "utf8");
   Handlebars.registerHelper("fieldGuideSections", fieldGuideSections);
   const render = Handlebars.compile(layout.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, ""));
-  const result = render({ title: "Guide", description: "Patterns", draft: true, ...directory, content: html });
+  const result = render({ title: "Guide", description: "Patterns", ...directory, content: html });
   const lookup = result.split('<div class="shell field-guide-grid">')[0];
   const rail = result.match(/<aside[\s\S]*?<\/aside>/)[0];
   for (const group of groups) {
@@ -59,7 +58,7 @@ test("the lookup lists scenarios while the reading rail keeps top-level anchors 
       assert.ok(!rail.includes(`href="#${scenario.id}"`));
     }
   }
-  assert.match(result, /Working draft/);
+  assert.doesNotMatch(result, /Working draft/);
 });
 
 test("visible Java snippets are present verbatim in the downloadable examples", () => {
@@ -101,11 +100,29 @@ test("scenarios provide deep reference links including the optional batch module
   }
 });
 
-test("a draft field guide is discoverable only through its generated collection", () => {
+test("capability mentions link directly to their relevant deeper explanations", () => {
+  for (const [text, destination] of [
+    ["probe", "/debugging.html#section-smtp-capabilities"],
+    ["sequential batch over one connection", "/sending-and-execution.html#section-not-reusing-connections"],
+    ["whole-operation deadline", "/sending-and-execution.html#section-send-deadlines"],
+    ["Build replacement Mailers from the new configuration", "/configuration.html#section-config-snapshot"],
+    ["`SMTPUTF8`", "/features.html#section-international-mail"],
+    ["`8BITMIME`", "/features.html#section-international-mail"],
+    ["OpenPGP", "/security.html#section-sending-openpgp"],
+    ["envelope-sender address", "/features.html#section-bouncing-emails"],
+    ["completion observer", "/analyzing-send-results.html#section-observer-results"],
+  ]) {
+    assert.ok(body.includes(`[${text}](${destination})`), text);
+  }
+  assert.match(body, /RelayDesk's recipient-specific example\]\(\/case-studies\/relaydesk\.html#retry-the-warehouse-s-copy-not-the-buyer-s\)/);
+});
+
+test("field-guide entry points follow their generated collection without draft labels", () => {
   for (const page of ["docs", "use-cases"]) {
     const template = readFileSync(new URL(`../src/pages/${page}.hbs`, import.meta.url), "utf8");
     assert.match(template, /#each collections\.fieldGuides/);
     assert.doesNotMatch(template, /href="\/email-workload-field-guide\.html"/);
+    assert.doesNotMatch(template, /data\.draft|working draft/i);
   }
 });
 
@@ -131,8 +148,8 @@ test("documentation menus place visible guides after Use cases and Why before Us
     if (name === "docs-sidebar") {
       assert.ok(menu.indexOf('href="/why-simple-java-mail.html"') < menu.indexOf('href="/use-cases.html"'));
     }
-    const production = render({ ...context, collections: { fieldGuides: [] } });
-    assert.ok(!production.includes(guide.url));
+    const withoutGuides = render({ ...context, collections: { fieldGuides: [] } });
+    assert.ok(!withoutGuides.includes(guide.url));
     const fallback = render({ ...context, collections: { fieldGuides: [{ ...guide, data: { title: "Another guide" } }] } });
     assert.match(fallback, />Another guide<\/a>/);
   }

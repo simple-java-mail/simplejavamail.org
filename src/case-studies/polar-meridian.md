@@ -13,7 +13,6 @@ series:
   title: "Case Studies"
   part: 2
   total: 3
-draft-note: "Follow https://github.com/bbottema/simple-java-mail/issues/740 before 10.0.0. Revisit centrally enforced requirements through properties and Email overrides, starting with REQUIRETLS and any approved signing/encryption requirements, plus a policy-conflict rehearsal. Keep connection TLS distinct from onward REQUIRETLS, and add API examples or implementation claims only after verifying what actually lands."
 mermaid: true
 templateEngineOverride: hbs,md
 typora-root-url: ..

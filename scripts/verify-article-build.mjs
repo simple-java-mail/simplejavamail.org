@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const [previewDirectory, productionDirectory] = process.argv.slice(2);
@@ -10,6 +10,9 @@ if (!previewDirectory || !productionDirectory) {
 const oldSlugs = ["your-mail-server-works-for-a-troll-farm-now", "mail-at-polar-meridian-systems",
   "everybody-brought-their-own-mail-server", "when-one-email-becomes-a-million"];
 const companies = ["staple-and-sons", "polar-meridian", "relaydesk"];
+const journalDrafts = readdirSync("src/journal")
+  .filter((filename) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(filename) && /^draft:\s*true\s*$/m.test(readFileSync(path.join("src/journal", filename), "utf8")))
+  .map((filename) => filename.replace(/^\d{4}-\d{2}-\d{2}-/, "").replace(/\.md$/, ""));
 
 for (const [directory, preview] of [[previewDirectory, true], [productionDirectory, false]]) {
   const read = (route) => readFileSync(path.join(directory, route), "utf8");
@@ -23,12 +26,19 @@ for (const [directory, preview] of [[previewDirectory, true], [productionDirecto
   const index = read("case-studies.html");
   const home = read("index.html");
   const sitemap = read("sitemap.xml");
-  assert.equal(index.includes('href="/case-studies/relaydesk.html"'), preview);
-  assert.equal(home.includes('href="/case-studies/relaydesk.html"'), preview);
-  assert.equal(home.includes("case-study-spotlight"), preview);
-  assert.equal(sitemap.includes("/case-studies/relaydesk.html"), false);
-  assert.equal(existsSync(path.join(directory, "case-studies/relaydesk.html")), preview);
-  for (const slug of companies.filter((slug) => preview || slug !== "relaydesk")) {
+  assert.ok(index.includes('href="/case-studies/relaydesk.html"'));
+  assert.ok(home.includes('href="/case-studies/relaydesk.html"'));
+  assert.ok(home.includes("case-study-spotlight"));
+  assert.ok(sitemap.includes("/case-studies/relaydesk.html"));
+  assert.ok(existsSync(path.join(directory, "case-studies/relaydesk.html")));
+  for (const slug of journalDrafts) {
+    const route = `journal/${slug}.html`;
+    assert.equal(existsSync(path.join(directory, route)), preview);
+    assert.ok(!sitemap.includes(route));
+    assert.ok(!feed.includes(route));
+    if (preview) assert.match(read(route), /name="robots" content="noindex, nofollow"/);
+  }
+  for (const slug of companies) {
     const html = read(`case-studies/${slug}.html`);
     assert.ok(html.includes(`rel="canonical" href="https://www.simplejavamail.org/case-studies/${slug}.html"`));
     assert.ok(html.includes(`data-comments-url="https://www.simplejavamail.org/case-studies/${slug}.html"`));
@@ -36,6 +46,7 @@ for (const [directory, preview] of [[previewDirectory, true], [productionDirecto
     assert.match(html, /class="journal-back-link" href="\/case-studies.html"/);
     assert.match(html, /aria-label="In this case study"/);
     assert.match(html, /journal-entry-navigation--top[\s\S]*journal-entry-navigation--bottom/);
+    assert.doesNotMatch(html, /name="robots" content="noindex, nofollow"/);
   }
   const staple = read("case-studies/staple-and-sons.html");
   const polar = read("case-studies/polar-meridian.html");
@@ -48,12 +59,12 @@ for (const [directory, preview] of [[previewDirectory, true], [productionDirecto
   }
   for (const nav of navigation(polar)) {
     assert.ok(nav.includes('href="/case-studies/staple-and-sons.html"'));
-    assert.equal(nav.includes('href="/case-studies/relaydesk.html"'), preview);
+    assert.ok(nav.includes('href="/case-studies/relaydesk.html"'));
   }
-  if (preview) {
+  {
     const relay = read("case-studies/relaydesk.html");
     assert.match(relay, /journal-theme-cyberpunk/);
-    assert.match(relay, /name="robots" content="noindex, nofollow"/);
+    assert.doesNotMatch(relay, /name="robots" content="noindex, nofollow"/);
     assert.match(index, /Multi-tenant communications/);
     assert.match(relay, /RUN COMPLETE/);
     for (const nav of navigation(relay)) {
@@ -63,5 +74,5 @@ for (const [directory, preview] of [[previewDirectory, true], [productionDirecto
   }
   assert.match(polar, /journal-code-disclosure/);
   assert.match(polar, /PolarMeridianDispatcher.java/);
-  console.log(`${preview ? "Preview" : "Production"}: article routes, collections, metadata, navigation and draft visibility verified.`);
+  console.log(`${preview ? "Preview" : "Production"}: all case studies included; Journal-only draft visibility, routes, metadata and navigation verified.`);
 }

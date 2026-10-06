@@ -16,6 +16,6 @@ export default {
   style: "field-guide",
   breadcrumbParent: "/use-cases.html",
   eleventyDataSchema(data) {
-    z.object({ title: text, description: text, draft: z.boolean().optional(), guideGroups: groups }).parse(data);
+    z.object({ title: text, navigationTitle: text.optional(), description: text, guideGroups: groups }).parse(data);
   },
 };

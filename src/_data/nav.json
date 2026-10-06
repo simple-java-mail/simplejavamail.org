@@ -71,7 +71,7 @@
       "items": [
         { "title": "Command-line interface", "url": "/cli.html" },
         { "title": "MIME and interoperability", "url": "/rfc-compliant.html" },
-        { "title": "Compare approaches", "url": "/feature-matrix.html" }
+        { "title": "Compare libraries", "url": "/feature-matrix.html" }
       ]
     },
     {

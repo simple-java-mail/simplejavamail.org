@@ -3,14 +3,13 @@ title: "When One Email Becomes a Million"
 navigationTitle: "Email workload field guide"
 description: "Find a sending pattern for your workload: occasional emails, scheduled batches, competing priorities, customer-owned servers and recovery after failure."
 permalink: "/email-workload-field-guide.html"
-draft: true
 typora-root-url: ..
 typora-copy-images-to: ../assets/guides/email-workloads
 ---
 
 Start with the deadline and the consequence of missing it, not the connection-pool size. A million newsletters spread over a day and a hundred login codes needed right now ask for different designs.
 
-The numbers below are **illustrative design inputs, not benchmarks**. Unless stated otherwise, each message has one envelope recipient. A message addressed to ten people is still one message, but consumes ten recipient attempts. SMTP acceptance is not proof that any of them received it.
+The numbers below are **illustrative design inputs, not benchmarks**. Unless stated otherwise, each message has one envelope recipient. A message addressed to ten people is still one message, but consumes ten recipient attempts. [SMTP acceptance is not proof that any of them received it](/analyzing-send-results.html#section-get-receipt).
 
 | What needs doing? | Where it belongs |
 | --- | --- |
@@ -18,7 +17,7 @@ The numbers below are **illustrative design inputs, not benchmarks**. Unless sta
 | Keep jobs across restarts; decide priority, expiry and retry timing; coordinate quotas across servers | Your application |
 | Accept submissions within its limits and attempt onward delivery | Your SMTP service |
 
-The [API reference](/sending-and-execution.html) explains the settings. The [case studies](/case-studies.html) assemble them into larger applications. Here, choose the smallest pattern that meets your target. The snippets use reusable Mailers; a `MailerRegularBuilder` parameter means a builder whose SMTP address, credentials and transport security you have already configured.
+The [API reference](/sending-and-execution.html) explains the settings. The [case studies](/case-studies.html) assemble them into larger applications. Here, choose the smallest pattern that meets your target. The snippets use reusable Mailers; a `MailerRegularBuilder` parameter means a builder whose [SMTP address, credentials](/configuration.html#section-programmatic-api-common) and [transport security](/security.html#section-security-routes) you have already configured.
 
 [Download the Java examples](/assets/guides/email-workloads/FieldGuideExamples.java) and their [usage notes](/assets/guides/email-workloads/README.md). They demonstrate the calls below, not a ready-made queue or Dispatcher.
 
@@ -28,7 +27,7 @@ The [API reference](/sending-and-execution.html) explains the settings. The [cas
 
 <p class="field-guide-goal"><strong>Target:</strong> Send about twenty confirmations a day without making an HTTP request wait for SMTP; acknowledge the request within two seconds.</p>
 
-At this volume, a connection pool may buy you very little. Build [one reusable Mailer](/features.html#section-reusable-mailer) and start with direct sending. If the confirmation must survive a restart, save a mail job with the business transaction and let a background worker claim it. Moving work to another thread alone does not make it durable.
+At this volume, a connection pool may buy you very little. Build [one reusable Mailer](/features.html#section-reusable-mailer) and start with direct sending. If the confirmation must survive a restart, [save a mail job with the business transaction](/case-studies/polar-meridian.html#leonie-places-her-order-and-ravi-gets-to-work) and let a background worker claim it. Moving work to another thread alone does not make it durable.
 
 Once that worker has claimed a job and constructed its `Email`, a blocking send is perfectly reasonable:
 
@@ -46,7 +45,7 @@ This returns a [submission receipt](/analyzing-send-results.html#section-get-rec
 
 <p class="field-guide-goal"><strong>Target:</strong> Submit 5,000 invoices between 08:00 and 08:30, preserving progress if the run fails.</p>
 
-That needs an average of about **2.8 messages per second**, including connection setup and failures. Before adding concurrency, measure a sequential batch over one connection:
+That needs an average of about **2.8 messages per second**, including connection setup and failures. Before adding concurrency, measure a [sequential batch over one connection](/sending-and-execution.html#section-not-reusing-connections):
 
 ```java
 static void submitInvoiceBatch(Mailer mailer, Iterable<Email> invoices) {
@@ -58,7 +57,7 @@ static void submitInvoiceBatch(Mailer mailer, Iterable<Email> invoices) {
 
 The iterable can produce messages as needed rather than allocating all 5,000 upfront. The batch stops at the first failure; it does not return a receipt list for every invoice. Use the [completion observer](/sending-and-execution.html#section-mail-send-observer) to record attempted messages, and resume from the resulting job state—not from invoice number one.
 
-A simple batch holds its connection between messages. Long pacing pauses may therefore run into the relay's idle timeout. If the run is mostly waiting for permission to send, separately scheduled sends may suit it better. Any configured whole-operation deadline must also allow the batch to finish.
+A simple batch holds its connection between messages. [Long pacing pauses](/sending-and-execution.html#section-sending-limits) may therefore run into the relay's idle timeout. If the run is mostly waiting for permission to send, separately scheduled sends may suit it better. Any configured [whole-operation deadline](/sending-and-execution.html#section-send-deadlines) must also allow the batch to finish.
 
 For a restartable run, a useful failure rehearsal is to reject invoice 101: the next run should neither repeat the hundred known submissions nor skip invoices that were never attempted.
 
@@ -104,7 +103,7 @@ static Mailer boundedPool(MailerRegularBuilder smtpBuilder) {
 
 A worker waiting for a pooled connection still occupies a worker slot. Four workers do not mean four simultaneous SMTP conversations when the pool permits only two connections.
 
-Queue rejection arrives through the returned send's completion as `MailSendRejectedException`; `getReason()` distinguishes `QUEUE_FULL` from other admission failures. Leave a rejected durable job pending and try later with backoff. Don't immediately loop over the same failed call, and don't treat a closed executor as a busy queue. [Staple & Sons](/case-studies/staple-and-sons.html#give-the-servers-a-chance-to-breathe) shows the surrounding dispatch code.
+[Queue rejection](/sending-and-execution.html#section-async-queue) arrives through the returned send's completion as `MailSendRejectedException`; `getReason()` distinguishes `QUEUE_FULL` from other admission failures. Leave a rejected durable job pending and try later with backoff. Don't immediately loop over the same failed call, and don't treat a closed executor as a busy queue. [Staple & Sons](/case-studies/staple-and-sons.html#give-the-servers-a-chance-to-breathe) shows the surrounding dispatch code.
 
 This bounds waiting tasks, not every byte your application might allocate. Thousands of callers constructing large attachments before submission can still exhaust memory.
 
@@ -112,7 +111,7 @@ This bounds waiting tasks, not every byte your application might allocate. Thous
 
 <p class="field-guide-goal"><strong>Target:</strong> Pace local attempts to thirty messages per minute instead of spending the whole minute's capacity in one burst.</p>
 
-For a limit expressed in messages, use a message-rate rule. A service counting recipients needs a recipient-rate rule instead:
+For a limit expressed in messages, use a [message-rate rule](/sending-and-execution.html#section-sending-limits). A service counting recipients needs a recipient-rate rule instead:
 
 ```java
 static Mailer pacedMailer(MailerRegularBuilder smtpBuilder) {
@@ -150,7 +149,7 @@ Suppose the shared account permits 100 recipients per second. Limiting bulk work
 
 [Pool settings](/sending-and-execution.html#section-reusing-connections) are local. Three application instances, each with two pools capped at five connections, can open **thirty connections**, not five. If each instance has four asynchronous workers, that's twelve workers across the fleet; the connection maximum and active-worker count still describe different resources.
 
-The same multiplication applies to independent local rate histories. Three instances configured for thirty attempts per minute can collectively attempt ninety. Assigning the same group name does not turn those JVMs into a distributed limiter.
+The same multiplication applies to [independent local rate histories](/sending-and-execution.html#section-sending-limits). Three instances configured for thirty attempts per minute can collectively attempt ninety. Assigning the same group name does not turn those JVMs into a distributed limiter.
 
 Divide the permitted capacity between instances, or coordinate admission centrally. Include rolling deployments: old and new instances overlap. Then inspect actual connection counts and quota consumption, rather than assuming that an autoscaling setting describes either.
 
@@ -175,7 +174,7 @@ static Mailer customerMailer(
 
 Keep the key in your customer configuration and use it consistently for that customer's equivalent relays. It is a connection-group identifier, not an authorization check or a data-security sandbox. Your application must still check whose message it is, select permitted routes and schedule customers fairly.
 
-When A's credentials fail, hold A's jobs while its administrator supplies replacements. Build replacement Mailers from the new configuration; B's working server is not a fallback. [RelayDesk](/case-studies/relaydesk.html) takes this through onboarding, credential replacement and customer-specific protection requirements.
+When A's credentials fail, hold A's jobs while its administrator supplies replacements. [Build replacement Mailers from the new configuration](/configuration.html#section-config-snapshot); B's working server is not a fallback. [RelayDesk](/case-studies/relaydesk.html) takes this through onboarding, credential replacement and customer-specific protection requirements.
 
 ### One hostname or two relays
 
@@ -185,12 +184,12 @@ Two server addresses are not automatically two eligible destinations:
 
 | What you were given | A reasonable starting point |
 | --- | --- |
-| One managed SMTP hostname | One reusable Mailer; the service operator manages the servers behind it |
-| Two equivalent, approved relays | Register both Mailers in one cluster with matching pool settings |
+| One managed SMTP hostname | [One reusable Mailer](/features.html#section-reusable-mailer); the service operator manages the servers behind it |
+| Two equivalent, approved relays | [Register both Mailers in one cluster](/sending-and-execution.html#section-clustering) with matching pool settings |
 | EU-only and US-only routes | Separate groups; select the permitted region before submitting |
 | Different customers' servers | Separate configuration and groups; no cross-customer fallback |
 
-Build the intended Mailers before starting the workload. Shared cluster membership lets eligible Mailers use registered connections; it does not decide which region or customer is allowed to handle a message. Nor does it make retries idempotent. After a connection fails, inspect the attempt's result before choosing another route.
+Build the intended Mailers before starting the workload. Shared cluster membership lets eligible Mailers use registered connections; it does not decide which region or customer is allowed to handle a message. Nor does it make retries idempotent. After a connection fails, [inspect the attempt's result](/analyzing-send-results.html#section-retry-decisions) before choosing another route.
 
 The [clustering reference](/sending-and-execution.html#section-clustering) covers registration and shared pool settings. You don't need that machinery just because a managed hostname resolves to multiple backend servers.
 
@@ -223,7 +222,7 @@ The probe opens a fresh connection; it sends no email and does not warm the pool
 
 <p class="field-guide-goal"><strong>Target:</strong> Detect an oversized invoice before submitting it, using the complete encoded message rather than the PDF's file size.</p>
 
-The customer accepts attachments up to a certain size, but its relay limits the whole email. MIME encoding, headers, other attachments and any signing or encryption all contribute. Measure the prepared message:
+The customer accepts attachments up to a certain size, but its relay limits the whole email. [MIME encoding](/features.html#section-content-transfer-encoding), headers, other attachments and any signing or encryption all contribute. Measure the prepared message:
 
 ```java
 static long preparedBytes(Mailer mailer, Email email) {
@@ -233,7 +232,7 @@ static long preparedBytes(Mailer mailer, Email email) {
 
 *Measure what would be sent, not just what was attached.*
 
-[Rehearsal](/features.html#section-email-validation) applies the Mailer's configuration and prepares the message offline. It contacts no server. Compare the result with your application's [maximum email size](/features.html#section-maximum-emailsize) and the relay's advertised `SIZE` maximum, when known. A probe can help during onboarding, but the actual sending connection determines the current server limit.
+[Rehearsal](/features.html#section-email-validation) applies the Mailer's configuration and prepares the message offline. It contacts no server. Compare the result with your application's [maximum email size](/features.html#section-maximum-emailsize) and the relay's advertised `SIZE` maximum, when known. A [probe](/debugging.html#section-smtp-capabilities) can help during onboarding, but the actual sending connection determines the current server limit.
 
 For the managed Angus transport, an oversized message is rejected before `MAIL FROM` when that connection advertises a usable maximum. [Receipt size facts](/analyzing-send-results.html#section-message-size) distinguish the prepared size from the server limit, so ticket feedback can say which constraint the attachment hit. Missing capability information is unknown, not proof that any size is allowed. Offer a smaller document or an approved download link; repeatedly retrying the same bytes won't shrink them.
 
@@ -241,7 +240,7 @@ For the managed Angus transport, an oversized message is rejected before `MAIL F
 
 <p class="field-guide-goal"><strong>Target:</strong> Identify whether a customer's configured relay can submit to an internationalized mailbox before enabling that workflow.</p>
 
-A support reply to `采购@partner.com` needs `SMTPUTF8` because the mailbox's local part contains non-ASCII characters. A subject saying “Résumé” does not necessarily need it: MIME header encoding can represent that text without raw UTF-8 headers.
+A support reply to `采购@partner.com` needs [`SMTPUTF8`](/features.html#section-international-mail) because the mailbox's local part contains non-ASCII characters. A subject saying “Résumé” does not necessarily need it: MIME header encoding can represent that text without raw UTF-8 headers.
 
 Inspect the [effective capabilities](/debugging.html#section-smtp-capabilities) reported by the customer's connection probe:
 
@@ -254,13 +253,13 @@ static Optional<Boolean> advertisesSmtpUtf8(SmtpConnectionReport report) {
 
 *Distinguish an advertised capability, its absence and an incomplete probe.*
 
-An empty `Optional` means the probe didn't establish the capability set; `false` means the inspected set lacks `SMTPUTF8`. `8BITMIME` answers a different question about raw eight-bit body content. Simple Java Mail checks the actual message against the sending connection, so onboarding information isn't a permanent guarantee. Hold incompatible messages and explain the requirement to the customer's administrator. Don't enable a [legacy content exception](/configuration.html#section-legacy-smtp-content) for every customer to make one failure disappear.
+An empty `Optional` means the probe didn't establish the capability set; `false` means the inspected set lacks `SMTPUTF8`. [`8BITMIME`](/features.html#section-international-mail) answers a different question about raw eight-bit body content. Simple Java Mail checks the actual message against the sending connection, so onboarding information isn't a permanent guarantee. Hold incompatible messages and explain the requirement to the customer's administrator. Don't enable a [legacy content exception](/configuration.html#section-legacy-smtp-content) for every customer to make one failure disappear.
 
 ### A partner update must stay confidential
 
 <p class="field-guide-goal"><strong>Target:</strong> Send maintenance instructions only to approved partners, protected for their keys, without silently downgrading required transport encryption.</p>
 
-Prepare a separately encrypted message for each partner using [S/MIME](/security.html#section-sending-smime), or use [OpenPGP](/modules.html#openpgp-module) where that is the established partner requirement. Resolve approved recipient keys from your application configuration; if a key is unavailable or expired, hold the message rather than sending plaintext. Choosing who owns a key is not a side effect of email-address validation.
+Prepare a separately encrypted message for each partner using [S/MIME](/security.html#section-sending-smime), or use [OpenPGP](/security.html#section-sending-openpgp) where that is the established partner requirement. Resolve approved recipient keys from your application configuration; if a key is unavailable or expired, hold the message rather than sending plaintext. Choosing who owns a key is not a side effect of [email-address validation](/features.html#section-email-validation).
 
 For messages that also require encrypted onward transport, add [`.withTlsRequiredForOnwardDelivery()`](/security.html#section-requiretls) to the email builder. S/MIME protects the content; REQUIRETLS tells cooperating SMTP servers to retain transport encryption. The submission server must support the requirement or the send fails—there is no silent fallback. Neither mechanism proves final delivery.
 
@@ -270,9 +269,9 @@ For messages that also require encrypted onward transport, add [`.withTlsRequire
 
 <p class="field-guide-goal"><strong>Target:</strong> Retrieve the maintenance instructions actually submitted last month without recreating them from today's template and configuration.</p>
 
-A business-event ID identifies why you sent something; it doesn't preserve what you sent. Retain finalized EML alongside the explicit SMTP envelope and attempt metadata for streams that need this evidence. Other streams, such as short-lived login codes, can retain metadata without keeping the content.
+A business-event ID identifies why you sent something; it doesn't preserve what you sent. Retain [finalized EML alongside the explicit SMTP envelope](/features.html#section-exact-eml) and attempt metadata for streams that need this evidence. Other streams, such as short-lived login codes, can retain metadata without keeping the content.
 
-[Polar Meridian's archive](/case-studies/polar-meridian.html#what-happened-to-leonie-s-confirmation-tracing-the-evidence) prepares, signs and encrypts the message, commits a safe outbound representation, then submits those same bytes through [`startingFromExactEml(...)`](/features.html#section-exact-eml). Sender, recipients, DSN settings and REQUIRETLS are separate submission metadata: saving just the EML is not enough to preserve that envelope and transport policy.
+[Polar Meridian's archive](/case-studies/polar-meridian.html#what-happened-to-leonie-s-confirmation-tracing-the-evidence) prepares, signs and encrypts the message, commits a safe outbound representation, then submits those same bytes through [`startingFromExactEml(...)`](/features.html#section-exact-eml). Sender, recipients, [DSN settings](/features.html#section-delivery-status-notification) and [REQUIRETLS](/security.html#section-requiretls) are separate submission metadata: saving just the EML is not enough to preserve that envelope and transport policy.
 
 Exact submission bypasses ordinary composition and keeps the supplied bytes, including any accidental `Bcc` header. Reject an unsafe outbound representation before archiving or sending it; silently rewriting protected bytes defeats the point. Archive failure must stop submission if preserving the evidence was a prerequisite.
 
@@ -300,7 +299,7 @@ static Email allowPartialReply(SimpleJavaMail mail, Email supportReply) {
 
 A partial send still reports a failed operation with receipt facts. Use [`getRecipientResults()`](/analyzing-send-results.html#section-recipient-details) for ticket feedback, and [`getRetryDisposition()` and `getRetryableRecipients()`](/analyzing-send-results.html#section-retry-decisions) to select the next action. The warehouse may qualify for a later attempt; the supplier needs a corrected address or another change. Don't repeat the buyer's known submission.
 
-Your application rebuilds the retry envelope and chooses timing and authorization. If the final acceptance reply was lost, investigate the uncertainty instead of treating that recipient as unsubmitted. [RelayDesk's support reply](/case-studies/relaydesk.html#retry-the-warehouse-s-copy-not-the-buyer-s) carries these facts back to the ticket.
+Your application rebuilds the retry envelope and chooses timing and authorization. If the final acceptance reply was lost, [investigate the uncertainty](/analyzing-send-results.html#section-unknown-acceptance) instead of treating that recipient as unsubmitted. [RelayDesk's support reply](/case-studies/relaydesk.html#retry-the-warehouse-s-copy-not-the-buyer-s) carries these facts back to the ticket.
 
 ### SMTP may have accepted the message
 
@@ -325,9 +324,9 @@ static List<MailRecipientResult> recipientsSafeToRetry(
 
 *Use known recipient results before deciding what another attempt may contain.*
 
-An empty list is **not** a declaration of success. [`DUPLICATE_RISK`](/analyzing-send-results.html#section-unknown-acceptance) needs investigation; `CALLER_POLICY_REQUIRED` means the facts are insufficient for automatic advice. `DO_NOT_RETRY` covers accepted messages and rejections that require a change. Record the disposition and recipient results, then apply your own retry timing and attempt limit.
+An empty list is **not** a declaration of success. [`DUPLICATE_RISK`](/analyzing-send-results.html#section-unknown-acceptance) needs investigation; [`CALLER_POLICY_REQUIRED`](/analyzing-send-results.html#section-retry-decisions) means the facts are insufficient for automatic advice. `DO_NOT_RETRY` covers accepted messages and rejections that require a change. Record the disposition and recipient results, then apply your own retry timing and attempt limit.
 
-If partial sending is enabled, rebuild the retry envelope from eligible recipients only. Do not resend to recipients already accepted by the relay. [RelayDesk's recipient-specific example](/case-studies/relaydesk.html) shows the required configuration and ticket feedback; later bounces remain a separate stage.
+If [partial sending](/analyzing-send-results.html#section-partial-send) is enabled, rebuild the retry envelope from eligible recipients only. Do not resend to recipients already accepted by the relay. [RelayDesk's recipient-specific example](/case-studies/relaydesk.html#retry-the-warehouse-s-copy-not-the-buyer-s) shows the required configuration and ticket feedback; [later bounces](#the-invoice-was-accepted-then-bounced) remain a separate stage.
 
 ### The invoice was accepted, then bounced
 
@@ -335,7 +334,7 @@ If partial sending is enabled, rebuild the retry envelope from eligible recipien
 
 The relay accepted the invoice yesterday. Today the destination reports a full mailbox. These are two observations about different stages, not contradictory results. Keep submission state and later-delivery feedback separately so the application can explain both.
 
-Use a monitored [envelope-sender address](/features.html#section-delivery-status-notification) for bounce traffic; `Reply-To` directs human replies and is not a substitute. Request the DSN notifications the workflow needs, then retain the receipt's [`getEnvelopeId()`](/features.html#section-dsn-envelope-id) when available. This attempt identifier helps correlate a returned DSN's `Original-Envelope-Id`; keep the Message-ID and business-event ID too. Not every relay supports DSN or supplies all those fields.
+Use a monitored [envelope-sender address](/features.html#section-bouncing-emails) for bounce traffic; `Reply-To` directs human replies and is not a substitute. Request the [DSN notifications](/features.html#section-delivery-status-notification) the workflow needs, then retain the receipt's [`getEnvelopeId()`](/features.html#section-dsn-envelope-id) when available. This attempt identifier helps correlate a returned DSN's `Original-Envelope-Id`; keep the [Message-ID](/features.html#section-custom-id) and business-event ID too. Not every relay supports DSN or supplies all those fields.
 
 Simple Java Mail submits the message and reports the submission. Your inbound processor parses and validates bounce feedback, matches it to an attempt and updates invoice follow-up. A later failure may warrant contacting the customer or correcting the address, not blindly sending the invoice again. [RelayDesk's bounce continuation](/case-studies/relaydesk.html#accepted-by-smtp-then-a-bounce-arrives) connects the two stages.
 
@@ -343,7 +342,7 @@ Simple Java Mail submits the message and reports the submission. Your inbound pr
 
 <p class="field-guide-goal"><strong>Target:</strong> Identify the dominant wait in slow attempts before changing worker counts, connection pools or provider capacity.</p>
 
-The HTTP request finished quickly, but the confirmation took seconds to leave. Record the [send diagnostics](/analyzing-send-results.html#section-send-timings) from the completion observer:
+The HTTP request finished quickly, but the confirmation took seconds to leave. Record the [send diagnostics](/analyzing-send-results.html#section-send-timings) from the [completion observer](/analyzing-send-results.html#section-observer-results):
 
 ```java
 static Mailer observedMailer(MailerRegularBuilder smtpBuilder,
@@ -376,17 +375,17 @@ Scheduling measures local admission-to-worker delay, not time spent in your dura
 
 <p class="field-guide-goal"><strong>Target:</strong> Drain 72,000 overdue jobs within an hour without making newly arriving urgent mail wait behind them.</p>
 
-Clearing 72,000 jobs in an hour needs twenty additional submissions per second. If normal traffic already consumes eighty of an approved hundred per second, that uses all the remaining capacity—with no room for retries or slower responses. Either allow more time, reduce other work or arrange more upstream capacity.
+Clearing 72,000 jobs in an hour needs twenty (additional) submissions per second. If normal traffic already consumes eighty of an approved hundred per second, that uses all the remaining capacity—with no room for retries or slower responses. Either allow more time, reduce other work or arrange more upstream capacity.
 
-Start recovery with expired jobs and permanent failures removed from the sending queue. Old login codes are not useful work. Pace the remaining attempts, preserve their business-event identity, and give each new attempt its own [Message-ID](/features.html#section-custom-id). [Known submissions and uncertain results](#smtp-may-have-accepted-the-message) need different treatment; replaying the entire outage window is not a recovery strategy.
+Start recovery with expired jobs and permanent failures removed from the sending queue. Old login codes are not useful work. [Pace the remaining attempts](/sending-and-execution.html#section-sending-limits), preserve their business-event identity, and give each new attempt its own [Message-ID](/features.html#section-custom-id). [Known submissions and uncertain results](#smtp-may-have-accepted-the-message) need different treatment; replaying the entire outage window is not a recovery strategy.
 
-Watch queue age by priority, current urgent-mail latency and attempts per business event. A declining backlog is encouraging, but not if fresh requests are now late or repeated attempts are making the relay busier. [Polar Meridian](/case-studies/polar-meridian.html) shows the archive and monitoring behind those questions.
+Watch queue age by priority, current urgent-mail latency and attempts per business event. A declining backlog is encouraging, but not if fresh requests are now late or repeated attempts are making the relay busier. [Polar Meridian](/case-studies/polar-meridian.html#noor-monitors-for-performance-degradation) shows the archive and monitoring behind those questions.
 
 ### A deployment must stop cleanly
 
 <p class="field-guide-goal"><strong>Target:</strong> Stop accepting new jobs, account for admitted sends and finish required result-writing callbacks before the deployment terminates the process.</p>
 
-[Closing a Mailer](/sending-and-execution.html#section-mailer-lifecycle) drains its accepted work, but a send can finish before an executor-backed observer writes the result. If your application supplied that executor, drain it separately:
+[Closing a Mailer](/sending-and-execution.html#section-mailer-lifecycle) drains its accepted work, but a send can finish before an [executor-backed observer](/sending-and-execution.html#section-mail-send-observer) writes the result. If your application supplied that executor, drain it separately:
 
 ```java
 static void stopSending(

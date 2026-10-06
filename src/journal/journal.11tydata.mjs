@@ -1,6 +1,7 @@
 import { createArticleData } from "../_lib/article-data.mjs";
+import { z } from "zod";
 
-export default createArticleData({
+const journalData = createArticleData({
   kind: "journal",
   collection: "journal",
   label: "Engineering Journal",
@@ -8,3 +9,15 @@ export default createArticleData({
   urlPrefix: "/journal/",
   tocLabel: "In this entry",
 });
+
+export default {
+  ...journalData,
+  eleventyDataSchema(data) {
+    journalData.eleventyDataSchema(data);
+    z.object({ draft: z.boolean().optional() }).parse(data);
+  },
+  eleventyComputed: {
+    ...journalData.eleventyComputed,
+    journalDraft: (data) => data.draft === true,
+  },
+};

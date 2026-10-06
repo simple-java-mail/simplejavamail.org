@@ -17,7 +17,6 @@ series:
   title: "Case Studies"
   part: 3
   total: 3
-draft: true
 mermaid: true
 theme: cyberpunk
 typora-root-url: ..

@@ -21,7 +21,6 @@ const articleData = z.object({
   date: dateValue,
   author: nonBlankText.optional(),
   updated: dateValue.optional(),
-  draft: z.boolean().optional(),
   commentsUrl: z.string().url().optional(),
   "banner-type": z.enum(["note", "info", "tip"]).optional(),
   "banner-header": nonBlankText.optional(),

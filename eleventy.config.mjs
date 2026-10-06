@@ -31,7 +31,7 @@ import { createSourceForgeMarkupLibrary, decodeSourceForgeEntities } from "./src
 import { journalCodeExample } from "./src/_lib/journal-code-example.mjs";
 import { articleNeighbor, orderCaseStudies } from "./src/_lib/article-context.mjs";
 import { fieldGuideSections } from "./src/_lib/field-guide-sections.mjs";
-import { enforceArticlePolicy } from "./src/_lib/article-policy.mjs";
+import { enforceArticlePolicy, enforceJournalPolicy } from "./src/_lib/article-policy.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const articlePath = /[\\/]src[\\/](?:journal|case-studies|guides)[\\/][^\\/]+\.md$/i;
@@ -97,7 +97,10 @@ export default function (eleventyConfig) {
   eleventyConfig.addPreprocessor("article-policy", "md", function (data, content) {
     if (!articlePath.test(this.inputPath)) return;
     const filename = path.basename(this.inputPath);
-    return enforceArticlePolicy(markdown, content, filename, data.draft, process.env.ELEVENTY_RUN_MODE);
+    if (/[\\/]src[\\/]journal[\\/]/i.test(this.inputPath)) {
+      return enforceJournalPolicy(markdown, content, filename, data.draft, process.env.ELEVENTY_RUN_MODE);
+    }
+    return enforceArticlePolicy(markdown, content, filename);
   });
 
   eleventyConfig.addTemplateFormats("less");
