@@ -1,0 +1,40 @@
+---
+layout: "layouts/marketing.hbs"
+---
+<header class="page-hero field-guide-hero">
+  <div class="shell">
+    <a class="field-guide-back" href="/use-cases.html">← Use cases</a>
+    <p class="eyebrow">Email workload field guide{{#if draft}} · Working draft{{/if}}</p>
+    <h1>{{title}}</h1>
+    <p class="hero-lede">{{description}}</p>
+  </div>
+</header>
+
+<nav id="scenario-directory" class="field-guide-directory shell" aria-label="Find an email workload scenario" data-pagefind-ignore>
+  <h2>What does your workload look like?</h2>
+  <div class="field-guide-directory-grid">
+    {{#each guideGroups}}
+      <section aria-labelledby="directory-{{id}}">
+        <h3 id="directory-{{id}}"><a href="#{{id}}">{{title}}</a></h3>
+        <ul>
+          {{#each scenarios}}
+            <li><a href="#{{id}}"><strong>{{title}}</strong><span>{{target}}</span></a></li>
+          {{/each}}
+        </ul>
+      </section>
+    {{/each}}
+  </div>
+</nav>
+
+<div class="shell field-guide-grid">
+  <aside class="field-guide-rail" data-pagefind-ignore>
+    <nav aria-label="Patterns in this field guide">
+      <span>Patterns</span>
+      <ul>{{#each guideGroups}}<li><a href="#{{id}}">{{title}}</a></li>{{/each}}</ul>
+      <a class="field-guide-directory-return" href="#scenario-directory">Find another scenario ↑</a>
+    </nav>
+  </aside>
+  <article class="journal-prose field-guide-content" aria-label="Email workload patterns">
+    {{{fieldGuideSections content guideGroups}}}
+  </article>
+</div>

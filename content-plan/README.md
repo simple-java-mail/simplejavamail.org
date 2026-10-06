@@ -5,6 +5,18 @@ Last synced: 2026-08-17
 Direction: start simple, stay production-ready
 Modernization: full visual and structural redesign on the upgraded static-site stack
 
+## Workload field guide
+
+`/email-workload-field-guide.html` is a standalone reference,
+authored in `src/guides/email-workloads.md`. It complements Use cases and the API
+documentation; it is not part of the Engineering Journal or the case studies.
+The first twenty scenarios cover sending shape, contention, connection grouping,
+message preparation and recovery. Each has its own target, design and reference
+links. Keep practical failure checks where they add insight, not as a repeated
+exercise format. A lookup directory and local category indexes let readers enter
+directly rather than read an essay in order.
+Further scenarios can grow within that pattern; total word count is not a limit.
+
 This plan leads; the templates follow. Changes to the public story, route hierarchy, visible section order, or claims are made here before they are made in HTML.
 
 ## Brief

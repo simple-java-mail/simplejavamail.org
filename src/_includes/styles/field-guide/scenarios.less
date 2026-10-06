@@ -1,0 +1,12 @@
+.field-guide-content .field-guide-goal { margin-block: @space-sm @space-lg; padding: @space-sm @space-md; border-left: 3px solid @teal; background: @teal-tint; font-size: 0.95rem; }
+.field-guide-content .field-guide-goal strong { font-family: @font-mono; font-size: 0.78rem; }
+.field-guide-content .field-guide-section-toc { margin-bottom: @space-xl; }
+.field-guide-content .field-guide-section-toc ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: @space-sm @space-lg; margin: 0; padding: 0; list-style: none; font-size: 0.88rem; }
+.field-guide-content .field-guide-section-toc li { margin: 0; }
+@media (max-width: 640px) {
+  .field-guide-content .field-guide-section-toc ul { grid-template-columns: 1fr; }
+}
+.field-guide-content > h3 { padding-top: @space-md; }
+.field-guide-content .journal-captioned { margin-block: @space-lg; }
+.field-guide-content .journal-captioned > figcaption { max-width: 65ch; margin-inline: auto; }
+.field-guide-content .field-guide-return { margin-top: @space-lg; font-family: @font-mono; font-size: 0.75rem; }

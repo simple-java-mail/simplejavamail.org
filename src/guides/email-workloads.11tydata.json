@@ -1,0 +1,54 @@
+{
+  "guideGroups": [
+    {
+      "id": "choose-the-sending-shape",
+      "title": "Choose the sending shape",
+      "scenarios": [
+        { "id": "a-few-emails-a-day", "title": "A few emails a day", "target": "Keep the request responsive" },
+        { "id": "a-nightly-invoice-run", "title": "A nightly invoice run", "target": "5,000 messages by 08:30" },
+        { "id": "a-million-before-the-deadline", "title": "A million before the deadline", "target": "Calculate the required rate" }
+      ]
+    },
+    {
+      "id": "control-arrival-and-contention",
+      "title": "Control arrival and contention",
+      "scenarios": [
+        { "id": "the-producer-outruns-smtp", "title": "The producer outruns SMTP", "target": "Bound the in-memory queue" },
+        { "id": "the-service-allows-thirty-a-minute", "title": "The service allows thirty a minute", "target": "Pace local submission attempts" },
+        { "id": "login-codes-behind-a-newsletter", "title": "Login codes behind a newsletter", "target": "Urgent queue wait below 5 seconds" }
+      ]
+    },
+    {
+      "id": "separate-connections-deliberately",
+      "title": "Separate connections deliberately",
+      "scenarios": [
+        { "id": "three-replicas-share-one-account", "title": "Three replicas share one account", "target": "Count the fleet, not one JVM" },
+        { "id": "customers-bring-their-own-servers", "title": "Customers bring their own servers", "target": "A failed customer stays isolated" },
+        { "id": "one-hostname-or-two-relays", "title": "One hostname or two relays", "target": "Pool only interchangeable routes" },
+        { "id": "the-customer-rotates-credentials", "title": "The customer rotates credentials", "target": "Verify replacements before resuming" }
+      ]
+    },
+    {
+      "id": "prepare-before-submission",
+      "title": "Prepare before submission",
+      "scenarios": [
+        { "id": "the-pdf-fits-but-the-email-does-not", "title": "The PDF fits, but the email does not", "target": "Check encoded size, not file size" },
+        { "id": "a-recipient-address-needs-smtputf8", "title": "A recipient address needs SMTPUTF8", "target": "Check the customer's relay capabilities" },
+        { "id": "a-partner-update-must-stay-confidential", "title": "A partner update must stay confidential", "target": "Protect content and require onward TLS" },
+        { "id": "reproduce-last-month-s-instructions", "title": "Reproduce last month's instructions", "target": "Retain the submitted bytes and envelope" }
+      ]
+    },
+    {
+      "id": "recover-without-guessing",
+      "title": "Recover without guessing",
+      "scenarios": [
+        { "id": "one-support-reply-three-recipient-results", "title": "One support reply, three recipient results", "target": "Retry only the eligible recipients" },
+        { "id": "smtp-may-have-accepted-the-message", "title": "SMTP may have accepted the message", "target": "Do not duplicate known submissions" },
+        { "id": "the-invoice-was-accepted-then-bounced", "title": "The invoice was accepted, then bounced", "target": "Correlate later delivery feedback" },
+        { "id": "a-slow-send-is-not-always-slow-smtp", "title": "A slow send is not always slow SMTP", "target": "Locate the wait before tuning" },
+        { "id": "an-outage-leaves-a-backlog", "title": "An outage leaves a backlog", "target": "Clear old work without starving new" },
+        { "id": "a-deployment-must-stop-cleanly", "title": "A deployment must stop cleanly", "target": "Account for sends and callbacks" }
+      ]
+    }
+  ]
+}

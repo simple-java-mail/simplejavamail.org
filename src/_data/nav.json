@@ -33,8 +33,8 @@
       "items": [
         { "title": "Documentation", "url": "/docs.html" },
         { "title": "Get started", "url": "/download.html" },
-        { "title": "Use cases", "url": "/use-cases.html" },
-        { "title": "Why Simple Java Mail", "url": "/why-simple-java-mail.html" }
+        { "title": "Why Simple Java Mail", "url": "/why-simple-java-mail.html" },
+        { "title": "Use cases", "url": "/use-cases.html" }
       ]
     },
     {

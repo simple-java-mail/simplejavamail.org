@@ -23,6 +23,9 @@
                   </ul>
                 {{/if}}
               </li>
+              {{#if (eq this.url "/use-cases.html")}}
+                {{> components/field-guide-menu-items collections=@root.collections}}
+              {{/if}}
             {{/each}}
           </ul>
         </section>

@@ -1,0 +1,3 @@
+{{#each collections.fieldGuides}}
+  <li><a href="{{this.url}}" class="{{docsActiveClass this.url @root.page.url @root.breadcrumbParent}}">{{#if data.navigationTitle}}{{data.navigationTitle}}{{else}}{{data.title}}{{/if}}</a></li>
+{{/each}}

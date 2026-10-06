@@ -1,0 +1,30 @@
+.field-guide-hero { padding: @space-xl 0; }
+.field-guide-hero h1 { max-width: 24ch; font-size: clamp(2.2rem, 4.5vw, 3.5rem); }
+.field-guide-hero .hero-lede { max-width: 55ch; }
+.field-guide-back { display: inline-block; margin-bottom: @space-md; color: @steel; font-family: @font-mono; font-size: 0.72rem; }
+.field-guide-instruction { max-width: 66ch; margin: @space-md 0 0; color: @steel; }
+
+.field-guide-grid { display: grid; grid-template-columns: 220px minmax(0, @reading); gap: @space-2xl; align-items: start; margin-block: @space-2xl; }
+.field-guide-rail { position: sticky; top: calc(@header-h + @space-lg); }
+.field-guide-rail nav { border-top: 2px solid @teal; padding-top: @space-md; }
+.field-guide-rail nav > span { color: @steel; font-family: @font-mono; font-size: 0.68rem; letter-spacing: @tracking-label; text-transform: uppercase; }
+.field-guide-rail ul { list-style: none; margin: @space-sm 0 @space-lg; padding: 0; }
+.field-guide-rail li + li { margin-top: @space-sm; }
+.field-guide-rail li a { display: block; color: @steel; font-size: 0.85rem; text-decoration: none; }
+.field-guide-rail li a:hover { color: @teal-deep; }
+.field-guide-directory-return { font-family: @font-mono; font-size: 0.7rem; }
+.field-guide-content { min-width: 0; }
+.field-guide-content > h2 { padding-top: @space-lg; border-top: 2px solid @teal; }
+
+@media (max-width: 1000px) {
+  .field-guide-grid { grid-template-columns: minmax(0, 1fr); max-width: @reading; gap: @space-xl; }
+  .field-guide-rail { position: static; }
+  .field-guide-rail ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: @space-sm; }
+  .field-guide-rail li + li { margin: 0; }
+}
+@media (max-width: 600px) {
+  .field-guide-grid { margin-block: @space-xl; }
+  .field-guide-rail ul { grid-template-columns: minmax(0, 1fr); }
+  .field-guide-content h2 { font-size: 1.9rem; }
+  .field-guide-content h3 { font-size: 1.5rem; }
+}

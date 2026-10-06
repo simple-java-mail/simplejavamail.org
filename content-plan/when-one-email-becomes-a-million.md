@@ -5,7 +5,10 @@ The agreed direction is a scenario-based reference guide, grouped by design patt
 Readers should find their situation through a lookup directory and read each entry
 independently, with concrete objectives, useful examples and measurable verification.
 Total length is secondary to clear navigation and brisk individual scenarios.
-The original outline below is retained as source material for the planned guide.
+The initial working guide now lives in `src/guides/email-workloads.md`, with its
+scenario lookup in `email-workloads.11tydata.json`. It is a companion
+to Use cases, not a Journal entry or a replacement for the API reference. The
+original outline below is retained as source material for further scenarios.
 
 ---
 title: "When One Email Becomes a Million"

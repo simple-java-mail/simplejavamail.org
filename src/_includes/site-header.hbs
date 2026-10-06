@@ -39,6 +39,9 @@
                 {{/if}}
                 {{#each submenu.trailingItems}}
                   <li><a href="{{href}}" class="{{activeClass href @root.page.url}}">{{label}}</a></li>
+                  {{#if (eq href "/use-cases.html")}}
+                    {{> components/field-guide-menu-items collections=@root.collections}}
+                  {{/if}}
                 {{/each}}
               </ul>
             {{/if}}

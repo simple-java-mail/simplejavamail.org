@@ -14,6 +14,9 @@ description: "Find the Simple Java Mail APIs and settings for correct MIME, secu
         <p class="eyebrow">Use cases</p>
         <h1>Common email jobs.</h1>
         <p class="hero-lede">Pick the situation closest to yours. Each route links directly to the message API, configuration, security settings, and optional modules involved.</p>
+        {{#each collections.fieldGuides}}
+    <p>Designing for bursts, quotas or competing workloads? Open the <a href="{{this.url}}">email workload field guide</a>.</p>
+        {{/each}}
         <nav class="use-case-jump" aria-label="Use cases on this page">
           <a href="#correct-mime"><span>01</span>Build messages</a>
           <a href="#secure-sending"><span>02</span>Send securely</a>

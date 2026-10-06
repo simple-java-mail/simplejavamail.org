@@ -30,10 +30,11 @@ import {
 import { createSourceForgeMarkupLibrary, decodeSourceForgeEntities } from "./src/_lib/sourceforge-archive.mjs";
 import { journalCodeExample } from "./src/_lib/journal-code-example.mjs";
 import { articleNeighbor, orderCaseStudies } from "./src/_lib/article-context.mjs";
+import { fieldGuideSections } from "./src/_lib/field-guide-sections.mjs";
 import { enforceArticlePolicy } from "./src/_lib/article-policy.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const articlePath = /[\\/]src[\\/](?:journal|case-studies)[\\/][^\\/]+\.md$/i;
+const articlePath = /[\\/]src[\\/](?:journal|case-studies|guides)[\\/][^\\/]+\.md$/i;
 
 function runPagefind(outputDirectory) {
   const runner = path.join(root, "node_modules", "pagefind", "lib", "runner", "bin.cjs");
@@ -67,6 +68,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addFilter("journalHeadings", headingsFromHtml);
   eleventyConfig.addFilter("journalNeighbor", journalNeighbor);
   eleventyConfig.addFilter("articleNeighbor", articleNeighbor);
+  eleventyConfig.addFilter("fieldGuideSections", fieldGuideSections);
   eleventyConfig.addFilter("journalCollectionSchema", collectionSchema);
   eleventyConfig.addFilter("absoluteUrl", (url, base) => new URL(url, base).toString());
   eleventyConfig.addFilter("googleCodeComment", (value) => googleCodeComments.render(decodeGoogleCodeEntities(value || "")));
@@ -90,6 +92,7 @@ export default function (eleventyConfig) {
     .filter((entry) => !entry.data.draft), true));
   eleventyConfig.addCollection("caseStudies", (collectionApi) => orderCaseStudies(collectionApi
     .getFilteredByTag("caseStudy")));
+  eleventyConfig.addCollection("fieldGuides", (collectionApi) => collectionApi.getFilteredByTag("fieldGuide"));
 
   eleventyConfig.addPreprocessor("article-policy", "md", function (data, content) {
     if (!articlePath.test(this.inputPath)) return;
@@ -117,6 +120,8 @@ export default function (eleventyConfig) {
   eleventyConfig.ignores.add("src/journal/README.md");
   eleventyConfig.ignores.add("src/journal/article-template.md");
   eleventyConfig.ignores.add("src/case-studies/README.md");
+  eleventyConfig.ignores.add("src/guides/README.md");
+  eleventyConfig.ignores.add("src/assets/guides/*/README.md");
   eleventyConfig.ignores.add("src/styles/tokens.less");
 
   eleventyConfig.addTransform("external-link-safety", function (content) {
