@@ -13,7 +13,7 @@ banner-body: "This first draft was developed from my article brief, the project 
 
 ![Three hands bring together superhero rings marked S, J and M](/assets/journal/articles/the-simple-in-simple-java-mail/powers-combined.png)
 
-*Three words combine into a name. One of them has some explaining to do.*
+*Three simple words combine into a name. One of them has some explaining to do.*
 
 Simple Java Mail. Three fairly unambiguous words, you would think. It is written in Java, it deals with email, and it is simple. Except that last word has been doing rather more work than I realised, and not all of it in my favour.
 
@@ -117,7 +117,7 @@ There are still gaps. The October progress assessment keeps MailKit ahead on pro
 
 ## I'm keeping the Simple
 
-<a href="/assets/journal/common/captain-sjm-darkmode.png"><img src="/assets/journal/common/captain-sjm-darkmode.png" alt="Captain Simple Java Mail winks in a blue superhero suit with the SJM emblem on his chest" class="journal-paragraph-image" style="width:320px; max-width:100%;" width="1024" height="1536" loading="lazy" decoding="async" /></a>
+<a href="/assets/journal/articles/the-simple-in-simple-java-mail/captain-sjm-darkmode.png"><img src="/assets/journal/articles/the-simple-in-simple-java-mail/captain-sjm-darkmode.png" alt="Captain Simple Java Mail winks in a blue superhero suit with the SJM emblem on his chest" class="journal-paragraph-image" style="width:320px; max-width:100%;" width="1006" height="1524" loading="lazy" decoding="async" /></a>
 
 A better website cannot repair a broken API, but a good API can be overlooked behind a website that undersells it. That is what I am trying to fix with the new presentation, the case studies and the clearer references: make the easy entrance visible without concealing the rooms behind it.
 
