@@ -23,6 +23,24 @@
 }
 .case-study-spotlight-link:hover { border-color: #35D9EF; }
 .case-study-spotlight-link:focus-visible { outline: 3px solid #F6CB43; outline-offset: 5px; }
+.case-study-spotlight-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1;
+  max-width: calc(100% - 2rem);
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #35D9EF;
+  background: #08171D;
+  color: #35D9EF;
+  font-family: @font-mono;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-align: right;
+  text-transform: uppercase;
+}
 .case-study-spotlight-art { position: relative; min-width: 0; }
 .case-study-spotlight-art > img {
   display: block;
@@ -50,6 +68,7 @@
   align-items: flex-start;
   gap: @space-md;
   padding: clamp(1.4rem, 3vw, 2.4rem);
+  padding-top: calc(clamp(1.4rem, 3vw, 2.4rem) + 1.5rem);
 }
 .case-study-spotlight-label {
   margin: 0;
@@ -86,5 +105,5 @@
 @media (max-width: 640px) {
   .case-study-spotlight-link { grid-template-columns: minmax(0, 1fr); }
   .case-study-spotlight-art { aspect-ratio: 3 / 2; }
-  .case-study-spotlight-copy { gap: 1rem; }
+  .case-study-spotlight-copy { gap: 1rem; padding-top: 1.4rem; }
 }

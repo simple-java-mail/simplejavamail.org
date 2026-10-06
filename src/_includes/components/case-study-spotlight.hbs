@@ -1,5 +1,6 @@
 <article class="case-study-spotlight">
-  <a class="case-study-spotlight-link" href="{{this.url}}" aria-labelledby="{{id}}-{{data.caseStudy.order}}-heading" aria-describedby="{{id}}-{{data.caseStudy.order}}-label">
+  <a class="case-study-spotlight-link" href="{{this.url}}" aria-labelledby="{{id}}-{{data.caseStudy.order}}-heading" aria-describedby="{{id}}-{{data.caseStudy.order}}-label {{id}}-{{data.caseStudy.order}}-distinction">
+    <span class="case-study-spotlight-badge" id="{{id}}-{{data.caseStudy.order}}-distinction">{{data.caseStudy.label}}</span>
     <div class="case-study-spotlight-art">
       <img src="{{data.caseStudy.spotlight.image}}" alt="" width="1536" height="1024" loading="lazy" decoding="async">
       <span class="case-study-spotlight-tag" aria-hidden="true">REPAIR GIG · RELAYDESK</span>

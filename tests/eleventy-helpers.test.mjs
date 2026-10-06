@@ -596,6 +596,7 @@ test("case-study spotlights reuse their article metadata on the index and homepa
   handlebars.registerPartial("components/module-badges", "");
   const ordinary = (company, order) => ({ url: `/journal/company-${order}.html`, data: { title: `Case study: ${company}`, caseStudy: { company, order, label: "SMTP integration", description: "An ordinary case study" } } });
   const featured = ordinary("RelayDesk", 3);
+  featured.data.caseStudy.label = "Multi-tenant communications";
   featured.data.caseStudy.spotlight = { image: "/assets/journal/articles/relaydesk/personas/relay-desk-sam.jpg", heading: "Sam's <repair> gig", description: "Customer-owned mail servers" };
   const renderPage = (name, entries) => {
     const source = readFileSync(new URL(`../src/pages/${name}.hbs`, import.meta.url), "utf8").replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, "");
@@ -606,6 +607,8 @@ test("case-study spotlights reuse their article metadata on the index and homepa
   assert.equal((index.match(/class="case-study-card"/g) || []).length, 2);
   assert.equal((index.match(/class="case-study-spotlight"/g) || []).length, 1);
   assert.match(index, /aria-labelledby="case-study-relaydesk-3-heading"/);
+  assert.match(index, /aria-describedby="case-study-relaydesk-3-label case-study-relaydesk-3-distinction"/);
+  assert.match(index, /class="case-study-spotlight-badge" id="case-study-relaydesk-3-distinction">Multi-tenant communications<\/span>/);
   assert.match(index, /id="case-study-relaydesk-3-heading">Sam&#x27;s &lt;repair&gt; gig/);
   assert.match(index, /Cyberpunk case study/);
   assert.match(index, /class="case-study-spotlight-logo">RelayDesk<\/span>/);
@@ -613,6 +616,7 @@ test("case-study spotlights reuse their article metadata on the index and homepa
   const home = renderPage("index", entries);
   assert.equal((home.match(/class="case-study-spotlight"/g) || []).length, 1);
   assert.match(home, /aria-labelledby="home-relaydesk-3-heading"/);
+  assert.match(home, /id="home-relaydesk-3-distinction">Multi-tenant communications<\/span>/);
   assert.match(home, /href="\/journal\/company-3.html"/);
   assert.doesNotMatch(renderPage("index", entries.slice(0, 2)), /home-case-study|case-study-spotlight/);
 });
