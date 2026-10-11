@@ -15,6 +15,9 @@ import org.simplejavamail.api.mailer.MailRecipientResult;
 import org.simplejavamail.api.mailer.MailSubmissionReceipt;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.MailerRegularBuilder;
+import org.simplejavamail.api.mailer.config.FailoverPolicy;
+import org.simplejavamail.api.mailer.config.TransportStrategy;
+import org.simplejavamail.recipient.RecipientBuilder;
 
 /** Small call examples, not a queue implementation. No method runs automatically. */
 public final class FieldGuideExamples {
@@ -24,8 +27,32 @@ public final class FieldGuideExamples {
         return mailer.sync().sendMail(email);
     }
 
+    static Mailer failoverMailer(SimpleJavaMail mail, Mailer alternative) {
+        return mail.mailerBuilder()
+            .withSMTPServer("primary.example.org", 587)
+            .withTransportStrategy(TransportStrategy.SMTP_TLS)
+            .withFailoverMailer(alternative, FailoverPolicy.builder()
+                .withPrimaryRecheckInterval(Duration.ofSeconds(30))
+                .build())
+            .buildMailer();
+    }
+
     static void submitInvoiceBatch(Mailer mailer, Iterable<Email> invoices) {
         mailer.sync().sendMailsInSimpleBatch(invoices);
+    }
+
+    static Email failoverTemplate(SimpleJavaMail mail) {
+        return mail.emailBuilder().startingBlank()
+            .withHeader("X-Relay", "secondary")
+            .withRecipients(RecipientBuilder.bcc(null, "mail-operations@example.org"))
+            .buildEmail();
+    }
+
+    static FailoverPolicy certificateIncidentPolicy() {
+        return FailoverPolicy.builder()
+            .withFailoverOnCertificateVerificationFailure(true)
+            .withFailoverOnAuthenticationFailure(false)
+            .build();
     }
 
     static Mailer boundedPool(MailerRegularBuilder smtpBuilder) {

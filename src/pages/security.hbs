@@ -7,6 +7,9 @@ title: "Security"
 section: "Protect and operate"
 description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/MIME, and protection against header injection."
 ---
+		<section><p class="wide">An expired primary certificate can be a reason to use another approved relay, without trusting that expired certificate.
+      <a href="/smtp-connection-failover.html#section-policy">Connection failover</a> provides separate opt-ins for authentication rejection and
+      certificate verification failure. The selected destination still has to pass its own TLS checks, and mandatory message locks remain binding.</p></section>
 		<section class="doc-overview" aria-labelledby="security-overview-title">
 			<header>
 				<p class="eyebrow">Security at a glance</p>

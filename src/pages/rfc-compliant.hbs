@@ -9,6 +9,9 @@ description: "Understand why MIME structure matters, what malformed nesting look
 mimeStructureDemo: true
 ---
   <section class="toc">
+    <p class="wide">An <a href="/smtp-connection-failover.html#section-ownership">SMTP failover destination</a> prepares a composed Email using its own
+      templates and message protection. Exact emails keep their authoritative bytes and ordinary-template bypass; incompatible mandatory locks cause
+      rejection, not rewriting. Routing alone performs no additional serialization or attachment reads.</p>
     <ul>
       <li><a href="#section-why">Why the MIME tree matters</a></li>
       <li><a href="#section-failures">What goes wrong when the structure is wrong</a></li>

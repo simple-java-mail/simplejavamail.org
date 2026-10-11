@@ -50,6 +50,7 @@
           ]
         },
         { "title": "Pool orchestration", "url": "/smtp-connection-pooling.html" },
+        { "title": "SMTP connection failover", "url": "/smtp-connection-failover.html" },
         { "title": "Modules", "url": "/modules.html" }
       ]
     },

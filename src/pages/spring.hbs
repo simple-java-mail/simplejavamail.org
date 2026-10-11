@@ -10,6 +10,9 @@ breadcrumbParent: "/configuration.html"
 description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x, or with plain Spring. Your application supplies the Spring and SLF4J versions."
 ---
   <section class="toc">
+    <p class="wide">The shared Environment loader also supports <a href="/smtp-connection-failover.html#section-named">named failover Mailers</a>,
+      their policies and <code>simplejavamail.locked.*</code> counterparts. Use the same property names in properties files or nested YAML.
+      Each named definition keeps its own sources and settings; it does not inherit the default Mailer's ordinary properties.</p>
     <ul>
       <li><a href="#section-spring-paths">Choose an integration path</a></li>
       <li><a href="#section-spring-versions">Match the application's Spring Boot line</a></li>

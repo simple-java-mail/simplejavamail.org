@@ -8,6 +8,10 @@ section: "Integrate and understand"
 description: "Send, validate, test connections, and inspect SMTP capabilities from the Java 17+ command line, with an optional local daemon."
 ---
   <section class="introduction">
+    <p class="wide">For <a href="/smtp-connection-failover.html#section-named">connection failover</a>, define named Mailers in the loaded configuration
+      and select one with <code>--mailer:withFailoverMailerName secondary</code>. Generated policy options include
+      <code>--mailer:withFailoverPrimaryRecheckInterval PT30S</code>. The daemon keeps different routes, policies, locks and referenced configuration
+      material in separate profiles. No additional command or asynchronous send mode is required.</p>
     <p class="wide">
       The CLI exposes the Simple Java Mail builders as terminal commands. You can build a message, configure a mailer, validate it, test the connection,
       inspect SMTP capabilities, and send without writing a Java entry point.

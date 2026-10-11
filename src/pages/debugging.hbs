@@ -9,6 +9,9 @@ description: "Choose a diagnostic tool, inspect prepared messages and SMTP conne
 ---
   <section><p class="wide">For a visual map of the queue, connection pool, SMTP transport, and observer callback, see
     <a href="/sending-and-execution.html#section-send-architecture">Inside a mail send</a>. The sections below cover the diagnostics available at those boundaries.</p></section>
+  <section><p class="wide">When a send changes SMTP destination, its observer diagnostics can show
+    <a href="/smtp-connection-failover.html#section-observation">connection attempts, cached skips and recovery</a>.
+    A probe checks the Mailer you explicitly chose; it does not follow the send failover chain. No receipt is manufactured for exhausted connection routes.</p></section>
   <section class="toc">
     <ul>
 		<li><a href="#section-choose-diagnostic">Choose a diagnostic tool</a></li>

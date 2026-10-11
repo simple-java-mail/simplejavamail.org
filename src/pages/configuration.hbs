@@ -7,6 +7,9 @@ title: "Configuration"
 section: "Build and configure"
 description: "Configure mailers in Java, property files, or environment variables, including defaults, overrides, pools, and clusters, then continue into Spring integration."
 ---
+    <section><p class="wide">For more than one approved SMTP destination, see <a href="/smtp-connection-failover.html#section-named">named failover configuration</a>.
+      Each <code>simplejavamail.mailers.name.*</code> definition resolves independently. A locked relationship protects the captured route, while
+      mandatory message locks remain binding through destination changes. Ordinary templates belong to the selected Mailer, including in a cluster.</p></section>
     <section class="doc-overview" aria-labelledby="configuration-overview-title">
       <header>
         <p class="eyebrow">Configuration at a glance</p>

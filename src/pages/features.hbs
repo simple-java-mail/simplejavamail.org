@@ -8,6 +8,9 @@ section: "Build and configure"
 description: "Explore well-formed MIME, reusable message rules, security, diagnostics, conversion, authenticated SOCKS, batches, pools, and SMTP clusters."
 ---
   <section class="doc-overview" aria-labelledby="capabilities-overview-title">
+    <p class="wide"><a href="/smtp-connection-failover.html">SMTP connection failover</a> lets an approved alternative Mailer take over during an outage,
+      then returns work to the primary after recovery. It works for ordinary sync/async sends with or without pooling, and never automatically replays
+      a message after provider invocation. Selected-Mailer templates, mandatory locks and per-destination sending limits keep their defined owners.</p>
     <header>
       <p class="eyebrow">Capabilities at a glance</p>
       <h2 id="capabilities-overview-title">Email essentials.</h2>
@@ -587,7 +590,8 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
     <div class="view">
       <p>Async sends return <code>MailSend&lt;T&gt;</code>. Use <code>getCompletion()</code> to await the actual result or attach a callback.
         Its optional <code>requestCancellation()</code> method asks remaining work to stop; it does not claim the email was unsent.</p>
-      <p><code>mailer.sync().sendMail(...)</code> returns a receipt and throws failures directly; ignoring the receipt is fine. Preparation remains on the calling thread for async sends.
+      <p><code>mailer.sync().sendMail(...)</code> returns a receipt and throws failures directly; ignoring the receipt is fine.
+        Async sends apply the selected destination's templates and validate the email when the executor runs the operation.
         For execution modes, deadlines, and cancellation, see <a href="/sending-and-execution.html">Sending and execution</a>.
         To interpret receipts and failures, see <a href="/analyzing-send-results.html">Analyzing send results</a>.</p>
     </div>

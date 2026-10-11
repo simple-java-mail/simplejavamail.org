@@ -189,9 +189,87 @@ Two server addresses are not automatically two eligible destinations:
 | EU-only and US-only routes | Separate groups; select the permitted region before submitting |
 | Different customers' servers | Separate configuration and groups; no cross-customer fallback |
 
-Build the intended Mailers before starting the workload. Shared cluster membership lets eligible Mailers use registered connections; it does not decide which region or customer is allowed to handle a message. Nor does it make retries idempotent. After a connection fails, [inspect the attempt's result](/analyzing-send-results.html#section-retry-decisions) before choosing another route.
+Build the intended Mailers before starting the workload. Shared cluster membership lets eligible Mailers use registered connections; it does not decide which region or customer is allowed to handle a message. For outage-driven routing, configure [connection failover](/smtp-connection-failover.html) explicitly. It stops before any submission replay; after provider entry, [inspect the attempt's result](/analyzing-send-results.html#section-retry-decisions) before deciding on a later retry.
 
 The [clustering reference](/sending-and-execution.html#section-clustering) covers registration and shared pool settings. You don't need that machinery just because a managed hostname resolves to multiple backend servers.
+
+### The primary relay is unavailable
+
+<p class="field-guide-goal"><strong>Target:</strong> Keep submitting through an approved alternative during an outage, then return to the primary without replaying accepted mail.</p>
+
+Configure the relationship on the primary Mailer. A connection failure can move the current, still-unsubmitted Email to the other Mailer; a full pool or a rate-limit wait cannot.
+
+```java
+static Mailer failoverMailer(SimpleJavaMail mail, Mailer alternative) {
+    return mail.mailerBuilder()
+        .withSMTPServer("primary.example.org", 587)
+        .withTransportStrategy(TransportStrategy.SMTP_TLS)
+        .withFailoverMailer(alternative, FailoverPolicy.builder()
+            .withPrimaryRecheckInterval(Duration.ofSeconds(30))
+            .build())
+        .buildMailer();
+}
+```
+
+*Borrow an independently configured Mailer; keep ownership of its shutdown in your application.*
+
+A fails, B takes work immediately, and A is reconsidered after the configured interval. B keeps its own sending rates, credentials, ordinary Email templates and message protection. A's mandatory message locks still apply. A due recheck belongs to one operation; other eligible sends can continue through B. A lazy batch may move its untouched remainder back to A between emails, without restarting the iterator.
+
+The [failover walkthrough](/smtp-connection-failover.html) includes the ownership matrix, named/locked configuration, expired-certificate opt-in and recovery output. Once submission starts, there is no automatic replay. [Use an observer and your job queue](/smtp-connection-failover.html#section-retry) for bounded, delayed retries based on the receipt; unknown acceptance needs a different decision from connection refusal.
+
+### Only the failover relay should copy operations
+
+<p class="field-guide-goal"><strong>Target:</strong> Add a relay-specific header and maintainer copy only when that destination actually sends.</p>
+
+Put those [Email defaults](/configuration.html#section-config-mailer) on the failover Mailer itself. Its template is not layered on top of the primary's ordinary template:
+
+```java
+static Email failoverTemplate(SimpleJavaMail mail) {
+    return mail.emailBuilder().startingBlank()
+        .withHeader("X-Relay", "secondary")
+        .withRecipients(RecipientBuilder.bcc(null, "mail-operations@example.org"))
+        .buildEmail();
+}
+```
+
+*Configure this template with `withEmailDefaults(...)` on the selected alternative.*
+
+The BCC is a real delivery, with confidentiality and recipient-quota implications, not merely an alert. It appears only when this Mailer is selected, including through a cluster. An archive recipient that must always be included needs a [mandatory message lock](/smtp-connection-failover.html#section-ownership), not an ordinary default on the primary. Exact emails bypass ordinary templates.
+
+### An approved route must keep its archive copy
+
+<p class="field-guide-goal"><strong>Target:</strong> Allow an operations-managed alternative without letting application customization remove the mandatory archive recipient.</p>
+
+Central configuration can provide `simplejavamail.locked.failover.mailer=secondary`, independently define and lock secondary's connection settings, and retain `simplejavamail.locked.defaults.bcc.address=archive@example.org` on the initiating factory. The [named-configuration walkthrough](/smtp-connection-failover.html#section-named) shows the complete properties.
+
+Switching destinations does not edit the primary's locked hostname. It selects an approved, separately configured destination. The archive requirement survives, together with any compatible requirements on traversed Mailers. Ordinary Java customization cannot replace a locked route with an unrelated Mailer, even one using the same hostname. This is not a sandbox against application code deliberately choosing another factory.
+
+### The primary certificate expires
+
+<p class="field-guide-goal"><strong>Target:</strong> Continue through a separately verified alternative without trusting an expired certificate or treating bad credentials as an outage.</p>
+
+Choose the certificate exception independently from authentication:
+
+```java
+static FailoverPolicy certificateIncidentPolicy() {
+    return FailoverPolicy.builder()
+        .withFailoverOnCertificateVerificationFailure(true)
+        .withFailoverOnAuthenticationFailure(false)
+        .build();
+}
+```
+
+*Permit a different destination, not weaker TLS verification.*
+
+Both destinations still apply their own certificate and hostname checks. If secondary's certificate is also invalid, it cannot send either. The incident remains visible in logs and observed connection history even if the email succeeds. Read the [failure policy reference](/smtp-connection-failover.html#section-policy); do not globally disable verification to avoid an outage.
+
+### The primary recovers during a large batch
+
+<p class="field-guide-goal"><strong>Target:</strong> Move the untouched remainder back to the primary without restarting the source or resending completed emails.</p>
+
+Keep one lazy `sendMailsInSimpleBatch(...)` operation. While primary is unavailable, secondary sends under its own message and recipient limits. When a recheck becomes due, one operation tries primary; other sends can continue using secondary. After successful acquisition, the batch switches at an email boundary, after the previous email and its required observer handoff finish.
+
+The iterator is opened once. Failed rechecks can leave the existing secondary connection in use. Each destination keeps its own recent rate-limit history, so recovery cannot reset its allowance. [Batch recovery](/smtp-connection-failover.html#section-batches) differs from `withOpenConnection`: that application callback remains pinned after its initial acquisition and is never replayed. Neither shape retries a submission failure automatically.
 
 ### The customer rotates credentials
 

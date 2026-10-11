@@ -17,6 +17,9 @@ description: "Reuse SMTP connections without giving up the API or framework that
       message/recipient sending rates, deadlines, cancellation, observer dispatch, and shutdown, see <a href="/sending-and-execution.html">Sending and execution</a>.
       Those settings do not configure standalone BatchTransportExecutor operations or another framework's sends.
     </p>
+    <p class="wide">Pooling manages ordinary capacity and load balancing. <a href="/smtp-connection-failover.html">Connection failover</a> handles
+      eligible failures and recovery through configured Mailer relationships. A full but healthy pool keeps waiting normally; it doesn't spill work
+      elsewhere. In either case, the selected member owns ordinary Email templates and SMTP settings, while the first registration still owns shared pool settings.</p>
     <p class="wide">
       Every option starts in your application. Follow a solid green path for the programming model you want to keep; dashed links reveal which modules
       provide the physical pool underneath. Path 01 reuses one scoped connection without a pool. Paths 02 through 06 converge on the same
@@ -273,8 +276,8 @@ description: "Reuse SMTP connections without giving up the API or framework that
       <div class="pooling-option-meta"><span class="pooling-owner">Owner: Simple Java Mail</span><span>Sequential</span><span>No clustering</span></div>
       <p>
         Use this when reconnecting is the only overhead and the work is naturally sequential. <code>sendMailsInSimpleBatch(...)</code> sends a known
-        collection over one connection; <code>withOpenConnection(...)</code> keeps one connection open while the caller drives the callback. Neither API
-        creates a shared lease or pool to shut down.
+        collection over one connection; <code>withOpenConnection(...)</code> keeps one connection open while the caller drives the callback.
+        Without configured failover, both use a dedicated connection outside the pool and close it when the operation finishes.
       </p>
       <div class="pooling-benefit">
         <strong>This gives you</strong>
@@ -300,6 +303,12 @@ description: "Reuse SMTP connections without giving up the API or framework that
       <p>
         For a lazy iterable of messages, <code>mailer.sync().sendMailsInSimpleBatch(emails)</code> is the shorter equivalent; it does not collect receipts. Move to a pool only when
         independent work must run concurrently or several SMTP Sessions must form a cluster.
+      </p>
+      <p>
+        <strong>With failover configured:</strong> these same operations follow the
+        <a href="/smtp-connection-failover.html#section-batches">selected failover route</a>. With the batch module present, they retain a lease from the
+        selected pool, occupying capacity until they release it; a healthy release need not close the socket. Without that module, they retain a direct
+        connection. The callback stays on its selected connection, while a simple batch can switch between untouched emails.
       </p>
     </div>
   </section>

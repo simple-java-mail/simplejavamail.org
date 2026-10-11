@@ -51,6 +51,8 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
       <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
       <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
+      <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
+      <li><a href="#async-preparation">Account for validation running during async execution</a></li>
       <li><a href="#async-shutdown">Allow shutdown to wait for sends already in progress</a></li>
       <li><a href="#mail-send-execution-control">Update stored async results to MailSend</a></li>
       <li><a href="#submission-results">Check exception reporting and SMTP acceptance checks</a></li>
@@ -59,6 +61,24 @@ breadcrumbParent: "/migration-notes.html"
     </ul>
   </section>
 
+  <a href="#selected-mailer-templates" id="selected-mailer-templates" class="section-link h2">&sect;</a>
+  <h2>Check templates when using several Mailers in a cluster</h2>
+  <section><div class="wide">
+    <p>When a clustered send selects B's SMTP connection, it now uses B's Email defaults, overrides and validation settings too.
+      Releases since 8.0.0 instead applied the Mailer you called, A, even if B actually sent the email. This could put A's relay-specific header,
+      sender or BCC recipients on mail submitted through B.</p>
+    <p>Review every registered member's templates. Put common requirements on each member and relay-specific values on the member that needs them.
+      B is prepared from the original Email, not from an intermediate copy containing A's ordinary template. The correction also applies without
+      a failover relationship. See the <a href="/smtp-connection-failover.html#section-ownership">ownership matrix</a>.</p>
+  </div></section>
+  <h2 id="async-preparation">Account for validation running during async execution</h2>
+  <section><div class="wide">
+    <p>Asynchronous sends now apply the selected destination's templates and validate the Email when the executor runs the operation, not before
+      queue admission on the caller. Observe the returned completion to handle these operational failures. Immediate argument errors, such as a
+      null Email, still throw directly. Your executor may use caller-runs behavior, so this does not guarantee a different physical thread.</p>
+    <p>If application code depended on caller-thread validation side effects or their ordering before admission, move that work explicitly or update
+      it for executor execution. Synchronous sends still perform the work on the caller.</p>
+  </div></section>
   <a href="#java-11" id="java-11" class="section-link h2">&sect;</a>
   <h2>Run on Java 11 or newer</h2>
 
@@ -978,8 +998,9 @@ MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
 // Background work:
 MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
 CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion();</code></pre>
-    <p class="wide">Synchronous calls throw preparation, connection and send failures directly. Asynchronous calls still prepare and validate the email
-      on the calling thread and may wait for executor capacity before returning. Preparation, sending and scheduling failures are reported through
+    <p class="wide">Synchronous calls throw preparation, connection and send failures directly. Asynchronous calls prepare and validate the email
+      when the executor runs the operation. Admission may still wait for executor capacity on the calling thread before returning.
+      Preparation, sending and scheduling failures are reported through
       <code>getCompletion()</code>; null arguments still throw immediately.
       SMTP failures use the exception described in <a href="#submission-results">send failures and receipts</a>.</p>
     <p class="wide">Simple batches still consume their iterable lazily, send sequentially over one shared connection and stop on the first failure.

@@ -25,6 +25,11 @@
         { "id": "three-replicas-share-one-account", "title": "Three replicas share one account", "target": "Count the fleet, not one JVM" },
         { "id": "customers-bring-their-own-servers", "title": "Customers bring their own servers", "target": "A failed customer stays isolated" },
         { "id": "one-hostname-or-two-relays", "title": "One hostname or two relays", "target": "Pool only interchangeable routes" },
+        { "id": "the-primary-relay-is-unavailable", "title": "The primary relay is unavailable", "target": "Fail over before submission, then recover" },
+        { "id": "only-the-failover-relay-should-copy-operations", "title": "Only the failover relay should copy operations", "target": "Apply only the selected destination's template" },
+        { "id": "an-approved-route-must-keep-its-archive-copy", "title": "An approved route must keep its archive copy", "target": "Preserve mandatory message requirements" },
+        { "id": "the-primary-certificate-expires", "title": "The primary certificate expires", "target": "Switch destinations without weakening TLS" },
+        { "id": "the-primary-recovers-during-a-large-batch", "title": "The primary recovers during a large batch", "target": "Move only untouched emails back" },
         { "id": "the-customer-rotates-credentials", "title": "The customer rotates credentials", "target": "Verify replacements before resuming" }
       ]
     },

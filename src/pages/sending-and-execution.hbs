@@ -46,8 +46,11 @@ description: "Choose send execution, sending rates, queue limits, deadlines, can
     <p><code>getCompletion()</code> returns a detached CompletableFuture for the actual result. Each call creates a fresh view.
       Completing, cancelling, or applying <code>orTimeout(...)</code> to that view cannot change the send.
       Use <code>requestCancellation()</code> when you intend to stop the underlying work.</p>
-    <p>Ordinary email preparation and validation stay on the caller thread, even for async sends. Their failures go onto the returned completion;
-      a null email remains an immediate argument error. Simple batches retain lazy iteration on their execution thread.</p>
+    <p>Async sends select their destination, apply its Email templates and validate during executor execution. Those failures go onto the returned
+      completion; a null email remains an immediate argument error. Direct or caller-runs executors may execute on the caller itself.
+      Simple batches retain lazy iteration on their execution thread.</p>
+    <p>To use another permitted server after a connection failure, configure <a href="/smtp-connection-failover.html">SMTP connection failover</a>.
+      It shares this operation's queue, deadline, cancellation and observer. Busy pools and sending-limit waits do not trigger it.</p>
   </div>
   <div class="side"><pre><code class="language-java">MailSend&lt;MailSubmissionReceipt&gt; send =
     mailer.async().sendMail(email);
@@ -129,8 +132,8 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
       <h4>Know what the bound counts</h4>
       <p>
         Worker count, waiting queue capacity, and connection-pool size are independent. A worker waiting for a pool lease still counts as active.
-        Queued tasks are FIFO; concurrent execution and completion need not be. Email preparation remains on the caller before queue admission,
-        so the bound does not limit memory used by simultaneous callers preparing emails.
+        Queued tasks are FIFO; concurrent execution and completion need not be. Destination-specific Email preparation runs during execution,
+        so it uses a worker slot too. The bound does not limit memory your application already used to construct the Email or its attachments.
       </p>
       <p>
         An asynchronous simple batch takes one slot and opens its iterable only when execution starts. Rejected batches do not touch the iterator or
@@ -383,6 +386,9 @@ batch.getCompletion().join(); // optional: wait for the whole sequential batch
 			<code class="inline language-java">withOpenConnection(...)</code>. Simple Java Mail owns and closes the SMTP connection for the callback, while the
 			callback decides what to send next. This is useful for database-backed queues where a message should be marked as sent before the next one is read.
 		</p>
+		<p>Use the sender only on the thread running this callback, before the callback returns or throws. Don't pass it to another thread or save it
+			for later: those calls are rejected before preparing or sending an email. Use <code>mailer.async().sendMail(...)</code> for independent
+			asynchronous sends.</p>
 		<p>
 			This form uses the Mailer's built-in SMTP connection. It cannot be combined with a
 			<a href="features.html#section-custom-mailer">CustomMailer</a>, which owns its own connection lifecycle. Use
@@ -647,12 +653,12 @@ Mailer mailer = mail.mailerBuilder()
     .buildMailer();</code></pre>
       <p>
         <code class="inline language-java">requestedAt</code> records when the individual attempt begins,
-        <code class="inline language-java">readyAt</code> when preparation finishes,
-        <code class="inline language-java">startedAt</code> when execution begins, and
+        <code class="inline language-java">readyAt</code> when it is ready for execution admission,
+        <code class="inline language-java">startedAt</code> when execution begins, before destination-specific preparation, and
         <code class="inline language-java">completedAt</code> when the terminal result exists. These wall-clock values are useful for correlation.
         For elapsed time, use <a href="/analyzing-send-results.html#section-send-timings"><code>outcome.getDiagnostics()</code></a>, collected automatically
         with the observer. Its monotonic scheduling measurement includes admission and worker waiting, not just time in a queue.
-        A preparation failure has neither ready nor started time. A scheduling failure has a ready time but no started time.
+        A preparation failure reached during execution has ready and started times. A scheduling failure has a ready time but no started time.
       </p>
       <p>
         With the default registration, synchronous callbacks run before the call returns and async callbacks before the completion resolves.

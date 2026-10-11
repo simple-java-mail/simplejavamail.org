@@ -1,0 +1,255 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/smtp-connection-failover.html"
+tags:
+  - "publicPage"
+title: "SMTP connection failover"
+section: "Build and configure"
+description: "Use another configured Mailer when an SMTP connection fails, without replaying a message that might already have been accepted."
+---
+  <section>
+    <div class="wide">
+      <p>Your application normally sends through A. If A cannot provide a usable connection, another configured Mailer, B, can take over.
+        When A recovers, new work returns to A. You keep calling the same Mailer.</p>
+      <p>This is connection failover, not message retry. Once the provider starts submitting an email, Simple Java Mail does not send it again
+        through another destination. A missing final SMTP reply could mean the first server already accepted it.</p>
+      <p>Failover also isn't load balancing. A healthy but busy pool waits normally; it doesn't spill work to B. Use
+        <a href="/smtp-connection-pooling.html">pool and cluster configuration</a> to distribute ordinary load.</p>
+    </div>
+  </section>
+  <section class="toc"><ul>
+    <li><a href="#section-configure">Configure the relationship</a></li>
+    <li><a href="#section-ownership">Which Mailer owns what?</a></li>
+    <li><a href="#section-policy">Choose failure modes and recovery timing</a></li>
+    <li><a href="#section-named">Configure named destinations and locks</a></li>
+    <li><a href="#section-batches">Recover during a large batch</a></li>
+    <li><a href="#section-observation">See what happened</a></li>
+    <li><a href="#section-retry">Schedule message retries in your application</a></li>
+  </ul></section>
+
+  <a href="#section-configure" id="section-configure" class="section-link h2">&sect;</a>
+  <h2>Configure the relationship</h2>
+  <section>
+    <div class="wide full-width-example">
+<pre><code class="language-java small">FailoverPolicy policy = FailoverPolicy.builder()
+    .withPrimaryRecheckInterval(Duration.ofSeconds(30))
+    .build();
+
+try (Mailer alternative = mail.mailerBuilder()
+         .withSMTPServer("secondary.example.org", 587)
+         .withTransportStrategy(TransportStrategy.SMTP_TLS)
+         .buildMailer();
+     Mailer primary = mail.mailerBuilder()
+         .withSMTPServer("primary.example.org", 587)
+         .withTransportStrategy(TransportStrategy.SMTP_TLS)
+         .withFailoverMailer(alternative, policy)
+         .buildMailer()) {
+    primary.async().sendMail(email).getCompletion().join();
+}</code></pre>
+    </div>
+    <div class="wide">
+      <p>The same relationship works with <code>primary.sync().sendMail(email)</code>, with or without the batch module.
+        Pooling reuses connections; it is not required to enable failover. Add each server's credentials and other settings to its own builder.</p>
+      <p><code>withFailoverMailer(mailer, policy)</code> replaces the destination and policy together.
+        <code>clearFailoverMailer()</code> removes both, unless centrally supplied configuration locks prevent that change.</p>
+      <p>You can give B its own relationship to C. One operation follows that route with one deadline, cancellation control, completion and observer.
+        It never recursively calls B's public send method or moves the job into B's executor.</p>
+      <p>Supplied Mailers are borrowed: closing A does not close B. Close them yourself after their work has drained, as the example does.
+        Mailers privately built from named properties are owned and closed by their parent. A participant cannot close itself from a send callback
+        that is still using it. A foreign implementation of the <code>Mailer</code> interface cannot be composed this way; an SJM-created Mailer
+        using another Jakarta Mail provider can, where the provider exposes enough evidence to identify connection failures.</p>
+    </div>
+  </section>
+
+  <a href="#section-ownership" id="section-ownership" class="section-link h2">&sect;</a>
+  <h2>Which Mailer owns what?</h2>
+  <section><div class="wide">
+    <p>Suppose you call A and the selected connection belongs to B. B's settings matter for more than its hostname.</p>
+    <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable failover ownership matrix"><table>
+      <thead><tr><th>Concern</th><th>Owner</th></tr></thead><tbody>
+        <tr><td>Executor, admission, observer, result, cancellation and overall deadline</td><td>A, the initiating Mailer</td></tr>
+        <tr><td>Ordinary Email defaults/overrides, validation and message protection</td><td>B, the actual selected Mailer</td></tr>
+        <tr><td>Credentials, TLS, proxy, Session, provider, size and content settings</td><td>B</td></tr>
+        <tr><td>Sending allowance</td><td>The selected SMTP configuration; switching destinations doesn't reset its history</td></tr>
+        <tr><td>Shared cluster pool settings</td><td>The existing first-registration owner</td></tr>
+        <tr><td>Mandatory message locks</td><td>A, traversed failover Mailers, and the selected cluster member together</td></tr>
+        <tr><td>Connection-setting locks</td><td>The actual approved destination</td></tr>
+      </tbody></table></div>
+    <p>Each candidate starts from your original Email. If A normally adds <code>X-Relay: primary</code> and B adds
+      <code>X-Relay: secondary</code>, B gets only its own ordinary template. A's ordinary BCC recipients do not travel with it either.
+      This selected-member rule also applies to cluster load balancing without failover.</p>
+    <p>B can have a maintainer BCC of its own, so staff get a copy only when B sends. That is an actual recipient: consider confidentiality,
+      recipient limits and cost. A mandatory archive BCC supplied through <code>simplejavamail.locked.defaults.bcc.address</code> still applies,
+      in addition to B's ordinary BCC. Conflicting mandatory message settings stop the operation.</p>
+    <p>Defaults, overrides and per-property suppression keep their normal precedence within the selected Mailer. Exact emails still bypass ordinary
+      templates, and their authoritative bytes are not rewritten. If mandatory message settings cannot be honored without altering protected or exact
+      content, the operation fails. See <a href="/configuration.html">configuration</a> and <a href="/features.html#section-exact-eml">exact EML submission</a>.</p>
+    <p>A <code>CustomMailer</code> remains an opaque callback and is never invoked again automatically. Logging-only sends don't try SMTP connections.
+      Do not configure either as a delivery fallback and assume it proves SMTP acceptance.</p>
+  </div></section>
+
+  <a href="#section-policy" id="section-policy" class="section-link h2">&sect;</a>
+  <h2>Choose failure modes and recovery timing</h2>
+  <section><div class="wide">
+    <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable failover policy reference"><table>
+      <thead><tr><th>Builder method</th><th>Default</th><th>What it changes</th></tr></thead><tbody>
+        <tr><td><code>withPrimaryConnectionAttempts(n)</code></td><td>1</td><td>Total setup attempts per candidate during this visit, including the first</td></tr>
+        <tr><td><code>withPrimaryConnectionRetryDelay(duration)</code></td><td>Zero</td><td>Wait between additional attempts you explicitly enable</td></tr>
+        <tr><td><code>withPrimaryRecheckInterval(duration)</code></td><td>30 seconds</td><td>When a previously failed destination becomes eligible for another check</td></tr>
+        <tr><td><code>withPrimaryRecheckBackoff(multiplier, maximum)</code></td><td>Disabled</td><td>Increase that interval once per failed recheck, up to the supplied maximum</td></tr>
+        <tr><td><code>withFailoverOnAuthenticationFailure(true)</code></td><td>false</td><td>Allow another destination after credentials are rejected</td></tr>
+        <tr><td><code>withFailoverOnCertificateVerificationFailure(true)</code></td><td>false</td><td>Allow another destination after certificate or server-identity checks fail</td></tr>
+      </tbody></table></div>
+    <p>Every policy setting has a matching reset method. Read the resolved policy through
+      <code>mailer.getOperationalConfig().getFailoverPolicy()</code>; it is absent when no relationship is configured.</p>
+    <p>Extra connection attempts don't skip recovery steps. With three attempts and a 30-second initial interval, the first recheck
+      is still due 30 seconds after the last failed attempt. A failed recheck increases the next interval once, even if it tried connecting three times.</p>
+    <p>For example, an expired certificate on A need not stop mail if your deployment permits another independently trusted relay.
+      Enable certificate-failure failover explicitly. A still fails verification, and B must pass its own checks. This setting does not trust
+      expired certificates, turn off hostname verification or downgrade mandatory TLS. Authentication failure is a separate decision.</p>
+    <p>By default, eligible failures include DNS lookup failure, connection refusal, unreachable endpoints, setup timeouts/disconnects and
+      temporary service-unavailable setup replies. Invalid local configuration, message validation, lock conflicts and unmet required capabilities
+      stop the send. So do unknown setup failures, ordinary pool-capacity timeouts, cancellation, shutdown and the overall deadline.</p>
+    <p>With the default one-attempt policy, A fails and B is considered immediately. Working B continues under its own sending limits while A waits
+      for reconsideration. When A is due, one operation tries it; other eligible operations can continue through B. A successful setup restores its
+      preference. Background pool replenishment does not keep opening new connections to A during that interval, and no health-probe executor is added.</p>
+    <p>Recheck observations are local to the factory and configured destination identity, not shared by hostname or across processes. Repeated construction
+      from one named definition shares the relevant history and allowance. Separate factories remain independent. A permissive caller's policy never
+      grants a stricter caller permission to skip authentication or certificate failure.</p>
+    <p>In a cluster, the selection strategy still chooses the first member. Eligible connection failures can exhaust the captured group before following
+      the configured failover relationship. A busy but healthy member retains its normal waiting behavior. Neither new registrations nor retiring ones
+      make this send's candidate traversal unbounded.</p>
+  </div></section>
+
+  <a href="#section-named" id="section-named" class="section-link h2">&sect;</a>
+  <h2>Configure named destinations and locks</h2>
+  <section><div class="wide full-width-example">
+<pre><code class="language-properties small">simplejavamail.smtp.host=primary.example.org
+simplejavamail.smtp.port=587
+simplejavamail.transportstrategy=SMTP_TLS
+
+simplejavamail.failover.mailer=secondary
+simplejavamail.failover.primary.connectionattempts=1
+simplejavamail.failover.primary.retrydelay=PT0S
+simplejavamail.failover.primary.recheckinterval=PT30S
+simplejavamail.failover.primary.backoffmultiplier=1
+simplejavamail.failover.primary.maximumrecheckinterval=PT30S
+simplejavamail.failover.onauthenticationfailure=false
+simplejavamail.failover.oncertificateverificationfailure=false
+
+simplejavamail.mailers.secondary.smtp.host=secondary.example.org
+simplejavamail.mailers.secondary.smtp.port=587
+simplejavamail.mailers.secondary.transportstrategy=SMTP_TLS
+simplejavamail.mailers.secondary.defaults.bcc.address=mail-operations@example.org</code></pre>
+  </div><div class="wide">
+    <p>Named definitions use the existing property tails and resolve independently. Secondary does not inherit primary's ordinary settings or credentials.
+      For a further relationship, set <code>simplejavamail.mailers.secondary.failover.mailer=third</code> and define
+      <code>simplejavamail.mailers.third.*</code>. Missing references, cycles and known conflicting locks are rejected before private resources are built.</p>
+    <p>A multiplier of one means fixed reconsideration intervals. A larger multiplier requires an explicit maximum. Policy properties without
+      <code>failover.mailer</code> are incomplete configuration and are rejected.</p>
+    <p>The same names work through the <a href="/spring.html">Spring Environment integration</a>, including nested YAML. A central configuration owner
+      can lock the route and a destination's TLS settings:</p>
+  </div><div class="wide full-width-example">
+<pre><code class="language-properties small">simplejavamail.locked.failover.mailer=secondary
+simplejavamail.locked.mailers.secondary.transportstrategy=SMTP_TLS
+simplejavamail.locked.defaults.bcc.address=archive@example.org</code></pre>
+  </div><div class="wide">
+    <p>A locked relationship protects the captured permitted definition and its nested relationships, not just the text “secondary”. Java code cannot
+      substitute a different Mailer with that label. Policy fields can be locked separately. A's locked SMTP host stays A's host; choosing approved B
+      does not edit A's connection configuration. Locks prevent accidental changes within this factory, not deliberate use of an unrelated factory.</p>
+    <p>The CLI uses generated named-selection options. Put the named definitions in your loaded properties and select a route with
+      <code>--mailer:withFailoverMailerName secondary</code>, optionally adding
+      <code>--mailer:withFailoverPrimaryRecheckInterval PT30S</code>. The command still waits for its send to finish.
+      See <a href="/cli.html">CLI configuration</a>; Java callers use the paired Mailer/policy API, not these internal text-based methods.</p>
+  </div></section>
+
+  <a href="#section-batches" id="section-batches" class="section-link h2">&sect;</a>
+  <h2>Recover during a large batch</h2>
+  <section><div class="wide">
+    <p>A lazy batch need not finish thousands of emails on B after A has recovered. It can reconsider A between emails:</p>
+<pre><code class="language-text small">Email 1: A cannot connect; B connects and submits it.
+Emails 2–40: B keeps its connection and sends under B's rate rules.
+Before email 41: A is due for a recheck and connects successfully.
+Emails 41 onward: A sends under A's rate rules.</code></pre>
+    <p>The current email and its required observer handoff finish before switching. The iterator is opened once and is never restarted. Only untouched
+      emails move to A; none is cancelled and resubmitted mid-send. If A's recheck fails, the current eligible B connection can remain in use.</p>
+    <p>The first message failure still stops the batch. A successful connection doesn't allow automatic recovery from a submission failure.
+      A scoped <code>withOpenConnection</code> callback behaves differently: initial acquisition may fail over, then that callback stays pinned to its
+      selected connection and is invoked exactly once. Shared setup and final teardown are not charged repeatedly to each email's diagnostic timings.</p>
+    <p>Its sender belongs to that callback's thread and cannot be used after the callback ends. Don't hand it to another thread; use
+      <code>mailer.async().sendMail(...)</code> for independent asynchronous sends.</p>
+    <p>With failover configured and the batch module present, both scopes retain a lease from the selected pool. It occupies pool capacity during
+      the batch or callback, including application work between sends, and is released or invalidated when the scope ends. A healthy release need not
+      close the socket. Without the batch module, the scope owns and closes a direct connection. Without configured failover, these APIs keep their
+      dedicated, non-pooled behavior even when the batch module is present.</p>
+    <p>Don't wait inside a callback or inline batch observer for another send that needs the same exhausted pool. For example, a size-one pool cannot
+      lend a second connection while this scope retains its only lease. Use the callback's sender, or submit that independent work after the scope ends.</p>
+    <p>Retained connections can sit idle during per-email sending-limit waits. Configure server idle timeouts accordingly; failover does not silently
+      reconnect a pinned callback or bypass rate limits. See the <a href="/email-workload-field-guide.html">email workload field guide</a> for choosing the sending shape.</p>
+  </div></section>
+
+  <a href="#section-observation" id="section-observation" class="section-link h2">&sect;</a>
+  <h2>See what happened</h2>
+  <section><div class="wide">
+    <p>New connection incidents are logged at ERROR, meaningful failover/recovery at INFO, and repeated failed rechecks at DEBUG.
+      Factory-local suppression keeps each send from reporting the same outage as a new incident. A successful failover still produces a successful
+      send outcome, not a separate application failure callback.</p>
+    <p>With a <code>MailSendObserver</code>, an individual send also records its connection route:</p>
+  </div><div class="wide full-width-example">
+<pre><code class="language-java small">.withMailSendObserver(outcome -> outcome.getDiagnostics().ifPresent(report -> {
+    report.getConnectionHistory().forEach(step -> {
+        System.out.printf("attempted=%s acquired=%s elapsed=%s detail=%s%n",
+            step.isConnectionAttempted(), step.isConnectionAcquired(),
+            step.getElapsed(), step.getExplanation());
+    });
+    System.out.println("omitted steps=" + report.getOmittedConnectionSteps());
+}))</code></pre>
+<pre><code class="language-text small">attempted=true  acquired=false elapsed=Optional[PT0.02S] detail=Optional[Connection unavailable]
+attempted=true  acquired=true  elapsed=Optional[PT0.08S] detail=Optional.empty
+omitted steps=0</code></pre>
+  </div><div class="wide">
+    <p>A later send might instead show <code>attempted=false</code> for A: it was skipped because of an earlier failure, not contacted again.
+      History retains the first 63 steps and the latest step; the omitted count describes anything in between. This reporting bound never limits routing.
+      Optional configured-name and logical host/port getters let your application add endpoint labels deliberately. Automatic rendering excludes them.</p>
+    <p>Async scheduling includes admission and executor waiting. Preparation starts during execution, after selection, and accumulates governance and
+      validation across candidates. Total elapsed time includes orchestration and retry delays, so the measurements need not sum to the total.
+      <a href="/analyzing-send-results.html#section-send-timings">Send diagnostics</a> explain the other boundaries.</p>
+    <p>For a separate diagnostic check, probe A or B explicitly with <code>mailer.sync().probeConnection(true)</code>. Probing answers whether that
+      configured server can connect now; it does not follow the send failover chain or spend sending allowance.</p>
+  </div></section>
+
+  <a href="#section-retry" id="section-retry" class="section-link h2">&sect;</a>
+  <h2>Schedule message retries in your application</h2>
+  <section><div class="wide">
+    <p>Connection failover and a later message retry solve different problems. Use your job system to decide when to try again, keep a bounded attempt
+      count and backoff, and correlate the outcome to the original job. An observer receives an outcome, not the original Email or a durable job.</p>
+    <p>This sketch hands work to an application queue. <code>jobs</code> and <code>retryQueue</code> are application services, not library APIs:</p>
+  </div><div class="wide full-width-example">
+<pre><code class="language-java small">.withMailSendObserver(outcome -> {
+    if (outcome.isSuccessful()) {
+        return;
+    }
+    outcome.getSubmissionReceipt().ifPresent(receipt -> {
+        switch (receipt.getRetryDisposition()) {
+            case SAFE_TO_RETRY_ALL:
+            case SAFE_TO_RETRY_UNACCEPTED:
+                retryQueue.scheduleAfterBackoff(
+                    jobs.findByMessageId(outcome.getEffectiveMessageId()),
+                    receipt.getRetryableRecipients());
+                break;
+            default:
+                // Unknown acceptance, permanent rejection or another policy decision:
+                // don't automatically submit the original message again.
+                break;
+        }
+    });
+})</code></pre>
+  </div><div class="wide">
+    <p>Build any later submission for only the recipients the job policy permits. Never blindly replay a partially accepted message, and stop automatic
+      retries when acceptance is uncertain. Also check locks and template-added recipients: a mandatory archive BCC can receive another copy even when
+      the application's recipient subset excludes already accepted addresses. Read the <a href="/analyzing-send-results.html#section-retry-decisions">receipt guidance</a>.</p>
+    <p>No receipt is not itself permission to retry. Local validation/configuration errors need fixing; exhausted connection routes may warrant delayed
+      rescheduling after the underlying cause has been assessed. An accepted receipt followed by cleanup failure must not become a duplicate send.</p>
+    <p>Keep inline observer work short: enqueue the decision and return. Alternatively use the existing observer executor option. Do not sleep or resend
+      synchronously inside the callback. Simple Java Mail supplies neither a durable retry queue nor an automatic message-retry policy here.</p>
+  </div></section>

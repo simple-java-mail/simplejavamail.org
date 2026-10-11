@@ -54,8 +54,8 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       </p>
       <p>
         Catching only <code>MailSubmissionException</code> is deliberate here. Preparation and validation failures, for example, do not produce a
-        submission receipt and still propagate to the caller. A receipt is not a promise that an SMTP command was reached: a connection failure can
-        also leave a receipt with no server response or known acceptance.
+        submission receipt and still propagate to the caller. Connection acquisition and exhausted failover routes also fail without a receipt.
+        A provider-internal preflight failure can have a receipt without a server response; receipt presence alone does not prove an SMTP command was reached.
       </p>
       <p>
         The snippets below reuse a configured <code>mailer</code> and an <code>email</code>, and omit imports. <code>printReceipt</code> is a small
@@ -608,6 +608,9 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
     outcome.getSubmissionReceipt().ifPresent(this::recordSubmissionResult);
     outcome.getFailure().ifPresent(this::recordFailure);
 });</code></pre>
+      <p><a href="/smtp-connection-failover.html#section-observation">Connection history examples</a> show a failed primary followed by an acquired
+        failover connection. The same walkthrough includes an <a href="/smtp-connection-failover.html#section-retry">observer-based retry recipe</a>.
+        Automatic failover stops at provider invocation; it never replays a partially accepted or uncertain submission.</p>
       <p><strong>Illustrative output:</strong> most of this attempt was spent getting a usable connection. The report uses Java's
         <code>Duration</code> notation: <code>PT0.9S</code> means 900 milliseconds.</p>
 <pre><code class="language-text small" id="output-send-timings">Mail send timings:
@@ -624,13 +627,14 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
       <table>
         <thead><tr><th>Getter</th><th>What it measures</th></tr></thead>
         <tbody>
-          <tr><td><code>getPreparation()</code></td><td>Email defaults/overrides and validation. MIME conversion comes later.</td></tr>
+          <tr><td><code>getPreparation()</code></td><td>Selected-Mailer Email defaults/overrides and validation, accumulated across considered destinations. MIME conversion comes later.</td></tr>
           <tr><td><code>getScheduling()</code></td><td>Async admission and worker waiting, not just time sitting in the queue.</td></tr>
           <tr><td><code>getRateLimitWait()</code></td><td>Waiting for configured message or recipient allowance, separately from executor scheduling and connection acquisition.</td></tr>
           <tr><td><code>getConnectionAcquisition()</code></td><td>Getting a usable transport, including proxy startup, pool waiting and any connection setup or validation.</td></tr>
           <tr><td><code>getMimePreparation()</code></td><td>MIME conversion and protection using the selected Session.</td></tr>
           <tr><td><code>getSubmission()</code></td><td>The provider or custom-mailer call, including preflight, deferred reads, serialization, writes and replies. Not just network time.</td></tr>
           <tr><td><code>getCleanup()</code></td><td>Ordinary connection release, disposal or close, and associated proxy teardown. A healthy pool release need not close the socket.</td></tr>
+          <tr><td><code>getConnectionHistory()</code></td><td>Bounded connection attempts and cached skips for this email; shared batch/open-connection setup is not repeated.</td></tr>
         </tbody>
       </table>
       <p>If you configured <a href="sending-and-execution.html#section-sending-limits">sending limits</a>, a slow send may simply be waiting its turn.

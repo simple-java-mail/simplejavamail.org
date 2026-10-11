@@ -8,6 +8,8 @@ The examples target the current development API. Use `org.simplejavamail:simple-
 
 The application constructs each `Email` and supplies an `Iterable<Email>` for a batch. The iterable may load messages lazily. A batch stops at its first failure; a completion observer and your job store must preserve attempted-message results if you need restartable progress.
 
+`failoverMailer` borrows an independently configured alternative. The application closes both Mailers after their work has drained. Failover handles eligible connection failures only; it does not spill saturated pools or replay a message after provider invocation. The selected Mailer owns ordinary templates and SMTP settings, while the initiating Mailer owns the operation and observer. Mandatory message locks accumulate along the route.
+
 `recipientsSafeToRetry` selects candidates; it neither submits nor schedules retries. An empty list can mean accepted mail, permanent rejection or insufficient/ambiguous evidence. Persist and inspect the full receipt before deciding what to do. The application rebuilds any retry envelope without confirmed recipients and chooses timing and attempt limits.
 
 `verifyReplacement` performs an authenticated connection probe and refuses an unsuccessful or unauthenticated report. It sends no email and does not replace a controlled test message. `preparedBytes` prepares the complete encoded message offline; it neither probes a relay nor promises delivery. `advertisesSmtpUtf8` preserves the distinction between unknown capabilities and an inspected set without SMTPUTF8.
