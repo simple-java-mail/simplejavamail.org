@@ -244,6 +244,11 @@ mail.mailerBuilder(session)
 mail.mailerBuilder(session)
         .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password");
 </code></pre>
+      <p>Use one Mailer per Session. Another Mailer cannot use that Session, or a second Session sharing its
+        <code class="inline language-java">Properties</code>, until the first Mailer has shut down successfully. Reuse the existing Mailer for
+        concurrent sending, or create independent Sessions with independent Properties copied from your original SMTP settings.
+        Use <code class="inline language-java">Session.getInstance(...)</code> rather than
+        <code class="inline language-java">Session.getDefaultInstance(...)</code> when you need separate Sessions.</p>
     </div>
   </section>
 

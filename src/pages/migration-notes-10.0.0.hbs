@@ -681,8 +681,47 @@ Mailer mailer = mail.mailerBuilder()
   <h2>If you create Jakarta Mail Sessions yourself</h2>
 
   <section>
+    <h3>Use one Mailer per Session</h3>
+    <p class="wide">
+      Earlier releases allowed two Mailers to use the same Jakarta Mail Session. Building the second could silently replace the first Mailer's
+      email defaults, overrides, and connection configuration. In 10.0.0, the second build throws an exception before changing that configuration.
+      This also applies to two different Sessions using the same <code class="inline language-java">Properties</code> object, and to a Session
+      obtained from another Mailer's <code class="inline language-java">getSession()</code>.
+    </p>
+    <p class="wide">
+      Reuse one Mailer when both callers should use the same configuration. It already supports concurrent sending:
+    </p>
+    <pre class="full-width-example"><code class="language-java">try (Mailer mailer = mail.mailerBuilder(session).buildMailer()) {
+    mailer.sync().sendMail(firstEmail);
+    mailer.async().sendMail(secondEmail).getCompletion().join();
+}</code></pre>
+    <p class="wide">
+      If the callers need different Mailer configurations, create separate Sessions with separate Properties. Copy your original SMTP settings,
+      not the properties of a Session already configured by a Mailer:
+    </p>
+    <pre class="full-width-example"><code class="language-java">Properties firstProperties = new Properties();
+firstProperties.putAll(smtpProperties);
+Properties secondProperties = new Properties();
+secondProperties.putAll(smtpProperties);
+
+Session firstSession = Session.getInstance(firstProperties);
+Session secondSession = Session.getInstance(secondProperties);
+
+try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
+     Mailer second = mail.mailerBuilder(secondSession).buildMailer()) {
+    first.sync().sendMail(firstEmail);
+    second.sync().sendMail(secondEmail);
+}</code></pre>
+    <p class="wide">
+      Use <code class="inline language-java">Session.getInstance(...)</code> rather than
+      <code class="inline language-java">Session.getDefaultInstance(...)</code> when creating independent Sessions; the latter can return an
+      existing Session. You can reuse a Session after its previous Mailer has shut down successfully. Wait for
+      <code class="inline language-java">close()</code> or the shutdown future to complete; starting shutdown does not release ownership.
+      If cleanup fails, create a fresh Session instead.
+    </p>
+    <h3>If you call the internal Session factory directly</h3>
     <p class="wide" style="font-size:smaller">
-      <strong>You can skip this section</strong> unless your code calls
+      <strong>You can skip this part</strong> unless your code calls
       <code class="inline language-java">MailerImpl.createMailSession(serverConfig, strategy)</code> directly. The method still exists, but it no longer
       picks up settings previously loaded through the static ConfigLoader.
     </p>
