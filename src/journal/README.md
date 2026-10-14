@@ -166,7 +166,7 @@ A series occupies the chronological position of Part 1 and remains together. Use
 For alphabetical file sorting, give the parts consecutive filename dates while keeping their shared publication date in front matter. For example, all three of these entries have `date: "2026-09-01"`:
 
 ```text
-2026-09-01-twenty-years-of-simple-java-mail.md
+2026-09-01-still-the-same-ticket.md
 2026-09-02-the-libraries-behind-simple-java-mail.md
 2026-09-03-the-library-i-keep-coming-back-to.md
 ```

@@ -78,7 +78,7 @@ Every return begins with reading code I used to know. Names are familiar, decisi
 
 Over time I got better at leaving more than vague memories behind. Tests remind me what the code is supposed to do, migration guides explain what changed for users and issues record why I added a feature. S/MIME, Outlook support, batch processing and Spring integration live in separate Maven modules. The build still enforces which can depend on which, even when I no longer remember why a shortcut was rejected.
 
-I describe how that structure developed in [Still the Same Ticket](/journal/twenty-years-of-simple-java-mail.html). The architecture acts as memory with a compiler attached.
+I describe how that structure developed in [Still the Same Ticket](/journal/still-the-same-ticket.html). The architecture acts as memory with a compiler attached.
 
 That does not make returning effortless. Builds rot, dependencies move and assumptions age. But a project that explains and tests its own structure gives a returning maintainer somewhere to stand. I'm pretty meticulous about the engineering. I want the codebase to be readable and maintainable for anyone looking at it, including future me. It's matter of personal integrity, but pride as well. A public project like this also exposes you to some extend.
 
