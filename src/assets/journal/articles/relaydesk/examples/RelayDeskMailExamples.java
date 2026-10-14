@@ -8,7 +8,7 @@ import org.simplejavamail.api.mailer.MailRehearsal;
 import org.simplejavamail.api.mailer.MailRecipientResult;
 import org.simplejavamail.api.mailer.MailRetryDisposition;
 import org.simplejavamail.api.mailer.MailSend;
-import org.simplejavamail.api.mailer.MailSendObserver;
+import org.simplejavamail.api.mailer.MailSendResultObserver;
 import org.simplejavamail.api.mailer.MailSendOutcome;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.MailSubmissionReceipt;
@@ -33,31 +33,37 @@ public final class RelayDeskMailExamples {
 
     // All arguments come from approved configuration, never directly from a request.
     // Reuse the result and close it when its route is safely retired.
+    // Rate values are this backend instance's share; the group joins Mailers in one factory.
     public static Mailer createMailer(SimpleJavaMail mail, UUID clusterKey,
             String smtpHost, String username, String password,
-            MailSendObserver observer, Executor observerWorkers) {
+            int maxConnectionsPerRelay, int asyncWorkersPerMailer,
+            int waitingOperationsPerMailer,
+            String sendingRateGroup, int recipientsPerPeriod, Duration sendingRatePeriod,
+            MailSendResultObserver observer, Executor observerWorkers) {
         return mail.mailerBuilder()
             .withSMTPServer(smtpHost, 587, username, password)
             .withTransportStrategy(TransportStrategy.SMTP_TLS)
             .trustingAllHosts(false)
             .trustingSSLHosts() // clear any host-specific trust exceptions
             .verifyingServerIdentity(true)
-            .withProperty("mail.smtp.sendpartial", true) // keep successful recipients; inspect the others
             .withClusterKey(clusterKey)
             .withConnectionPoolCoreSize(0) // no need to stay connected while quiet
-            .withConnectionPoolMaxSize(2) // at most two connections per relay pool
+            .withConnectionPoolMaxSize(maxConnectionsPerRelay) // within Kestrel's connection allocation
             .withConnectionPoolExpireAfterMillis(30_000) // retire idle connections
             .withConnectionPoolClaimTimeoutMillis(2_000) // don't wait forever for a pool
             .withMailSendTimeout(Duration.ofSeconds(20)) // bound each send attempt
-            .withThreadPoolSize(2)
-            .withAsyncQueueCapacity(4) // a small buffer, not the customer's backlog
-            .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT)
-            .withMailSendObserver(observer, observerWorkers)
+            .withThreadPoolSize(asyncWorkersPerMailer) // operations executing, including preparation
+            .withAsyncQueueCapacity(waitingOperationsPerMailer) // waiting in memory, not the durable backlog
+            .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT) // refuse work when workers and queue are full
+            .withRecipientRateLimit(recipientsPerPeriod, sendingRatePeriod) // this instance's share of the customer's rate
+            .withRateLimitGroup(sendingRateGroup) // both approved relays spend the same local share
+            .withRateLimitBurstsAllowed(false) // spread the recovered backlog instead of releasing a burst
+            .withMailSendResultObserver(observer, observerWorkers)
             .buildMailer();
     }
 
     // Register the attempt and its Message-ID before submitting the prepared Email.
-    public static MailSendObserver observerFor(AttemptResults attemptResults) {
+    public static MailSendResultObserver observerFor(AttemptResults attemptResults) {
         return outcome -> attemptResults.record(outcome.getInitialMessageId(), outcome);
     }
 
@@ -81,22 +87,25 @@ public final class RelayDeskMailExamples {
     // Ordinary parcel replies do not acquire an encryption requirement here.
     public static Email protectWholesaleReply(SimpleJavaMail mail, Mailer mailer,
             String customerId, Email reply, ApprovedOpenPgpKeys keys) {
-        MailRehearsal draft = mailer.rehearse(reply, false);
+        MailRehearsal rehearsal = mailer.rehearse(reply, false);
+        Email effectiveReply = rehearsal.getEffectiveEmail(); // includes defaults and overrides
+
         OpenPgpEncryptionConfig.OpenPgpEncryptionConfigBuilder encryption =
                 OpenPgpEncryptionConfig.builder();
-        for (String address : draft.getEnvelopeRecipients()) {
+        for (String address : rehearsal.getEnvelopeRecipients()) {
             encryption.addRecipientPublicKeyRing(Objects.requireNonNull(
                     keys.requireRecipientKey(customerId, address), "Missing approved recipient key"));
         }
-        EmailPopulatingBuilder protectedReply = mail.emailBuilder().copying(draft.getEffectiveEmail())
-                // Defaults/overrides were already applied; don't add recipients after key selection.
-                .ignoringDefaults().ignoringOverrides()
+
+        EmailPopulatingBuilder protectedReplyBuilder = mail.emailBuilder().copying(effectiveReply)
+                .ignoringDefaults().ignoringOverrides() // don't apply them again after key selection
                 .signWithOpenPgp(Objects.requireNonNull(keys.requireSigningConfig(customerId)))
                 .encryptWithOpenPgp(encryption.build());
-        if (!draft.getEffectiveEmail().getOverrideReceivers().isEmpty()) {
-            protectedReply.withOverrideReceivers(draft.getEffectiveEmail().getOverrideReceivers());
+        if (!effectiveReply.getOverrideReceivers().isEmpty()) {
+            protectedReplyBuilder.withOverrideReceivers(effectiveReply.getOverrideReceivers());
         }
-        return protectedReply.buildEmail();
+        Email protectedReply = protectedReplyBuilder.buildEmail();
+        return protectedReply;
     }
 
     // Load the saved outcome only after authorizing access to its customer and ticket.
@@ -119,6 +128,7 @@ public final class RelayDeskMailExamples {
     public static Email prepareKestrelReply(EmailPopulatingBuilder replyEmailBuilder,
             UUID conversationToken, UUID attemptToken) {
         return replyEmailBuilder
+            .withSendingToAcceptedRecipients(true) // this reply may proceed for recipients the relay accepts
             .fixingMessageId("<" + attemptToken + "@mail.relaydesk.com>")
             .from("Kestrel Support", "support@kestrel-outfitters.com")
             .withReplyTo("Kestrel Support",

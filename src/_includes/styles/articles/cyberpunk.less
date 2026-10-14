@@ -45,6 +45,19 @@
     border-top-color: @signal-cyan;
     box-shadow: inset 3px 0 fade(@signal-cyan, 12%);
   }
+  .journal-entry-toc a[href="#run-complete-jack-out"] {
+    color: #F6CB43;
+    font-family: @font-mono;
+    text-shadow: 0 0 8px fade(#F6CB43, 32%);
+
+    &:hover,
+    &:focus-visible,
+    &.is-active {
+      color: #FFE387;
+      text-shadow: 0 0 10px fade(#F6CB43, 55%);
+    }
+    &.is-active { border-left-color: #F6CB43; }
+  }
   .journal-prose h2 {
     border-left: 3px solid @signal-cyan;
     padding-left: 0.8rem;
@@ -322,7 +335,6 @@
   }
   .journal-mission-opening {
     margin-bottom: @space-md;
-    padding-right: 220px;
   }
   .journal-prose .journal-mission-story {
     margin: 0;
@@ -332,8 +344,8 @@
   .journal-prose img.journal-mission-mascot {
     position: absolute;
     top: 50%;
-    // Center in the unused right-hand portion, rather than against the card edge.
-    right: calc(@space-lg + (100% - (@space-lg * 2)) * 0.225);
+    // Center in the unused right-hand portion of the crew rows.
+    right: 110px;
     display: block;
     width: 160px;
     height: auto;
@@ -349,6 +361,14 @@
   .journal-mission-debrief dt,
   .journal-mission-debrief dd { margin: 0; }
   .journal-mission-debrief dt { color: #35D9EF; }
+  .journal-mission-crew {
+    position: relative;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: clamp(3.5rem, 9vw, 2.5rem) minmax(0, 1fr);
+    align-items: center;
+    gap: @space-xs @space-sm;
+  }
   .journal-mission-result {
     display: grid;
     grid-template-columns: clamp(36px, 6vw, 48px) minmax(0, 1fr);
@@ -366,6 +386,74 @@
     border-radius: 3px;
     object-fit: cover;
   }
+  .journal-mission-debrief .journal-mission-data-label {
+    grid-column: 1 / -1;
+    margin-top: @space-xs;
+    padding-top: @space-sm;
+    border-top: 1px solid fade(#35D9EF, 20%);
+    align-self: start;
+    color: #F6CB43;
+    letter-spacing: 0.05em;
+  }
+  .journal-mission-data {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+  }
+  .journal-mission-data > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.12rem 0.4rem;
+    border: 1px solid fade(#35D9EF, 36%);
+    background: fade(#35D9EF, 5%);
+    color: #789BA0;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", Menlo, Monaco, monospace;
+    font-size: 0.64rem;
+    line-height: 1.45;
+    letter-spacing: 0.015em;
+  }
+  .journal-mission-artifact { color: #82AAB0; }
+  .journal-mission-data strong {
+    color: #B7F0B9;
+    font-weight: 650;
+  }
+  .journal-mission-rarity {
+    margin-left: 0.12rem;
+    font-size: 0.49rem;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+  }
+  .journal-mission-badge-icon {
+    flex: 0 0 auto;
+    width: 0.8rem;
+    height: 0.8rem;
+    fill: fade(#35D9EF, 5%);
+    stroke: #35D9EF;
+    stroke-width: 1.35;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .journal-mission-data > .journal-mission-item--rare {
+    border-color: fade(#6FAEFF, 50%);
+    background: fade(#6FAEFF, 4%);
+  }
+  .journal-mission-item--rare .journal-mission-badge-icon { stroke: #6FAEFF; }
+  .journal-mission-item--rare .journal-mission-rarity { color: #8EBDFF; }
+  .journal-mission-data > .journal-mission-item--elite {
+    border-color: fade(#D973E8, 50%);
+    background: fade(#D973E8, 4%);
+  }
+  .journal-mission-item--elite .journal-mission-badge-icon { stroke: #D973E8; }
+  .journal-mission-item--elite .journal-mission-rarity { color: #EA98F4; }
+  .journal-mission-data > .journal-mission-item--legendary {
+    border-color: fade(#F6CB43, 55%);
+    background: fade(#F6CB43, 4%);
+  }
+  .journal-mission-item--legendary .journal-mission-badge-icon { stroke: #F6CB43; }
+  .journal-mission-item--legendary .journal-mission-rarity { color: #F6CB43; }
   .journal-mission-debrief .journal-mission-reward {
     margin-top: @space-xs;
     padding-top: @space-sm;
@@ -377,16 +465,12 @@
     font-size: inherit;
   }
   @media (max-width: 640px) {
-    .journal-mission-opening {
-      position: relative;
-      margin-bottom: 96px;
-      padding-right: 0;
-    }
+    .journal-mission-crew { padding-top: 72px; }
     .journal-prose img.journal-mission-mascot {
-      top: calc(100% + 48px);
+      top: 0;
       right: 0;
       width: 112px;
-      transform: translateY(-50%);
+      transform: none;
     }
     .journal-mission-result { padding-right: 0; }
   }

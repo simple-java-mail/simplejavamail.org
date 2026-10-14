@@ -4,11 +4,11 @@ Editorial outline for the [RelayDesk case-study draft](../src/case-studies/relay
 
 ## Company name and profile
 
-**RelayDesk** is an old, trusted multi-party case platform in a lightly cyberpunk future. Nobody knows who operates it; an AI and a relic from the before time are rumours, not established facts. Fixers, information brokers and businesses use it to coordinate participants, evidence, conversations, assignments, deadlines and agreements. Customer support is one use of this broader product. Its Java backend runs in Europe and North America; contractors such as Sam work on its integrations. General incoming-mail processing is outside the scope; the article does cover correlating later delivery reports with outgoing attempts.
+**RelayDesk** is an old, trusted multi-party case platform in a lightly cyberpunk future. Nobody knows who operates it; an AI and a relic from the before time are rumours, not established facts. Fixers, information brokers and businesses use it to coordinate participants, evidence, conversations, assignments, deadlines and agreements. Customer support is one use of this broader product. Its Java backend runs in Europe and North America; solo runners such as Sam pick up its integration repair gigs. General incoming-mail processing is outside the scope; the article does cover correlating later delivery reports with outgoing attempts.
 
 RelayDesk offers a default sending service, but some customers require outgoing mail to pass through their own approved infrastructure. Those customers supply the endpoints, authentication requirements, sender permissions and operational contacts. Some provide one managed hostname; others provide several equivalent relays or separately approved regional routes.
 
-Sam is a freelance orc Java developer, not a RelayDesk employee or an administrator of every customer's mail system. His repair contract lets him improve the integration and coordinate an approved change. It does not let him reset a customer's password, relax its firewall or silently substitute another customer's working relay. Maya is an AI case coordinator within Kestrel's authorized workspace; she cannot change SMTP settings or credentials.
+Sam is an orc solo runner hired to repair RelayDesk's Java mail integration, not a RelayDesk employee or an administrator of every customer's mail system. His repair contract lets him improve the integration and coordinate an approved change. It does not let him reset a customer's password, relax its firewall or silently substitute another customer's working relay. Maya is an AI case coordinator within Kestrel's authorized workspace; she cannot change SMTP settings or credentials.
 
 Keep the character of the company practical and slightly weary of integration surprises. The humour comes from an apparently simple settings screen turning into customer-specific operational work, not from incompetent customers or an elaborate villain.
 
@@ -33,7 +33,7 @@ The lesson is not that multiple clusters are universally necessary. It is that a
 ## People and editorial constraints
 
 - **Maya:** Kestrel's AI case coordinator, pictured through an avatar. May inspect permitted support records and submit authorized replies, not alter mail configuration. Human staff can inspect the same saved evidence; UI helpers are not an AI subsystem.
-- **Sam:** a freelance orc Java developer on a RelayDesk repair contract. Can change the integration, not every customer's mail infrastructure.
+- **Sam:** an orc solo runner on a RelayDesk Java integration repair gig. Can change the integration, not every customer's mail infrastructure.
 - **Anika:** Kestrel's mail administrator. Approves regional endpoints, credentials, sender/return addresses and changes. She is not a villain or an incompetent customer.
 - **Kestrel Outfitters:** sells drones, spare parts and field equipment for riggers. Two interchangeable EU relays and a separately approved US pair; Maya's ticket uses EU only. A fixer brokered the deal, but Kestrel authorizes SMTP access.
 - **Juniper Nomad Air Services:** formal name at introduction, Juniper Nomad in diagrams and captions, Juniper thereafter. One managed hostname; its continuing service makes customer isolation concrete without adding a fourth persona.
@@ -49,7 +49,7 @@ Keep this smaller than Polar Meridian. Use that article for deep observer persis
 5. **Maya needs an answer, not an SMTP transcript.** Record attempts before sending, correlate the terminal observer with the initial Message-ID, and show product-facing statuses. Deal with unknown/partial results here because replacement and retry depend on that distinction.
 6. **Anika updates Kestrel's settings without stopping Juniper.** A sequence diagram shows route-wide pause, accounting for in-flight work, close/rebuild/test and resume. Explicitly distinguish credential replacement from changing first-registration pool policy. Service discovery is now a short subsection here, not a new late narrative thread.
 7. **Accepted by SMTP. Then a bounce arrives.** Resolve Maya's original reply first. A second ticket demonstrates Reply-To, MAIL FROM, DSN and ENVID, followed by a small ticket-history example. Captions explain the separate return paths and why later failure does not erase earlier acceptance.
-8. **Back to Maya's support ticket.** Close all three personas' practical concerns, link the useful SJM capabilities and finish Sam's contract with the existing RUN COMPLETE debrief, credits and “Jack out.”
+8. **RUN COMPLETE, JACK OUT.** Close all three personas' practical concerns, link the useful SJM capabilities and finish Sam's contract with the existing RUN COMPLETE debrief, credits and “Jack out.”
 
 The companion helpers and no-network tests cover actual 10.0.0 message/observer APIs. They deliberately do not invent a complete SJM tenant registry, scheduler or hot-reload API. Existing draft/publication TODOs remain.
 

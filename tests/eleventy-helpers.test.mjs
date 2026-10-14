@@ -920,16 +920,16 @@ test("linked raw persona images retain captions, attributes and their lightbox o
 
 test("RelayDesk closes with a readable mission debrief rather than a copyable code example", () => {
   const article = readFileSync(new URL("../src/case-studies/relaydesk.md", import.meta.url), "utf8");
-  const html = createMarkdownLibrary().render(article.slice(article.indexOf("## Back to Maya's support ticket")));
+  const html = createMarkdownLibrary().render(article.slice(article.indexOf("## RUN COMPLETE, JACK OUT")));
   assert.match(html, /class="journal-mission-debrief" role="group" aria-labelledby="relaydesk-run-complete"/);
   assert.match(html, /id="relaydesk-run-complete">RUN COMPLETE<\/p>/);
   assert.match(html, /Back at the bar, Sam orders a fresh beer\.<br>\s*This time, his pad stays in his jacket\.<br>\s*For the moment\./);
-  assert.match(html, /<div class="journal-mission-opening">[\s\S]*?<img class="journal-mission-mascot" src="\/assets\/journal\/articles\/relaydesk\/relaydesk-spiderbot-mascotte\.png" width="400" height="210" alt="" loading="lazy" decoding="async">\s*<\/div>\s*<dl>/);
+  assert.match(html, /<div class="journal-mission-crew">[\s\S]*?<img class="journal-mission-mascot" src="\/assets\/journal\/articles\/relaydesk\/relaydesk-spiderbot-mascotte\.png" width="400" height="210" alt="" loading="lazy" decoding="async">\s*<\/div>/);
   assert.ok(readFileSync(new URL("../src/assets/journal/articles/relaydesk/relaydesk-spiderbot-mascotte.png", import.meta.url)).length > 0);
   const styles = readFileSync(new URL("../src/_includes/styles/articles/cyberpunk.less", import.meta.url), "utf8");
-  assert.match(styles, /img\.journal-mission-mascot \{[^}]*top: 50%;[^}]*right: calc\(@space-lg \+ \(100% - \(@space-lg \* 2\)\) \* 0\.225\);[^}]*border: 0;[^}]*transform: translate\(50%, -50%\);/);
-  assert.match(styles, /@media \(max-width: 640px\) \{\s*\.journal-mission-opening \{\s*position: relative;\s*margin-bottom: 96px;/);
-  for (const [name, result] of [["Maya", "Reply delivered"], ["Sam", "Access restored"], ["Anika", "Credentials replaced"]]) {
+  assert.match(styles, /img\.journal-mission-mascot \{[^}]*top: 50%;[^}]*right: 110px;[^}]*border: 0;[^}]*transform: translate\(50%, -50%\);/);
+  assert.match(styles, /@media \(max-width: 640px\) \{\s*\.journal-mission-crew \{ padding-top: 72px; \}/);
+  for (const [name, result] of [["Maya", "Reply delivered"], ["Sam", "Route restored"], ["Anika", "Credentials replaced"]]) {
     const row = html.match(new RegExp(`<dt>${name}</dt><dd class="journal-mission-result">([\\s\\S]*?)</dd>`));
     assert.ok(row, `${name} keeps a name and result row`);
     assert.ok(row[1].includes(`src="/assets/journal/articles/relaydesk/personas/relay-desk-${name.toLowerCase()}-portrait.jpg"`));
@@ -937,6 +937,11 @@ test("RelayDesk closes with a readable mission debrief rather than a copyable co
     assert.ok(row[1].includes(`<span>${result}. Level up.</span>`));
     assert.ok(row[1].indexOf("<img") < row[1].indexOf("<span"), "portrait sits before the result");
   }
+  assert.match(html, /DATA ACQUIRED/);
+  assert.match(html, /journal-mission-item--rare[\s\S]*?KESTREL ROUTE[\s\S]*?REVISION 8 VERIFIED/);
+  assert.match(html, /journal-mission-item--elite[\s\S]*?RECIPIENT RESULTS[\s\S]*?RETRY MAPPED/);
+  assert.match(html, /journal-mission-item--legendary[\s\S]*?BOUNCE TRAIL[\s\S]*?DSN CORRELATED/);
+  assert.match(html, /JUNIPER RIDE TICKET[\s\S]*?FREE RIDE FOR SAM/);
   assert.match(html, /10\.547 credits &mdash; contract complete\./);
   assert.match(html, /&gt; Job's done\. Jack out\./);
   assert.doesNotMatch(html, /<pre|<code|RelayDesk sells support software/);

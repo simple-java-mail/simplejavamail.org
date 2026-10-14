@@ -17,6 +17,7 @@ import org.simplejavamail.api.mailer.MailSubmissionStatus;
 import org.simplejavamail.config.ConfigLoader;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +41,7 @@ public final class RelayDeskMailExamplesTest {
 
     public static void main(String[] args) throws Exception {
         SimpleJavaMail mail = SimpleJavaMail.withConfig(ConfigLoader.builder().load());
+        mailerSettingsTest(mail);
         UUID conversation = UUID.fromString("e5039a2b-37b3-4200-9cb1-a7d3530b70a7");
         UUID firstAttempt = UUID.fromString("25a4f7f0-6f52-4bd6-9d0b-8b623ce50e62");
         UUID retryAttempt = UUID.fromString("4125c98a-22d4-4c0d-b233-5c8d4862f1fa");
@@ -66,6 +68,11 @@ public final class RelayDeskMailExamplesTest {
             "Preserve the intended recipient");
         check(first.getPlainText().equals("Your parcel is waiting at the collection point."),
             "Preserve the reply content");
+        check(Boolean.TRUE.equals(first.getSendingToAcceptedRecipients()),
+            "The support reply explicitly permits partial submission");
+        check(Boolean.FALSE.equals(mail.emailBuilder().copying(first)
+                .withSendingToAcceptedRecipients(false).buildEmail().getSendingToAcceptedRecipients()),
+            "Another message can require all recipients without rebuilding its Mailer");
 
         DeliveryStatusNotification dsn = first.getDeliveryStatusNotification();
         check(dsn.getReturnOption() == DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
@@ -101,6 +108,32 @@ public final class RelayDeskMailExamplesTest {
         receiptTests();
         probeTests();
         System.out.println("Passed " + checks + " RelayDesk message/observer checks; no mail sent.");
+    }
+
+    private static void mailerSettingsTest(SimpleJavaMail mail) throws Exception {
+        try (Mailer mailer = RelayDeskMailExamples.createMailer(mail, UUID.randomUUID(),
+                "smtp.relaydesk.invalid", "test-user", "test-password",
+                3, 6, 7, "kestrel-eu-test", 12, Duration.ofSeconds(1), outcome -> { }, Runnable::run)) {
+            check(mailer.getOperationalConfig().getConnectionPoolMaxSize() == 3,
+                "Use the selected per-relay connection limit");
+            check(mailer.getOperationalConfig().getThreadPoolSize() == 6,
+                "Worker count need not equal connection count");
+            check(mailer.getOperationalConfig().getAsyncQueueConfig().getCapacity() == 7,
+                "Use the selected local waiting capacity");
+            check(mailer.getOperationalConfig().getAsyncQueueConfig().getOverflowPolicy()
+                    == org.simplejavamail.api.mailer.config.AsyncQueueOverflowPolicy.REJECT,
+                "Reject excess local work rather than growing the queue");
+            check(mailer.getOperationalConfig().getRecipientRateLimit().getCount() == 12,
+                "Use the assigned per-instance recipient rate, not the connection count");
+            check(mailer.getOperationalConfig().getRecipientRateLimit().getPeriod().equals(Duration.ofSeconds(1)),
+                "Keep the customer's counting period explicit");
+            check(mailer.getOperationalConfig().getRateLimitGroup().equals("kestrel-eu-test"),
+                "Customer and region identify the local shared rate group");
+            check(!mailer.getOperationalConfig().isRateLimitBurstsAllowed(),
+                "Recovery does not release the whole window as one burst");
+            check(mailer.getSession().getProperty("mail.smtp.sendpartial") == null,
+                "Partial sending belongs to the Email, not a blanket provider property");
+        }
     }
 
     private static void protectionTests(SimpleJavaMail mail, Path resources) throws Exception {
