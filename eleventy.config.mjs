@@ -1,3 +1,4 @@
+import { createTemplateHelpers } from "./src/_lib/template-helpers.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -45,40 +46,11 @@ function runPagefind(outputDirectory) {
 }
 
 export default function (eleventyConfig) {
-  const googleCodeComments = createGoogleCodeCommentLibrary();
-  const googleCodeProjects = createGoogleCodeProjectLibrary();
-  const sourceForgeMarkup = createSourceForgeMarkupLibrary();
-
-  eleventyConfig.addFilter("eq", (left, right) => left === right);
-  eleventyConfig.addFilter("year", () => new Date().getFullYear());
-  eleventyConfig.addFilter("activeClass", (href, current) => href === current ? "is-active" : "");
-  eleventyConfig.addFilter("docsActiveClass", (href, current, breadcrumbParent) => href === current || href === breadcrumbParent ? "is-active" : "");
-  eleventyConfig.addFilter("navItemForUrl", navItemForUrl);
-  eleventyConfig.addFilter("json", (value) => JSON.stringify(value).replace(/</g, "\\u003c"));
-  eleventyConfig.addFilter("journalOldestFirst", (value) => orderJournalEntries(value));
-  eleventyConfig.addFilter("isoDate", isoDate);
-  eleventyConfig.addFilter("formatDate", formatDate);
-  eleventyConfig.addFilter("journalRssDate", rssDate);
-  eleventyConfig.addFilter("capitalize", (value) => {
-    const text = String(value ?? "");
-    return text ? `${text[0].toUpperCase()}${text.slice(1)}` : text;
-  });
-  eleventyConfig.addFilter("join", (values, separator) => (values || []).join(separator));
-  eleventyConfig.addFilter("upper", (value) => String(value ?? "").toUpperCase());
-  eleventyConfig.addFilter("journalHeadings", headingsFromHtml);
-  eleventyConfig.addFilter("journalNeighbor", journalNeighbor);
-  eleventyConfig.addFilter("articleNeighbor", articleNeighbor);
-  eleventyConfig.addFilter("fieldGuideSections", fieldGuideSections);
-  eleventyConfig.addFilter("journalCollectionSchema", collectionSchema);
-  eleventyConfig.addFilter("absoluteUrl", (url, base) => new URL(url, base).toString());
-  eleventyConfig.addFilter("googleCodeComment", (value) => googleCodeComments.render(decodeGoogleCodeEntities(value || "")));
-  eleventyConfig.addFilter("googleCodeProject", (value) => googleCodeProjects.render(decodeGoogleCodeEntities(value || "")));
-  eleventyConfig.addFilter("sourceForgeMarkup", (value) => sourceForgeMarkup.render(decodeSourceForgeEntities(value || "")));
-
   const markdown = createMarkdownLibrary();
   eleventyConfig.setLibrary("md", markdown);
-  eleventyConfig.addFilter("markdownInline", (value) => markdown.renderInline(String(value ?? "")));
-  eleventyConfig.addFilter("journalCodeExample", journalCodeExample);
+  for (const [name, helper] of Object.entries(createTemplateHelpers(markdown))) {
+    eleventyConfig.addFilter(name, helper);
+  }
 
   eleventyConfig.addPlugin(handlebarsPlugin, { eleventyLibraryOverride: Handlebars });
   eleventyConfig.addPlugin(rssPlugin);
