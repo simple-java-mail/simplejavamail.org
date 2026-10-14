@@ -258,7 +258,7 @@ test("sequence system images preserve proportions, labels and lifelines with a n
 test("Journal paste targets keep assets with their article rather than in shared buckets", () => {
   const articles = [
     ["2026-08-29-simple-java-mails-origin-story.md", "origin-story"],
-    ["2026-09-01-twenty-years-of-simple-java-mail.md", "twenty-years-of-simple-java-mail"],
+    ["2026-09-01-still-the-same-ticket.md", "still-the-same-ticket"],
     ["2026-09-02-the-libraries-behind-simple-java-mail.md", "the-libraries-behind-simple-java-mail"],
     ["2026-09-03-the-library-i-keep-coming-back-to.md", "the-library-i-keep-coming-back-to"],
     ["2026-09-08-set-phasers-to-synchronize.md", "set-phasers-to-synchronize"],
