@@ -84,7 +84,7 @@ test("dark company-logo treatment targets only the two flat logos and preserves 
 
 test("Mermaid console palette is article-scoped and uses matching sequence layout fonts", async () => {
   const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
-  const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
   const initialize = async (classes) => {
     let configuration;
     let complete;
@@ -92,13 +92,13 @@ test("Mermaid console palette is article-scoped and uses matching sequence layou
     runInNewContext(script, {
       document: {
         documentElement: { classList: { contains: (name) => classes.includes(name) } },
-        querySelector: () => ({}), querySelectorAll: () => [],
+        querySelector: () => ({}), querySelectorAll: () => [{ isConnected: true, dataset: {}, textContent: 'graph TD; A-->B', removeAttribute: () => {}, querySelectorAll: () => [] }],
         fonts: { ready: Promise.resolve() }, addEventListener: () => {},
       },
       window: { mermaid: {
         initialize: (config) => { configuration = config; },
         run: async () => { complete(); },
-      } }, console,
+      } }, console, exports: {},
     });
     await rendered;
     return configuration;
@@ -122,7 +122,7 @@ test("Mermaid console palette is article-scoped and uses matching sequence layou
 
 test("sequence portraits replace only actor glyphs, retain labels and fall back on image failure", () => {
   const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
-  const functionSource = source.slice(source.indexOf("function applyActorPortraits"), source.indexOf("if (mermaid &&"));
+  const functionSource = source.slice(source.indexOf("function applyActorPortraits"), source.indexOf("const diagramSources"));
   const script = ts.transpileModule(functionSource, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
   const graphic = (box, attributes = {}) => ({
     getBBox: () => box,
@@ -177,7 +177,7 @@ test("sequence portraits replace only actor glyphs, retain labels and fall back 
 
 test("sequence system images preserve proportions, labels and lifelines with a native-box fallback", async () => {
   const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
-  const functionSource = source.slice(source.indexOf("async function applySequenceNodeImages"), source.indexOf("if (mermaid &&"));
+  const functionSource = source.slice(source.indexOf("async function applySequenceNodeImages"), source.indexOf("const diagramSources"));
   const script = ts.transpileModule(functionSource, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
   const label = { attrs: { y: "50" }, getAttribute(name) { return this.attrs[name] ?? null; },
     setAttribute(name, value) { this.attrs[name] = value; }, removeAttribute(name) { delete this.attrs[name]; } };
@@ -349,7 +349,7 @@ test("RelayDesk flowchart uses hexagonal portrait badges without enclosing cards
 
 test("portrait links anchor to badge edges, preserve arrowheads and move their labels with the curve", () => {
   const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
-  const functions = source.slice(source.indexOf("type DiagramPoint"), source.indexOf("if (mermaid &&"));
+  const functions = source.slice(source.indexOf("type DiagramPoint"), source.indexOf("const diagramSources"));
   const script = ts.transpileModule(functions, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
   const label = {
     classList: { contains: (name) => name === "edgeLabel" },
@@ -401,7 +401,7 @@ test("portrait links anchor to badge edges, preserve arrowheads and move their l
 
 test("portrait Bézier curves leave and approach their anchors in the chosen directions", () => {
   const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
-  const functions = source.slice(source.indexOf("type DiagramPoint"), source.indexOf("if (mermaid &&"));
+  const functions = source.slice(source.indexOf("type DiagramPoint"), source.indexOf("const diagramSources"));
   const context = {};
   runInNewContext(ts.transpileModule(functions, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, context);
   assert.equal(context.portraitLinkPath({ x: 200, y: 100 }, { x: 0, y: 200 }, { x: -1, y: 0 }, { x: 0, y: -1 }),
@@ -421,7 +421,7 @@ test("image branches leave the artwork, keep angular elbows out of captions and 
   assert.ok(article.includes("%% journal-image-inlet: storedJobs workers"));
   assert.ok(article.includes("store storedJobs@--> workers"));
   const source = readFileSync(new URL("../src/scripts/mermaid.ts", import.meta.url), "utf8");
-  const functions = source.slice(source.indexOf("function applyImageBranchLinks"), source.indexOf("if (mermaid &&"));
+  const functions = source.slice(source.indexOf("function applyImageBranchLinks"), source.indexOf("const diagramSources"));
   const images = {
     dispatcher: { getBoundingClientRect: () => ({ right: 100, top: 100, width: 80, height: 100 }) },
     kestrel: { getBoundingClientRect: () => ({ left: 300, top: 0, width: 80, height: 100 }) },
@@ -476,7 +476,7 @@ test("image branches leave the artwork, keep angular elbows out of captions and 
 test("copy controls stay on the frame while the code remains the unmodified copy source", async () => {
   const site = readFileSync(new URL("../src/scripts/site.ts", import.meta.url), "utf8");
   const source = site.slice(site.indexOf("const copyLabel ="), site.indexOf("const route ="));
-  const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const script = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
   const original = "// a long line\nSystem.out.println(\"<value>\");\n";
   const code = { textContent: original };
   const classes = new Set();
@@ -484,7 +484,7 @@ test("copy controls stay on the frame while the code remains the unmodified copy
   let click;
   let clipboard;
   const pre = {
-    querySelector: () => code, closest: () => null,
+    querySelector: (selector) => selector === ':scope > .copy-code' ? null : code, closest: () => null,
     classList: { add: (name) => classes.add(name) },
     append: (element) => { button = element; },
   };
@@ -495,7 +495,7 @@ test("copy controls stay on the frame while the code remains the unmodified copy
       createElement: () => ({ setAttribute: () => {}, addEventListener: (_, handler) => { click = handler; } }),
     },
     navigator: { clipboard: { writeText: async (text) => { clipboard = text; } } },
-    window: { setTimeout: () => {} },
+    window: { setTimeout: () => {} }, exports: {},
   });
   assert.ok(classes.has("code-copy-enabled"));
   assert.equal(button.className, "copy-code");

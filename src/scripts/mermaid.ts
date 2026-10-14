@@ -1,6 +1,6 @@
 interface MermaidApi {
   initialize(config: Record<string, unknown>): void;
-  run(options: { querySelector: string }): Promise<void>;
+  run(options: { querySelector?: string; nodes?: HTMLElement[] }): Promise<void>;
 }
 
 const mermaid = (window as Window & { mermaid?: MermaidApi }).mermaid;
@@ -199,12 +199,23 @@ function applyImageBranchLinks(element: HTMLElement, source: string): void {
   }
 }
 
-if (mermaid && document.querySelector('.mermaid')) {
-  const cyberpunk = document.documentElement.classList.contains('journal-theme-cyberpunk');
-  const sources = Array.from(document.querySelectorAll<HTMLElement>('.mermaid')).map((element) => ({
-    element,
-    source: element.textContent ?? '',
-  }));
+const diagramSources = new WeakMap<HTMLElement, string>();
+let diagramRendering: Promise<void> = Promise.resolve();
+
+// Existing drawings are retained unless their source or effective theme changes.
+export function renderJournalDiagrams(root: ParentNode = document, redraw = false): Promise<void> {
+  const elements = Array.from(root.querySelectorAll<HTMLElement>('.mermaid'));
+  diagramRendering = diagramRendering.then(async () => {
+    if (!mermaid) return;
+    const sources = elements.filter(element => element.isConnected && (redraw || element.dataset.processed !== 'true')).map(element => {
+      const source = element.dataset.processed === 'true'
+        ? diagramSources.get(element) ?? element.textContent ?? ''
+        : element.textContent ?? '';
+      diagramSources.set(element, source);
+      return { element, source };
+    });
+    if (!sources.length) return;
+    const cyberpunk = document.documentElement.classList.contains('journal-theme-cyberpunk');
   const initialize = (): void => mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
@@ -298,28 +309,21 @@ if (mermaid && document.querySelector('.mermaid')) {
     },
   });
 
-  // Mermaid measures labels during layout; wait for their web fonts to avoid clipping.
-  let rendering: Promise<void> = Promise.resolve();
-  const render = (): void => {
-    // Serialize redraws, including clicks while the initial render is in flight.
-    rendering = rendering.then(async () => {
-      await document.fonts.ready;
-      initialize();
-      for (const { element, source } of sources) {
-        element.removeAttribute('data-processed');
-        element.textContent = source;
-      }
-      await mermaid.run({ querySelector: '.mermaid' });
-      for (const { element, source } of sources) {
-        applyPortraitLinks(element, source);
-        applyImageBranchLinks(element, source);
-        applyActorPortraits(element, source);
-        await applySequenceNodeImages(element, source);
-      }
-    }).catch((error: unknown) => {
-      console.error('Unable to render Mermaid diagram.', error);
-    });
-  };
-  document.addEventListener('site-theme-change', render);
-  render();
+    await document.fonts.ready;
+    initialize();
+    for (const { element, source } of sources) {
+      element.removeAttribute('data-processed');
+      element.textContent = source;
+    }
+    await mermaid.run({ nodes: sources.map(item => item.element) });
+    for (const { element, source } of sources) {
+      applyPortraitLinks(element, source);
+      applyImageBranchLinks(element, source);
+      applyActorPortraits(element, source);
+      await applySequenceNodeImages(element, source);
+    }
+  }).catch((error: unknown) => { console.error('Unable to render Mermaid diagram.', error); });
+  return diagramRendering;
 }
+document.addEventListener('site-theme-change', () => { void renderJournalDiagrams(document, true); });
+void renderJournalDiagrams();

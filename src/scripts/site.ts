@@ -96,9 +96,10 @@ const copyLabel = (button: HTMLButtonElement, value: string): void => {
   button.setAttribute('aria-label', value === 'Copied' ? 'Code copied to clipboard' : 'Copy code');
 };
 
-for (const pre of document.querySelectorAll<HTMLPreElement>('pre')) {
+export function initializeCodeCopy(root: ParentNode = document): void {
+for (const pre of root.querySelectorAll<HTMLPreElement>('pre')) {
   const code = pre.querySelector('code');
-  if (!code || pre.closest('.smtp-receipt')) continue;
+  if (!code || pre.closest('.smtp-receipt') || pre.querySelector(':scope > .copy-code')) continue;
 
   const button = document.createElement('button');
   button.type = 'button';
@@ -121,6 +122,9 @@ for (const pre of document.querySelectorAll<HTMLPreElement>('pre')) {
   pre.append(button);
   pre.classList.add('code-copy-enabled');
 }
+
+}
+initializeCodeCopy();
 
 const route = document.querySelector<HTMLElement>('.delivery-route');
 if (route) {
