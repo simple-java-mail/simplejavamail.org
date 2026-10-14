@@ -1,3 +1,7 @@
+import { initializeArticleToc } from './article-toc.js';
+
+initializeArticleToc();
+
 const header = document.querySelector<HTMLElement>('[data-site-header]');
 const navToggle = document.querySelector<HTMLButtonElement>('.nav-toggle');
 const navToggleLabel = navToggle?.querySelector<HTMLElement>('[data-nav-toggle-label]');

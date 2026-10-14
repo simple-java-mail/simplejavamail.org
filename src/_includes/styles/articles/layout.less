@@ -96,8 +96,9 @@
 .journal-entry-toc { padding: @space-md; }
 .journal-entry-toc ol { margin: @space-sm 0 0; padding: 0; list-style: none; }
 .journal-entry-toc li + li { margin-top: 0.45rem; }
-.journal-entry-toc a { display: block; color: @steel; font-size: 0.71rem; line-height: 1.35; text-decoration: none; }
+.journal-entry-toc a { display: block; padding-left: 0.65rem; border-left: 2px solid transparent; color: @steel; font-size: 0.71rem; line-height: 1.35; text-decoration: none; }
 .journal-entry-toc a:hover { color: @teal-deep; }
+.journal-entry-toc a.is-active { border-left-color: @teal; color: @teal-deep; font-weight: 600; }
 .journal-entry-toc .journal-toc-depth-3 { padding-left: @space-sm; }
 
 .journal-prose {
