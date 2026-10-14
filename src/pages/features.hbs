@@ -2476,3 +2476,7 @@ try {
 </code></pre>
       </div>
 	</section>
+
+  <section><p class="wide"><a href="/mail-send-retries.html">Safe, bounded mail-send retries</a> handle temporarily refused whole emails with
+    configurable delay, backoff and jitter. Bytes and envelope remain unchanged, async waiting releases ordinary workers and connections, and the observer
+    receives one final result with bounded attempt history. Partial or uncertain acceptance never triggers whole-email replay.</p></section>

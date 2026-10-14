@@ -672,6 +672,16 @@ simplejavamail.smtp.ratelimit.recipients.limit=100
 simplejavamail.smtp.ratelimit.recipients.period=PT1M
 simplejavamail.smtp.ratelimit.allowbursts=false
 
+# Optional safely refused mail-send retries. Both attempts and delay are required; omitted means disabled.
+# simplejavamail.smtp.retry.attempts=3
+# simplejavamail.smtp.retry.delay=PT30S
+# simplejavamail.smtp.retry.backoffmultiplier=2
+# simplejavamail.smtp.retry.maximumdelay=PT5M
+# simplejavamail.smtp.retry.jitter=0.2
+simplejavamail.defaults.mailsend.retry.waitingcapacity=100
+simplejavamail.defaults.mailsend.retry.maximummessagesize=33554432
+simplejavamail.defaults.mailsend.retry.memorylimit=134217728
+
 # Validation, SSL and proxying
 simplejavamail.disable.all.clientvalidation=false
 simplejavamail.custom.sslfactory.class=org.mypackage.ssl.MySSLSocketFactoryClass
@@ -1032,3 +1042,7 @@ Mailer mailer = mail.mailerBuilder()
     <a href="/sending-and-execution.html">Sending and execution guide</a>. The
     <a href="/smtp-connection-pooling.html">Pool orchestration guide</a> explains which integration owns your Jakarta Mail connections.</p>
 </section>
+
+  <section><p class="wide">For safely refused temporary submissions, configure a <a href="/mail-send-retries.html#section-configuration">mail-send retry policy</a>.
+    Attempts and delay have no implicit defaults. The selected Mailer owns the schedule; the initiating Mailer owns bounded waiting capacity and replay memory.
+    The same property tails work in named definitions, Spring and the <code>simplejavamail.locked.</code> namespace.</p></section>

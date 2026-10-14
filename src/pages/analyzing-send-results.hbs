@@ -751,3 +751,33 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
       </p>
     </div>
   </section>
+
+  <a href="#section-retry-history" id="section-retry-history" class="section-link h2">&sect;</a>
+  <h2>See attempts inside one logical send</h2>
+  <section>
+    <div class="wide">
+      <p>With an observer and a configured <a href="/mail-send-retries.html">retry policy</a>, the outcome's diagnostics expose
+        <code>getSubmissionHistory()</code>, <code>getOmittedSubmissionSteps()</code> and <code>getRetryWait()</code>.
+        Each step identifies a real provider invocation, its status, optional primary SMTP code, elapsed time and selected next delay.
+        No intermediate receipt, recipient list or exception text is retained. Read the final outcome's receipt for recipient facts.</p>
+      <p>You can log the report directly from your observer:</p>
+    </div>
+    <div class="wide full-width-example">
+      <pre><code class="language-java small">outcome.getDiagnostics().ifPresent(report -&gt; log.info("{}", report));</code></pre>
+      <pre><code class="language-text small">Mail send timings:
+  ...
+  Retry wait: PT30.006S
+  ...
+  Submission history:
+    - Attempt 1: REJECTED (SMTP 451), submission=PT0.04S, next delay=PT30S; Temporary refusal; the entire email can be submitted again safely.
+    - Attempt 2: ACCEPTED (SMTP 250), submission=PT0.06S</code></pre>
+    </div>
+    <div class="wide">
+      <p>This abbreviated, illustrative output shows a temporary refusal followed by acceptance on the second attempt. The observer fires once,
+        with the final successful outcome. The configured delay was 30 seconds; the retry-wait measurement also includes waiting for resumed
+        execution, so it can be longer. Initial admission and scheduling are measured separately.</p>
+      <p>The first 63 and latest steps are retained. An exhausted policy still throws the last genuine submission exception.
+        Connection history records acquisition and skipped destinations; submission history records actual provider invocations.
+        The <a href="/mail-send-retries.html#section-results">retry walkthrough</a> includes the full timing report and explains ownership.</p>
+    </div>
+  </section>

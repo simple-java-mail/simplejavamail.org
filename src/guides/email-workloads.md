@@ -215,7 +215,7 @@ static Mailer failoverMailer(SimpleJavaMail mail, Mailer alternative) {
 
 A fails, B takes work immediately, and A is reconsidered after the configured interval. B keeps its own sending rates, credentials, ordinary Email templates and message protection. A's mandatory message locks still apply. A due recheck belongs to one operation; other eligible sends can continue through B. A lazy batch may move its untouched remainder back to A between emails, without restarting the iterator.
 
-The [failover walkthrough](/smtp-connection-failover.html) includes the ownership matrix, named/locked configuration, expired-certificate opt-in and recovery output. Once submission starts, there is no automatic replay. [Use an observer and your job queue](/smtp-connection-failover.html#section-retry) for bounded, delayed retries based on the receipt; unknown acceptance needs a different decision from connection refusal.
+The [failover walkthrough](/smtp-connection-failover.html) includes the ownership matrix, named/locked configuration, expired-certificate opt-in and recovery output. Once submission starts, failover does not replay through another destination. A separate [mail-send retry policy](/mail-send-retries.html) can replay a safely refused temporary whole-envelope submission on the selected destination. [Use an observer and your job queue](/smtp-connection-failover.html#section-retry) for broader or durable retry decisions after terminal completion; unknown acceptance needs a different decision from connection refusal.
 
 ### Only the failover relay should copy operations
 
@@ -227,7 +227,8 @@ Put those [Email defaults](/configuration.html#section-config-mailer) on the fai
 static Email failoverTemplate(SimpleJavaMail mail) {
     return mail.emailBuilder().startingBlank()
         .withHeader("X-Relay", "secondary")
-        .withRecipients(RecipientBuilder.bcc(null, "mail-operations@example.org"))
+        .withRecipients(mail.recipientBuilder().withAddress("mail-operations@example.org")
+            .withType(Message.RecipientType.BCC).build())
         .buildEmail();
 }
 ```
@@ -358,6 +359,24 @@ This can complement existing corporate journaling. The record establishes what t
 <p class="field-guide-return"><a href="#scenario-directory">Find another scenario ↑</a></p>
 
 ## Recover without guessing
+
+### A mailbox is temporarily unavailable
+
+<p class="field-guide-goal"><strong>Target:</strong> Retry a safely refused email while unrelated messages continue.</p>
+
+The relay temporarily refuses Alice's message with 451, while Bob's mail still succeeds. Configure a [mail-send retry policy](/mail-send-retries.html)
+with a deliberate attempt limit, delay, optional backoff and jitter. There is no default retry schedule and no relay-wide cooldown inferred from Alice's refusal.
+The downloadable `retryingMailer` example configures three total attempts, with bounded replay bytes and waiting work.
+
+The selected Mailer owns the schedule, even if clustering or failover selected it through another Mailer. The initiating Mailer owns the executor,
+overall deadline, final observer and memory/waiting limits. Ordinary async waits free their worker and connection; retained batches/callbacks keep
+their shared connection and must allow for server idle timeouts. Each physical invocation spends the selected destination's sending allowance.
+
+All attempts use the same content and envelope. Partial acceptance and uncertain acceptance stop automatic replay. Keep jobs durable if they must
+survive a restart, and inspect the final outcome before scheduling more application-owned work. [Submission history](/analyzing-send-results.html#section-retry-history)
+distinguishes intermediate refusals from one final outcome; a connection probe answers a different question.
+
+<p class="field-guide-return"><a href="#scenario-directory">Find another scenario ↑</a></p>
 
 ### One support reply, three recipient results
 

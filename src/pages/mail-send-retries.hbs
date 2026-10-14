@@ -1,0 +1,215 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/mail-send-retries.html"
+tags:
+  - "publicPage"
+title: "Mail-send retries"
+section: "Build and configure"
+description: "Retry safely refused emails with bounded backoff, unchanged content and one final send result."
+---
+<section><div class="wide">
+  <p>A relay can temporarily refuse Alice's email while still accepting Bob's. If it clearly refused the entire message,
+    Simple Java Mail can wait and try that same email again. Other emails keep their own schedule.</p>
+  <p>This is opt-in. It never replays partial acceptance or a lost final reply, because somebody might already receive the first copy.
+    <a href="/smtp-connection-failover.html">Connection failover</a> chooses a usable destination before submission; retries stay on the destination already selected.</p>
+</div></section>
+<section class="toc"><ul>
+  <li><a href="#section-configure">Choose a retry schedule</a></li>
+  <li><a href="#section-safety">Which failures qualify?</a></li>
+  <li><a href="#section-ownership">Which Mailer owns what?</a></li>
+  <li><a href="#section-resources">Bound waiting work and replay memory</a></li>
+  <li><a href="#section-results">Read the final result and attempt history</a></li>
+  <li><a href="#section-configuration">Properties, Spring and CLI</a></li>
+  <li><a href="#section-jobs">Keep durable jobs in your application</a></li>
+</ul></section>
+
+<a href="#section-configure" id="section-configure" class="section-link h2">&sect;</a>
+<h2>Choose a retry schedule</h2>
+<section><div class="wide full-width-example">
+<pre><code class="language-java small">MailSendRetryPolicy retry = MailSendRetryPolicy.builder()
+    .withMaximumAttempts(3)
+    .withRetryDelay(Duration.ofSeconds(30))
+    .withRetryBackoff(2, Duration.ofMinutes(5))
+    .withRetryJitter(0.2)
+    .build();
+
+Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 587, "user", "password")
+    .withMailSendRetryPolicy(retry)
+    .withMailSendObserver(outcome -> outcome.getDiagnostics().ifPresent(report -> log.info("{}", report)))
+    .buildMailer();
+
+MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
+MailSubmissionReceipt receipt = send.getCompletion().join();</code></pre>
+</div><div class="wide">
+  <p>Three means at most three provider invocations, including the first. This example waits around thirty seconds after the first refusal,
+    around sixty after the second, and stops after a third. The maximum caps the delay after jitter too.
+    Attempts and initial delay are required to enable retries; there is no implicit retry schedule.</p>
+  <p>Without backoff, delays stay fixed. Without jitter, they do not vary. <code>resetRetryBackoff()</code> and <code>resetRetryJitter()</code>
+    remove those optional choices. Calling <code>withMailSendRetryPolicy(...)</code> again replaces the entire policy, including resource limits;
+    <code>clearMailSendRetryPolicy()</code> disables retries and restores built-in resource limits unless locked configuration prevents the change.</p>
+  <p>Synchronous calls wait on their calling thread. Ordinary asynchronous sends release their worker, lease and proxy before backoff,
+    then resume through the same configured executor. Caller-runs executors may execute on the submitting or retry-dispatch thread.</p>
+</div></section>
+
+<a href="#section-safety" id="section-safety" class="section-link h2">&sect;</a>
+<h2>Which failures qualify?</h2>
+<section><div class="wide">
+  <p>The receipt must say <code>REJECTED</code> and <code>SAFE_TO_RETRY_ALL</code>, with structured temporary SMTP evidence such as a 450 recipient refusal
+    or a 451 refusal of the complete message. Contradictory permanent, accepted or uncertain facts stop automatic retrying.</p>
+  <div class="doc-table-wrap" tabindex="0" aria-label="Automatic retry safety"><table>
+    <thead><tr><th>Result</th><th>Automatic action</th></tr></thead><tbody>
+      <tr><td>Entire unchanged envelope safely refused temporarily</td><td>Wait, then try again within the configured limit</td></tr>
+      <tr><td>Permanent refusal</td><td>Fail normally; unchanged content is not a remedy</td></tr>
+      <tr><td>Some recipients accepted</td><td>Fail with the partial receipt; never replay the whole email</td></tr>
+      <tr><td>Final reply lost or insufficient evidence</td><td>Fail with uncertainty; do not risk a duplicate</td></tr>
+      <tr><td>Local validation, configuration, capability or replay-limit failure</td><td>Stop; do not submit again</td></tr>
+      <tr><td>Accepted, then cleanup failed</td><td>Fail while retaining acceptance; do not resend</td></tr>
+    </tbody></table></div>
+  <p>Each physical attempt uses the same frozen MIME bytes, Message-ID and envelope. Templates, attachments and protection are not rebuilt.
+    Exact EML and signed content stay unchanged; normal composed submissions still omit headers such as BCC.
+    Automatic ENVID is fresh for each physical SMTP transaction; an explicitly fixed ENVID remains fixed.</p>
+  <p>Once submission starts, retries never select another relay or redo failover. Failure to reacquire the pinned destination ends the operation.
+    Third-party adapters need explicit repeatable-submission support and trustworthy receipt facts. <code>CustomMailer</code> is invoked once
+    and owns any internal retrying; logging-only mode makes no SMTP attempts.</p>
+  <p>SMTP acceptance is responsibility for onward delivery, not final delivery. Later bounces and server-side delivery retries are separate.</p>
+</div></section>
+
+<a href="#section-ownership" id="section-ownership" class="section-link h2">&sect;</a>
+<h2>Which Mailer owns what?</h2>
+<section><div class="wide">
+  <p>If A selects B through clustering or failover, B supplies the schedule from its retry policy and A supplies its own policy's resource limits.
+    A disabled schedule on B does not inherit A's schedule. Grouping these settings in one policy does not change their owners.</p>
+  <div class="doc-table-wrap" tabindex="0" aria-label="Retry ownership"><table><thead><tr><th>Concern</th><th>Owner</th></tr></thead><tbody>
+    <tr><td>Attempts, delay, backoff and jitter</td><td>Actual selected Mailer</td></tr>
+    <tr><td>SMTP settings, templates, security and sending allowance</td><td>Actual selected Mailer; every invocation consumes allowance</td></tr>
+    <tr><td>Executor, admission, overall deadline, completion and observer</td><td>Initiating Mailer</td></tr>
+    <tr><td>Waiting capacity and replay-memory limits</td><td>Initiating Mailer</td></tr>
+  </tbody></table></div>
+  <p>The observer receives one terminal outcome, not one callback per attempt. The deadline is not reset for another attempt.
+    <code>requestCancellation()</code> wakes a waiting retry. Graceful shutdown rejects new work but drains accepted retries before closing owned resources;
+    a long configured delay can lengthen shutdown. Borrowed executors must remain usable until the Mailer has drained.</p>
+  <p>Simple batches finish retries for the current email before advancing their lazy iterator, and still stop at the first terminal failure.
+    Open-connection callbacks execute once. Both intentionally retain their connection and existing thread during retry waits;
+    configure the server's idle timeout accordingly. An unusable retained connection is not silently replaced.</p>
+</div></section>
+
+<a href="#section-resources" id="section-resources" class="section-link h2">&sect;</a>
+<h2>Bound waiting work and replay memory</h2>
+<section><div class="wide full-width-example">
+<pre><code class="language-java small">MailSendRetryPolicy retry = MailSendRetryPolicy.builder()
+    .withMaximumAttempts(3)
+    .withRetryDelay(Duration.ofSeconds(30))
+    .withWaitingCapacity(100)
+    .withMaximumMessageSize(32L * 1024 * 1024)
+    .withMemoryLimit(128L * 1024 * 1024)
+    .build();
+
+mailerBuilder.withMailSendRetryPolicy(retry);</code></pre>
+</div><div class="wide">
+  <p>These are built-in resource defaults, not a default retry rate. Waiting capacity bounds ordinary async sends in backoff, awaiting dispatch
+    or queued for resumed execution. It does not replace the initial admission queue, and does not count synchronous or retained-scope waits.</p>
+  <p>The per-message limit is serialized MIME size, not attachment size. The aggregate counts retained replay bytes across the initiating Mailer's
+    retry-enabled sends, not exact heap use: objects, arrays and provider buffers have overhead. Capture is incremental and uses no temporary files.</p>
+  <p>Message and memory-limit failures stop before the first provider invocation. Exhausted waiting capacity or rejected resumption preserves the last
+    genuine SMTP refusal, with a suppressed explanation of why no further attempt started. Limits are not silently bypassed.</p>
+  <p><code>resetWaitingCapacity()</code>, <code>resetMaximumMessageSize()</code> and <code>resetMemoryLimit()</code> on the policy builder
+    restore the built-in values. Configuration locks still apply when that policy is supplied to the Mailer builder.</p>
+  <p>You can configure only these limits without enabling retries on this Mailer. For example, A may select a retry-enabled B while
+    A retains its own waiting and memory budget. Supply no attempt count, delay, backoff or jitter to keep A's schedule disabled:</p>
+</div><div class="wide full-width-example">
+<pre><code class="language-java small">MailSendRetryPolicy resources = MailSendRetryPolicy.builder()
+    .withWaitingCapacity(20)
+    .withMaximumMessageSize(8L * 1024 * 1024)
+    .withMemoryLimit(64L * 1024 * 1024)
+    .build();
+
+initiatingMailerBuilder.withMailSendRetryPolicy(resources);
+// resources.isRetryEnabled() == false</code></pre>
+</div><div class="wide">
+  <p><code>mailer.getOperationalConfig().getMailSendRetryPolicy()</code> always returns the resolved policy. Use
+    <code>isRetryEnabled()</code> to check whether it includes a schedule; resource limits remain available either way.</p>
+</div></section>
+
+<a href="#section-results" id="section-results" class="section-link h2">&sect;</a>
+<h2>Read the final result and attempt history</h2>
+<section><div class="wide full-width-example">
+<pre><code class="language-java small">outcome.getDiagnostics().ifPresent(report -> {
+    report.getRetryWait().getElapsed().ifPresent(metrics::recordRetryWaiting);
+    for (MailSendSubmissionStep step : report.getSubmissionHistory()) {
+        log.info("Attempt {}: {}, code={}, elapsed={}, next delay={}",
+            step.getAttemptNumber(), step.getSubmissionStatus(),
+            step.getSmtpReplyCode(), step.getElapsed(), step.getRetryDelay());
+    }
+});</code></pre>
+<pre><code class="language-text small">Mail send timings:
+  Total: PT30.16S
+  Preparation: PT0.002S
+  Scheduling: PT0.004S
+  Sending-limit wait: not measured: No sending limit is configured for this destination.
+  Retry wait: PT30.006S
+  Connection acquisition: PT0.026S
+  MIME preparation: PT0.004S
+  Submission: PT0.1S
+  Cleanup: PT0.018S
+  Connection history:
+    - Connection acquired in PT0.016S
+    - Connection acquired in PT0.01S
+  Submission history:
+    - Attempt 1: REJECTED (SMTP 451), submission=PT0.04S, next delay=PT30S; Temporary refusal; the entire email can be submitted again safely.
+    - Attempt 2: ACCEPTED (SMTP 250), submission=PT0.06S</code></pre>
+</div><div class="wide">
+  <p>This illustrative output has one final successful outcome. Exhaustion fails with the final genuine exception and receipt, not a replacement
+    retry-exhaustion exception. Partial failure stays failure. Retry wait includes backoff and waiting for resumed execution; initial scheduling stays separate.</p>
+  <p>Acquisition, submission and cleanup accumulate across attempts. Retained scopes exclude shared setup/teardown.
+    History records real provider invocations, not failed reacquisitions. It is collected only with an observer and a retry-enabled SMTP send.</p>
+  <p>At most 64 entries are retained: the first 63 and the latest. <code>getOmittedSubmissionSteps()</code> counts omitted intermediate entries without
+    limiting attempts. Automatic rendering excludes content, addresses, identifiers, endpoints and raw server prose. Read the final receipt for recipient-level facts.</p>
+  <p>The first scheduled retry is logged at WARN, later retries at DEBUG, and recovery at INFO.
+    A connection probe describes setup and capabilities now, not this email's attempt history; see <a href="/debugging.html">Diagnostics</a>.</p>
+</div></section>
+
+<a href="#section-configuration" id="section-configuration" class="section-link h2">&sect;</a>
+<h2>Properties, Spring and CLI</h2>
+<section><div class="wide full-width-example">
+<pre><code class="language-properties small">simplejavamail.smtp.retry.attempts=3
+simplejavamail.smtp.retry.delay=PT30S
+simplejavamail.smtp.retry.backoffmultiplier=2
+simplejavamail.smtp.retry.maximumdelay=PT5M
+simplejavamail.smtp.retry.jitter=0.2
+
+simplejavamail.defaults.mailsend.retry.waitingcapacity=100
+simplejavamail.defaults.mailsend.retry.maximummessagesize=33554432
+simplejavamail.defaults.mailsend.retry.memorylimit=134217728</code></pre>
+</div><div class="wide">
+  <p>If you set any scheduling property under <code>simplejavamail.smtp.retry.</code>, supply both <code>attempts</code> and <code>delay</code>.
+    Increasing backoff also requires <code>maximumdelay</code>.</p>
+  <p>The resource limits under <code>simplejavamail.defaults.mailsend.retry.</code> can be set on their own; they do not enable retries.
+    For example, you can limit the initiating Mailer's waiting capacity and replay memory while a selected Mailer supplies the retry schedule.</p>
+  <p>Named definitions use the same tails,
+    for example <code>simplejavamail.mailers.secondary.smtp.retry.attempts</code> and its delay.
+    <a href="/configuration.html#section-locked-configuration">Locks</a> use the existing namespace, such as <code>simplejavamail.locked.smtp.retry.attempts</code>.</p>
+  <p>The <a href="/spring.html">Spring Environment integration</a> reads these same typed properties, with ordinary and locked IDE metadata.
+    <a href="/debugging.html">Configuration diagnostics</a> show their individual winning sources.</p>
+</div><div class="wide full-width-example">
+<pre><code class="language-text small">--mailer:withMailSendRetryAttempts 3
+--mailer:withMailSendRetryDelay PT30S
+--mailer:withMailSendRetryBackoff 2 PT5M
+--mailer:withMailSendRetryJitter 0.2
+--mailer:withMailSendRetryWaitingCapacity 100
+--mailer:withMailSendRetryMaximumMessageSize 33554432
+--mailer:withMailSendRetryMemoryLimit 134217728</code></pre>
+</div><div class="wide"><p>CLI sends wait for their final result. Configuration and explicit options participate in daemon profile identity,
+  so requests with different retry behavior cannot accidentally share a Mailer.</p></div></section>
+<section><p class="wide"><code>--mailer:clearMailSendRetryPolicy</code> removes an ordinary property-loaded schedule.
+  Locked configuration still prevents clearing. Resource reset options restore their built-in bounds independently of enabling retries.</p></section>
+
+<a href="#section-jobs" id="section-jobs" class="section-link h2">&sect;</a>
+<h2>Keep durable jobs in your application</h2>
+<section><div class="wide">
+  <p>Built-in retries retain work only in this process. Keep invoices, campaigns, priorities, business expiry and restart recovery in your job system.
+    The final observer is the handoff back to that system, not an intermediate failure callback.</p>
+  <p>After terminal completion, inspect receipt status and temporary evidence again before scheduling new work. Never restart whole-envelope retrying
+    after partial or uncertain acceptance. Recipient-subset retries need an application-owned email and authorization, including template-added recipients.
+    The <a href="/smtp-connection-failover.html#section-retry">observer/job-queue recipe</a> covers that broader decision.</p>
+</div></section>

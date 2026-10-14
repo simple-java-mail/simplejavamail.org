@@ -13,6 +13,8 @@ description: "Use another configured Mailer when an SMTP connection fails, witho
         When A recovers, new work returns to A. You keep calling the same Mailer.</p>
       <p>This is connection failover, not message retry. Once the provider starts submitting an email, Simple Java Mail does not send it again
         through another destination. A missing final SMTP reply could mean the first server already accepted it.</p>
+      <p>An independently configured <a href="/mail-send-retries.html">mail-send retry policy</a> can retry a safely refused temporary submission
+        on that selected destination. It does not reopen the failover route or replay partial or uncertain acceptance.</p>
       <p>Failover also isn't load balancing. A healthy but busy pool waits normally; it doesn't spill work to B. Use
         <a href="/smtp-connection-pooling.html">pool and cluster configuration</a> to distribute ordinary load.</p>
     </div>
@@ -251,5 +253,6 @@ omitted steps=0</code></pre>
     <p>No receipt is not itself permission to retry. Local validation/configuration errors need fixing; exhausted connection routes may warrant delayed
       rescheduling after the underlying cause has been assessed. An accepted receipt followed by cleanup failure must not become a duplicate send.</p>
     <p>Keep inline observer work short: enqueue the decision and return. Alternatively use the existing observer executor option. Do not sleep or resend
-      synchronously inside the callback. Simple Java Mail supplies neither a durable retry queue nor an automatic message-retry policy here.</p>
+      synchronously inside the callback. This recipe runs after terminal completion, including exhaustion of any configured
+      <a href="/mail-send-retries.html">built-in retry policy</a>. A durable retry queue remains application-owned.</p>
   </div></section>

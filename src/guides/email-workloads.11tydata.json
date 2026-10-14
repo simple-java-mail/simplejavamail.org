@@ -47,6 +47,7 @@
       "id": "recover-without-guessing",
       "title": "Recover without guessing",
       "scenarios": [
+        { "id": "a-mailbox-is-temporarily-unavailable", "title": "A mailbox is temporarily unavailable", "target": "Retry safely without delaying unrelated mail" },
         { "id": "one-support-reply-three-recipient-results", "title": "One support reply, three recipient results", "target": "Retry only the eligible recipients" },
         { "id": "smtp-may-have-accepted-the-message", "title": "SMTP may have accepted the message", "target": "Do not duplicate known submissions" },
         { "id": "the-invoice-was-accepted-then-bounced", "title": "The invoice was accepted, then bounced", "target": "Correlate later delivery feedback" },

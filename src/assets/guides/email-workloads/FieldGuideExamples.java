@@ -1,4 +1,5 @@
 import java.time.Duration;
+import jakarta.mail.Message;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -16,8 +17,8 @@ import org.simplejavamail.api.mailer.MailSubmissionReceipt;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.MailerRegularBuilder;
 import org.simplejavamail.api.mailer.config.FailoverPolicy;
+import org.simplejavamail.api.mailer.config.MailSendRetryPolicy;
 import org.simplejavamail.api.mailer.config.TransportStrategy;
-import org.simplejavamail.recipient.RecipientBuilder;
 
 /** Small call examples, not a queue implementation. No method runs automatically. */
 public final class FieldGuideExamples {
@@ -25,6 +26,16 @@ public final class FieldGuideExamples {
 
     static MailSubmissionReceipt submitOne(Mailer mailer, Email email) {
         return mailer.sync().sendMail(email);
+    }
+
+    static Mailer retryingMailer(MailerRegularBuilder<?> smtpBuilder) {
+        final MailSendRetryPolicy retryPolicy = MailSendRetryPolicy.builder()
+                .withMaximumAttempts(3).withRetryDelay(Duration.ofSeconds(30))
+                .withRetryBackoff(2, Duration.ofMinutes(5)).withRetryJitter(0.2)
+                .withWaitingCapacity(100)
+                .withMaximumMessageSize(32L * 1024 * 1024)
+                .withMemoryLimit(128L * 1024 * 1024).build();
+        return smtpBuilder.withMailSendRetryPolicy(retryPolicy).buildMailer();
     }
 
     static Mailer failoverMailer(SimpleJavaMail mail, Mailer alternative) {
@@ -44,7 +55,8 @@ public final class FieldGuideExamples {
     static Email failoverTemplate(SimpleJavaMail mail) {
         return mail.emailBuilder().startingBlank()
             .withHeader("X-Relay", "secondary")
-            .withRecipients(RecipientBuilder.bcc(null, "mail-operations@example.org"))
+            .withRecipients(mail.recipientBuilder().withAddress("mail-operations@example.org")
+                .withType(Message.RecipientType.BCC).build())
             .buildEmail();
     }
 

@@ -723,3 +723,7 @@ python tools/smtp-conformance/run.py --mode all</code></pre>
         Raw captures and fixture keys stay separate from the publishable evidence.</p>
     </div>
   </section>
+
+  <section><p class="wide">For observed, retry-enabled sends, <a href="/mail-send-retries.html#section-results">submission history and retry-wait timing</a>
+    explain temporary refusals inside the final outcome. A connection probe describes the server now; it does not reproduce the history of an email.
+    No new listener is needed, and unobserved sends do not collect this diagnostic history.</p></section>

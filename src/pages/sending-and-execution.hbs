@@ -824,3 +824,10 @@ observationWorkers.shutdown(); // application owns this executor
 }</code></pre>
     </div>
   </section>
+
+  <a href="#section-mail-send-retries" id="section-mail-send-retries" class="section-link h2">&sect;</a>
+  <h2>Retry a temporary refusal without holding a worker</h2>
+  <section><p class="wide">Optional <a href="/mail-send-retries.html">mail-send retries</a> keep one completion and one final observer outcome.
+    Ordinary asynchronous retry waits release their worker, lease and proxy, then resume on the configured executor. Each actual invocation consumes
+    the selected server's sending allowance. A partial or uncertain result is never automatically replayed. Simple batches and open-connection callbacks
+    deliberately retain their connection and thread during waits; graceful shutdown drains accepted retries before closing owned execution resources.</p></section>

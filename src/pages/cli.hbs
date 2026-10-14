@@ -391,3 +391,7 @@ Elapsed: 142ms</code></pre>
     </code></pre>
     <pre><code class="language-text">mvn exec:java</code></pre>
   </section>
+
+  <section><p class="wide">Optional <a href="/mail-send-retries.html#section-configuration">retry options</a> are generated from typed builder input:
+    <code>--mailer:withMailSendRetryAttempts 3 --mailer:withMailSendRetryDelay PT30S</code>, with optional backoff, jitter and resource limits.
+    Sends wait for the final result. Loaded policies, named policies, locks and explicit options all separate daemon profiles when their behavior differs.</p></section>

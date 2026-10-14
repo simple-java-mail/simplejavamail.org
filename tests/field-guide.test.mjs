@@ -28,7 +28,7 @@ test("every directory group and scenario resolves to its own matching heading", 
   const expected = groups.flatMap((group) => [[2, group.id], ...group.scenarios.map((scenario) => [3, scenario.id])]);
   assert.deepEqual(headingIds, expected);
   const scenarios = groups.flatMap((group) => group.scenarios);
-  assert.equal(scenarios.length, 25);
+  assert.equal(scenarios.length, 26);
   assert.equal((html.match(/class="field-guide-goal"/g) || []).length, scenarios.length);
   assert.doesNotMatch(html, /field-guide-check|Try it:/);
 });
