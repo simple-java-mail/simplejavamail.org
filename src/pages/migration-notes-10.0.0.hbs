@@ -32,6 +32,7 @@ breadcrumbParent: "/migration-notes.html"
     <ul>
       <li><a href="#java-11">Run on Java 11 or newer</a></li>
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
+      <li><a href="#api-construction">Use public contracts instead of constructing library results</a></li>
       <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
       <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
       <li><a href="#smtp-content-compatibility">Check sends with international addresses or unencoded non-ASCII text</a></li>
@@ -90,6 +91,35 @@ breadcrumbParent: "/migration-notes.html"
       Upgrade the application runtime before moving to 10.0.0. If the application must stay on Java 8, keep using the Simple Java Mail 9.x line.
     </p>
   </section>
+
+  <h2 id="api-construction">Use public contracts instead of constructing library results</h2>
+  <section><div class="wide">
+    <p>If you created recipient builders directly, get them from your <code>SimpleJavaMail</code> factory instead.
+      The concrete <code>org.simplejavamail.recipient.RecipientBuilder</code> and <code>RecipientsBuilder</code> classes are no longer application entry points.</p>
+<pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+IRecipientBuilder recipient = mail.recipientBuilder();
+IRecipientsBuilder recipients = mail.recipientsBuilder();
+
+Recipient alice = recipient.withName("Alice").withAddress("alice@example.org")
+    .withType(Message.RecipientType.TO).build();</code></pre>
+    <p>Import the builder interfaces from <code>org.simplejavamail.api.email</code>. Also update imports of the template-suppression selector
+      from <code>org.simplejavamail.internal.config.EmailProperty</code> to <code>org.simplejavamail.api.email.EmailProperty</code>;
+      the selected fields and suppression behavior are unchanged.</p>
+    <p><code>MailSubmissionReceipt</code>, <code>OutlookMessageData</code> and <code>OutlookEmailConversionResult</code> are now read interfaces.
+      Keep receiving and inspecting them through sending or conversion calls; remove direct constructor calls.
+      Recompile integrations compiled against the old concrete classes. Adapter implementations return
+      <code>MailTransportResult</code> rather than constructing an application receipt.</p>
+    <p><code>MailSender.sendMailAndGetReceipt(Email)</code> no longer has a default implementation that calls the void send method and
+      creates a receipt without transport facts. If you implemented a wrapper or test double, implement both methods and delegate receipt-producing
+      calls to the real sender. Code using the sender supplied to <code>withOpenConnection(...)</code> needs no change for this.</p>
+    <p>Previously serialized Java objects containing <code>MailSubmissionReceipt</code> or <code>OutlookMessageData</code> cannot be read by
+      the new implementations. Before upgrading, read those stored reports with the old library and export the observations your application needs.
+      This does not remove compatibility for serialized <code>Email</code>, <code>Recipient</code> or attachment data.</p>
+    <p>The two deprecated <code>EmailConverter.outlookMsgToEmailBuilder(InputStream, ...)</code> overloads now return
+      <code>OutlookEmailConversionResult</code>, not the internal <code>EmailFromOutlookMessage</code> wrapper. Use
+      <code>getEmailBuilder()</code> for the editable email and <code>getOutlookMessageData()</code> for the source metadata.
+      New calls should use <code>outlookMsgToEmailBuilderWithOutlookData(...)</code>.</p>
+  </div></section>
 
   <a href="#builder-entry" id="builder-entry" class="section-link h2">&sect;</a>
   <h2>Move builder calls to SimpleJavaMail</h2>

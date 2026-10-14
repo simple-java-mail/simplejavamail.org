@@ -112,7 +112,7 @@ simplejavamail.locked.defaults.bcc.address=archive@company.com
 try (Mailer mailer = mail.mailerBuilder().buildMailer()) {
     Email email = mail.emailBuilder().startingBlank()
         .from("orders@company.com")
-        .withRecipients(RecipientBuilder.to(null, "customer@example.org"))
+        .withRecipients(mail.recipientBuilder().withAddress("customer@example.org").withType(Message.RecipientType.TO).build())
         .withSubject("Your order")
         .withPlainText("Thanks for your order.")
         .buildEmail();

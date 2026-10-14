@@ -217,8 +217,8 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
 Email email = mail.emailBuilder().startingBlank()
     .from("Michel Baker", "m.baker@mbakery.com")
     .withRecipients(
-        RecipientBuilder.to("mom", "jean.baker@hotmail.com"),
-        RecipientBuilder.to("dad", "StevenOakly1963@hotmail.com"))
+        mail.recipientBuilder().withName("mom").withAddress("jean.baker@hotmail.com").withType(Message.RecipientType.TO).build(),
+        mail.recipientBuilder().withName("dad").withAddress("StevenOakly1963@hotmail.com").withType(Message.RecipientType.TO).build())
     .withSubject("My Bakery is finally open!")
     .withPlainText("Mom, Dad. We did the opening ceremony of our bakery!!!")
 	.withHTMLText("&lt;p&gt;Mom, Dad. We did the opening ceremony of &lt;strong&gt;our bakery&lt;/strong&gt;!!!&lt;/p&gt;")
@@ -317,14 +317,14 @@ public Mailer inhouseMailer(SimpleJavaMail mail) {
       <p class="wide">
         For example, when building an email, add
         <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/src/main/java/org/simplejavamail/api/email/Recipient.java" target="_blank">Recipient</a>
-        objects directly. For one named recipient, <code class="inline">RecipientBuilder.to(...)</code>,
-        <code class="inline">RecipientBuilder.cc(...)</code>, and <code class="inline">RecipientBuilder.bcc(...)</code> return a finished recipient. Use
-        <code class="inline">RecipientsBuilder</code> when a list needs RFC822 parsing,
+        objects directly. Obtain a single-recipient builder through <code class="inline">mail.recipientBuilder()</code>, choose its address and
+        <code class="inline">TO</code>, <code class="inline">CC</code> or <code class="inline">BCC</code> type, then call <code class="inline">build()</code>. Use
+        <code class="inline">mail.recipientsBuilder()</code> when a list needs RFC822 parsing,
         default names, fixed names, mixed recipient types or a group-level S/MIME certificate.
         The email builder itself keeps a small set of <code class="inline">withRecipients(...)</code> entry points.
       </p>
       <p class="wide">
-        Use <code class="inline">RecipientsBuilder</code> when a group of recipients should share the same rules. Defaults fill missing values; fixed values
+        Use <code class="inline">mail.recipientsBuilder()</code> when a group of recipients should share the same rules. Defaults fill missing values; fixed values
         replace the source data. For S/MIME, you can keep existing certificates, fill only the missing ones, replace them all, or clear them so the email or
         mailer fallback certificate is used.
       </p>
@@ -336,7 +336,7 @@ currentEmailBuilder.withRecipients(yourRecipient1, yourRecipient2);</code></pre>
 
       <pre><code>// Or build comma / semicolon separated recipient lists first
 String list = "twister@sweets.com,blue.tongue@sweets.com;honey@sweets.com";
-Collection&lt;Recipient&gt; archive = new RecipientsBuilder()
+Collection&lt;Recipient&gt; archive = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withDefaultSmimeCertificate(archiveCertificate)
     .withRecipientsWithDefaultName("maintenance group", Message.RecipientType.BCC, list)
     .buildRecipients();
@@ -344,13 +344,13 @@ currentEmailBuilder.withRecipients(archive);</code></pre>
 
       <pre><code>// what about a group with one deviating name?
 String list = "bob@sweets.com, gene@sweets.com; Security Group &lt;security@sweets.com&gt;";
-Collection&lt;Recipient&gt; stakeholders = new RecipientsBuilder()
+Collection&lt;Recipient&gt; stakeholders = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withRecipientsWithDefaultName("stakeholders", Message.RecipientType.TO, list)
     .buildRecipients();
 currentEmailBuilder.withRecipients(stakeholders);
 // bob and gene are named "stakeholders", "Security Group" keeps its own name</code></pre>
       <pre><code>// or force both display name and certificate for a controlled group
-Collection&lt;Recipient&gt; legal = new RecipientsBuilder()
+Collection&lt;Recipient&gt; legal = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withFixedSmimeCertificate(legalDepartmentCertificate)
     .withRecipientsWithFixedName("Legal Department", Message.RecipientType.CC,
             "reviewer@example.com", "Counsel &lt;counsel@example.com&gt;")
@@ -358,7 +358,7 @@ Collection&lt;Recipient&gt; legal = new RecipientsBuilder()
 currentEmailBuilder.withRecipients(legal);
 // all recipients are shown as "Legal Department" and use the same group certificate</code></pre>
       <pre><code>// or strip certificate state from reused recipients
-Collection&lt;Recipient&gt; reusedWithoutCertificates = new RecipientsBuilder()
+Collection&lt;Recipient&gt; reusedWithoutCertificates = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .clearingSmimeCertificates()
     .withRecipients(reusedRecipients)
     .buildRecipients();
@@ -376,16 +376,18 @@ simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;ho
         <p>The email builder only needs a small set of recipient methods:</p>
       </div>
       <div class="side">
-      <pre><code class="small">// Named single-address shortcuts, each returning one Recipient
-RecipientBuilder.to(String name, String address)
-RecipientBuilder.cc(String name, String address)
-RecipientBuilder.bcc(String name, String address)
+      <pre><code class="small">// Builder contracts obtained from your SimpleJavaMail factory
+IRecipientBuilder recipient = mail.recipientBuilder();
+IRecipientsBuilder recipients = mail.recipientsBuilder();
+
+recipient.withName("Alice").withAddress("alice@example.org")
+    .withType(Message.RecipientType.TO).build();
 
 // EmailPopulatingBuilder
 .withRecipients(Recipient... recipients)
 .withRecipients(Collection&lt;Recipient&gt; recipients)
 
-// RecipientsBuilder
+// IRecipientsBuilder
 .withRecipientsWithDefaultName(String name, RecipientType recipientType, String... oneOrMoreAddressesEach)
 .withRecipientsWithFixedName(String name, RecipientType recipientType, String... oneOrMoreAddressesEach)
 .withRecipientsFromAddressesWithDefaultName(String name, Collection&lt;InternetAddress&gt; addresses, RecipientType recipientType)
@@ -409,13 +411,12 @@ RecipientBuilder.bcc(String name, String address)
       <p>
         If a recipient needs to be assembled outside an email builder call, use the dedicated recipient builders. This keeps address parsing,
         recipient type and optional recipient metadata in one small object before it is added to an email. When several recipients belong together,
-        <code class="inline">RecipientsBuilder</code> lets you apply their shared names and certificates before adding the group to an email.
+        <code class="inline">mail.recipientsBuilder()</code> lets you apply their shared names and certificates before adding the group to an email.
       </p>
       <p>
-        <code class="inline">RecipientBuilder</code> always creates exactly one recipient. When you already have a display name and one address, use
-        <code class="inline">RecipientBuilder.to(name, address)</code>, <code class="inline">RecipientBuilder.cc(name, address)</code>, or
-        <code class="inline">RecipientBuilder.bcc(name, address)</code>. These shortcuts return a finished <code class="inline">Recipient</code>. Use the full
-        builder when you need recipient metadata or address interpretation. For multiple recipients, use <code class="inline">RecipientsBuilder</code>. Its
+        <code class="inline">mail.recipientBuilder()</code> always creates exactly one recipient and returns the core
+        <code class="inline">IRecipientBuilder</code> contract. Supply its name, address and type, plus any recipient metadata, then call
+        <code class="inline">build()</code>. For multiple recipients, use <code class="inline">mail.recipientsBuilder()</code>. Its
         String inputs may be separate addresses or comma- and semicolon-delimited lists, and every parsed address becomes its own recipient.
       </p>
       <p>
@@ -430,10 +431,10 @@ RecipientBuilder.bcc(String name, String address)
 
     <div class="side">
 <pre><code class="small">// One named recipient with exactly one address
-Recipient alice = RecipientBuilder.to("Alice", "alice@example.com");
+Recipient alice = mail.recipientBuilder().withName("Alice").withAddress("alice@example.com").withType(Message.RecipientType.TO).build();
 
 // Separate inputs and delimited lists can be combined
-Collection&lt;Recipient&gt; reviewers = new RecipientsBuilder()
+Collection&lt;Recipient&gt; reviewers = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withRecipientsWithDefaultName(null, Message.RecipientType.CC,
             "Bob &lt;bob@example.com&gt;",
             "carol@example.com;dave@example.com")
@@ -1410,7 +1411,7 @@ Session session = mailer.getSession();
     <div class="side">
 <pre><code class="language-java small">Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
     .from("sender@example.com")
-    .withRecipients(new RecipientBuilder()
+    .withRecipients(mail.recipientBuilder()
         .withAddress("recipient@example.com")
         .withType(Message.RecipientType.TO)
         .build())
@@ -1442,7 +1443,7 @@ Session session = mailer.getSession();
     <div class="side">
 <pre><code class="language-java small">Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
     .from("sender@example.com")
-    .withRecipients(new RecipientBuilder()
+    .withRecipients(mail.recipientBuilder()
         .withAddress("receiver@example.com")
         .withType(Message.RecipientType.TO)
         .build())
@@ -1480,7 +1481,7 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
     <div class="side">
 <pre><code class="language-java small">Email email = mail.emailBuilder().startingBlank()
     .from("sender@example.com")
-    .withRecipients(new RecipientBuilder()
+    .withRecipients(mail.recipientBuilder()
         .withAddress("receiver@example.com")
         .withType(Message.RecipientType.TO)
         .build())
@@ -1552,19 +1553,19 @@ Status: 5.1.1</code></pre>
         RET and ENVID still belong to the whole SMTP transaction.</p>
 <pre><code class="language-java small">import org.simplejavamail.api.email.config.DeliveryStatusNotification.NotifyOption;
 
-Recipient customer = new RecipientBuilder()
+Recipient customer = mail.recipientBuilder()
     .withAddress("customer@example.com")
     .withType(Message.RecipientType.TO)
     .withDeliveryStatusNotificationNotifyOptions(NotifyOption.SUCCESS)
     .build();
 
-Collection&lt;Recipient&gt; team = new RecipientsBuilder()
+Collection&lt;Recipient&gt; team = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withDefaultDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE)
     .withRecipient(customer) // keeps its explicit SUCCESS preference
     .withRecipient("support@example.com", Message.RecipientType.CC)
     .buildRecipients();
 
-Recipient archive = new RecipientBuilder()
+Recipient archive = mail.recipientBuilder()
     .withAddress("archive@example.com")
     .withType(Message.RecipientType.BCC)
     .withDeliveryStatusNotificationNotifyOptions(NotifyOption.NEVER)
@@ -1832,7 +1833,7 @@ MailSubmissionReceipt receipt =
 
 Email email = mail.emailBuilder().startingBlank()
     .from("sender@example.org")
-    .withRecipients(RecipientBuilder.to("Müller", "müller@example.org"))
+    .withRecipients(mail.recipientBuilder().withName("Müller").withAddress("müller@example.org").withType(Message.RecipientType.TO).build())
     .withPlainText("Hello!")
     .buildEmail();
 

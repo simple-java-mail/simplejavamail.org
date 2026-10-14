@@ -317,7 +317,7 @@ Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
 			</div>
 			<pre class="full-width-example"><code class="language-java">Email email = mail.emailBuilder().startingBlank()
     .from("sender@example.org")
-    .withRecipients(RecipientBuilder.to("Recipient", "recipient@example.net"))
+    .withRecipients(mail.recipientBuilder().withName("Recipient").withAddress("recipient@example.net").withType(Message.RecipientType.TO).build())
     .withSubject("Sensitive report")
     .withPlainText("...")
     .withTlsRequiredForOnwardDelivery()
@@ -690,7 +690,7 @@ currentMailerBuilder
 					email-level or mailer-level <code class="inline language-java">SmimeEncryptionConfig</code>, if one is configured.
 				</p>
 				<p>
-					For a mailing list, department, or any group that should share certificate rules, use <code class="inline language-java">RecipientsBuilder</code> before adding the
+					For a mailing list, department, or any group that should share certificate rules, use <code class="inline language-java">mail.recipientsBuilder()</code> before adding the
 					flat recipient list to the email. <code class="inline language-java">withDefaultSmimeCertificate(...)</code> fills only missing certificates,
 					<code class="inline language-java">withFixedSmimeCertificate(...)</code> replaces every recipient certificate in that group, and
 					<code class="inline language-java">clearingSmimeCertificates()</code> removes certificate state from reused recipients so the email-level
@@ -742,13 +742,13 @@ mailer.sync().sendMail(emailToBeEncrypted);
     .cipherAlgorithm("AES256_CBC")
     .build();
 
-Recipient alice = new RecipientBuilder()
+Recipient alice = mail.recipientBuilder()
     .withAddress("alice@example.com")
     .withType(Message.RecipientType.TO)
     .withSmimeCertificate(aliceCertificate)
     .build();
 
-Recipient bob = new RecipientBuilder()
+Recipient bob = mail.recipientBuilder()
     .withAddress("bob@example.com")
     .withType(Message.RecipientType.TO)
     .withSmimeCertificate(bobCertificate)
@@ -760,7 +760,7 @@ Email emailToBeEncrypted = currentEmailBuilder
     .buildEmail();
 </code></pre>
 				Encrypting a group with exactly one certificate:
-				<pre><code>Collection&lt;Recipient&gt; finance = new RecipientsBuilder()
+				<pre><code>Collection&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withFixedSmimeCertificate(financeCertificate)
     .withRecipientsWithDefaultName("Finance", Message.RecipientType.TO,
             "alice@example.com", "bob@example.com")
@@ -771,14 +771,14 @@ Email emailToBeEncrypted = currentEmailBuilder
     .buildEmail();
 </code></pre>
 				Defaulting only missing certificates in a group:
-				<pre><code>Collection&lt;Recipient&gt; finance = new RecipientsBuilder()
+				<pre><code>Collection&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withDefaultSmimeCertificate(financeFallbackCertificate)
     .withRecipients(previousFinanceRecipients)
     .buildRecipients();
 // recipients that already had their own certificates keep them;
 // the others receive financeFallbackCertificate</code></pre>
 				Clearing reused recipient certificates so the email-level certificate applies:
-				<pre><code>Collection&lt;Recipient&gt; reusableRecipients = new RecipientsBuilder()
+				<pre><code>Collection&lt;Recipient&gt; reusableRecipients = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .clearingSmimeCertificates()
     .withRecipients(previousRecipients)
     .buildRecipients();
@@ -821,7 +821,7 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 </code></pre>
 				<p class="small">
 					Properties can configure the signing identity and a single encryption fallback. They cannot express different S/MIME certificates per
-					recipient; use <code class="inline language-java">RecipientBuilder</code> or <code class="inline language-java">RecipientsBuilder</code>
+					recipient; use <code class="inline language-java">mail.recipientBuilder()</code> or <code class="inline language-java">mail.recipientsBuilder()</code>
 					for per-recipient or group certificate policy.
 				</p>
 			</div>

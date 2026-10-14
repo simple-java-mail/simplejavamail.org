@@ -27,7 +27,7 @@ description: "Send email from Java with a small fluent API and built-in support 
 
 Email email = mail.emailBuilder().startingBlank()
     .from("Sender", "sender@example.org")
-    .withRecipients(RecipientBuilder.to("Recipient", "recipient@example.net"))
+    .withRecipients(mail.recipientBuilder().withName("Recipient").withAddress("recipient@example.net").withType(Message.RecipientType.TO).build())
     .withSubject("It works")
     .withPlainText("Your first message.")
     .buildEmail();
