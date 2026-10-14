@@ -1,41 +1,56 @@
-# Java Concurrency in Practice: remaining series material
+# Concurrency article: consolidated scope
 
-Part 1 is the SOCKS bridge article in `src/journal/2026-09-08-set-phasers-to-synchronize.md`, at `/journal/set-phasers-to-synchronize.html`. These are unpublished drafts, so filenames and URLs can change with the content. The series has no fixed total yet; decide subsequent article divisions as the material is written.
+The concurrency material now belongs in one Journal article:
+`src/journal/2026-09-08-set-phasers-to-synchronize.md`, at
+`/journal/set-phasers-to-synchronize.html`. It is not a series. The former
+follow-up topics have been folded into the expanded draft where they add a
+distinct concurrency concern; no additional article pages are planned here.
 
-This is a planning draft, outside the published site. The remaining outline below was moved intact from the original article. References to preceding sections or later in the article need adapting when each follow-up is drafted.
+## Editorial direction
 
-Possible groupings, not a committed part count: scheduling and overload; results and cancellation; shutdown and testing. Do not publish empty placeholder articles for these groups.
+Use descriptive topic headings so readers can scan for a concern or tool.
+Each section stands on its own: establish the problem, show the relevant
+implementation decision, and explain what the regression test checks.
+The maintainer's experiences and judgment belong in the prose; do not impose
+one continuous incident across these unrelated examples.
 
-Keeping the bridge alive was one problem. Deciding how much work to run at once was another.
+Condense the SOCKS bridge history into the opening technical section. Explain
+its locking once, keeping the shutdown gap and corrective commit. Later
+sections should cover different mechanisms rather than repeatedly teaching
+`synchronized`.
 
-## `Runnable`: the job is not the thread
+## Sections incorporated in the article
 
-*Reader journey:* Follow the send closure from the preceding sections back to `sendMail()`. Show where synchronous and asynchronous execution diverge: the same packaged operation can run directly or be handed to an executor. Introduce the queue and worker here without repeating the whole send path as a separate overview.
+1. **Tracking active sends: from `Phaser` to `AtomicInteger`.** Dynamic
+   participation, the zero-check race and waiting for listener shutdown.
+2. **Backpressure with `ThreadPoolExecutor` and bounded queues.** Queue shapes,
+   rejection or bounded waiting, and restoring a worker after idle expiry.
+3. **Cancellation versus completion.** Detached `CompletableFuture` result
+   views, explicit cancellation requests and compare-and-set arbitration
+   between queued cancellation and execution.
+4. **Safe cancellation of pooled connections.** Resource-specific stop
+   registrations, closing an in-flight registration before reuse, and
+   invalidating an aborted connection.
+5. **Detecting callback self-waits with `ThreadLocal`.** Operation context,
+   rejection before shutdown starts, and restoring nested context.
+6. **Reproducing concurrency bugs with `CountDownLatch`.** Controlled
+   interleavings, bounded waits, thread-state checks and the limits of what
+   each regression test establishes.
 
-## When sends arrive faster than they finish
+## Source material
 
-*Reader journey:* Follow the asynchronous branch into `ThreadPoolExecutor` and `BlockingQueue`: how many sends run, where the rest wait, and what happens when there is no room left. Introduce backpressure through that concrete situation. Date the later bounded-admission implementation explicitly; explain worker count, queue capacity, timed admission and rejection before secondary settings such as fairness and keep-alive. Bring in atomic rejection counters where they are used rather than as a separate catalogue of atomic classes.
+Historical bridge examples retain their pinned commits. Current behavior is
+grounded in the parent repository's `docs/concurrency/01-send-operation.md`,
+`02-mailer-lifecycle.md`, `03-executor-admission.md` and
+`05-stop-registration.md`, together with their implementation and regression
+tests. Keep historical and development-era behavior explicitly separate.
 
-## `CompletableFuture`: getting the result back
+## Material held back
 
-*Reader journey:* Now follow completion, failure and rejected work back to the caller. Distinguish the executor running the send from the future reporting its outcome. Show any compare-and-set completion guards alongside the race they prevent, and be precise about what cancellation does and does not stop.
-
-## `ConcurrentHashMap`: keeping a live registry
-
-*Reader journey:* Follow a running send into its pooled transport lease. Show how active leases are tracked while other sends acquire and release theirs. Reconnect to the bridge example: a concurrent collection makes its own operations safe, but coordinating lease acquisition with shutdown still takes more than choosing the right map.
-
-## Threads are resources too
-
-*Reader journey:* Return to the original question of when shared infrastructure can stop, now at the scale of the mailer. Follow shutdown through accepted sends, transport leases and executor threads. Explain draining with monitor `wait()` and `notifyAll()`, caller-supplied versus library-created executors, daemon status and core-thread timeout using the current implementation, clearly separated from the earlier bridge history.
-
-## `ThreadLocal`: detecting a worker from the inside
-
-*Reader journey:* Introduce the shutdown corner case: what if a callback running on a mailer worker asks the mailer to close? Show how thread-confined context identifies that worker and prevents it from waiting for its own termination. This also pays off the ThreadLocal aside in the introduction.
-
-## The concurrency laboratory
-
-*Reader journey:* Use latches and deliberately stalled operations to manufacture queue saturation, cancellation, lease, and shutdown interleavings, showing how a test can prove a race-handling claim instead of merely hoping to encounter the race.
-
-## Choosing the mechanism from the invariant
-
-*Reader journey:* Return briefly to the Phaser that became a counter. Tie the ending to the problems the reader has followed: keeping the bridge alive, scheduling sends, handling overload, reporting results and shutting down. Let those examples carry the conclusion instead of summarizing every concurrency class again.
+The old outline also covered `Runnable`, live registries with
+`ConcurrentHashMap`, executor ownership, thread naming and daemon status,
+and a fuller shutdown walkthrough. These remain possible supporting details,
+not promised follow-up articles. Add them only if a concrete problem earns
+the space; the draft should not become a catalogue of every concurrency
+class used by the library. The detailed concurrency documentation remains
+the home for full state machines and lock maps.

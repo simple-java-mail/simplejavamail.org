@@ -1,84 +1,40 @@
 ---
-title: "Set Phasers to Synchronize: Keeping the SOCKS Bridge Alive"
+title: "Set Phasers to Synchronize: Concurrency Lessons from Simple Java Mail"
 subtitle: "Set phasers to ~~stun~~ synchronize!"
-description: "How Simple Java Mail kept a shared SOCKS bridge alive, replaced a Phaser with an atomic counter, and learned to wait for the listener to stop."
+description: "How Simple Java Mail coordinates shared resources, handles overloaded queues and cancellation, and tests races that ordinary runs can miss."
 date: "2026-09-08"
+updated: "2026-10-11"
 category: "Library design"
-series:
-  title: "Java Concurrency in Practice"
-  part: 1
 draft: true
+mermaid: true
 typora-root-url: ..
 typora-copy-images-to: ../assets/journal/articles/set-phasers-to-synchronize
 banner-type: note
 banner-header: "AI-Assisted"
-banner-body: "This draft began as an AI-assisted outline for a future Engineering Journal article."
+banner-body: "This article began as an AI-assisted outline and is still a draft."
 ---
 
 ![A retro-futurist space officer fires a beam that brings floating clocks into sync.](/assets/journal/articles/set-phasers-to-synchronize/set-phasers-to-synchronize.jpg)
 
-I studied concurrent programming models in Computer Science at school, where I learned the basics such as latches, semaphores, barriers, but never did I think I would actually have to use this foundation in my own projects. I mean sure, everything works on threads, but the kind of work I did for my job was mostly on top of servlets with Spring or J2EE, where this kind of thing is mostly managed (don't get me started on inherited/nested ThreadLocal holders, though).
+I studied concurrent programming models in Computer Science at school, where I learned the basics such as latches, semaphores and barriers, but never did I think I would actually have to use this foundation in my own projects. I mean sure, everything works on threads, but the kind of work I did for my job was mostly on top of servlets with Spring or J2EE, where this kind of thing is mostly managed (don't get me started on inherited/nested `ThreadLocal` holders, though).
 
 Simple Java Mail, however, is not a servlet-based server type of application, but it wants to do a bunch of things at the same time; in parallel for performance, buffering for convenience, back-pressured for stability, multi-clustered for horizontal scaling and failover.
 
-[Twenty years](/journal/twenty-years-of-simple-java-mail.html) in, Simple Java Mail employs a bunch of concurrency patterns, but [ten years ago](https://github.com/bbottema/simple-java-mail/commit/21634338b8c1c9cde8f5eaa591fb1e5d28371284), shortly after I added authenticated SOCKS proxy support, I reached for the [Phaser](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Phaser.html)...
+Counting sends, admitting more work and cancelling it have each needed their own answer. Some of these decisions go back years; others come from the current 10.0.0 work. Together they give a fairly good idea of what concurrency asks of a library that has to fit into somebody else's application.
 
-## `Phaser`: coordinating a party whose size keeps changing
+## Tracking active sends: from `Phaser` to `AtomicInteger`
 
-The [SOCKS bridge](/configuration.html#section-proxy-bridge-ports) is a small local server that uniquely forwards JavaMail’s unauthenticated proxy connections through an authenticated SOCKS proxy. That gives it a lifecycle: start it when needed, keep it alive while sends depend on it, and stop it when the last one finishes. I covered its origins in [A tale of two proxies](/journal/the-libraries-behind-simple-java-mail.html#a-tale-of-two-proxies).
+[Twenty years](/journal/still-the-same-ticket.html) in, Simple Java Mail employs a bunch of concurrency patterns, but [ten years ago](https://github.com/bbottema/simple-java-mail/commit/21634338b8c1c9cde8f5eaa591fb1e5d28371284), shortly after I added authenticated SOCKS proxy support, I reached for the [Phaser](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Phaser.html).
 
-The hard part was knowing when that last send had finished. I could not know the number of sends beforehand, and new ones could arrive while others were still running. A `CountDownLatch` can only count down from its initial count. A `CyclicBarrier` lets a fixed number of participants wait for each other. Neither fitted a group that kept changing.
+The [SOCKS bridge](/configuration.html#section-proxy-bridge-ports) is a small local server that forwards JavaMail's unauthenticated proxy connections through an authenticated SOCKS proxy. It must start when needed, stay alive while sends depend on it, and stop when the last one finishes. I covered its origins in [A tale of two proxies](/journal/the-libraries-behind-simple-java-mail.html#a-tale-of-two-proxies).
 
-A `Phaser` let each send register before being submitted and deregister when it finished. As long as anyone remained registered, the bridge still had work to do. The last one out could turn off the lights.
+I couldn't know the number of sends beforehand, and new ones could arrive while others were running. A `CountDownLatch` can only count down from its initial count, while a `CyclicBarrier` brings a fixed number of participants together. A `Phaser` supported the changing group: sends registered before submission and deregistered when finished. The last one out could turn off the lights.
 
-These two excerpts come from [the implementation just before the May 2019 refactor](https://github.com/bbottema/simple-java-mail/blob/32d1941a9a5b0dd3f7230069ddf8890042ae9a84/modules/simple-java-mail/src/main/java/org/simplejavamail/mailer/internal/mailsender/MailSenderImpl.java). Logging and unrelated sending code are omitted:
-```java
-// At submission, inside the synchronized send(...) method:
-if (smtpRequestsPhaser == null || smtpRequestsPhaser.isTerminated()) {
-    smtpRequestsPhaser = new Phaser();
-}
-smtpRequestsPhaser.register();
+By Simple Java Mail 6.0.0, I had [replaced it with an `AtomicInteger`](https://github.com/bbottema/simple-java-mail/commit/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2). I wasn't asking sends to wait for each other or advance through phases. I was counting them: one more send, one less send. Registration happened before executor submission, and the send closure decremented the counter in `finally`.
 
-// At completion:
-private synchronized void checkShutDownRunningProcesses() {
-    smtpRequestsPhaser.arriveAndDeregister();
-    if (smtpRequestsPhaser.getUnarrivedParties() == 0) {
-        if (needsAuthenticatedProxy() && proxyServer.isRunning() && !proxyServer.isStopping()) {
-            proxyServer.stop();
-        }
-    }
-}
-```
-The reset at the top mattered too. Once the last send deregistered, this phaser terminated. A later batch needed a new one. Notice that both methods were already `synchronized`; the phaser did not coordinate the bridge lifecycle on its own.
+But an [atomic counter](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/atomic/AtomicInteger.html) only protects the updates. Suppose the last send reaches zero and decides to stop the bridge, then a new send registers before `stop()` runs. Both counter updates were correct; stopping the bridge would still crash the new send mid-air.
 
-But by Simple Java Mail 6.0.0, I had [replaced it with an `AtomicInteger`](https://github.com/bbottema/simple-java-mail/commit/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2). Looking at what the code actually did, I wasn’t asking sends to wait for each other or advance through phases. I was counting them.
-
-## `AtomicInteger`: one more send, one less send
-
-An `AtomicInteger` made tracking emails simpler: one more send, one less send. But just reaching zero is not enough, you also have to make sure it stays zero until the bridge has shut down. Otherwise you risk crashing send jobs mid-air. You have to somehow *synchronize* these activities.
-
-In the replacement, the [send closure's constructor increased the shared counter](https://github.com/bbottema/simple-java-mail/blob/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2/modules/simple-java-mail/src/main/java/org/simplejavamail/mailer/internal/mailsender/AbstractProxyServerSyncingClosure.java#L22-L43), before the work could be submitted to an executor. A send waiting for a worker still needed the bridge to remain available. Once the closure ran, cleanup happened in `finally`, whether sending succeeded or threw an exception:
-
-```java
-public final void run() {
-    try {
-        startProxyServerIfNeeded();
-        executeClosure();
-    } finally {
-        shutDownProxyServerIfRunningAndCurrentBatchCompleted();
-    }
-}
-```
-
-The cleanup method decremented the counter and checked the result. An [atomic increment or decrement](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/atomic/AtomicInteger.html) prevents concurrent updates from overwriting each other. It does not make the subsequent call to another object part of that same atomic operation.
-
-## `synchronized`: Java’s multithreading workhorse
-
-Suppose the last send decrements the counter to zero. Before it calls `stop()`, another thread registers a new send. The counter is now one, but the first thread has already decided to close the bridge. Both updates were perfectly atomic. The decision was still out of date.
-
-Java gives every object a [monitor lock](https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.1). A `synchronized` block acquires that lock before entering and releases it when leaving, including when an exception escapes. Another thread trying to acquire the same lock has to wait. The important word is *same*: synchronizing on two different objects does not make the threads wait for each other.
-
-Here are the two counter operations from [the May 2019 replacement](https://github.com/bbottema/simple-java-mail/blob/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2/modules/simple-java-mail/src/main/java/org/simplejavamail/mailer/internal/mailsender/AbstractProxyServerSyncingClosure.java#L29-L74), with logging omitted:
+Here is the [May 2019 implementation](https://github.com/bbottema/simple-java-mail/blob/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2/modules/simple-java-mail/src/main/java/org/simplejavamail/mailer/internal/mailsender/AbstractProxyServerSyncingClosure.java#L29-L74), with logging omitted:
 
 ```java
 private void increaseSmtpConnectionCounter() {
@@ -102,17 +58,13 @@ private void shutDownProxyServerIfRunningAndCurrentBatchCompleted() {
 }
 ```
 
-The lock around `incrementAndGet()` may look like it does nothing and on its own that would be true. However, the lock is acquired elsewhere, too: the last send holds that same counter lock while checking for zero and calling `stop()`. A new _send_ cannot increment the counter halfway through those steps. Just calling an atomic method does not automatically acquire the object's monitor; the explicit `synchronized` block is what makes registration wait here.
+*Keep a new send from registering between the zero check and bridge shutdown.*
 
-The second lock, on `proxyServer`, serves a different purpose. The [startup method used that same object](https://github.com/bbottema/simple-java-mail/blob/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2/modules/simple-java-mail/src/main/java/org/simplejavamail/mailer/internal/mailsender/AbstractProxyServerSyncingClosure.java#L47-L56) to coordinate checking whether the bridge was running and starting it if necessary. The actual email send ran outside these blocks, so asynchronous sends could still overlap.
+The last send holds the counter's [monitor lock](https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.1) through the zero check and `stop()`, so registration must take that same lock. Calling `incrementAndGet()` alone doesn't acquire it. The separate proxy lock coordinates startup and stopping; the email sends themselves run outside both locks and can overlap.
 
-There is a catch in this historical version. Holding the counter lock through `stop()` was not the same as waiting for the bridge to finish shutting down. Its [`stop()` method closed the listening socket](https://github.com/bbottema/simple-java-mail/blob/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2/modules/authenticated-socks-module/src/main/java/org/simplejavamail/internal/authenticatedsockssupport/socks5server/AnonymousSocks5ServerImpl.java#L56-L84), but the bridge thread shut down its worker pool afterwards. The counter could increase again before that thread finished. The locks protected the decision and the call; they did not provide the full shutdown guarantee I described above. [This was a bug](https://github.com/bbottema/simple-java-mail/commit/38b119d9633434256e403900f5ee209e778a4ced).
+There was still a gap. The old [`stop()` closed the listening socket](https://github.com/bbottema/simple-java-mail/blob/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2/modules/authenticated-socks-module/src/main/java/org/simplejavamail/internal/authenticatedsockssupport/socks5server/AnonymousSocks5ServerImpl.java#L56-L84), but returned before the listener had finished shutting down its worker pool. A new batch could start in that interval. [This was a bug](https://github.com/bbottema/simple-java-mail/commit/38b119d9633434256e403900f5ee209e778a4ced), fixed [during the 10.0.0 work](https://github.com/bbottema/simple-java-mail/issues/694#issuecomment-5393805734) by keeping the listener thread and waiting for it with `join()`.
 
-## Waiting for the listener to stop
-
-That sync bug was addressed [during the 10.0.0 work](https://github.com/bbottema/simple-java-mail/issues/694#issuecomment-5393805734), in the [24 August 2026 proxy refactor](https://github.com/bbottema/simple-java-mail/commit/38b119d9633434256e403900f5ee209e778a4ced). The bridge now keeps a reference to its listener thread, and after closing the listening socket, `stop()` calls `join()` on that thread, making it wait. The outer counter lock stays held during that call, preventing another send from registering halfway through. So, both the bridge and the user are told to wait until the work is done and new work can start the whole cycle over again.
-
-Let's see what that looks like. To stop the bridge and wait for it to finish, [`stop()` needs two things: the listening socket to close, and the listener thread to wait for](https://github.com/bbottema/simple-java-mail/blob/38b119d9633434256e403900f5ee209e778a4ced/modules/authenticated-socks-module/src/main/java/org/simplejavamail/internal/authenticatedsockssupport/socks5server/AnonymousSocks5ServerImpl.java#L85-L114). The bridge has its own lock, `lifecycleMonitor`, to coordinate changes to its internal state. Under that lock, we mark it as stopping and save those two references for the next step:
+Inside the repaired bridge, [`stop()` captures the socket and thread under its own `lifecycleMonitor`](https://github.com/bbottema/simple-java-mail/blob/38b119d9633434256e403900f5ee209e778a4ced/modules/authenticated-socks-module/src/main/java/org/simplejavamail/internal/authenticatedsockssupport/socks5server/AnonymousSocks5ServerImpl.java#L85-L114):
 
 ```java
 final ServerSocket serverSocketToClose;
@@ -127,43 +79,192 @@ synchronized (lifecycleMonitor) {
 }
 ```
 
-Then it closes the socket and waits for the listener to finish. But we have to release `lifecycleMonitor` before waiting: the listener needs that same lock to clear its state before it can exit. Keep the lock while waiting, and neither thread can make progress. That's a deadlock. The outer counter lock stays held, though, so new sends still have to wait their turn:
+*Capture what shutdown needs, then release the bridge's internal lock before waiting.*
+
+After releasing that monitor, `stop()` closes the socket and joins the listener. Holding `lifecycleMonitor` while waiting would deadlock: the listener needs it to clear its state before exiting. The outer counter lock stays held, so a new send still cannot register halfway through shutdown.
+
+Stopping the listener doesn't kill connections it already accepted. Pooled SMTP connections may still be using their bridge sockets, so normal listener shutdown calls `shutdown()` on its worker pool rather than `shutdownNow()`. The [restart test](https://github.com/bbottema/simple-java-mail/blob/38b119d9633434256e403900f5ee209e778a4ced/modules/authenticated-socks-module/src/test/java/org/simplejavamail/internal/authenticatedsockssupport/socks5server/AnonymousSocks5ServerImplTest.java#L35-L56) checks that stopping really finishes, then occupies the old port and starts the bridge on another one. Seeing the counter reach zero wouldn't have established any of that.
+
+## Backpressure with `ThreadPoolExecutor` and bounded queues
+
+An asynchronous send still needs somewhere to wait when every worker is busy. An unbounded queue makes submission convenient, but lets a producer keep accumulating work faster than the server can accept it. Limiting the worker count doesn't limit that waiting backlog.
+
+SJM's [async queue configuration](/sending-and-execution.html#section-async-queue) uses a `ThreadPoolExecutor` with three possible queue shapes:
+
+| Capacity | Queue | What happens to waiting work |
+| --- | --- | --- |
+| `-1` | `LinkedBlockingQueue` | There is no configured backlog limit. |
+| `0` | `SynchronousQueue` | A task must meet a worker directly; nothing is stored. |
+| Positive | `ArrayBlockingQueue` | Up to that many tasks can wait, in addition to running workers. |
+
+When the executor cannot accept another task, SJM either rejects it or waits for capacity within the configured budget. That wait delays the call to the asynchronous API; it doesn't move SMTP onto the caller's thread. A caller-supplied executor can choose different rules, but the built-in one doesn't quietly turn an async send into a caller-runs send.
+
+The less obvious problem appears when idle workers are allowed to expire. A submission has already reached the capacity-wait handler, and meanwhile the last worker finishes its previous task and exits. With a `SynchronousQueue`, waiting for space is now rather optimistic: there is no consumer left to receive the job.
+
+In [`MailSendExecutor`](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/modules/simple-java-mail/src/main/java/org/simplejavamail/mailer/internal/MailSendExecutor.java), the wait loop starts a core worker before each timed offer, and again after a successful offer. Here is the relevant excerpt; `operation` is the submitted task and `remaining` is its remaining wait budget:
 
 ```java
+prestartCoreThread();
+if (getQueue().offer(operation,
+        Math.min(remaining, TimeUnit.MILLISECONDS.toNanos(50)),
+        TimeUnit.NANOSECONDS)) {
+    if (isShutdown() && remove(operation)) {
+        throw reject(AsyncQueueRejectionReason.EXECUTOR_SHUT_DOWN);
+    }
+    prestartCoreThread();
+    return;
+}
+```
+
+*A waiting producer needs a worker as well as room for its task.*
+
+Starting before the offer gives a direct handoff someone to meet. Starting afterwards covers a buffered queue whose worker expired between the first check and insertion. The short offer intervals also let the wait loop notice shutdown and cancellation rather than disappear into one long queue wait.
+
+The [worker-expiry regression test](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/modules/simple-java-mail/src/test/java/org/simplejavamail/mailer/internal/MailSendExecutorTest.java) deliberately lets the last worker exit before resuming the rejection handler, then checks that the task runs once on a worker, not on the submitting thread. That's a different question from whether the queue is thread-safe. Both the queue and the executor can behave correctly individually while the code connecting them forgets to keep a consumer available.
+
+## Cancellation versus completion
+
+With a `CompletableFuture`, it is easy to tell a caller that something has finished. Whether the send has actually stopped is another question. Cancelling a future doesn't, by itself, close a socket, release a pooled connection or establish that SMTP didn't accept the email.
+
+SJM makes that distinction explicit in its [`MailSend` handle](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/modules/core-module/src/main/java/org/simplejavamail/api/mailer/MailSend.java). Each call to `getCompletion()` returns a detached future: cancelling or completing that view affects only the view. To stop the work, the caller uses [`requestCancellation()`](/sending-and-execution.html#section-send-deadlines), then checks the eventual result.
+
+For an existing configured SJM `Mailer` and an `Email` named `email`, that looks like this:
+
+```java
+MailSend<MailSubmissionReceipt> send = mailer.async().sendMail(email);
+
+send.getCompletion().whenComplete((receipt, failure) -> {
+    if (failure != null) {
+        log.warn("Send finished with a failure", failure);
+    } else {
+        log.info("SMTP submission result: {}", receipt);
+    }
+});
+
+send.requestCancellation();
+```
+
+*Request that the send stop; let its actual completion report what happened.*
+
+The request can retire queued work or ask a supported transport to abort its I/O. It cannot forcibly stop arbitrary application callbacks, and a late request may arrive after SMTP acceptance. Cancellation is therefore neither a recall button nor permission to retry blindly.
+
+There is also a race before sending starts: a worker may take a queued operation just as cancellation tries to remove it. SJM uses an `AtomicReference` holding its internal operation state to decide which path proceeds. The worker must change `QUEUED` to `RUNNING`; queued cancellation must change `QUEUED` to `FINISHING`. Both use compare-and-set, so only one can win that transition.
+
+If cancellation wins, removing the task from the queue is useful housekeeping, but the state change is what makes a concurrent dequeue harmless. Even a caller-owned executor that cannot remove the wrapper will later find nothing to execute. The [operation tests](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/modules/simple-java-mail/src/test/java/org/simplejavamail/mailer/internal/MailSendOperationTest.java) cover that case as well as reclaiming space in SJM's own queue.
+
+Required cleanup precedes result completion. An inline observer also returns before the result completes; an observer on an application executor only needs to have been handed off. Waiting for the send's result doesn't wait for all the application work somebody may attach to it.
+
+## Safe cancellation of pooled connections
+
+A pooled connection can outlive the send that borrowed it. That makes a delayed cancellation callback more dangerous than an ordinary late result: it could close a connection that is already carrying somebody else's email.
+
+SJM's internal `MailSendControl` therefore registers stop actions for specific claims and transport leases. A *lease* is one send's temporary use of a connection. Cancelling a thread waiting to acquire one must wake that waiter, not abort the connection's current borrower.
+
+Once a send has a lease, its abort action stays registered only for that use. Before returning a healthy connection to the pool, the send closes the registration. If an abort action has already started on another thread, closing must wait for it to finish; merely removing the callback from a list would leave the running action free to interfere with the next borrower.
+
+The two retirement cases are:
+
+| Stop action at retirement | What closing the registration does |
+| --- | --- |
+| Not started | Prevents it from starting, even if a cancellation thread already selected it. |
+| Already running elsewhere | Prevents another start and waits for the running action to return. |
+
+In the second case, an aborted connection must be discarded rather than reused:
+
+```mermaid
+sequenceDiagram
+    participant S as Cancellation thread
+    participant R as Send A's registration
+    participant W as Send A's worker
+    participant P as Connection pool
+    S->>R: Start abort action
+    W->>R: Close registration before cleanup
+    Note over R,W: Closing waits while the action runs
+    S-->>R: Abort action returns
+    R-->>W: Registration close returns
+    W->>P: Invalidate lease and await disposal
+    Note over P: The aborted connection is not reused
+```
+
+*Finish the old abort action before retiring its connection, so it cannot escape into another send.*
+
+This is called [registration fencing](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/docs/concurrency/05-stop-registration.md): closing establishes that the old action cannot continue into the next use. The callback runs outside the registration's bookkeeping lock, allowing the closing thread to wait without preventing the action from finishing. It must be a short internal stop action, not application code that might wait indefinitely.
+
+The [pooled-cancellation tests](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/modules/simple-java-mail/src/test/java/org/simplejavamail/mailer/MailSendExecutionControlTest.java) check both sides: cancelling a waiting claimant leaves the current borrower alone, while aborting one active lease doesn't disrupt other healthy leases. A later send gets fresh result facts, and an old handle can't cancel it.
+
+## Detecting callback self-waits with `ThreadLocal`
+
+A Mailer has to [drain accepted work before closing its resources](/sending-and-execution.html#section-async-queue). That includes an inline completion observer, because the send hasn't finished reporting until the callback returns. Now imagine that callback calls `mailer.close()`.
+
+The callback waits for the Mailer to shut down, while shutdown waits for the callback to return. More locks won't resolve that circle.
+
+SJM uses `ThreadLocal` context to recognize when the current thread is already working inside that Mailer. Its [`close()` guard](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/modules/simple-java-mail/src/main/java/org/simplejavamail/mailer/internal/MailerImpl.java) checks both the operation context and the identity of an SJM-owned executor worker:
+
+```java
+public void close() throws ExecutionException, InterruptedException {
+    if (mailSendOperations.isCurrentOperation()
+            || (ownsMailSendExecutor()
+                && MailSendExecutor.isCurrentWorker(
+                    operationalConfig.getExecutorService()))) {
+        throw new IllegalStateException(
+                "A Mailer worker cannot wait for its own shutdown; "
+                + "close the Mailer from its owning application thread");
+    }
+    shutdownConnectionPool().get();
+}
+```
+
+*Reject a self-wait before starting shutdown; let the application close the Mailer from outside its callback.*
+
+Here, `ThreadLocal` records which Mailer this thread is working inside. Checking the operation as well as the worker matters because synchronous sends and caller-supplied executors can run on threads SJM didn't create.
+
+The marker is installed around execution and inline reporting, then the previous context is restored in `finally`. Nested work must leave the surrounding context intact when it returns or throws. Simply clearing a `ThreadLocal` at the end of every nested call would erase information the outer operation still needs.
+
+The [observer-close regression test](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/modules/simple-java-mail/src/test/java/org/simplejavamail/mailer/MailSendQueueTest.java) checks that the callback gets an `IllegalStateException`, the send completes and the Mailer stays open until the application closes it elsewhere. It is a targeted self-wait guard, not a detector for every dependency cycle an application can create. Explicitly waiting on `shutdownConnectionPool().get()` inside the callback would bypass it.
+
+## Reproducing concurrency bugs with `CountDownLatch`
+
+Running a test a thousand times might encounter a race. It also might miss it a thousand times. For these bugs, the useful question is whether the test can hold one thread at the point another thread needs to cross.
+
+The registration-fencing test uses a pair of `CountDownLatch` instances: one announces that the stop action has started, and the other keeps it there until the test releases it. These excerpts come from [`closingRegistrationFencesAnAlreadyRunningAction`](https://github.com/bbottema/simple-java-mail/blob/0fba80c1fb7581ed94a3b52f70534071132b42c8/modules/core-module/src/test/java/org/simplejavamail/internal/util/concurrent/MailSendControlTest.java). Here `control` is SJM's internal stop control, `watcher` is the test's scheduled executor, and `await` is its helper for a bounded latch wait:
+
+```java
+final CountDownLatch release = new CountDownLatch(1);
+final CountDownLatch entered = new CountDownLatch(1);
+final MailSendControl.Registration registration = control.onStop(() -> {
+    entered.countDown();
+    await(release);
+});
+watcher.execute(control::requestCancellation);
+assertThat(entered.await(2, SECONDS)).isTrue();
+```
+
+*Hold the stop action in progress before asking another thread to retire it.*
+
+The test then starts a separate closing thread. Starting it alone doesn't prove it has reached the wait, so `awaitRegistrationCloseWaiting` checks for the waiting thread state with `Registration.close()` on its stack. Only then does the test release the action:
+
+```java
+final FutureTask<Void> closing = new FutureTask<>(registration::close, null);
+final Thread closingThread = new Thread(closing, "registration-closing-test");
+closingThread.start();
 try {
-    if (serverSocketToClose != null) {
-        serverSocketToClose.close();
-    }
-} catch (final IOException e) {
-    throw new SocksException(e.getMessage(), e);
-}
-
-if (listenerThreadToJoin != null && listenerThreadToJoin != Thread.currentThread()) {
-    try {
-        listenerThreadToJoin.join();
-    } catch (final InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new SocksException("interrupted while stopping socks5bridge server", e);
-    }
+    awaitRegistrationCloseWaiting(closingThread);
+    assertThat(closing).isNotDone();
+    release.countDown();
+    closing.get(2, SECONDS);
+} finally {
+    release.countDown();
+    closingThread.join(SECONDS.toMillis(2));
+    assertThat(closingThread.isAlive()).isFalse();
 }
 ```
 
-The listener needs the same monitor to [clear its state before it exits](https://github.com/bbottema/simple-java-mail/blob/38b119d9633434256e403900f5ee209e778a4ced/modules/authenticated-socks-module/src/main/java/org/simplejavamail/internal/authenticatedsockssupport/socks5server/AnonymousSocks5ServerImpl.java#L150-L158):
+*Verify that close really waits, then release the action and check that both threads finish.*
 
-```java
-synchronized (lifecycleMonitor) {
-    if (serverSocket == activeServerSocket) {
-        serverSocket = null;
-        threadPool = null;
-        listenerThread = null;
-        running = false;
-        stopping = false;
-    }
-}
-```
+The complete test shuts down its scheduled executor in `finally`; its bounded waits make a broken test fail rather than hang the test suite. The timeouts aren't an attempt to guess how long the race takes. They limit how long the test will wait for explicitly arranged events.
 
-Stopping the listener does not mean killing every connection it has already accepted. Pooled SMTP connections can still be using their bridge sockets, so normal listener shutdown now calls `shutdown()` on its worker pool rather than `shutdownNow()`. Existing relay work can continue until those transports close. Waiting for the listener and waiting for every relay connection are different jobs.
+The queue tests use the same idea to hold workers and force saturation or expiry, while pooled tests hold an SMTP phase open to exercise cancellation. Each test establishes a particular interleaving, not every possible one. But it gives the implementation something far more useful than a lucky run: a repeatable description of the situation it must handle.
 
-There is also a [restart test](https://github.com/bbottema/simple-java-mail/blob/38b119d9633434256e403900f5ee209e778a4ced/modules/authenticated-socks-module/src/test/java/org/simplejavamail/internal/authenticatedsockssupport/socks5server/AnonymousSocks5ServerImplTest.java#L35-L56) that calls `stop()`, checks that the bridge is no longer running, occupies its old port and starts it again on a new one. That is a rather more convincing end to this story than just seeing the counter reach zero.
+The retry tests now use latches in much the same way. Once the test server reaches a temporary SMTP refusal, the test can check what happens during backoff: the send releases its worker and connection so another message can proceed, while shutdown still waits for the parked retry. Other retry tests bring two sends to the same refusal point before either continues, proving that their receipts and connection histories remain separate. None of this depends on a well-placed sleep or a lucky scheduler.
 
-This is a simple setup, but as you'll see in the current 10.0.0 ongoing work, there's extensive synchronizing machinery coming to capture the complete lifecycle of sending and cancelling of send operations. <!-- TODO: make good on this promise by referencing it in a later (last?) article of this series -->
+What I like about these examples is that they make the choice of tool concrete. The bridge needed a count and a completed shutdown; the executor needed a bounded backlog and available workers; cancellation needed its own request and cleanup rules. A familiar concurrency class can help with each of those, but it doesn't choose the behaviour the library should promise. That part is still engineering.
