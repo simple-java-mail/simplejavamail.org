@@ -15,6 +15,9 @@ import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.config.ConfigLoader;
 import org.simplejavamail.api.mailer.config.Pkcs12Config;
 import org.simplejavamail.converter.EmailConverter;
+import org.simplejavamail.mailer.internal.MailRehearsalImpl;
+import org.simplejavamail.mailer.internal.MailSendOutcomeImpl;
+import org.simplejavamail.mailer.internal.MailSubmissionReceiptImpl;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Proxy;
@@ -47,9 +50,6 @@ import static org.simplejavamail.api.mailer.AsyncQueueRejectionReason.QUEUE_FULL
 import static org.simplejavamail.api.mailer.MailSubmissionStatus.ACCEPTED;
 import static org.simplejavamail.api.mailer.MailSubmissionStatus.PARTIALLY_ACCEPTED;
 import static org.simplejavamail.api.mailer.MailSubmissionStatus.UNKNOWN;
-import static org.simplejavamail.recipient.RecipientBuilder.to;
-import static org.simplejavamail.recipient.RecipientBuilder.cc;
-import static org.simplejavamail.recipient.RecipientBuilder.bcc;
 import static org.simplejavamail.api.email.config.DeliveryStatusNotification.NotifyOption.FAILURE;
 import static org.simplejavamail.api.email.config.DeliveryStatusNotification.NotifyOption.NEVER;
 
@@ -143,10 +143,13 @@ public final class PolarMeridianDispatcherTest {
         check(successful.quotaAttempt.equals(successful.archiveAttempt)
                 && successful.archiveAttempt.equals(successful.sentEmail.getId()),
                 "Quota, archive and submission must use the same attempt ID");
-        MailSubmissionReceipt archivedReceipt = new MailSubmissionReceipt(successful.archiveAttempt,
-                null, NOW, ACCEPTED, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
-        MailSendOutcome archivedOutcome = new MailSendOutcome(successful.archiveAttempt,
-                successful.archiveAttempt, NOW, NOW, NOW, NOW, true, false, archivedReceipt, null);
+        // Test fixtures assemble internal results; the application example only consumes their public read interfaces.
+        MailSubmissionReceipt archivedReceipt = MailSubmissionReceiptImpl.builder()
+                .emailId(successful.archiveAttempt).submittedAt(NOW).status(ACCEPTED)
+                .recipientResults(Collections.emptyList()).retryDisposition(org.simplejavamail.api.mailer.MailRetryDisposition.DO_NOT_RETRY).build();
+        MailSendOutcome archivedOutcome = MailSendOutcomeImpl.builder()
+                .initialMessageId(successful.archiveAttempt).effectiveMessageId(successful.archiveAttempt)
+                .requestedAt(NOW).readyAt(NOW).startedAt(NOW).completedAt(NOW).successful(true).submissionReceipt(archivedReceipt).build();
         MailSendResultObserver observationSink = outcome ->
                 successful.archive.recordOutcome(outcome.getInitialMessageId(), outcome);
         observationSink.onMailSendCompleted(archivedOutcome);
@@ -397,9 +400,10 @@ public final class PolarMeridianDispatcherTest {
                         submittedBytes = renderingMailer.rehearse(sentEmail).getEmlBytes();
                         CompletableFuture<MailSubmissionReceipt> result = new CompletableFuture<>();
                         if (sendFailure != null) result.completeExceptionally(sendFailure);
-                        else result.complete(noReceipt ? null : new MailSubmissionReceipt(
-                                sentEmail.getId(), null, NOW, status,
-                                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()));
+                        else result.complete(noReceipt ? null : MailSubmissionReceiptImpl.builder()
+                                .emailId(sentEmail.getId()).submittedAt(NOW).status(status).recipientResults(Collections.emptyList())
+                                .retryDisposition(status == ACCEPTED ? org.simplejavamail.api.mailer.MailRetryDisposition.DO_NOT_RETRY
+                                        : org.simplejavamail.api.mailer.MailRetryDisposition.CALLER_POLICY_REQUIRED).build());
                         return new MailSend<>(result, () -> {});
                     });
             Mailer mailer = (Mailer) Proxy.newProxyInstance(Mailer.class.getClassLoader(),
@@ -409,8 +413,9 @@ public final class PolarMeridianDispatcherTest {
                             MailRehearsal snapshot = renderingMailer.rehearse((Email) args[0]);
                             if (!nonCanonical) return snapshot;
                             byte[] truncated = Arrays.copyOf(snapshot.getEmlBytes(), snapshot.getEmlBytes().length - 1);
-                            return new MailRehearsal(snapshot.getEffectiveEmail(), truncated, snapshot.getEmailId(),
-                                    snapshot.getEnvelopeSender(), snapshot.getEnvelopeRecipients(), true);
+                            return MailRehearsalImpl.builder().effectiveEmail(snapshot.getEffectiveEmail()).emlBytes(truncated)
+                                    .emailId(snapshot.getEmailId()).envelopeSender(snapshot.getEnvelopeSender())
+                                    .envelopeRecipients(snapshot.getEnvelopeRecipients()).fullRehearsal(true).build();
                         }
                         throw new UnsupportedOperationException(method.getName());
                     });
@@ -449,7 +454,8 @@ public final class PolarMeridianDispatcherTest {
                             .from("service@polarmeridian.com")
                             .withRecipients(new Recipient("Leonie", "leonie@partner.com",
                                     jakarta.mail.Message.RecipientType.TO, null, List.of(NEVER)),
-                                    cc("Service", "service@partner.com"))
+                                    mail.recipientBuilder().withName("Service").withAddress("service@partner.com")
+                                            .withType(jakarta.mail.Message.RecipientType.CC).build())
                             .withSubject("Test only").withPlainText("Never sent\r\n")
                             .withTlsRequiredForOnwardDelivery()
                             .withDeliveryStatusNotification(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY, FAILURE)
@@ -460,9 +466,11 @@ public final class PolarMeridianDispatcherTest {
                                     "letmein", "smime_test_user_alias_rsa", "letmein", null)
                             .encryptWithSmime(testResources.resolve("pkcs12/smime_test_user.pem.standard.crt"), null, null);
                     if (overrideRecipients) builder.withOverrideReceivers(List.of(
-                            to(null, "actual-one@partner.com"), to(null, "actual-two@partner.com"),
-                            to(null, "actual-three@partner.com")));
-                    if ("Bcc".equals(unsafeHeader)) builder.withRecipients(bcc(null, "hidden@partner.com"));
+                            mail.recipientBuilder().withAddress("actual-one@partner.com").withType(jakarta.mail.Message.RecipientType.TO).build(),
+                            mail.recipientBuilder().withAddress("actual-two@partner.com").withType(jakarta.mail.Message.RecipientType.TO).build(),
+                            mail.recipientBuilder().withAddress("actual-three@partner.com").withType(jakarta.mail.Message.RecipientType.TO).build()));
+                    if ("Bcc".equals(unsafeHeader)) builder.withRecipients(mail.recipientBuilder().withAddress("hidden@partner.com")
+                            .withType(jakarta.mail.Message.RecipientType.BCC).build());
                     else if (unsafeHeader != null) builder.withHeader(unsafeHeader,
                             "Content-Length".equals(unsafeHeader) ? "10" : "hidden@partner.com");
                     return new PolarMeridianDispatcher.ComposedMail(mailer, "eu-application-mail", builder.buildEmail(),

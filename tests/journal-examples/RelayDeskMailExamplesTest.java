@@ -15,6 +15,8 @@ import org.simplejavamail.api.mailer.MailSend;
 import org.simplejavamail.api.mailer.MailSubmissionReceipt;
 import org.simplejavamail.api.mailer.MailSubmissionStatus;
 import org.simplejavamail.config.ConfigLoader;
+import org.simplejavamail.mailer.internal.MailSendOutcomeImpl;
+import org.simplejavamail.mailer.internal.MailSubmissionReceiptImpl;
 
 import java.time.Instant;
 import java.time.Duration;
@@ -29,9 +31,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.simplejavamail.recipient.RecipientBuilder.to;
-import static org.simplejavamail.recipient.RecipientBuilder.cc;
-import static org.simplejavamail.recipient.RecipientBuilder.bcc;
 import static org.simplejavamail.api.mailer.MailRetryDisposition.*;
 import static org.simplejavamail.api.mailer.MailRecipientDisposition.*;
 
@@ -85,19 +84,22 @@ public final class RelayDeskMailExamplesTest {
 
         Instant now = Instant.parse("2026-09-27T10:00:00Z");
         for (MailSubmissionStatus status : MailSubmissionStatus.values()) {
-            MailSubmissionReceipt receipt = new MailSubmissionReceipt(
-                "<effective@recipient.invalid>", null, now, status,
-                status == MailSubmissionStatus.ACCEPTED ? List.of("shopper@recipient.invalid") : Collections.emptyList(),
-                Collections.emptyList(), Collections.emptyList());
+            // Internal assembly is test-only; the downloadable application example consumes the public read interfaces.
+            MailSubmissionReceipt receipt = MailSubmissionReceiptImpl.builder()
+                .emailId("<effective@recipient.invalid>").submittedAt(now).status(status)
+                .recipientResults(status == MailSubmissionStatus.ACCEPTED
+                    ? List.of(new MailRecipientResult("shopper@recipient.invalid", "shopper@recipient.invalid", ACCEPTED, null, null))
+                    : Collections.emptyList())
+                .retryDisposition(status == MailSubmissionStatus.ACCEPTED ? DO_NOT_RETRY : CALLER_POLICY_REQUIRED).build();
             boolean accepted = status == MailSubmissionStatus.ACCEPTED;
-            MailSendOutcome outcome = new MailSendOutcome(first.getId(), receipt.getEmailId(),
-                now, now, now, now, accepted, false, receipt,
-                accepted ? null : new IllegalStateException("Synthetic " + status));
+            MailSendOutcome outcome = MailSendOutcomeImpl.builder().initialMessageId(first.getId()).effectiveMessageId(receipt.getEmailId())
+                .requestedAt(now).readyAt(now).startedAt(now).completedAt(now).successful(accepted).submissionReceipt(receipt)
+                .failure(accepted ? null : new IllegalStateException("Synthetic " + status)).build();
             assertRecordedUnchanged(first.getId(), outcome);
         }
 
-        MailSendOutcome preparationFailure = new MailSendOutcome(first.getId(), null,
-            now, null, null, now, false, false, null, new IllegalArgumentException("Synthetic preparation failure"));
+        MailSendOutcome preparationFailure = MailSendOutcomeImpl.builder().initialMessageId(first.getId())
+            .requestedAt(now).completedAt(now).failure(new IllegalArgumentException("Synthetic preparation failure")).build();
         assertRecordedUnchanged(first.getId(), preparationFailure);
         check(preparationFailure.getStartedAt().isEmpty(), "A pre-send failure has no start timestamp");
         Feedback noReceiptFeedback = new Feedback();
@@ -155,12 +157,14 @@ public final class RelayDeskMailExamplesTest {
                 return publicKey;
             }
         };
-        Email defaults = mail.emailBuilder().startingBlank().withRecipients(bcc(null, "archive@recipient.invalid"))
+        Email defaults = mail.emailBuilder().startingBlank().withRecipients(mail.recipientBuilder()
+                .withAddress("archive@recipient.invalid").withType(jakarta.mail.Message.RecipientType.BCC).build())
                 .buildEmail();
         try (Mailer mailer = mail.mailerBuilder().withSMTPServer("127.0.0.1", 1)
                 .withConnectionPoolCoreSize(0).withEmailDefaults(defaults).buildMailer()) {
             Email reply = mail.emailBuilder().startingBlank().from("support@kestrel-outfitters.com")
-                    .withRecipients(to(null, "buyer@recipient.invalid"), cc(null, "accounts@recipient.invalid"))
+                    .withRecipients(mail.recipientBuilder().withAddress("buyer@recipient.invalid").withType(jakarta.mail.Message.RecipientType.TO).build(),
+                            mail.recipientBuilder().withAddress("accounts@recipient.invalid").withType(jakarta.mail.Message.RecipientType.CC).build())
                     .withSubject("Wholesale support").withPlainText("Confidential test reply\r\n").buildEmail();
             Email protectedReply = RelayDeskMailExamples.protectWholesaleReply(mail, mailer, "kestrel", reply, keys);
             check(lookups.containsAll(List.of("buyer@recipient.invalid", "accounts@recipient.invalid", "archive@recipient.invalid")),
@@ -179,7 +183,8 @@ public final class RelayDeskMailExamplesTest {
             catch (IllegalStateException expected) { tenantBlocked = true; }
             check(tenantBlocked, "Juniper cannot borrow Kestrel's keys");
             Email missing = mail.emailBuilder().copying(reply).clearRecipients()
-                    .withRecipients(to(null, "missing@recipient.invalid")).buildEmail();
+                    .withRecipients(mail.recipientBuilder().withAddress("missing@recipient.invalid")
+                            .withType(jakarta.mail.Message.RecipientType.TO).build()).buildEmail();
             boolean missingBlocked = false;
             try { RelayDeskMailExamples.protectWholesaleReply(mail, mailer, "kestrel", missing, keys); }
             catch (IllegalStateException expected) { missingBlocked = true; }
@@ -187,7 +192,8 @@ public final class RelayDeskMailExamplesTest {
 
             lookups.clear();
             Email redirected = mail.emailBuilder().copying(reply)
-                    .withOverrideReceivers(to(null, "actual@recipient.invalid")).buildEmail();
+                    .withOverrideReceivers(mail.recipientBuilder().withAddress("actual@recipient.invalid")
+                            .withType(jakarta.mail.Message.RecipientType.TO).build()).buildEmail();
             Email protectedRedirect = RelayDeskMailExamples.protectWholesaleReply(mail, mailer, "kestrel", redirected, keys);
             check(lookups.equals(List.of("actual@recipient.invalid")), "Key selection follows the actual SMTP envelope");
             check(mailer.rehearse(protectedRedirect).getEnvelopeRecipients().equals(lookups),
@@ -200,25 +206,26 @@ public final class RelayDeskMailExamplesTest {
                 recipient("buyer@recipient.invalid", ACCEPTED, 250),
                 recipient("warehouse@recipient.invalid", VALID_UNSENT, 450),
                 recipient("former-contact@recipient.invalid", INVALID, 550));
-        MailSubmissionReceipt partial = new MailSubmissionReceipt("<test@relaydesk.com>", null, Instant.now(),
-                MailSubmissionStatus.PARTIALLY_ACCEPTED, recipients, SAFE_TO_RETRY_UNACCEPTED);
+        MailSubmissionReceipt partial = MailSubmissionReceiptImpl.builder().emailId("<test@relaydesk.com>").submittedAt(Instant.now())
+                .status(MailSubmissionStatus.PARTIALLY_ACCEPTED).recipientResults(recipients).retryDisposition(SAFE_TO_RETRY_UNACCEPTED).build();
         Feedback feedback = new Feedback();
         Instant now = Instant.now();
-        RelayDeskMailExamples.presentOutcome(new MailSendOutcome("<initial@relaydesk.com>", partial.getEmailId(),
-                now, now, now, now, false, false, partial, new IllegalStateException("Synthetic partial send")), feedback);
+        RelayDeskMailExamples.presentOutcome(MailSendOutcomeImpl.builder().initialMessageId("<initial@relaydesk.com>")
+                .effectiveMessageId(partial.getEmailId()).requestedAt(now).readyAt(now).startedAt(now).completedAt(now)
+                .submissionReceipt(partial).failure(new IllegalStateException("Synthetic partial send")).build(), feedback);
         check(feedback.updates == 3, "A failed attempt can still supply its captured receipt to the ticket");
         check(feedback.recipients.equals(recipients), "Ticket retains each recipient's independent result");
         check(feedback.advice == SAFE_TO_RETRY_UNACCEPTED && feedback.candidates.equals(List.of(recipients.get(1))),
                 "Only the temporary, unsubmitted recipient is a retry candidate");
         for (MailRetryDisposition advice : List.of(DUPLICATE_RISK, CALLER_POLICY_REQUIRED, DO_NOT_RETRY)) {
-            RelayDeskMailExamples.presentResult(new MailSubmissionReceipt("<test@relaydesk.com>", null, Instant.now(),
-                    MailSubmissionStatus.UNKNOWN, recipients, advice), feedback);
+            RelayDeskMailExamples.presentResult(MailSubmissionReceiptImpl.builder().emailId("<test@relaydesk.com>").submittedAt(Instant.now())
+                    .status(MailSubmissionStatus.UNKNOWN).recipientResults(recipients).retryDisposition(advice).build(), feedback);
             check(feedback.advice == advice && feedback.candidates.isEmpty(), "No automatic candidates for " + advice);
         }
         for (Long maximum : new Long[]{10_000_000L, 12_000_000L, 13_000_000L, null}) {
-            RelayDeskMailExamples.presentResult(new MailSubmissionReceipt("<test@relaydesk.com>", null, Instant.now(),
-                    MailSubmissionStatus.REJECTED, List.of(), CALLER_POLICY_REQUIRED, null, false,
-                    12_000_000L, maximum), feedback);
+            RelayDeskMailExamples.presentResult(MailSubmissionReceiptImpl.builder().emailId("<test@relaydesk.com>").submittedAt(Instant.now())
+                    .status(MailSubmissionStatus.REJECTED).recipientResults(List.of()).retryDisposition(CALLER_POLICY_REQUIRED)
+                    .messageSize(12_000_000L).serverMaximumMessageSize(maximum).build(), feedback);
             check(feedback.messageSize.equals(12_000_000L) && java.util.Objects.equals(feedback.maximumSize, maximum),
                     "Keep size facts independently of status, including unknown maximum");
         }
@@ -283,7 +290,7 @@ public final class RelayDeskMailExamplesTest {
 
     private static Email reply(SimpleJavaMail mail, UUID conversation, UUID attempt) {
         return RelayDeskMailExamples.prepareKestrelReply(mail.emailBuilder().startingBlank()
-            .withRecipients(to(null, "shopper@recipient.invalid"))
+            .withRecipients(mail.recipientBuilder().withAddress("shopper@recipient.invalid").withType(jakarta.mail.Message.RecipientType.TO).build())
             .withSubject("Re: Your parcel")
             .withPlainText("Your parcel is waiting at the collection point."), conversation, attempt);
     }

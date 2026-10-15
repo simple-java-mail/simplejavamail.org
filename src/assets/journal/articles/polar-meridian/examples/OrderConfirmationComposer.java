@@ -1,7 +1,6 @@
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.mailer.Mailer;
-import org.simplejavamail.recipient.RecipientBuilder;
 
 /** Application composition example called by MessagePreparation.compose after permission checks. */
 public final class OrderConfirmationComposer {
@@ -22,8 +21,8 @@ public final class OrderConfirmationComposer {
         Email email = mail.emailBuilder().startingBlank()
                 .from("Polar Meridian Orders", "orders@polarmeridian.com")
                 .withBounceTo("bounces@polarmeridian.com")
-                .withRecipients(RecipientBuilder.to(
-                        confirmation.getCustomerName(), confirmation.getCustomerEmail()))
+                .withRecipients(mail.recipientBuilder().withName(confirmation.getCustomerName())
+                        .withAddress(confirmation.getCustomerEmail()).withType(jakarta.mail.Message.RecipientType.TO).build())
                 .withSubject("Confirmation for order " + confirmation.getOrderNumber())
                 .withPlainText(
                         "We've received your replacement-parts order "
