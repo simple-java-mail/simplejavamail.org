@@ -11,7 +11,7 @@ banner-header: "From the author"
 banner-body: "I wanted to give version 10 more space than a release note. Coding agents helped me build it, and helped me shape this draft too. I'm excited about what the library has become, even if keeping up with it has been quite a ride."
 ---
 
-[![A maintainer grips luminous controls as giant AI coding hands expand an SJM apparatus into a growing software architecture amid a storm of SMTP envelopes](/assets/journal/articles/what-simple-java-mail-10-is-for/sjm-singularity-10.0.0.png "The local singularity")](/assets/journal/articles/what-simple-java-mail-10-is-for/sjm-singularity-10.0.0.png)
+[![A maintainer grips luminous controls as giant AI coding hands expand an SJM apparatus into a growing software architecture amid a storm of SMTP envelopes](/assets/journal/articles/what-simple-java-mail-10-is-for/sjm-singularity-10.0.0.jpg "The local singularity")](/assets/journal/articles/what-simple-java-mail-10-is-for/sjm-singularity-10.0.0.jpg)
 
 *The agents keep building, the mail keeps flying, and I'm still holding the reins.*
 
