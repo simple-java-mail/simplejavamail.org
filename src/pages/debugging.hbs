@@ -51,6 +51,7 @@ description: "Choose a diagnostic tool, inspect prepared messages and SMTP conne
             <tr><td>Where did a loaded setting come from?</td><td><a href="#section-config-diagnostics"><code>mail.getConfig().getDiagnostics()</code></a></td><td>Resolved configuration values and their sources, with sensitive values redacted</td><td>No</td></tr>
             <tr><td>What happened to an actual send?</td><td><a href="/analyzing-send-results.html">Submission receipt and mail-send outcome</a></td><td>Available server responses, recipient results and the send's success or failure</td><td>The send does</td></tr>
             <tr><td>Where did a slow or failed send spend its time?</td><td><a href="/analyzing-send-results.html#section-send-timings"><code>outcome.getDiagnostics()</code></a> in the observer</td><td>Available per-phase measurements and where a failure was observed</td><td>No additional connection</td></tr>
+            <tr><td>What is this email doing right now?</td><td><a href="/analyzing-send-results.html#section-live-progress"><code>withMailSendProgressObserver(...)</code></a></td><td>Latest work, supported greeting/TLS/authentication/envelope stages, retry attempt and upload counts; final results remain authoritative</td><td>No additional connection</td></tr>
           </tbody>
         </table>
       </div>
@@ -254,9 +255,9 @@ CompletableFuture&lt;SmtpConnectionReport&gt; pending =
     </div>
   </section>
 
+  <h3>Compare SMTP features before and after STARTTLS</h3>
   <section>
     <div class="view">
-      <h3>Compare SMTP features before and after STARTTLS</h3>
       <p>
         This illustrative report shows a server that advertises a different SIZE limit and adds DSN after STARTTLS.
         <code>getBeforeTls()</code> is history; <code>getAfterTls()</code> describes the encrypted EHLO. Use
@@ -290,9 +291,9 @@ Elapsed: 138ms</code></pre>
     </div>
   </section>
 
+  <h3>Keep configuration, negotiation and delivery apart</h3>
   <section>
     <div class="view">
-      <h3>Keep configuration, negotiation and delivery apart</h3>
       <p>
         Read the configured transport strategy from <code>mailer.getTransportStrategy()</code>. The probe reports what happened
         during connection setup; it does not repeat that configuration setting.
@@ -389,6 +390,15 @@ LOGGER.info(
     "Resolved Simple Java Mail configuration:\n{}",
     mail.getConfig().getDiagnostics());
 </code></pre>
+      <strong>Illustrative log output</strong>
+<pre><code class="language-text small">09:41:06.218 INFO  Resolved Simple Java Mail configuration:
+SMTP connection:
+  simplejavamail.smtp.host = smtp.example.org (source: application-production.properties)
+  simplejavamail.smtp.password = &lt;redacted&gt; (source: secret store)
+  simplejavamail.smtp.port = 587 (source: application.properties)
+Transport security:
+  simplejavamail.defaults.trustallhosts = false (source: platform policy)
+  simplejavamail.defaults.verifyserveridentity = true (source: platform policy)</code></pre>
     </div>
   </section>
 
@@ -423,6 +433,14 @@ for (ConfigDiagnosticGroup group : diagnostics.getGroups()) {
             property.getSourceName());
     }
 }</code></pre>
+      <strong>Illustrative console output</strong>
+<pre><code class="language-text small">SMTP connection
+  simplejavamail.smtp.host = smtp.example.org (source: application-production.properties)
+  simplejavamail.smtp.password = &lt;redacted&gt; (source: secret store)
+  simplejavamail.smtp.port = 587 (source: application.properties)
+Transport security
+  simplejavamail.defaults.trustallhosts = false (source: platform policy)
+  simplejavamail.defaults.verifyserveridentity = true (source: platform policy)</code></pre>
     </div>
   </section>
 

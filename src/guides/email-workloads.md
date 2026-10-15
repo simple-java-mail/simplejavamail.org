@@ -445,7 +445,7 @@ The HTTP request finished quickly, but the confirmation took seconds to leave. R
 static Mailer observedMailer(MailerRegularBuilder smtpBuilder,
                              Consumer<MailSendDiagnostics> recordTimings) {
     return smtpBuilder
-        .withMailSendObserver(outcome ->
+        .withMailSendResultObserver(outcome ->
             outcome.getDiagnostics().ifPresent(recordTimings))
         .buildMailer();
 }

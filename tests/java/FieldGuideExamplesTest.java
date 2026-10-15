@@ -14,6 +14,7 @@ import org.simplejavamail.api.mailer.MailSubmissionStatus;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.SmtpCapabilities;
 import org.simplejavamail.api.mailer.SmtpConnectionReport;
+import org.simplejavamail.mailer.internal.MailSubmissionReceiptImpl;
 
 /** Offline checks of the example's decisions and shutdown ordering; no SMTP. */
 public final class FieldGuideExamplesTest {
@@ -116,7 +117,9 @@ public final class FieldGuideExamplesTest {
     }
     private static MailSubmissionReceipt receipt(MailSubmissionStatus status, MailRetryDisposition retry,
             List<MailRecipientResult> recipients) {
-        return new MailSubmissionReceipt(null, null, Instant.EPOCH, status, recipients, retry);
+        // Test-only assembly: the downloadable application example consumes the public read interface.
+        return MailSubmissionReceiptImpl.builder().submittedAt(Instant.EPOCH).status(status)
+                .recipientResults(recipients).retryDisposition(retry).build();
     }
     private static void check(boolean condition, String message) {
         if (!condition) throw new AssertionError(message);

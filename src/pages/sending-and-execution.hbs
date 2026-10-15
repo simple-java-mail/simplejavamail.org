@@ -364,7 +364,7 @@ if (backgroundJob) {
 	<div class="view">
 		<p>
 			When reconnecting for every message is the only problem you need to solve, use simple sequential batch sending. It sends all provided emails
-			over one SMTP connection. It consumes the iterable lazily, sends one at a time, stops at the first failure and reuses only that connection. Neither mode collects receipts: the sync call returns void, and the async completion carries Void. Use the configured MailSendObserver for per-email outcomes, including attempts before a later failure.
+			over one SMTP connection. It consumes the iterable lazily, sends one at a time, stops at the first failure and reuses only that connection. Neither mode collects receipts: the sync call returns void, and the async completion carries Void. Use the configured MailSendResultObserver for per-email outcomes, including attempts before a later failure.
 		</p>
 	</div>
 
@@ -578,7 +578,7 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
   <section>
     <div class="view">
       <p>
-        Configure one <code class="inline language-java">MailSendObserver</code> when audit, metrics, or progress code should see every completed email
+        Configure one <code class="inline language-java">MailSendResultObserver</code> when audit or metrics code should see every completed email
         handled by a reusable Mailer. The builder keeps its usual <code class="inline language-java">with...</code> vocabulary; the
         <code class="inline language-java">onMailSendCompleted(...)</code> method is the callback Simple Java Mail invokes. Configuring another observer
         replaces the previous one.
@@ -600,7 +600,7 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
     .withSMTPServer(
         "smtp.example.org", 587,
         "user", "password")
-    .withMailSendObserver(
+    .withMailSendResultObserver(
         this::recordMailSendOutcome)
     .buildMailer();
 
@@ -632,7 +632,7 @@ private void recordMailSendOutcome(
       <p>
         A named observer makes the configuration method and callback roles explicit:
       </p>
-<pre><code class="language-java small">final class MetricsMailSendObserver implements MailSendObserver {
+  <pre><code class="language-java small">final class MetricsMailSendObserver implements MailSendResultObserver {
 
     @Override
     public void onMailSendCompleted(MailSendOutcome outcome) {
@@ -649,7 +649,7 @@ private void recordMailSendOutcome(
 }
 
 Mailer mailer = mail.mailerBuilder()
-    .withMailSendObserver(new MetricsMailSendObserver())
+    .withMailSendResultObserver(new MetricsMailSendObserver())
     .buildMailer();</code></pre>
       <p>
         <code class="inline language-java">requestedAt</code> records when the individual attempt begins,
@@ -685,9 +685,9 @@ Mailer mailer = mail.mailerBuilder()
   <div class="wide">
     <h3>Choose where the observer runs</h3>
     <table><thead><tr><th>Registration</th><th>Before send completion</th><th>Application responsibility</th></tr></thead><tbody>
-      <tr><td><code>withMailSendObserver(observer)</code></td><td>The callback returns before the synchronous call or async completion.</td>
+      <tr><td><code>withMailSendResultObserver(observer)</code></td><td>The callback returns before the synchronous call or async completion.</td>
         <td>Keep it quick and thread-safe; slow work delays that completion and occupies its notifying thread.</td></tr>
-      <tr><td><code>withMailSendObserver(observer, executor)</code></td><td>SJM attempts one handoff before completing, without waiting for the callback.</td>
+      <tr><td><code>withMailSendResultObserver(observer, executor)</code></td><td>SJM attempts one handoff before completing, without waiting for the callback.</td>
         <td>Own the executor, its queue, rejection policy, and shutdown. Track downstream completion yourself.</td></tr>
     </tbody></table>
     <p>Either overload replaces the whole registration; the one-argument overload restores inline dispatch.
@@ -698,13 +698,16 @@ Mailer mailer = mail.mailerBuilder()
     <p>The executor overload uses the application executor's actual policy. A direct executor or CallerRunsPolicy can still execute inline;
       a blocking execute() can delay handoff. Rejected handoffs are logged as undelivered notifications, without retry or inline fallback.
       A silent-discard executor cannot report a lost notification. Callback RuntimeExceptions are logged and ignored in both modes.</p>
-    <p>There are three distinct completions: the send and its cleanup, observer callback/handoff, and whatever downstream processing your observer
+    <p>Want updates before the result arrives? Use the separate <a href="/analyzing-send-results.html#section-live-progress">live-progress observer</a>.
+      Its dispatcher keeps callbacks away from send threads, including when your executor runs tasks inline. Progress can be coalesced or dropped;
+      the final result remains the source of truth.</p>
+    <p>There are three distinct completions: the send and its cleanup, result-observer callback/handoff, and whatever downstream processing your observer
       starts. An observer may publish an event to a durable broker for night processing or separately scaled cloud workers. That downstream work
       need not limit SMTP throughput; its persistence, capacity and delivery guarantees belong to that application integration.</p>
   </div>
   <div class="wide full-width-example"><pre><code class="language-java">ExecutorService observationWorkers = Executors.newFixedThreadPool(2);
 Mailer mailer = mail.mailerBuilder()
-    .withMailSendObserver(outcome -&gt; auditQueue.publish(outcome), observationWorkers)
+    .withMailSendResultObserver(outcome -&gt; auditQueue.publish(outcome), observationWorkers)
     .buildMailer();
 
 // Sends may complete before publish() runs. A broker acknowledgement
@@ -733,7 +736,8 @@ observationWorkers.shutdown(); // application owns this executor
       <p class="wide">
         Closing a Mailer stops new work on its built-in executor, waits for accepted tasks to finish, and then closes its connection-pool registration.
         It also tracks sends accepted through a caller-owned executor and its private completion worker, without shutting down the caller's executor.
-        It waits for observer handoff attempts, not executor-backed callbacks or external downstream processing.
+        It waits for result-observer handoff attempts, not executor-backed callbacks or external downstream processing.
+        Live-progress reporting is separate: shutdown discards pending updates after sending drains, without waiting for or interrupting progress callbacks.
       </p>
       <p class="wide">
         Enabled write timeouts also need a background monitoring thread. Connections from each Angus Session created by Simple Java Mail share that thread;

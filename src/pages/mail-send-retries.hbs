@@ -36,7 +36,7 @@ description: "Retry safely refused emails with bounded backoff, unchanged conten
 Mailer mailer = mail.mailerBuilder()
     .withSMTPServer("smtp.example.org", 587, "user", "password")
     .withMailSendRetryPolicy(retry)
-    .withMailSendObserver(outcome -> outcome.getDiagnostics().ifPresent(report -> log.info("{}", report)))
+    .withMailSendResultObserver(outcome -> outcome.getDiagnostics().ifPresent(report -> log.info("{}", report)))
     .buildMailer();
 
 MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);

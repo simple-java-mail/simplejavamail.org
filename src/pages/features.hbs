@@ -95,7 +95,7 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
 		<li><a href="#section-sending-asynchronously" class="indent">Asynchronous sending, simple batches and clustering</a></li>
 		<li><a href="#section-sending-limits" class="indent">Message and recipient sending limits</a></li>
 		<li><a href="#section-handling-async-result" class="indent">Handling asynchronous mailing result</a></li>
-		<li><a href="#section-mail-send-observer" class="indent">Observing completed mail sends</a></li>
+		<li><a href="#section-mail-send-observer" class="indent">Live progress and completed mail sends</a></li>
 		<li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
 		<li><a href="#section-custom-session">Sending with your own Session instance</a></li>
 		<li><a href="#section-custom-id">Setting a custom message ID on sent email</a></li>
@@ -605,11 +605,15 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
   </section>
 
   <a href="#section-mail-send-observer" id="section-mail-send-observer" class="section-link h3">&sect;</a>
-  {{#> components/feature-heading-h3 core=true}}Observing completed mail sends{{/components/feature-heading-h3}}
-  <section><p class="wide">Configure <code>withMailSendObserver(...)</code> for one reporting point across sends and batches.
+  {{#> components/feature-heading-h3 core=true}}Live progress and completed mail sends{{/components/feature-heading-h3}}
+  <section><p class="wide">Configure <code>withMailSendResultObserver(...)</code> for one reporting point across sends and batches.
     The <a href="/sending-and-execution.html#section-mail-send-observer">observer guide</a> covers inline and executor-backed callbacks,
     both observer styles, timestamps, and the streaming demo. To see where a slow send spent its time, see
-    <a href="/analyzing-send-results.html#section-send-timings">actual-send timings</a>.</p></section>
+    <a href="/analyzing-send-results.html#section-send-timings">actual-send timings</a>.</p>
+    <p class="wide">For a dashboard that updates while an email is being sent, register <code>withMailSendProgressObserver(...)</code> as well.
+      It reports the latest work and available upload counts without making SMTP wait for your callback. See
+      <a href="/analyzing-send-results.html#section-live-progress">live progress</a> for both observers together, sample output and the difference
+      between finishing an upload and receiving SMTP acceptance.</p></section>
 
   <a href="#section-custom-session" id="section-custom-session" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Sending with your own Session instance{{/components/feature-heading-h2}}
@@ -1520,7 +1524,7 @@ Status: 5.1.1</code></pre>
         <li>Generated identifiers belong to individual submissions, not the Email object. Reusing an Email, including concurrent sends, generates
           separate identifiers. Fixed identifiers are retained by copying/reuse and partial NOTIFY/RET changes; whole DSN replacement replaces the fixed value.</li>
         <li>Read the effective identifier from the receipt returned by synchronous or asynchronous sending, or from the receipt in a
-          <code>MailSendObserver</code> outcome. This also works for simple batches and open connections. A failed submission can carry an identifier;
+          <code>MailSendResultObserver</code> outcome. This also works for simple batches and open connections. A failed submission can carry an identifier;
           its presence does not imply SMTP acceptance. Notifications still arrive separately and must be received and processed by your application.</li>
         <li>This is an envelope option, not a MIME header. The same method is available for <a href="#section-exact-eml">exact EML</a>, without changing
           its bytes or signatures. An identifier alone is valid; explicit NOTIFY or RET options are not required.</li>

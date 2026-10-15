@@ -196,9 +196,9 @@ Emails 41 onward: A sends under A's rate rules.</code></pre>
     <p>New connection incidents are logged at ERROR, meaningful failover/recovery at INFO, and repeated failed rechecks at DEBUG.
       Factory-local suppression keeps each send from reporting the same outage as a new incident. A successful failover still produces a successful
       send outcome, not a separate application failure callback.</p>
-    <p>With a <code>MailSendObserver</code>, an individual send also records its connection route:</p>
+    <p>With a <code>MailSendResultObserver</code>, an individual send also records its connection route:</p>
   </div><div class="wide full-width-example">
-<pre><code class="language-java small">.withMailSendObserver(outcome -> outcome.getDiagnostics().ifPresent(report -> {
+<pre><code class="language-java small">.withMailSendResultObserver(outcome -> outcome.getDiagnostics().ifPresent(report -> {
     report.getConnectionHistory().forEach(step -> {
         System.out.printf("attempted=%s acquired=%s elapsed=%s detail=%s%n",
             step.isConnectionAttempted(), step.isConnectionAcquired(),
@@ -227,7 +227,7 @@ omitted steps=0</code></pre>
       count and backoff, and correlate the outcome to the original job. An observer receives an outcome, not the original Email or a durable job.</p>
     <p>This sketch hands work to an application queue. <code>jobs</code> and <code>retryQueue</code> are application services, not library APIs:</p>
   </div><div class="wide full-width-example">
-<pre><code class="language-java small">.withMailSendObserver(outcome -> {
+<pre><code class="language-java small">.withMailSendResultObserver(outcome -> {
     if (outcome.isSuccessful()) {
         return;
     }

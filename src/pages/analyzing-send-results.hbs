@@ -36,6 +36,7 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       <li><a href="#section-other-send-paths">Use the same facts in other send paths</a></li>
       <li><a href="#section-async-results" class="indent">Asynchronous sends</a></li>
       <li><a href="#section-observer-results" class="indent">Mail-send observers</a></li>
+      <li><a href="#section-live-progress" class="indent">Watch a send while it runs</a></li>
       <li><a href="#section-send-timings" class="indent">Where did the time go?</a></li>
       <li><a href="#section-open-connection-results" class="indent">Open connections and simple batches</a></li>
       <li><a href="#section-provider-details">Account for missing provider details</a></li>
@@ -173,11 +174,11 @@ SMTP reply present: false</code></pre>
         <code>mailer.rehearse(email).getEncodedSize()</code>, which work without a server. Rehearsal EML can differ from SMTP content after
         provider conversion or omitted headers. A <a href="/debugging.html#section-smtp-capabilities">connection probe</a> is useful for diagnosis,
         but may connect to a different server in a cluster; sending always checks its own connection.</p>
-      <p>To collect these facts for successful and failed attempts in one place, use your mail-send observer. Attempts that fail before a receipt
+      <p>To collect these facts for successful and failed attempts in one place, use your result observer. Attempts that fail before a receipt
         exists do not enter this callback's <code>ifPresent</code> block:</p>
     </div>
     <div class="wide full-width-example">
-<pre><code class="language-java small">mailerBuilder.withMailSendObserver(outcome -&gt;
+<pre><code class="language-java small">mailerBuilder.withMailSendResultObserver(outcome -&gt;
     outcome.getSubmissionReceipt().ifPresent(receipt -&gt;
         System.out.printf("%s: content=%s bytes, server limit=%s bytes%n",
             receipt.getStatus(), receipt.getMessageSize(),
@@ -289,7 +290,7 @@ carol@example.org: rcpt=PERMANENTLY_REJECTED (550), submitted=INVALID</code></pr
         available as immutable address lists derived from the same recipient results. Prefer the individual results when the reason matters:
         being in <code>getValidUnsentRecipients()</code> does not, on its own, make an address retryable.
       </p>
-      <p>The same failed-completion contract applies to <code>mailer.async().sendMail(email)</code>. Your mail-send observer receives
+      <p>The same failed-completion contract applies to <code>mailer.async().sendMail(email)</code>. Your result observer receives
         <code>isSuccessful() == false</code> and the same receipt. A simple batch still stops at its first failed email, even when that email was
         partially accepted. A lost final server reply can still mean <code>UNKNOWN</code>; permission to continue does not remove duplicate risk.</p>
     </div>
@@ -546,12 +547,12 @@ Retry: DUPLICATE_RISK</code></pre>
   </section>
 
   <a href="#section-observer-results" id="section-observer-results" class="section-link h3">&sect;</a>
-  <h3>Mail-send observers</h3>
+  <h3>Final mail-send results</h3>
   <section>
     <div class="view">
       <p>
-        If you want one reporting point for ordinary sends, asynchronous sends and batches, configure <code>withMailSendObserver(...)</code> on
-        the builder. Its <code>MailSendObserver.onMailSendCompleted(MailSendOutcome)</code> callback receives the whole attempt, including preparation
+        If you want one reporting point for ordinary sends, asynchronous sends and batches, configure <code>withMailSendResultObserver(...)</code> on
+        the builder. Its <code>MailSendResultObserver.onMailSendCompleted(MailSendOutcome)</code> callback receives the whole attempt, including preparation
         and scheduling failures, rather than only SMTP facts. The optional <code>getSubmissionReceipt()</code> is the same receipt returned to the
         caller or attached to <code>MailSubmissionException</code>.
       </p>
@@ -567,7 +568,7 @@ Retry: DUPLICATE_RISK</code></pre>
       </p>
     </div>
     <div class="wide full-width-example">
-<pre><code class="language-java small" id="example-observer-receipt">mailerBuilder.withMailSendObserver(outcome -&gt; {
+<pre><code class="language-java small" id="example-observer-receipt">mailerBuilder.withMailSendResultObserver(outcome -&gt; {
     String submission = outcome.getSubmissionReceipt()
         .map(receipt -&gt; receipt.getStatus().name())
         .orElse("none");
@@ -583,6 +584,137 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
     </div>
   </section>
 
+  <a href="#section-live-progress" id="section-live-progress" class="section-link h3">&sect;</a>
+  <h3>Watch a send while it runs</h3>
+  <section>
+    <div class="wide">
+      <p>A large attachment is taking a while. Is the email still waiting for a connection, uploading, or waiting for the server's answer?
+        Register a progress observer for that live view, and keep a result observer for what finally happened. Either works on its own.</p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 587)
+    .withMailSendProgressObserver(progress -&gt; System.out.println(progress))
+    .withMailSendResultObserver(outcome -&gt; {
+        System.out.println("Result " + outcome.getObservationId()
+            + ": successful=" + outcome.isSuccessful());
+        outcome.getSubmissionReceipt().ifPresent(receipt -&gt;
+            System.out.println("SMTP submission: " + receipt.getStatus()));
+    })
+    .buildMailer();
+
+try (mailer) {
+    mailer.async().sendMail(email).getCompletion().join();
+}</code></pre>
+    </div>
+    <div class="wide">
+      <p>The snapshot has explicit getters: <code>getStage()</code>, <code>getElapsed()</code>, <code>getObservedAt()</code>,
+        <code>getSequence()</code>, <code>getSubmissionAttempt()</code>, and optional <code>getBytesWritten()</code> and <code>getTotalBytes()</code>.
+        Elapsed time uses a monotonic clock; the timestamp is for correlating external logs. The automatic string includes the observation ID,
+        stage, attempt, elapsed time and available counts, but never Message-IDs, addresses, content, credentials or raw server replies.</p>
+      <p>Here is abbreviated output for a send that waits for its rate allowance and connection, uploads, gets a temporary refusal,
+        then succeeds on a configured retry. The ID is shortened here for readability; the real value is a UUID. Intermediate snapshots may be missing.</p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-text small">id=7cf5… seq=2  WAITING_FOR_RATE_LIMIT attempt=0 elapsed=PT0.02S
+id=7cf5… seq=3  ACQUIRING_CONNECTION  attempt=0 elapsed=PT2S
+id=7cf5… seq=6  UPLOADING             attempt=1 elapsed=PT4S bytes=524288/1048576
+id=7cf5… seq=8  WAITING_FOR_RESPONSE  attempt=1 elapsed=PT4.5S bytes=1048576/1048576
+id=7cf5… seq=10 WAITING_TO_RETRY      attempt=1 elapsed=PT4.8S
+id=7cf5… seq=14 UPLOADING             attempt=2 elapsed=PT10S bytes=0/1048576
+id=7cf5… seq=17 WAITING_FOR_RESPONSE  attempt=2 elapsed=PT11S bytes=1048576/1048576
+Result 7cf5…: successful=true
+SMTP submission: ACCEPTED
+id=7cf5… seq=19 FINISHED              attempt=2 elapsed=PT11.2S</code></pre>
+    </div>
+    <div class="wide">
+      <p><code>FINISHED</code> only means the logical send ended, not that it succeeded. The result, receipt and completion handle remain authoritative.
+        A late progress callback may arrive after the result callback. A dashboard should remember finished IDs and ignore subsequent progress for them.
+        The <a href="https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/modules/simple-java-mail/src/test/java/demo/MailSendObserverDemoApp.java">observer demo</a>
+        shows both registrations and that terminal-state guard.</p>
+      <h4>What the stages and upload figures mean</h4>
+      <p><code>WAITING_FOR_EXECUTION</code> covers async admission and worker waiting; <code>PREPARING</code> covers email governance and validation.
+        <code>WAITING_FOR_RATE_LIMIT</code> is intentional pacing, <code>ACQUIRING_CONNECTION</code> includes obtaining a usable connection, and
+        <code>PREPARING_MIME</code> includes MIME conversion and protection. <code>SUBMITTING</code> is the provider invocation;
+        <code>UPLOADING</code> and <code>WAITING_FOR_RESPONSE</code> add detail where supported. <code>WAITING_TO_RETRY</code> is a configured retry delay,
+        and <code>CLEANING_UP</code> covers ordinary per-email release/close. Stages can repeat or be skipped. This is not a protocol-event audit trail.</p>
+      <p>Attempt numbers start at one when the provider is invoked, not when a connection is tried. Connection failover leaves the number at zero;
+        an actual retry increments it and resets upload counts. One email remains one observation throughout both.</p>
+      <p>Managed Angus transports count serialized MIME bytes successfully handed to the DATA or BDAT content stream, before line-ending normalization,
+        dot escaping, command framing and TLS overhead. The optional total comes from the existing size-preparation pass; it is not the receipt's canonical
+        SMTP SIZE value. No extra content read is added. If content changes and the figures no longer agree, the total becomes unknown.</p>
+      <p><strong>100% uploaded is not SMTP acceptance.</strong> Bytes may still be buffered, the final reply can reject the message, or the connection can
+        disappear before acceptance is known. Final mailbox delivery remains separate. Caller-owned ordinary Angus transports, other adapters without
+        upload support and <code>CustomMailer</code> report coarse submission progress with unknown byte counts. Logging-only sends report preparation,
+        not invented SMTP activity. A lazy batch observes only emails it reaches; shared connection setup/teardown is not repeated for every email.</p>
+      <p>For example, a slow greeting can leave a send in <code>WAITING_FOR_GREETING</code> before any submission attempt starts.
+        Authentication has its own stage too. You do not need protocol debug logging to tell those waits apart.</p>
+    </div>
+    <div class="wide full-width-example">
+<pre><code class="language-text small"># New connection; abbreviated illustrative snapshots, not a guaranteed event sequence
+id=0ab2… seq=3  WAITING_FOR_GREETING       attempt=0 elapsed=PT0.1S
+id=0ab2… seq=6  NEGOTIATING_CAPABILITIES   attempt=0 elapsed=PT2.4S
+id=0ab2… seq=8  NEGOTIATING_TLS            attempt=0 elapsed=PT2.5S
+id=0ab2… seq=12 AUTHENTICATING             attempt=0 elapsed=PT2.7S
+id=0ab2… seq=16 SUBMITTING_SENDER          attempt=1 elapsed=PT5S
+id=0ab2… seq=18 SUBMITTING_RECIPIENTS      attempt=1 elapsed=PT5.1S
+id=0ab2… seq=20 WAITING_FOR_DATA_PERMISSION attempt=1 elapsed=PT5.2S
+id=0ab2… seq=23 WAITING_FOR_RESPONSE       attempt=1 elapsed=PT5.4S bytes=2048/2048
+Result 0ab2…: successful=true; SMTP submission: ACCEPTED
+
+# Another email reuses a connection: no old greeting, TLS or authentication is replayed
+id=39cd… seq=3 ACQUIRING_CONNECTION       attempt=0 elapsed=PT0.01S
+id=39cd… seq=8 SUBMITTING_RECIPIENTS      attempt=1 elapsed=PT0.02S
+
+# A provider without detailed hooks still reports the work SJM can observe
+id=8ef1… seq=3 ACQUIRING_CONNECTION       attempt=0 elapsed=PT0.02S
+id=8ef1… seq=6 SUBMITTING                 attempt=1 elapsed=PT0.4S
+Result 8ef1…: successful=true</code></pre>
+    </div>
+    <div class="wide">
+      <h4>Which connection and SMTP details are available?</h4>
+      <p><code>NEGOTIATING_CAPABILITIES</code> covers EHLO or HELO, including EHLO after STARTTLS.
+        <code>NEGOTIATING_TLS</code> covers an observable TLS upgrade, including its handshake and certificate checks.
+        <code>SUBMITTING_SENDER</code> and <code>SUBMITTING_RECIPIENTS</code> describe the SMTP envelope exchange, not mailbox delivery.
+        <code>WAITING_FOR_DATA_PERMISSION</code> means the server has not yet replied to DATA with permission to upload.</p>
+      <p>BDAT does not have that DATA-permission exchange. Chunk replies are not reported as final acceptance waiting.
+        DNS, TCP connection, proxy negotiation and implicit TLS stay within <code>ACQUIRING_CONNECTION</code> where the provider cannot
+        identify them reliably. These stages are not per-phase duration measurements.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sending path</th><th>What you can see</th></tr></thead>
+        <tbody>
+          <tr><td>New managed Angus connection caused by this email</td><td>Supported greeting, capability, TLS and authentication stages, then envelope and upload progress</td></tr>
+          <tr><td>Reused or background-created connection</td><td>Current envelope/upload work; no historical connection setup</td></tr>
+          <tr><td>Shared batch/open-connection setup</td><td>Setup is outside individual emails; their own envelope/upload work can still be observed</td></tr>
+          <tr><td>Caller-owned ordinary Angus transport</td><td>Coarse progress; SJM does not replace your transport for diagnostics</td></tr>
+          <tr><td>Another provider adapter</td><td>Any details it supports, with coarse fallback for the rest; setup and upload support are independent</td></tr>
+          <tr><td>CustomMailer</td><td>Opaque submission callback, without invented SMTP detail</td></tr>
+        </tbody>
+      </table></div>
+      <p>Missing detail never makes a provider unsuitable for sending. A fast exchange may also be coalesced before your callback sees it,
+        so a missing stage does not prove that work was skipped. Handle additional enum values in dashboard switches; the stage list may grow.
+        No commands, recipient addresses, credentials or raw replies are included.</p>
+      <h4>Callback speed and shutdown</h4>
+      <p>Progress runs on a lazily started, dedicated daemon dispatcher. The optional
+        <code>withMailSendProgressObserver(observer, applicationExecutor)</code> overload hands work to your executor from that dispatcher, never from a send
+        thread. Callbacks are serialized per Mailer. Sending, cancellation and completion never wait for a progress callback.
+        Keep a supplied executor separate from mail-sending workers; if you deliberately share their executor, slow reporting can occupy those workers.</p>
+      <p>Only the newest pending snapshot per ID is kept, up to 1,024 pending IDs plus one callback in flight; overflow discards the oldest pending snapshot.
+        Upload-only updates are published at most four times per second per email. Stage changes and the final count bypass that throttle but can still
+        be coalesced. These bounds keep a lagging dashboard from retaining an unbounded send history; they do not limit sending throughput.</p>
+      <p>Callback runtime failures and rejected executor handoffs are logged and ignored, without retry or inline fallback. Shutdown waits for sending,
+        not reporting: it discards pending progress and does not interrupt an executing callback or close your executor. Registering an observer again
+        replaces only that observer and its dispatch choice. Both registrations are Java callbacks, not properties, Spring metadata or CLI options.</p>
+      <h4>Three different identifiers</h4>
+      <p>The observation UUID correlates progress and the final outcome for one invocation. Re-sending the same Email produces a new UUID, even if its
+        Message-ID stays the same. <code>getInitialMessageId()</code> and <code>getEffectiveMessageId()</code> are separately available when known.
+        The observation ID is never inserted into the email or SMTP exchange, is not ENVID, and is not a deduplication key or an OpenTelemetry TraceId.
+        Older serialized outcomes can have no observation ID. Use it in logs or span attributes if useful, not as a per-send metric label.</p>
+      <p>For completed phase durations, use <a href="#section-send-timings">actual-send diagnostics</a>. For a separate endpoint check rather than an email
+        already in flight, use a <a href="/debugging.html#section-smtp-capabilities">connection probe</a>.</p>
+    </div>
+  </section>
+
   <a href="#section-send-timings" id="section-send-timings" class="section-link h3">&sect;</a>
   <h3>Where did the time go?</h3>
   <section>
@@ -592,7 +724,7 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
         attempt, including failures before SMTP. Nothing is sent or read a second time to collect them.</p>
     </div>
     <div class="wide full-width-example">
-<pre><code class="language-java small" id="example-send-timings">mailerBuilder.withMailSendObserver(outcome -&gt; {
+<pre><code class="language-java small" id="example-send-timings">mailerBuilder.withMailSendResultObserver(outcome -&gt; {
     outcome.getDiagnostics().ifPresent(report -&gt; {
         log.info("{}", report);
 
