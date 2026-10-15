@@ -217,7 +217,7 @@ When the attempt finishes, the completion observer updates that record with the 
 
 ```java
 Mailer mailer = mailerBuilder
-    .withMailSendObserver(outcome ->
+    .withMailSendResultObserver(outcome ->
         archive.recordOutcome(outcome.getInitialMessageId(), outcome))
     .buildMailer();
 ```

@@ -6,7 +6,7 @@ import org.simplejavamail.api.email.Recipient;
 import org.simplejavamail.api.email.config.DeliveryStatusNotification;
 import org.simplejavamail.api.mailer.MailRehearsal;
 import org.simplejavamail.api.mailer.MailSend;
-import org.simplejavamail.api.mailer.MailSendObserver;
+import org.simplejavamail.api.mailer.MailSendResultObserver;
 import org.simplejavamail.api.mailer.MailSendOutcome;
 import org.simplejavamail.api.mailer.MailSendRejectedException;
 import org.simplejavamail.api.mailer.MailSubmissionReceipt;
@@ -147,7 +147,7 @@ public final class PolarMeridianDispatcherTest {
                 null, NOW, ACCEPTED, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
         MailSendOutcome archivedOutcome = new MailSendOutcome(successful.archiveAttempt,
                 successful.archiveAttempt, NOW, NOW, NOW, NOW, true, false, archivedReceipt, null);
-        MailSendObserver observationSink = outcome ->
+        MailSendResultObserver observationSink = outcome ->
                 successful.archive.recordOutcome(outcome.getInitialMessageId(), outcome);
         observationSink.onMailSendCompleted(archivedOutcome);
         observationSink.onMailSendCompleted(archivedOutcome);

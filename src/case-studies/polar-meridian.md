@@ -657,7 +657,7 @@ A failed insert stops the send. These records complement corporate journaling: t
 Ravi attaches a [completion observer](/sending-and-execution.html#section-mail-send-observer) to record how each attempt ended, including failures. He keeps the calls to the application's `stageLog` and `monitoring` adapters separate, so an archive failure still allows telemetry:
 
 ```java
-MailSendObserver observationSink = outcome -> {
+MailSendResultObserver observationSink = outcome -> {
     String attemptMessageId = outcome.getInitialMessageId();
 
     try {
@@ -737,7 +737,7 @@ List<Mailer> mailers = new ArrayList<>();
 for (MailerRegularBuilder<?> builder :
         List.of(urgentABuilder, urgentBBuilder, bulkBuilder)) {
     mailers.add(builder
-        .withMailSendObserver(observationSink, observationWorkers)
+        .withMailSendResultObserver(observationSink, observationWorkers)
         .buildMailer());
 }
 ```

@@ -35,7 +35,7 @@ After fixing a fresh Message-ID, the dispatcher calls `mailer.rehearse(email)`. 
 
 Quota accounting uses the rehearsed SMTP envelope, not just visible To/Cc headers. The example explicitly carries override recipients when copying an Email; the current `copying(...)` API does not copy that list. Do not mutate the selected Mailer/Session/configuration while a job is being prepared or sent. Metadata-only sends use the original composed inputs after rehearsal; their later MIME rendering is not claimed to be byte-identical.
 
-Configure reusable Mailers, their bounded worker queues and the `MailSendObserver` as shown in the article. Pass the same bounded `observationWorkers` executor as `completionWorkers` here, with explicit rejection and failure monitoring. It handles both archive observations and request-result updates; asynchronous callback failures leave requests unresolved for investigation, not automatically retryable. Never use a silent-discard policy.
+Configure reusable Mailers, their bounded worker queues and the `MailSendResultObserver` as shown in the article. Pass the same bounded `observationWorkers` executor as `completionWorkers` here, with explicit rejection and failure monitoring. It handles both archive observations and request-result updates; asynchronous callback failures leave requests unresolved for investigation, not automatically retryable. Never use a silent-discard policy.
 
 Then construct and start the dispatcher:
 
