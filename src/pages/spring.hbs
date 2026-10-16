@@ -414,3 +414,12 @@ simplejavamail.dkim.signing.signing-domain=your-domain.com
     <code>simplejavamail.smtp.retry.attempts</code> and <code>simplejavamail.smtp.retry.delay</code> are both required. Backoff, jitter and
     <code>simplejavamail.defaults.mailsend.retry.*</code> resource limits have ordinary and locked IDE metadata. Named Mailers resolve their own schedules;
     they do not inherit the initiating Mailer's policy. These are Java callback-free settings, so CLI configuration is supported too.</p></section>
+
+  <section><div class="wide">
+    <p>To activate <a href="/opentelemetry.html#section-integration">OpenTelemetry</a> on Spring's default Mailer, explicitly supply a
+      <code>MailSendTelemetry</code> bean, for example <code>OtelAdapter.wrap(openTelemetry)</code>. An OpenTelemetry bean alone does not activate it.
+      Alternatively, <code>simplejavamail.telemetry.enabled=true</code> enables every Mailer from the configured factory using the application's
+      global OpenTelemetry instance. Endpoint permission uses <code>simplejavamail.telemetry.smtp.endpointattributes</code>.
+      Both settings and their locked counterparts use the same Environment and Boolean IDE metadata.
+      Your application still owns SDK and exporter setup and shutdown; initialize the global instance before constructing enabled Mailers.</p>
+  </div></section>

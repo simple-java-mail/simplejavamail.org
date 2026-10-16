@@ -395,3 +395,9 @@ Elapsed: 142ms</code></pre>
   <section><p class="wide">Optional <a href="/mail-send-retries.html#section-configuration">retry options</a> are generated from typed builder input:
     <code>--mailer:withMailSendRetryAttempts 3 --mailer:withMailSendRetryDelay PT30S</code>, with optional backoff, jitter and resource limits.
     Sends wait for the final result. Loaded policies, named policies, locks and explicit options all separate daemon profiles when their behavior differs.</p></section>
+
+  <section><p class="wide"><code>--mailer:withMailSendTelemetrySmtpEndpointAttributes true</code> configures the optional
+    <a href="/opentelemetry.html">telemetry endpoint permission</a>. It does not supply an SDK or activate telemetry.
+    Enable reporting with <code>--mailer:withMailSendTelemetryEnabled true</code> or <code>simplejavamail.telemetry.enabled=true</code>;
+    the included optional module uses the application's or Java agent's global instance. No SDK or exporter setup is added to the CLI.
+    Activation, permission, locks and explicit options participate in daemon profile identity.</p></section>

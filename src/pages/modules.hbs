@@ -16,6 +16,23 @@ description: "Understand the default Angus provider adapter and choose optional 
     </p>
   </section>
 
+  <section class="toc" aria-label="On this page">
+    <ul>
+      <li><a href="#core-module">Core</a></li>
+      <li><a href="#angus-mail-provider-module">Angus Mail provider adapter</a></li>
+      <li><a href="#batch-module">Batch and clustering support</a></li>
+      <li><a href="#authenticated-socks-module">Authenticated (SOCKS) proxy support</a></li>
+      <li><a href="#outlook-module">Outlook support</a></li>
+      <li><a href="#dkim-module">DKIM support</a></li>
+      <li><a href="#smime-module">S/MIME support</a></li>
+      <li><a href="#openpgp-module">OpenPGP/MIME support</a></li>
+      <li><a href="#cli-module">CLI support</a></li>
+      <li><a href="#spring-module">Spring support</a></li>
+      <li><a href="#open-telemetry-module">OpenTelemetry support</a></li>
+      <li><a href="#karaf-module">Apache Karaf support</a></li>
+    </ul>
+  </section>
+
   <h2 id="core-module" class="with-back-to-top">Core</h2>
   <nav class="module-capability-links" aria-label="Core capabilities">
     <a href="features.html#section-basic-usage"><span>Compose</span><strong>Messages and recipients</strong><b aria-hidden="true">→</b></a>
@@ -413,6 +430,20 @@ com.example.ExampleMailTransportAdapter</code></pre>
           also discovers auto-configuration automatically, so switching to the starter is optional.
 	  </p>
   </section>
+
+  <h2 id="open-telemetry-module" class="with-back-to-top">OpenTelemetry support</h2>
+  <section><div class="view">
+    <p>Add <code>open-telemetry-module</code> to connect real sends to your application's traces and metrics.
+      Register <code>OtelAdapter.wrap(openTelemetry)</code> with <code>withMailSendTelemetry(...)</code>, or set
+      <code>simplejavamail.telemetry.enabled=true</code> to use the application's global instance for Mailers from that factory.
+      The module uses only the OpenTelemetry API/context; your application owns its SDK, exporters and shutdown.</p>
+    <p>Adding the dependency does not activate telemetry. SMTP endpoint attributes are opt-in, and message content,
+      addresses and raw exceptions are excluded. See the <a href="/opentelemetry.html">complete walkthrough and sample output</a>.</p>
+  </div><div class="side"><pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;open-telemetry-module&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre></div></section>
 
   <h2 id="karaf-module" class="with-back-to-top">Apache Karaf support</h2>
   <nav class="module-capability-links" aria-label="Karaf module capabilities">

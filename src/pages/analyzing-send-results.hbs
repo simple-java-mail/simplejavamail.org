@@ -21,11 +21,15 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       </p>
       <p>For a visual map of the pieces producing these results and observer callbacks, see
         <a href="/sending-and-execution.html#section-send-architecture">Inside a mail send</a>.</p>
+      <p>To join actual sends to application traces and aggregated metrics, use the optional
+        <a href="/opentelemetry.html">OpenTelemetry integration</a>. It records terminal completion directly,
+        independently of progress coalescing or result-observer dispatch.</p>
     </div>
   </section>
 
   <section class="toc">
     <ul>
+      <li><a href="#section-observation-options">Choose how to observe sending</a></li>
       <li><a href="#section-get-receipt">Get the receipt, including when a send fails</a></li>
       <li><a href="#section-message-size">Check message size against the server limit</a></li>
       <li><a href="#section-partial-send">Follow one partially successful send</a></li>
@@ -42,6 +46,29 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       <li><a href="#section-provider-details">Account for missing provider details</a></li>
     </ul>
   </section>
+
+  <a href="#section-observation-options" id="section-observation-options" class="section-link h2">&sect;</a>
+  <h2>Choose how to observe sending</h2>
+  <section><div class="wide">
+    <p>Progress, final results and telemetry answer different questions. Use them independently or together:</p>
+    <div class="doc-table-wrap" tabindex="0" aria-label="Compare mail-send observation facilities"><table>
+      <thead><tr><th>Facility</th><th>Question it answers</th><th>What you get</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#section-live-progress">Progress observer</a></td><td>What is happening now?</td>
+          <td>Stages and available upload counts, with finer SMTP detail when supported. Updates can be combined or dropped, so this is a best-effort view, not an audit trail.</td></tr>
+        <tr><td><a href="#section-observer-results">Result observer</a></td><td>What happened, and where did the time go?</td>
+          <td>The final outcome, receipt, failure, portable timings and bounded connection/submission histories.</td></tr>
+        <tr><td><a href="/opentelemetry.html">OpenTelemetry</a></td><td>How is sending behaving across my application?</td>
+          <td>Application-linked traces, per-send timings and aggregate measurements, recorded independently of observer delivery.</td></tr>
+      </tbody>
+    </table></div>
+    <p>The result observer and telemetry reuse the same portable measurement boundaries. Detailed progress can identify greeting,
+      TLS, authentication and other SMTP stages, but it does not turn them into separate duration measurements.</p>
+    <p>Intermediate upload-count updates are throttled to one every 250 milliseconds; stage changes and the final count bypass that throttle
+      but can still be combined.
+      Neither that reporting interval nor your telemetry export interval rounds the underlying send timings.
+      All three facilities describe local sending and SMTP submission, not final mailbox delivery.</p>
+  </div></section>
 
   <a href="#section-get-receipt" id="section-get-receipt" class="section-link h2">&sect;</a>
   <h2>Get the receipt, including when a send fails</h2>

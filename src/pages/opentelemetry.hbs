@@ -1,0 +1,231 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/opentelemetry.html"
+tags:
+  - "publicPage"
+title: "OpenTelemetry"
+section: "Protect and operate"
+breadcrumbParent: "/debugging.html"
+description: "Connect real mail sends to your application's traces and metrics, with explicit SDK ownership and privacy-safe defaults."
+---
+  <section>
+    <div class="wide">
+      <p>Your request trace can follow an email from admission through connection acquisition, submission, retries and cleanup.
+        The optional OpenTelemetry integration records that work directly; it does not depend on a progress callback arriving or a result observer running.</p>
+      <p>Use <a href="/analyzing-send-results.html">receipts and result observers</a> for individual submission decisions,
+        <a href="/analyzing-send-results.html#section-live-progress">progress</a> for a best-effort current state, and telemetry for traces and aggregated measurements.
+        None of them proves final mailbox delivery.</p>
+      <p>The <a href="/analyzing-send-results.html#section-observation-options">observation comparison</a> shows which questions each facility answers.</p>
+    </div>
+  </section>
+  <section class="toc">
+    <ul>
+      <li><a href="#section-register">Register your OpenTelemetry instance</a></li>
+      <li><a href="#section-traces">Read a send trace</a></li>
+      <li><a href="#section-metrics">Use the metrics</a></li>
+      <li><a href="#section-privacy">Choose endpoint visibility</a></li>
+      <li><a href="#section-integration">Spring, CLI and Java agents</a></li>
+      <li><a href="#section-boundaries">Ownership and reporting limits</a></li>
+    </ul>
+  </section>
+
+  <a href="#section-register" id="section-register" class="section-link h2">&sect;</a>
+  <h2>Register your OpenTelemetry instance</h2>
+  <section>
+    <div class="view">
+      <p>Add <code>open-telemetry-module</code> alongside the main library. It uses the OpenTelemetry API and context only;
+        your application supplies the SDK and decides where traces and metrics go.</p>
+      <p>The <code>openTelemetry</code> variable below is your already configured instance, supplied by your application or framework.
+        You can select it explicitly, or enable telemetry through factory properties and use the application's global instance.
+        Simple Java Mail does not create exporters or activate telemetry just because the JAR is present.</p>
+    </div>
+    <div class="side"><pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;open-telemetry-module&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre></div>
+  </section>
+  <section><div class="wide full-width-example"><pre><code class="language-java">import org.simplejavamail.otel.OtelAdapter;
+
+Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("relay.example.org", 587, user, password)
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .withMailSendTelemetry(OtelAdapter.wrap(openTelemetry))
+    .buildMailer();
+
+mailer.async().sendMail(email);</code></pre></div></section>
+  <section><div class="wide">
+    <p>The adapter retains your exact OpenTelemetry instance in an immutable handle that is safe to reuse. Wrapping it starts no telemetry work
+      and does not install a global instance. Configure sending preferences through the Mailer builder or properties.
+      Registering another handle replaces it and enables telemetry;
+      <code>getMailSendTelemetry()</code> returns the supplied value. Each Mailer resolves its own configuration.
+      Progress and result observers remain independently configurable.</p>
+    <p>For property-driven applications, configure this once in the factory's captured sources:</p>
+    <pre><code class="language-properties">simplejavamail.telemetry.enabled=true
+simplejavamail.telemetry.smtp.endpointattributes=false</code></pre>
+    <p>Every Mailer created through that factory inherits the values. The optional module uses the application's global OpenTelemetry instance
+      unless you supply a specific one with the Java registration above. Initialize that global instance before building enabled Mailers;
+      without a configured SDK it provides no-op reporting, not an automatically created exporter.</p>
+    <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.withConfig(config);
+Mailer first = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587).buildMailer();
+Mailer second = mail.mailerBuilder().withSMTPServer("relay-b.example.org", 587).buildMailer();
+
+// Replace the inherited choice for this Mailer, unless the configuration owner locked it.
+Mailer quiet = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587)
+    .withMailSendTelemetryEnabled(false).buildMailer();</code></pre>
+    <p><code>withMailSendTelemetryEnabled(false)</code> disables instrumentation without discarding a supplied integration;
+      <code>resetMailSendTelemetryEnabled()</code> explicitly chooses the built-in false default.
+      <code>clearMailSendTelemetry()</code> removes a supplied integration and restores activation from captured properties,
+      so clearing does not mean off when those properties enable it. Read <code>getOperationalConfig().isMailSendTelemetryEnabled()</code>
+      for the resolved choice. A conflicting <code>simplejavamail.locked.telemetry.enabled</code> value rejects construction.</p>
+    <p>For SDK and exporter setup, follow the <a href="https://opentelemetry.io/docs/languages/java/sdk/">OpenTelemetry Java SDK guidance</a>.
+      Prefer application-owned batching: custom processors can run synchronously, so telemetry is not guaranteed to be free of delay.</p>
+  </div></section>
+
+  <a href="#section-traces" id="section-traces" class="section-link h2">&sect;</a>
+  <h2>Read a send trace</h2>
+  <section><div class="wide">
+    <p>Each reached email produces one <code>mail.send</code> INTERNAL span, parented to the context at the initiating call.
+      Async work and resumed retries keep that parent even when they run on another thread. Each actual provider invocation creates a
+      <code>mail.submit</code> CLIENT child. Its duration includes provider processing, not just network time.</p>
+    <p>A temporary refusal followed by a successful retry can look like this. Durations and formatting are illustrative:</p>
+    <pre><code class="language-text">application request
+  mail.send        2.4 s   outcome=success  submission.status=accepted
+    phase.connection_acquisition.duration=0.12
+    phase.retry_wait.duration=1.9
+    mail.submit    0.1 s   ERROR            submission.status=rejected   attempt=1
+    [retry wait]
+    mail.submit    0.2 s                    submission.status=accepted   attempt=2</code></pre>
+    <p>The first child failed; the recovered logical send did not. A connection failover before provider invocation creates no submission child for the failed connection.
+      <a href="/mail-send-retries.html">Retry safety</a> and <a href="/smtp-connection-failover.html">connection failover</a> still decide whether any further work is allowed.</p>
+    <p>SMTP acceptance and successful local completion can differ:</p>
+    <pre><code class="language-text">mail.send          ERROR  outcome=failure  submission.status=accepted
+  failure.phase=cleanup
+  phase.submission.duration=0.14
+  phase.cleanup.duration=0.02
+  mail.submit             outcome=success  submission.status=accepted
+  [ordinary cleanup failed]</code></pre>
+    <p>The accepted submission is retained; telemetry does not turn it into rejection or authorize replay.
+      Inspect the receipt and failure for the actual decision. Partial acceptance fails the logical send, while a lost final reply can leave acceptance unknown.</p>
+    <p>Trace attributes use <code>simplejavamail.send.outcome</code>, <code>simplejavamail.submission.status</code>,
+      <code>simplejavamail.submission.attempt</code> and <code>simplejavamail.observation.id</code>.
+      The abbreviated output above omits their repeated prefix. Failed spans have an ERROR status with a bounded <code>error.type</code>, not raw exception text.</p>
+    <p>Open a slow <code>mail.send</code> span to inspect <code>simplejavamail.send.phase.&lt;phase&gt;.duration</code> attributes.
+      Their numeric values are seconds, taken from the same frozen measurements as the result observer. Available phases are
+      <code>preparation</code>, <code>scheduling</code>, <code>rate_limit_wait</code>, <code>connection_acquisition</code>,
+      <code>mime_preparation</code>, <code>submission</code>, <code>retry_wait</code> and <code>cleanup</code>.
+      Missing measurements stay absent; a measured zero is included.</p>
+    <p><code>simplejavamail.send.failure.phase</code> identifies the measurement that observed the primary failure, when known.
+      A later cleanup failure does not replace that location. Success and failures outside a measured boundary omit the attribute.
+      These timing and failure-location attributes belong to the logical span, not its submission children or metric labels.</p>
+  </div></section>
+
+  <a href="#section-metrics" id="section-metrics" class="section-link h2">&sect;</a>
+  <h2>Use the metrics</h2>
+  <section><div class="wide">
+    <p>All instruments use the <code>org.simplejavamail.mail</code> instrumentation scope. Metrics are recorded even when the SDK does not sample traces.</p>
+    <div class="doc-table-wrap" tabindex="0" aria-label="Mail telemetry instruments"><table>
+      <thead><tr><th>Instrument</th><th>Type / unit</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>simplejavamail.mail.send.completed</code></td><td>Counter / sends</td><td>One terminal completion per reached email, not one per retry.</td></tr>
+        <tr><td><code>simplejavamail.mail.send.active</code></td><td>Up/down counter / sends</td><td>Started logical sends that have not reached terminal completion.</td></tr>
+        <tr><td><code>simplejavamail.mail.send.duration</code></td><td>Histogram / seconds</td><td>Total elapsed send time, including admission, waiting and ordinary cleanup.</td></tr>
+        <tr><td><code>simplejavamail.mail.submission.completed</code></td><td>Counter / invocations</td><td>Each completed provider or CustomMailer invocation, including retries.</td></tr>
+        <tr><td><code>simplejavamail.mail.submission.duration</code></td><td>Histogram / seconds</td><td>Elapsed invocation time.</td></tr>
+        <tr><td><code>simplejavamail.mail.send.phase.duration</code></td><td>Histogram / seconds</td><td>Available preparation, scheduling, rate-limit wait, acquisition, MIME preparation, submission, retry-wait and cleanup measurements.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Unavailable phases are omitted, not recorded as zero. Shared batch/open-connection acquisition and final teardown are outside individual-email measurements.
+      These are elapsed boundaries, not CPU measurements or precise DNS/TLS/server-processing timings. See <a href="/analyzing-send-results.html#section-send-timings">timing semantics</a>.</p>
+    <p>Duration histograms suggest these bucket boundaries, in seconds:</p>
+    <pre><code class="language-text">0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 30, 60, 120, 300</code></pre>
+    <p>The scale starts with OpenTelemetry's <a href="https://opentelemetry.io/docs/specs/semconv/http/http-metrics/">HTTP duration recommendations</a>
+      and extends through five minutes for connection setup and rate/retry waits. This distinguishes short submissions without putting every
+      positive duration below five seconds into the same generic SDK bucket. Longer durations remain recorded in the overflow bucket;
+      these boundaries are not timeouts or rounding rules.</p>
+    <p>The boundaries are advice, not an imposed SDK configuration. Your application's
+      <a href="https://opentelemetry.io/docs/languages/java/sdk/#views">SDK Views</a> can replace them or choose a different aggregation.
+      Your SDK also controls collection and export intervals. A longer interval delays visibility, not timing precision;
+      short sends still contribute their completion counts and durations even if they begin and end between exports.</p>
+    <p>Bounded metric labels describe outcomes, submission status, failure category and, for phase measurements, the phase name.
+      Observation IDs, trace IDs, hosts, ports and mailbox identities never become metric labels.</p>
+    <p>Your SDK and monitoring backend may also offer exemplars: links from individual metric samples to the send or submission trace.
+      Simple Java Mail supplies the matching span context, including for asynchronous sends and retries. Your SDK decides which samples
+      retain those links; counts and durations are still recorded when traces are not sampled.</p>
+    <pre><code class="language-text">Illustrative totals after one successful retry:
+simplejavamail.mail.send.completed          1  outcome=success
+simplejavamail.mail.submission.completed    1  outcome=failure, status=rejected
+simplejavamail.mail.submission.completed    1  outcome=success, status=accepted
+simplejavamail.mail.send.active             0</code></pre>
+  </div></section>
+
+  <a href="#section-privacy" id="section-privacy" class="section-link h2">&sect;</a>
+  <h2>Choose endpoint visibility</h2>
+  <section><div class="wide">
+    <p>SMTP host and port are excluded by default. Allow them when your trace backend should identify the selected relay:</p>
+    <pre><code class="language-java">mailerBuilder
+    .withMailSendTelemetry(OtelAdapter.wrap(openTelemetry))
+    .withMailSendTelemetrySmtpEndpointAttributes(true);</code></pre>
+    <p>This permits bounded <code>server.address</code> and <code>server.port</code> attributes on submission spans only when the actual transport exposes them.
+      A missing port remains missing; it is not copied from the initiating Mailer's settings or guessed from a protocol default.</p>
+    <p>The same permission can come from captured configuration:</p>
+    <pre><code class="language-properties">simplejavamail.telemetry.smtp.endpointattributes=true
+
+# A centrally supplied restriction can prohibit endpoint reporting.
+simplejavamail.locked.telemetry.smtp.endpointattributes=false</code></pre>
+    <p>The two lines illustrate different choices; a locked value wins over its ordinary counterpart.
+      An explicit fluent choice overrides an ordinary property, but a conflicting lock rejects Mailer construction.</p>
+    <ul>
+      <li><code>resetMailSendTelemetrySmtpEndpointAttributes()</code> explicitly chooses the built-in false value on the builder.</li>
+      <li><code>clearMailSendTelemetrySmtpEndpointAttributes()</code> restores the captured property's value.</li>
+      <li><code>isMailSendTelemetrySmtpEndpointAttributesEnabled()</code> reads the builder's current permission.</li>
+      <li><code>mailer.getOperationalConfig().isMailSendTelemetrySmtpEndpointAttributesEnabled()</code> describes the resolved permission.</li>
+    </ul>
+    <p>Each Mailer has its own permission. Replacing or clearing a telemetry handle leaves that setting alone,
+      and reusing a handle with another Mailer does not carry over the first Mailer's choice.</p>
+    <p>Endpoint permission alone does not activate telemetry. Activation has its own <code>simplejavamail.telemetry.enabled</code> property
+      and independent locked counterpart. A lock on activation restricts this Mailer's choice; it does not install an SDK or guarantee export.</p>
+    <p>SJM-generated telemetry excludes message content, addresses, credentials, Message-ID, ENVID, exception messages and stack traces.
+      Its observation UUID joins the send's progress, outcome and trace when those are enabled. It is not an OpenTelemetry TraceId or a deduplication key,
+      and nothing is inserted into the email or SMTP conversation. Attributes produced by your application or another agent have their own privacy policy.</p>
+    <p>This integration does not redact existing application, mail-debug or logging-only output. Review that output separately if an agent exports your logs.</p>
+  </div></section>
+
+  <a href="#section-integration" id="section-integration" class="section-link h2">&sect;</a>
+  <h2>Spring, CLI and Java agents</h2>
+  <section><div class="wide">
+    <p>In Spring, explicitly supply the integration as a bean. The default Mailer uses that bean through the shared configuration path;
+      an OpenTelemetry bean by itself does not activate it. If several integration beans exist, choose a primary one.</p>
+    <pre><code class="language-java">@Bean
+MailSendTelemetry mailTelemetry(OpenTelemetry openTelemetry) {
+    return OtelAdapter.wrap(openTelemetry);
+}</code></pre>
+    <p>Alternatively, set <code>simplejavamail.telemetry.enabled=true</code> through Spring's Environment to enable all Mailers from that configured
+      factory using the application-global instance. Activation and endpoint permission both have ordinary and locked metadata.
+      Environment precedence, placeholders and configuration diagnostics work as usual.</p>
+    <p>The generated CLI option <code>--mailer:withMailSendTelemetrySmtpEndpointAttributes true</code> configures permission only.
+      It cannot supply a live SDK or turn telemetry on. Use <code>--mailer:withMailSendTelemetryEnabled true</code> or the enabled property
+      for activation. The standalone CLI includes the optional module, but no SDK or exporter setup.</p>
+    <p>With the OpenTelemetry Java instrumentation agent, property activation uses its installed global instance. You can also pass that instance explicitly, following
+      <a href="https://opentelemetry.io/docs/languages/java/api/">OpenTelemetry's manual-instrumentation guidance</a>:</p>
+    <pre><code class="language-java">mailerBuilder.withMailSendTelemetry(
+    OtelAdapter.wrap(GlobalOpenTelemetry.get()));</code></pre>
+    <p>The explicit registration above selects the same source that property-only activation uses.
+      Do not create a competing SDK merely for mail when the agent already owns one. The agent remains optional.
+      SJM's logical/submission spans can coexist with legitimate lower-level spans from other instrumentation; arbitrary vendor duplicate suppression is not promised.</p>
+  </div></section>
+
+  <a href="#section-boundaries" id="section-boundaries" class="section-link h2">&sect;</a>
+  <h2>Ownership and reporting limits</h2>
+  <section><div class="wide">
+    <p>The initiating Mailer owns the integration across failover and retries. Each lazy batch email gets its own observation only when reached;
+      later emails do not become children of earlier completed emails. Open-connection sends retain their per-email boundaries.</p>
+    <p>A CustomMailer creates an INTERNAL <code>mail.custom_submit</code> child for its opaque callback, with no invented SMTP endpoint or acceptance facts.
+      Logging-only sends record actual preparation and a <code>logged_only</code> outcome, without a submission child.
+      Standalone validation, rehearsal, probing, connection tests and shutdown do not create mail-send spans.</p>
+    <p>Telemetry uses authoritative lifecycle boundaries rather than lossy progress callbacks. It does not enable upload counting or public diagnostic histories,
+      add content reads, serialize an extra copy, open connections or change retry decisions. A telemetry RuntimeException is logged safely and ignored;
+      the existing send result and resource cleanup remain authoritative.</p>
+    <p>Closing a Mailer releases its work but does not close or flush your SDK or exporters. The application owns their lifecycle.
+      This is local submission instrumentation, not a delivery receipt service.</p>
+  </div></section>

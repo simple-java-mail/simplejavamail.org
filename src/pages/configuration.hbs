@@ -10,6 +10,10 @@ description: "Configure mailers in Java, property files, or environment variable
     <section><p class="wide">For more than one approved SMTP destination, see <a href="/smtp-connection-failover.html#section-named">named failover configuration</a>.
       Each <code>simplejavamail.mailers.name.*</code> definition resolves independently. A locked relationship protects the captured route, while
       mandatory message locks remain binding through destination changes. Ordinary templates belong to the selected Mailer, including in a cluster.</p></section>
+    <section><p class="wide">Optional <a href="/opentelemetry.html#section-privacy">OpenTelemetry endpoint permission</a> uses
+      <code>simplejavamail.telemetry.smtp.endpointattributes</code> and its locked counterpart. Activate reporting for Mailers from this factory
+      with <code>simplejavamail.telemetry.enabled=true</code>, using the application's initialized global instance or an explicit Java registration.
+      Both Boolean settings support locks. The initiating Mailer resolves them independently of the selected SMTP destination.</p></section>
     <section class="doc-overview" aria-labelledby="configuration-overview-title">
       <header>
         <p class="eyebrow">Configuration at a glance</p>
@@ -652,6 +656,10 @@ simplejavamail.javaxmail.debug.out=SLF4J
 simplejavamail.transportstrategy=SMTP_TLS
 simplejavamail.transport.mode.logging.only=false
 simplejavamail.opportunistic.tls=false
+
+# Optional OpenTelemetry; the application supplies its global SDK or an explicit Java integration
+simplejavamail.telemetry.enabled=false
+simplejavamail.telemetry.smtp.endpointattributes=false
 
 # SMTP destination, protocol identity and local/source binding
 simplejavamail.smtp.host=smtp.default.com

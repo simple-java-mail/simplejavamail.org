@@ -63,7 +63,8 @@
           "title": "Diagnostics",
           "url": "/debugging.html",
           "children": [
-            { "title": "Analyzing send results", "url": "/analyzing-send-results.html" }
+            { "title": "Analyzing send results", "url": "/analyzing-send-results.html" },
+            { "title": "OpenTelemetry", "url": "/opentelemetry.html" }
           ]
         }
       ]

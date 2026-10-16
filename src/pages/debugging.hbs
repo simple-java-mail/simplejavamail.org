@@ -24,6 +24,7 @@ description: "Choose a diagnostic tool, inspect prepared messages and SMTP conne
 		<li><a href="#section-inspect-mailer-email">Inspect a mailer or an email</a></li>
 		<li><a href="#section-mailexception">Catching exceptions</a></li>
 		<li><a href="/analyzing-send-results.html">Analyzing send results</a></li>
+		<li><a href="/opentelemetry.html">OpenTelemetry traces and metrics</a></li>
 		<li><a href="#section-logging">Logging output</a></li>
 		<li><a href="#section-log4j2" class="indent">Example with Log4j 2</a></li>
 		<li><a href="#section-logback" class="indent">Example with Logback</a></li>
@@ -52,6 +53,7 @@ description: "Choose a diagnostic tool, inspect prepared messages and SMTP conne
             <tr><td>What happened to an actual send?</td><td><a href="/analyzing-send-results.html">Submission receipt and mail-send outcome</a></td><td>Available server responses, recipient results and the send's success or failure</td><td>The send does</td></tr>
             <tr><td>Where did a slow or failed send spend its time?</td><td><a href="/analyzing-send-results.html#section-send-timings"><code>outcome.getDiagnostics()</code></a> in the observer</td><td>Available per-phase measurements and where a failure was observed</td><td>No additional connection</td></tr>
             <tr><td>What is this email doing right now?</td><td><a href="/analyzing-send-results.html#section-live-progress"><code>withMailSendProgressObserver(...)</code></a></td><td>Latest work, supported greeting/TLS/authentication/envelope stages, retry attempt and upload counts; final results remain authoritative</td><td>No additional connection</td></tr>
+            <tr><td>How does mail sending fit into my application's traces and metrics?</td><td><a href="/opentelemetry.html"><code>withMailSendTelemetry(...)</code></a></td><td>Logical sends, actual submission attempts and available timing measurements through your own OpenTelemetry instance</td><td>No additional connection</td></tr>
           </tbody>
         </table>
       </div>
