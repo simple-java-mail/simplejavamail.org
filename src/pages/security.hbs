@@ -695,6 +695,8 @@ currentMailerBuilder
 					<code class="inline language-java">withFixedSmimeCertificate(...)</code> replaces every recipient certificate in that group, and
 					<code class="inline language-java">clearingSmimeCertificates()</code> removes certificate state from reused recipients so the email-level
 					or mailer-level fallback certificate can apply.
+					To keep each original recipient's certificate instead, use <code class="inline language-java">resetSmimeCertificatePolicy()</code>.
+					It removes the group rule, not the recipients' certificates, and leaves any group notification policy unchanged.
 				</p>
 				<br/>
 				<p>
@@ -1001,6 +1003,12 @@ Email mergedEmail = mail.converter()
 mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENCRYPTED
 </code></pre>
 			</div>
+			<p class="wide">Requesting decryption requires <code>smime-module</code> at runtime. If it is missing, conversion explains which module
+				to include instead of silently ignoring your keys. Ordinary import without a decryption request remains available without it.</p>
+			<p class="wide">The original S/MIME details describe the protection layers of this message. A successfully decrypted envelope reports
+				<code>DECRYPTED</code>; recognized encryption without keys reports <code>KEY_MISSING</code>. Signature verification is separate:
+				readable decrypted content does not establish a valid signature or a trusted sender. An unrelated encrypted attachment does not
+				make its containing message an encrypted envelope.</p>
 		</section>
 
 
@@ -1053,7 +1061,6 @@ mailer.sync().sendMail(protectedEmail);</code></pre>
 		</section>
 
 		<section>
-		<section>
 			<div class="view">
 				<p>To reuse OpenPGP settings, put them on an Email template and pass it to <code>withEmailDefaults(...)</code> or
 					<code>withEmailOverrides(...)</code>, just as you would for S/MIME or DKIM. Each signing or encryption configuration is one complete
@@ -1061,6 +1068,9 @@ mailer.sync().sendMail(protectedEmail);</code></pre>
 				<p><code>clearOpenPgp()</code> removes the draft's choices and permits template fallback. To exclude a template instead, use the ordinary
 					defaults/overrides suppression controls with <code>OPENPGP_SIGNING_CONFIG</code> or <code>OPENPGP_ENCRYPTION_CONFIG</code>.
 					Exact EML remains untouched, and OpenPGP key material is still not included in Email serialization.</p>
+				<p>On the signing-config builder, <code>clearSigningKeyId()</code> returns to automatic key selection and
+					<code>resetHashAlgorithm()</code> restores SHA-256. The encryption-config builder's <code>resetSymmetricAlgorithm()</code>
+					restores AES-256. These companions keep the supplied keys and passphrases; previously built configurations do not change.</p>
 			</div>
 			<div class="side">
 <pre><code class="language-java">Email protectionDefaults = mail.emailBuilder().startingBlank()
@@ -1074,6 +1084,7 @@ Mailer protectedMailer = mail.mailerBuilder()
 			</div>
 		</section>
 
+		<section>
 			<div class="view">
 				<p><strong>Keys and algorithm choices</strong></p>
 				<p>

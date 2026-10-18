@@ -48,6 +48,9 @@ MailSubmissionReceipt receipt = send.getCompletion().join();</code></pre>
   <p>Without backoff, delays stay fixed. Without jitter, they do not vary. <code>resetRetryBackoff()</code> and <code>resetRetryJitter()</code>
     remove those optional choices. Calling <code>withMailSendRetryPolicy(...)</code> again replaces the entire policy, including resource limits;
     <code>clearMailSendRetryPolicy()</code> disables retries and restores built-in resource limits unless locked configuration prevents the change.</p>
+  <p>On the policy builder, <code>clearRetrySchedule()</code> removes attempts, delay, backoff and jitter while keeping your resource budgets.
+    <code>clearMaximumAttempts()</code> and <code>clearRetryDelay()</code> remove only their own choice; supply the missing part again or clear the
+    complete schedule before building. Clearing a schedule is not the same as replacing the entire policy.</p>
   <p>Synchronous calls wait on their calling thread. Ordinary asynchronous sends release their worker, lease and proxy before backoff,
     then resume through the same configured executor. Caller-runs executors may execute on the submitting or retry-dispatch thread.</p>
 </div></section>

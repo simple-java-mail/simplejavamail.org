@@ -190,12 +190,16 @@ mailerBuilder = mail.mailerBuilder()
   .withSMTPServerPassword("password");
 </code></pre>
       <pre><code class="small">
-// you can even leave out some details for an anonymous SMTP server
+// omit credentials for an anonymous server only if the factory has none configured
+// a shorter overload preserves any credentials already on the builder
 mail.mailerBuilder().withSMTPServer("smtp.host.com", 25);
 // or
 mail.mailerBuilder()
   .withSMTPServerHost("smtp.host.com")
   .withSMTPServerPort(25);
+
+// clear only these credentials without changing the host or port
+mailerBuilder.clearSMTPServerUsername().clearSMTPServerPassword();
 
 // require STARTTLS, also when authenticating with username/password
 mailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
@@ -253,6 +257,12 @@ mail.mailerBuilder(session)
         concurrent sending, or create independent Sessions with independent Properties copied from your original SMTP settings.
         Use <code class="inline language-java">Session.getInstance(...)</code> rather than
         <code class="inline language-java">Session.getDefaultInstance(...)</code> when you need separate Sessions.</p>
+      <p>A supplied Session keeps its connection settings unless you explicitly replace them through the builder, additional Jakarta Mail
+        properties or mandatory locks. Ordinary factory connection defaults do not replace its timeouts, local binding, EHLO name or
+        certificate trust. This is independent of whether the Session previously belonged to another Mailer.</p>
+      <p>If a setting comes from an inherited <code>Properties</code> default, clearing it cannot remove that default. Such a clear is rejected
+        before changing the Session. Supply a replacement value or create a new Session with independent Properties containing only the
+        settings you want.</p>
     </div>
   </section>
 
@@ -266,6 +276,11 @@ mail.mailerBuilder(session)
         The mailer builder also covers validation, diagnostics, timeouts, local binding, shared signing defaults, and
         <a href="features.html#section-extension-points">extension points</a>.
       </p>
+      <p><code>withSessionTimeout(1000)</code> sets connection, read and write timeouts together, in milliseconds. On a caller-supplied Session,
+        leaving that setter unused preserves all three original values. Inspect the common configured value through
+        <code>mailer.getOperationalConfig().getSessionTimeout()</code>. It returns an <code>Integer</code>, or <code>null</code> when the values
+        differ, are missing or cannot be interpreted. Null does not mean unlimited, and the getter does not guess provider defaults.
+        These inspection values describe construction; they do not track direct Session mutations after the Mailer is built.</p>
     </div>
 
     <div class="wide full-width-example">
@@ -569,9 +584,9 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
       <p>
         Static inbound methods on <code class="inline language-java">EmailConverter</code> use the conventional default snapshot. Use
         <code class="inline language-java">mail.converter()</code> when parsing should produce builders backed by an explicit factory snapshot.
-      </p>
         For example, <code>mail.converter().fromEml(emlPath).toEmailBuilder()</code> keeps that snapshot without restricting the supported conversion routes.
         See <a href="/features.html#section-converting">source-first conversion</a> for the complete shape and receive-side options.
+      </p>
       <p>
         When replacing a <code class="inline language-java">Mailer</code>, let any work already using the old instance finish and then
         <a href="/sending-and-execution.html#section-mailer-lifecycle">close it</a>.

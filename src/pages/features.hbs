@@ -237,6 +237,12 @@ mail.mailerBuilder()
   {{#> components/feature-heading-h3 core=true}}About the fluent API with the Builder pattern{{/components/feature-heading-h3}}
 
   <section>
+    <p class="wide">Each built Email keeps its own recipients, headers and other metadata. You can continue using its builder without changing
+      that earlier message. To change a built Email, start with <code>mail.emailBuilder().copying(email)</code> and build a replacement; changing a
+      collection returned by a builder changes only your separate copy. Byte-array content is copied when supplied, too.</p>
+    <p class="wide">Attachment <code>DataSource</code> objects and forwarded <code>MimeMessage</code> objects remain borrowed. Building does not
+      read or freeze them, so keep their content stable and available while an operation consumes it. Exact EML owns its supplied bytes;
+      retry-enabled sends create their own repeatable content snapshot.</p>
     <p class="wide">
       Start from a configured
       <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/api/SimpleJavaMail.html" target="_blank">
@@ -396,6 +402,8 @@ recipient.withName("Alice").withAddress("alice@example.org")
 .withDefaultSmimeCertificate(X509Certificate smimeCertificate)
 .withFixedSmimeCertificate(X509Certificate smimeCertificate)
 .clearingSmimeCertificates()
+.resetSmimeCertificatePolicy()
+.resetDeliveryStatusNotificationNotifyPolicy()
 .withRecipients(Collection&lt;Recipient&gt; recipients)
 .withRecipients(Recipient... recipients)
 .buildRecipients()</code></pre>
@@ -429,6 +437,8 @@ recipient.withName("Alice").withAddress("alice@example.org")
         Default names and default certificates only fill missing values. Fixed names and fixed certificates override source data for the whole group.
         <code class="inline">clearingSmimeCertificates()</code> removes certificate state from reused recipients when the current email should use its own
         S/MIME fallback instead.
+        <code class="inline">resetSmimeCertificatePolicy()</code> does something different: it stops applying the group rule and keeps each original
+        recipient's certificate. If Alice and Bob supplied different certificates, resetting preserves those two certificates; clearing removes both.
       </p>
       <p>
         Recipient-level S/MIME certificates are described in the <a href="security.html#section-sending-smime">S/MIME security section</a>.
@@ -629,6 +639,12 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
       <p>
         If you prefer to use your own preconfigured <code class="inline language-java">Session</code> instance and still benefit from Simple Java Mail, you can!
       </p>
+      <p>Your Session is the starting point for connection settings. Its timeouts, local address, EHLO hostname and certificate-trust choices stay
+        unchanged unless you explicitly replace them on the Mailer builder or a configured lock requires a value. Ordinary Simple Java Mail
+        connection defaults do not overwrite them, including when you reuse a Session after its previous Mailer has shut down.</p>
+      <p>For example, <code>withSessionTimeout(1000)</code> deliberately sets connection, read and write timeouts to one second. Additional Jakarta
+        Mail properties and configured proxy routing still apply. Standard <code>smtp</code> and <code>smtps</code> Sessions need no special marker;
+        for a custom protocol, configure its provider-specific properties instead. See <a href="configuration.html#section-programmatic-api-other">timeout inspection</a>.</p>
     </div>
 
     <div class="side">
@@ -1524,7 +1540,6 @@ Status: 5.1.1</code></pre>
       <p>The notification's <code>5.1.1</code> means a bad destination mailbox address; it is not the result of the Java send call.</p>
       <p>If you already have an identifier, fix it explicitly, just like a Message-ID:</p>
 <pre><code class="language-java small">emailBuilder.fixingEnvelopeId("order-42-attempt-1");</code></pre>
-    </div>
       <p>When editing an existing DSN request, <code>clearReturnOption()</code> removes only the choice about returning headers or the full message.
         Notification events and a fixed envelope identifier stay unchanged:</p>
 <pre><code class="language-java small">DeliveryStatusNotification request = DeliveryStatusNotification.builder()
@@ -1535,6 +1550,12 @@ Status: 5.1.1</code></pre>
 DeliveryStatusNotification withoutReturnPreference = request.toBuilder()
     .clearReturnOption()
     .build();</code></pre>
+      <p>On composed and exact Email builders, use <code>clearDeliveryStatusNotificationReturnOption()</code>,
+        <code>clearDeliveryStatusNotificationNotifyOptions()</code> or <code>clearEnvelopeId()</code> to remove just that part of the request.
+        Other choices stay in place; when no request components remain, the builder has no shared DSN request.
+        Composed emails can then receive configured defaults again, whereas exact emails continue to bypass ordinary templates.
+        Clearing does not remove locks or recipient-specific notification preferences.</p>
+    </div>
     <div class="wide full-width-example">
       <h4>What to expect</h4>
       <ul>
@@ -1623,6 +1644,9 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
         <li><code>clearingDeliveryStatusNotificationNotifyOptions()</code> restores fallback. On a group it also strips preferences copied from
           source recipients. An empty typed array supplies no preference: a recipient setter restores fallback, a group default leaves existing
           recipient choices intact, and a fixed group policy clears them. <code>NEVER</code> explicitly requests no notifications instead.</li>
+        <li><code>resetDeliveryStatusNotificationNotifyPolicy()</code> removes the group rule and preserves the original recipients' preferences.
+          Unlike clearing, it can restore Alice's <code>FAILURE</code> and Bob's <code>NEVER</code> after a fixed group rule replaced both.
+          Resetting either the certificate or notification rule leaves the other rule and previously built recipient lists unchanged.</li>
         <li>An explicit recipient preference still wins over an Email-level value from <code>withEmailOverrides(...)</code>.
           Configure reusable message policy through <a href="/configuration.html#section-config-mailer">Email defaults and overrides</a>;
           there is no second set of Mailer DSN setters. Reusing groups or emails does not mutate their preferences.</li>
@@ -1692,6 +1716,8 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
 			  defensive EML bytes, encoded size, Message-ID, and the envelope sender and recipients that would be given to the transport. It is a snapshot:
 			  a later send prepares the original Email again, so generated dates, boundaries, IDs, and cryptographic output can differ.
 		  </p>
+		  <p>Rehearsal uses the Mailer you call. It does not select or test a cluster/failover route; another selected Mailer can apply different
+			  defaults, overrides or security settings when the actual send runs.</p>
 		  <p>
 			  <a href="#section-exact-eml">Exact EML</a> follows the same validate-versus-rehearse choice but not the composed-message transformation rules.
 			  Validation checks its explicit envelope and parseable canonical EML; full validation also checks the supplied byte length. Rehearsal returns those
@@ -1786,6 +1812,11 @@ JMail.strictValidator()
 			  differ from the provider default. DSN notify and return options, including an optional <a href="#section-dsn-envelope-id">envelope identifier</a>,
 			  are also available because they belong to the envelope rather than the MIME bytes.
 		  </p>
+		  <p>Inspect the exact builder's choices with <code>getEnvelopeRecipients()</code>, <code>getEnvelopeSender()</code>,
+			  <code>getDeliveryStatusNotification()</code> and <code>isTlsRequiredForOnwardDelivery()</code>, without parsing the message again.
+			  Named <code>clearEnvelopeRecipients()</code>, <code>clearEnvelopeSender()</code>, DSN-component clears and <code>clearEnvelopeId()</code>
+			  let you remove a choice. Clearing recipients requires replacements before building; clearing a sender restores provider fallback,
+			  not an empty SMTP sender. These methods neither rewrite preserved bytes nor remove configured locks.</p>
 	  </div>
 
 	  <div class="side">
@@ -1934,13 +1965,13 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         For example, if you need a MimeMessage, you can convert <code class="inline language-java">Email</code> objects, EML data and even Outlook .msg files.
       </p>
       <p>
-        If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
-      <p>
         Start with <code>mail.converter().fromEml(...)</code>, <code>fromMimeMessage(...)</code>, <code>fromEmail(...)</code> or
         <code>fromOutlookMsg(...)</code>, then choose the result you need. Completion offers the supported targets for that source.
         You can set receive-side security and attachment options before creating an Email, rather than filling unused arguments with <code>null</code>.
         The existing static <code>EmailConverter</code> methods remain available.
       </p>
+      <p>
+        If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
       </p>
       <p>
@@ -1964,14 +1995,14 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         <code class="inline language-java">InputStream</code>, and in-memory EML <code class="inline language-java">String</code> methods remain available;
         caller-supplied streams keep their existing ownership rules.
       </p>
-    </div>
-
       <p>
         Selecting a source does not read it. Configure the conversion, then choose one <code>to...</code> result; start a fresh source selection for
         another conversion, including after a failed read. Imported Email builders retain the factory's configuration snapshot.
         Exporting an Email does not silently apply templates; use <code>withEmailGovernance(...)</code> when you want that explicitly.
         Direct MIME/EML routes do not rebuild the message through an editable Email.
       </p>
+    </div>
+
     <div class="side">
 <pre><code class="language-java small">Path emlPath = Path.of("received.eml");
 Path msgPath = Path.of("received.msg");

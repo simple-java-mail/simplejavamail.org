@@ -798,8 +798,8 @@ observationWorkers.shutdown(); // application owns this executor
       <p class="wide">
         Graceful shutdown does not request cancellation or add a deadline; configured send deadlines still apply. It can wait for slow I/O or an application callback. Call blocking
         <code class="inline language-java">close()</code> from the application's owning thread, not within a send operation or inline observer, which would wait for itself.
-      </p>
         You may start <code class="inline language-java">closeAsync()</code> there, but do not wait for its future from that same send or observer.
+      </p>
     </div>
   </section>
 

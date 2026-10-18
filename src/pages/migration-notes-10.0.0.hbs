@@ -54,6 +54,9 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
       <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
       <li><a href="#copied-template-suppression">Check copies of emails that skip defaults or overrides</a></li>
+      <li><a href="#message-snapshots">Stop changing emails through retained lists or arrays</a></li>
+      <li><a href="#address-only-name">Check names when importing only a recipient address</a></li>
+      <li><a href="#requested-smime-module">Include S/MIME support when requesting decryption</a></li>
       <li><a href="#async-preparation">Account for validation running during async execution</a></li>
       <li><a href="#async-shutdown">Allow shutdown to wait for sends already in progress</a></li>
       <li><a href="#mail-send-execution-control">Update stored async results to MailSend</a></li>
@@ -81,6 +84,34 @@ breadcrumbParent: "/migration-notes.html"
       <code>ignoringOverrides(false)</code>. Calling <code>dontApplyDefaultValueFor()</code> or <code>dontApplyOverrideValueFor()</code> with no
       arguments clears the corresponding per-field exclusions on the copy's builder. Keep the inherited exclusions when the copy should retain
       the original Email's choices. These controls still cannot remove locked settings.</p>
+  </div></section>
+
+  <h2 id="message-snapshots">Stop changing emails through retained lists or arrays</h2>
+  <section><div class="wide">
+    <p>Building an Email now keeps its recipients, headers and other message metadata separate from the builder. Changing that builder later no
+      longer changes an Email you already built. Stored message collections, including nested header values, cannot be changed; filtered To/Cc/Bcc
+      lists and collection getters on builders return separate, editable copies. Recipient groups also copy their input list, and byte-array
+      attachment/image input is copied.</p>
+    <p>If your code used a returned collection or retained input array to change an existing message, make the change through a builder and build
+      a replacement instead. A collection change can now throw <code>UnsupportedOperationException</code>, or affect only your detached copy.</p>
+    <p>This does not freeze arbitrary attachment sources or forwarded <code>MimeMessage</code> objects. Keep those borrowed resources available
+      and stable while sending, converting or serializing the Email.</p>
+  </div></section>
+
+  <h2 id="address-only-name">Check names when importing only a recipient address</h2>
+  <section><div class="wide">
+    <p><code>withAddressOnlyFrom("Parsed name &lt;alice@example.org&gt;")</code> now keeps the name already configured on the recipient builder,
+      matching the overload that accepts an <code>InternetAddress</code>. Earlier releases unexpectedly replaced it with the parsed display name.</p>
+    <p>If you relied on that replacement, set the desired name explicitly with <code>withName(...)</code>, or use
+      <code>withAddressAndNameOrDefault(source, null)</code> when you want both the parsed name and address.</p>
+  </div></section>
+
+  <h2 id="requested-smime-module">Include S/MIME support when requesting decryption</h2>
+  <section><div class="wide">
+    <p>If you supply decryption keys to an EML, MIME or Outlook conversion, Simple Java Mail now requires <code>smime-module</code> on the runtime
+      classpath. Previously the request could be silently ignored when the module was missing.</p>
+    <p>Include the module when you want decryption. If you only want ordinary inspection without decryption, omit the keys or clear the configured
+      decryption request. Reading mail without an explicit decryption request still does not require S/MIME support.</p>
   </div></section>
 
   <h2 id="async-preparation">Account for validation running during async execution</h2>
@@ -760,6 +791,36 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
       <code class="inline language-java">close()</code> or the shutdown future to complete; starting shutdown does not release ownership.
       If cleanup fails, create a fresh Session instead.
     </p>
+    <h3>Keep your Session's connection settings unless you explicitly replace them</h3>
+    <p class="wide">
+      Earlier releases treated supplied Sessions inconsistently. A Session originating from Simple Java Mail could have its timeouts and
+      certificate-trust choices replaced by builder defaults, while another Session could silently ignore an explicit timeout setter.
+      Both now use the supplied settings as the starting point. Ordinary factory connection defaults no longer replace them; explicit builder
+      choices, additional Jakarta Mail properties, configured proxy routing and mandatory locks still apply.
+    </p>
+    <p class="wide">
+      If you relied on those automatic replacements, call the relevant builder setters explicitly or put the intended values on your Session.
+      For example, <code class="inline language-java">withSessionTimeout(1000)</code> replaces all three socket timeouts with one second.
+      Standard SMTP/SMTPS Sessions support these choices directly. A custom protocol now rejects a convenience setting it cannot map rather
+      than silently ignoring it; use its provider-specific names through <code>withProperty(...)</code> instead.
+      Clearing a setting inherited through <code>Properties</code> defaults is also rejected when removal would simply reactivate that default.
+      Supply a replacement value or a fresh Session with independent Properties containing only the intended settings.
+    </p>
+    <h3>Allow for a missing common timeout when inspecting configuration</h3>
+    <p class="wide">
+      <code class="inline language-java">OperationalConfig.getSessionTimeout()</code> now returns <code>Integer</code> instead of
+      <code>int</code>. Recompile integrations and check for null before unboxing. Null means the connection, read and write settings do not
+      have one known common value, not that the connection has no timeout. Previously this getter could report the builder's default even
+      when the supplied Session used different values. The Mailer builder's own getter still reports its configured choice.
+      Local-binding, client-hostname and certificate-trust inspection also reflects the effective construction settings rather than unrelated
+      factory defaults or inactive trust choices. Later direct Session mutations are not tracked by this snapshot.
+    </p>
+    <pre class="full-width-example"><code class="language-java">Integer commonTimeoutMillis = mailer.getOperationalConfig().getSessionTimeout();
+if (commonTimeoutMillis != null) {
+    log.info("Common socket timeout: {} ms", commonTimeoutMillis);
+} else {
+    log.info("Inspect the Session's separate connection, read and write settings");
+}</code></pre>
     <h3>If you call the internal Session factory directly</h3>
     <p class="wide" style="font-size:smaller">
       <strong>You can skip this part</strong> unless your code calls

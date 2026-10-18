@@ -597,10 +597,10 @@ Retry: DUPLICATE_RISK</code></pre>
         attempts handoff before completion without waiting for the callback. For dispatch, ownership, timestamps, and the progress demos, see
         <a href="/sending-and-execution.html#section-mail-send-observer">the observer configuration guide</a>.
       </p>
-    </div>
       <p>When reusing a builder, <code>clearMailSendResultObserver()</code> removes its result callback and dispatch executor.
         <code>clearMailSendProgressObserver()</code> does the same for progress, independently. Neither changes Mailers already built from it.
         A no-op callback still enables observation; clearing the registration avoids that work when no other observation facility needs it.</p>
+    </div>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-observer-receipt">mailerBuilder.withMailSendResultObserver(outcome -&gt; {
     String submission = outcome.getSubmissionReceipt()
