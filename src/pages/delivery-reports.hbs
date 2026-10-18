@@ -1,0 +1,122 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/delivery-reports.html"
+tags: ["publicPage"]
+title: "Reading delivery reports"
+section: "Integrate and understand"
+breadcrumbParent: "/analyzing-send-results.html"
+description: "Turn a received delivery notification into recipient actions, status codes and correlation facts through the ordinary Email conversion API."
+---
+<section>
+  <h2 id="read-a-notification">The relay accepted it. What happened next?</h2>
+  <p>A successful send tells you that an SMTP server accepted the message, not that it reached a mailbox.
+    Later, a delivery notification may say that one address failed, another is still being tried, and a third received the message.
+    Convert that notification into an <code>Email</code> as usual. Simple Java Mail makes the report's fields available without asking your application
+    to understand its MIME structure or parse server-specific prose.</p>
+  <p>A standards-based delivery notification is itself an email with a machine-readable report alongside the explanation you normally see.
+    Simple Java Mail reads those structured fields. It does not guess the result from sentences such as “could not deliver”. A typical notification looks like this:</p>
+  <pre><code class="language-text">multipart/report; report-type=delivery-status
+├── Human-readable explanation
+├── message/delivery-status: recipient actions, status codes and diagnostics
+└── Original message or its headers (optional)</code></pre>
+  <pre><code class="language-java">Email notification = mail.converter()
+    .mimeMessageToEmailBuilder(incomingMessage)
+    .buildEmail();
+
+DeliveryStatusReport report = notification.getDeliveryStatusReport();
+if (report != null) {
+    System.out.println(report);
+    for (RecipientDeliveryReport recipient : report.getRecipients()) {
+        System.out.println(recipient.getAction() + " " + recipient.getStatusCode());
+    }
+}</code></pre>
+  <p>You might see this for a notification containing three recipient reports:</p>
+  <pre><code class="language-text">DeliveryStatusReport{recipients=3, delivered=1, delayed=1, failed=1, warnings=0}
+FAILED 5.1.1
+DELIVERED 2.0.0
+DELAYED 4.4.1</code></pre>
+  <p>Use the existing EML or MIME conversion methods and, for protected mail, the existing receiving-key inputs.
+    There is no separate report converter, parser option or listener. The getter reads an immutable snapshot already extracted during conversion;
+    it does not fetch mail or do I/O. Your application still supplies the received message.</p>
+</section>
+<section>
+  <h2 id="correlate-and-decide">Match the notification, then make your decision.</h2>
+  <p><code>report.getEnvelopeId()</code> is the reported <code>Original-Envelope-Id</code>. When available, match it to the envelope identifier retained
+    from your original <a href="/analyzing-send-results.html">submission receipt</a>. It is not Message-ID, a progress observation ID or a telemetry trace ID.</p>
+  <p>Each recipient provides an original and final <code>ReportedRecipient</code>, a <code>DeliveryAction</code>, an
+    <code>EnhancedStatusCode</code>, an optional <code>DeliveryDiagnostic</code> and any last-attempt/retry-until timestamps.
+    Addresses keep their reported format and spelling, including duplicate occurrences. The reporting server likewise keeps its name and naming format
+    together in a <code>ReportedMailServer</code>.</p>
+  <p>You don't need to split <code>5.1.1</code> to recognize a permanent failure, or parse a diagnostic's leading SMTP reply number yourself:</p>
+  <pre><code class="language-java">for (RecipientDeliveryReport recipient : report.getRecipients()) {
+    EnhancedStatusCode status = recipient.getStatusCode();
+    if (status != null) {
+        System.out.println(status + ": permanent=" + status.isPermanentFailure());
+        // For 5.1.1: status class 5, subject 1, detail 1.
+    }
+
+    ReportedRecipient target = recipient.getFinalRecipient();
+    if (target != null) {
+        Recipient mailbox = target.getMailbox();
+        if (mailbox != null) {
+            // Explicit access to personal data; automatic report rendering omits it.
+            System.out.println(mailbox.getAddress());
+            // mailbox.getName() is also available when a name was actually reported.
+        }
+    }
+
+    DeliveryDiagnostic diagnostic = recipient.getDiagnostic();
+    if (diagnostic != null &amp;&amp; diagnostic.getSmtpResponse() != null) {
+        System.out.println("SMTP reply: " + diagnostic.getSmtpResponse().getReturnCode());
+    }
+}</code></pre>
+  <p>For the failed recipient above, the status line is <code>5.1.1: permanent=true</code>; a reported
+    <code>smtp; 550 5.1.1 No such mailbox</code> also exposes SMTP reply <code>550</code>. Subject and detail remain readable numeric components,
+    including unfamiliar but well-formed combinations; the API does not require an exhaustive enum of registered codes.</p>
+  <p>A <code>ReportedRecipient</code> keeps the source address in <code>getAddress()</code> and its format in <code>getType()</code>.
+    Recognized Internet addresses offer a parsed <code>Recipient</code> through <code>getMailbox()</code>. Its name is usually null because a delivery
+    report normally contains a mailbox address, not a display name. No To/Cc/Bcc preference or certificate is invented. Foreign formats such as
+    <code>x400</code>, malformed mailboxes and address lists keep their reported data but have no mailbox view. Nothing is looked up or contacted.</p>
+  <p>The same principle applies to diagnostics: <code>getType()</code> and <code>getText()</code> preserve the reported explanation, while
+    <code>getSmtpResponse()</code> is available only for a recognizable SMTP reply. Other protocol formats or explanations without a usable
+    reply code remain readable without guessing a number from human prose. That optional view uses the existing <code>SmtpServerResponse</code> API.</p>
+  <p>Read the action as well as the status: <code>DELAYED 4.4.1</code> means the reporting system has not finished; a later
+    <code>FAILED 4.4.1</code> says it stopped. <code>RELAYED</code> and <code>EXPANDED</code> do not establish final mailbox delivery.
+    A reported retry-until time belongs to that system; it is not a schedule for your application to resend.</p>
+  <p>Missing or unusable scalar fields are <code>null</code>. Recipient and warning lists are immutable and never null.
+    A recognized malformed report retains the usable facts and human-readable warnings; contradictory fields are not silently picked.</p>
+</section>
+<section>
+  <h2 id="imperfect-notifications">Read what you can, even from an imperfect notification.</h2>
+  <p>Mail generated by other systems is not always perfectly formatted. Simple Java Mail recovers a clear meaning where it can:
+    a status such as <code>5.01.001</code> becomes the numeric view <code>5.1.1</code>, and an explicit ISO timestamp such as
+    <code>2026-10-16T10:20:30+02:00</code> can still be read. Each recovery adds a warning; it does not rewrite the original message.</p>
+  <p>If the notification's only direct delivery-status part is in the wrong position, it can still be recognized. Two competing parts are different:
+    Simple Java Mail leaves the report facts unavailable rather than choosing one. It likewise does not invent a timezone or turn an impossible date
+    into another day. Attached or nested notifications remain separate from the outer email's report.</p>
+  <p>If optional report reading stops partway through, the completed header blocks remain available and the warnings say extraction may be incomplete.
+    An interrupted block is not presented as complete. This does not hide failures to obtain message content: an eager attachment read can still fail
+    conversion with its original cause, rather than returning a silently truncated attachment. Check <code>report.getWarnings()</code> before treating
+    the extracted facts as a complete account.</p>
+</section>
+<section>
+  <h2 id="trust-and-preservation">Useful facts are not authenticated instructions.</h2>
+  <p>A notification can be forged, duplicated, delayed or arrive out of order. Decide which receiving routes and senders your application trusts,
+    confirm the correlation, and apply your own idempotency and business rules. Do not suppress a customer address or resend an invoice merely because
+    an untrusted email says to. A missing report does not prove delivery, and <code>DELIVERED</code> does not mean somebody read the message.</p>
+  <p>Ordinary messages return <code>null</code>. A report attached to an ordinary message is not promoted into its parent's report.
+    Existing protection processing runs first: readable signed/decrypted notifications can expose reports, while inaccessible ciphertext cannot.
+    Inspect the protection results too; a null report does not establish that encrypted content contains none.</p>
+  <p>Copies keep this source snapshot even if you edit their content. New replies and forwards do not inherit it as their own report.
+    Exact EML inspection does not rewrite its bytes or add decryption. Outgoing templates cannot manufacture source metadata, and converting a copied
+    Email back to MIME does not generate a delivery notification from the snapshot.</p>
+  <p>Automatic report rendering includes counts, not addresses, identifiers or diagnostic prose. If you log or export those getters, treat the values
+    as untrusted and potentially personal data. JSON/YAML output belongs to your application's normal serializer and DTOs; Simple Java Mail adds no serialization dependency.</p>
+</section>
+<section>
+  <h2 id="teach-the-integration">Connect facts to your application.</h2>
+  <p>Simple Java Mail interprets mail. Your job runner, broker or workflow engine owns persistence, scheduling and business transitions.
+    See the <a href="/email-workload-field-guide.html#the-invoice-was-accepted-then-bounced">workload field guide</a> for an accepted invoice that later bounces.</p>
+  <p>Delivery-status parsing follows <a href="https://www.rfc-editor.org/rfc/rfc3464">RFC 3464</a> and
+    <a href="https://www.rfc-editor.org/rfc/rfc6533">RFC 6533</a>. Human-only bounce messages without a machine-readable report remain ordinary Email content.</p>
+</section>

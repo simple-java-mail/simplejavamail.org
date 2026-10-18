@@ -1438,6 +1438,11 @@ Session session = mailer.getSession();
         This is separate from read receipts: DSN is about delivery status at SMTP/server level.
       </p>
       <p>
+        When a notification comes back, convert it into <code>Email</code> and read <code>getDeliveryStatusReport()</code> for its recipient actions,
+        status codes and correlation facts. Your application supplies the received mail and decides what to trust or do next.
+        See <a href="/delivery-reports.html">Reading delivery reports</a> for examples and output.
+      </p>
+      <p>
         Shared notification events and the return option can be configured per email, through Mailer Email defaults or through properties.
         They remain best effort when the server does not support DSN. A fixed per-send identifier and
         <a href="#section-dsn-recipients">explicit recipient preferences</a> have stricter contracts, described below.
@@ -1913,6 +1918,11 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       <p>
         If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
+      </p>
+      <p>
+        A converted delivery notification also exposes an immutable <code>DeliveryStatusReport</code> through the same Email object.
+        Ordinary mail returns <code>null</code>; reports attached to another message are not promoted into its parent's facts.
+        <a href="/delivery-reports.html">Read structured delivery feedback</a> without walking MIME parts or interpreting human bounce prose yourself.
       </p>
       <p>
         Conversion does not copy the original header block verbatim. Addressing, date, subject, reply, message ID, and MIME content headers are

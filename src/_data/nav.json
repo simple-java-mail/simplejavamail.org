@@ -64,6 +64,7 @@
           "url": "/debugging.html",
           "children": [
             { "title": "Analyzing send results", "url": "/analyzing-send-results.html" },
+            { "title": "Reading delivery reports", "url": "/delivery-reports.html" },
             { "title": "OpenTelemetry", "url": "/opentelemetry.html" }
           ]
         }
