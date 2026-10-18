@@ -384,8 +384,10 @@ simplejavamail.locked.defaults.sendtoacceptedrecipients=false</code></pre>
       <p>
         Both <code>receipt.getSmtpResponse()</code> and <code>recipient.getRcptResponse()</code> expose <code>SmtpServerResponse</code> when available.
         Its <code>getReturnCode()</code> is the primary code, such as <code>550</code>.
-        <code>getEnhancedStatusCode()</code> optionally gives more detail, such as <code>5.1.1</code>. Missing, malformed, inconsistent or
-        primary-code-mismatched enhanced statuses remain absent.
+        <code>getEnhancedStatusCode()</code> optionally gives an <code>EnhancedStatusCode</code>, such as <code>5.1.1</code>,
+        with <code>isTemporaryFailure()</code>, <code>isPermanentFailure()</code> and separate numeric components. It is the same type used by
+        <a href="/delivery-reports.html">received delivery reports</a>. Missing, malformed, inconsistent or primary-code-mismatched enhanced statuses remain absent.
+        Unfamiliar numeric combinations stay readable; the complete provider reply remains unchanged in <code>getResponse()</code>.
       </p>
       <p>
         <code>getResponse()</code> returns the raw server text, or <code>null</code> if absent.
@@ -398,13 +400,13 @@ simplejavamail.locked.defaults.sendtoacceptedrecipients=false</code></pre>
     recipient.getRcptResponse().ifPresent(reply -&gt;
         System.out.printf("RCPT: %d, enhanced=%s%n",
             reply.getReturnCode(),
-            reply.getEnhancedStatusCode().orElse("unavailable")));
+            reply.getEnhancedStatusCode().map(Object::toString).orElse("unavailable")));
 }
 
 receipt.getSmtpResponse().ifPresent(reply -&gt;
     System.out.printf("Transaction: %d, enhanced=%s%n",
         reply.getReturnCode(),
-        reply.getEnhancedStatusCode().orElse("unavailable")));</code></pre>
+        reply.getEnhancedStatusCode().map(Object::toString).orElse("unavailable")));</code></pre>
 <pre><code class="language-text small" id="output-server-replies">RCPT: 250, enhanced=2.1.5
 RCPT: 450, enhanced=4.2.0
 RCPT: 550, enhanced=5.1.1
@@ -596,6 +598,9 @@ Retry: DUPLICATE_RISK</code></pre>
         <a href="/sending-and-execution.html#section-mail-send-observer">the observer configuration guide</a>.
       </p>
     </div>
+      <p>When reusing a builder, <code>clearMailSendResultObserver()</code> removes its result callback and dispatch executor.
+        <code>clearMailSendProgressObserver()</code> does the same for progress, independently. Neither changes Mailers already built from it.
+        A no-op callback still enables observation; clearing the registration avoids that work when no other observation facility needs it.</p>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-observer-receipt">mailerBuilder.withMailSendResultObserver(outcome -&gt; {
     String submission = outcome.getSubmissionReceipt()

@@ -53,6 +53,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
       <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
       <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
+      <li><a href="#copied-template-suppression">Check copies of emails that skip defaults or overrides</a></li>
       <li><a href="#async-preparation">Account for validation running during async execution</a></li>
       <li><a href="#async-shutdown">Allow shutdown to wait for sends already in progress</a></li>
       <li><a href="#mail-send-execution-control">Update stored async results to MailSend</a></li>
@@ -72,6 +73,16 @@ breadcrumbParent: "/migration-notes.html"
       B is prepared from the original Email, not from an intermediate copy containing A's ordinary template. The correction also applies without
       a failover relationship. See the <a href="/smtp-connection-failover.html#section-ownership">ownership matrix</a>.</p>
   </div></section>
+  <h2 id="copied-template-suppression">Check copies of emails that skip defaults or overrides</h2>
+  <section><div class="wide">
+    <p>If an Email opts out of some defaults or overrides, copying it now keeps those choices. Earlier releases forgot them during
+      <code>emailBuilder().copying(email)</code>, so a copied draft could receive values the original draft had excluded.</p>
+    <p>Review code that depended on copying to restore templates. Re-enable global inheritance with <code>ignoringDefaults(false)</code> and
+      <code>ignoringOverrides(false)</code>. Calling <code>dontApplyDefaultValueFor()</code> or <code>dontApplyOverrideValueFor()</code> with no
+      arguments clears the corresponding per-field exclusions on the copy's builder. Keep the inherited exclusions when the copy should retain
+      the original Email's choices. These controls still cannot remove locked settings.</p>
+  </div></section>
+
   <h2 id="async-preparation">Account for validation running during async execution</h2>
   <section><div class="wide">
     <p>Asynchronous sends now apply the selected destination's templates and validate the Email when the executor runs the operation, not before

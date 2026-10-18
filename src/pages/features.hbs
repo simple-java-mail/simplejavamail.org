@@ -9,8 +9,9 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
 ---
   <section class="doc-overview" aria-labelledby="capabilities-overview-title">
     <p class="wide"><a href="/smtp-connection-failover.html">SMTP connection failover</a> lets an approved alternative Mailer take over during an outage,
-      then returns work to the primary after recovery. It works for ordinary sync/async sends with or without pooling, and never automatically replays
-      a message after provider invocation. Selected-Mailer templates, mandatory locks and per-destination sending limits keep their defined owners.</p>
+      then returns work to the primary after recovery. It works for ordinary sync/async sends with or without pooling. Failover never replays a message
+      after provider invocation; a separate <a href="/mail-send-retries.html">retry policy</a> can retry a safely refused submission on the selected
+      destination. Selected-Mailer templates, mandatory locks and per-destination sending limits keep their defined owners.</p>
     <header>
       <p class="eyebrow">Capabilities at a glance</p>
       <h2 id="capabilities-overview-title">Email essentials.</h2>
@@ -876,7 +877,8 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
         <a href="/analyzing-send-results.html#section-partial-send">Alice, Bob and Carol example</a> follows those stages through one partially
         successful send, then uses <code class="inline language-java">getRetryDisposition()</code> and
         <code class="inline language-java">getRetryableRecipients()</code> to identify who can be retried. These APIs provide guidance; your
-        application still owns retries and must account for possible duplicates.
+        application owns recipient-subset retries and must account for possible duplicates. The separately configured
+        <a href="/mail-send-retries.html">retry policy</a> can retry safely refused whole emails, but never a partially accepted email.
       </p>
     </div>
   </section>

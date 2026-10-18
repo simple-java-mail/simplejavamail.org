@@ -1048,6 +1048,27 @@ mailer.sync().sendMail(protectedEmail);</code></pre>
 		</section>
 
 		<section>
+		<section>
+			<div class="view">
+				<p>To reuse OpenPGP settings, put them on an Email template and pass it to <code>withEmailDefaults(...)</code> or
+					<code>withEmailOverrides(...)</code>, just as you would for S/MIME or DKIM. Each signing or encryption configuration is one complete
+					choice: an override replaces the supplied choice, which otherwise wins over a default. Encryption key-ring lists are not merged.</p>
+				<p><code>clearOpenPgp()</code> removes the draft's choices and permits template fallback. To exclude a template instead, use the ordinary
+					defaults/overrides suppression controls with <code>OPENPGP_SIGNING_CONFIG</code> or <code>OPENPGP_ENCRYPTION_CONFIG</code>.
+					Exact EML remains untouched, and OpenPGP key material is still not included in Email serialization.</p>
+			</div>
+			<div class="side">
+<pre><code class="language-java">Email protectionDefaults = mail.emailBuilder().startingBlank()
+    .signWithOpenPgp(signing)
+    .encryptWithOpenPgp(encryption)
+    .buildEmail();
+
+Mailer protectedMailer = mail.mailerBuilder()
+    .withEmailDefaults(protectionDefaults)
+    .buildMailer();</code></pre>
+			</div>
+		</section>
+
 			<div class="view">
 				<p><strong>Keys and algorithm choices</strong></p>
 				<p>
