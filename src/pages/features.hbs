@@ -1328,6 +1328,7 @@ simplejavamail.smtp.localport=25252
 
   <a href="#section-smtp-client-hostname" id="section-smtp-client-hostname" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Setting the SMTP EHLO/HELO client hostname{{/components/feature-heading-h2}}
+  {{> components/pattern-examples topic="smtp-client-identity"}}
 
   <section>
 	  <div class="view">
@@ -1793,6 +1794,7 @@ JMail.strictValidator()
 
   <a href="#section-exact-eml" id="section-exact-eml" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Submit finalized EML without rebuilding{{/components/feature-heading-h2}}
+  {{> components/pattern-examples topic="exact-content"}}
 
   <section>
 	  <div class="view">
@@ -2366,6 +2368,7 @@ CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 
 	<a href="#section-custom-mailer" id="section-custom-mailer" class="section-link h2">&sect;</a>
 	{{#> components/feature-heading-h2 core=true}}Plug your own sending logic{{/components/feature-heading-h2}}
+  {{> components/pattern-examples topic="custom-mailer"}}
 
 	<section>
 		<p class="wide">

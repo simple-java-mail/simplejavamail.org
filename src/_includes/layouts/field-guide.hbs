@@ -3,10 +3,11 @@ layout: "layouts/marketing.hbs"
 ---
 <header class="page-hero field-guide-hero">
   <div class="shell">
-    <a class="field-guide-back" href="/use-cases.html">← Use cases</a>
+    {{> breadcrumbs}}
     <p class="eyebrow">Email workload field guide</p>
-    <h1>{{title}}</h1>
+    <h1 id="pattern-title">{{title}}</h1>
     <p class="hero-lede">{{description}}</p>
+    <p>Looking for a complete application? Explore <a href="/strategic-patterns.html">Strategic Patterns</a>, or stay here for a focused sending solution.</p>
   </div>
 </header>
 
@@ -29,12 +30,23 @@ layout: "layouts/marketing.hbs"
 <div class="shell field-guide-grid">
   <aside class="field-guide-rail" data-pagefind-ignore>
     <nav aria-label="Patterns in this field guide">
-      <span>Patterns</span>
+      <div class="pattern-reading-context">
+        <a href="/patterns.html">Patterns</a>
+        <a class="pattern-current-title" href="#pattern-title">{{title}}</a>
+      </div>
+      <span>On this page</span>
       <ul>{{#each guideGroups}}<li><a href="#{{id}}">{{title}}</a></li>{{/each}}</ul>
-      <a class="field-guide-directory-return" href="#scenario-directory">Find another scenario ↑</a>
+      <div class="pattern-return-links">
+        <a class="field-guide-directory-return" href="#scenario-directory">Find another scenario ↑</a>
+        <a href="/patterns.html">All patterns</a>
+      </div>
     </nav>
   </aside>
   <article class="journal-prose field-guide-content" aria-label="Email workload patterns">
     {{{fieldGuideSections content guideGroups}}}
+    <nav class="pattern-end-links" aria-label="Explore more patterns">
+      <a href="#scenario-directory">Find another scenario ↑</a>
+      <a href="/patterns.html">All patterns</a>
+    </nav>
   </article>
 </div>

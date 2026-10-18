@@ -147,21 +147,31 @@ export function headingsFromHtml(content) {
   return headings;
 }
 
-function findNavItem(items, url) {
+function findNavPath(items, url) {
   for (const item of items || []) {
-    if (item.url === url) return item;
-    const child = findNavItem(item.children, url);
-    if (child) return child;
+    if (item.url === url) return [item];
+    const children = findNavPath(item.children, url);
+    if (children.length) return [item, ...children];
   }
-  return null;
+  return [];
+}
+
+function navPathForUrl(groups, url) {
+  for (const group of groups || []) {
+    const path = findNavPath(group.items, url);
+    if (path.length) return path;
+  }
+  return [];
 }
 
 export function navItemForUrl(groups, url) {
-  for (const group of groups || []) {
-    const item = findNavItem(group.items, url);
-    if (item) return item;
-  }
-  return null;
+  return navPathForUrl(groups, url).at(-1) ?? null;
+}
+
+/** Use the navigation hierarchy for both listed pages and articles that name a collection as their parent. */
+export function breadcrumbAncestors(groups, currentUrl, parentUrl) {
+  return navPathForUrl(groups, parentUrl || currentUrl)
+    .filter((item) => item.url && item.url !== currentUrl && item.url !== "/docs.html");
 }
 
 function validateDocumentationItems(items, pageUrls, docsUrls, errors) {
@@ -169,12 +179,16 @@ function validateDocumentationItems(items, pageUrls, docsUrls, errors) {
     if (typeof item.title !== "string" || !item.title.trim()) {
       errors.push(`documentation navigation item for ${item.url || "an unknown URL"} needs a title`);
     }
-    if (typeof item.url !== "string" || !item.url.startsWith("/")) {
-      errors.push(`documentation navigation item ${item.title || "without a title"} needs a root-relative URL`);
-    } else {
-      if (docsUrls.has(item.url)) errors.push(`duplicate documentation navigation URL ${item.url}`);
-      docsUrls.add(item.url);
-      if (!pageUrls.has(item.url)) errors.push(`documentation navigation references missing page ${item.url}`);
+    // A label groups real page links; it must not invent a landing page just to supply a URL.
+    const isGroupLabel = item.url === undefined && Array.isArray(item.children) && item.children.length > 0;
+    if (!isGroupLabel) {
+      if (typeof item.url !== "string" || !item.url.startsWith("/")) {
+        errors.push(`documentation navigation item ${item.title || "without a title"} needs a root-relative URL`);
+      } else {
+        if (docsUrls.has(item.url)) errors.push(`duplicate documentation navigation URL ${item.url}`);
+        docsUrls.add(item.url);
+        if (!pageUrls.has(item.url)) errors.push(`documentation navigation references missing page ${item.url}`);
+      }
     }
     validateDocumentationItems(item.children, pageUrls, docsUrls, errors);
   }

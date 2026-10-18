@@ -5,11 +5,9 @@
     <a href="/docs.html">Docs</a>
     <span aria-hidden="true">/</span>
   {{/unless}}
-  {{#if breadcrumbParent}}
-    {{#with (navItemForUrl nav.docsGroups breadcrumbParent)}}
-      <a href="{{this.url}}">{{title}}</a>
-      <span aria-hidden="true">/</span>
-    {{/with}}
-  {{/if}}
+  {{#each (breadcrumbAncestors nav.docsGroups page.url breadcrumbParent)}}
+    <a href="{{this.url}}">{{title}}</a>
+    <span aria-hidden="true">/</span>
+  {{/each}}
   <span aria-current="page">{{title}}</span>
 </nav>

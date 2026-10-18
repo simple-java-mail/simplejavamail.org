@@ -1,0 +1,21 @@
+@import "tokens.less";
+
+.pattern-reading-context { display: grid; gap: @space-xs; margin-bottom: @space-lg; flex-shrink: 0; }
+.pattern-reading-context > a { font-family: @font-mono; font-size: 0.7rem; }
+.pattern-reading-context .pattern-current-title { color: @ink; font-family: @font-sans; font-size: 0.9rem; font-weight: 600; text-decoration: none; }
+.pattern-return-links { display: grid; gap: @space-sm; flex-shrink: 0; font-family: @font-mono; font-size: 0.7rem; }
+.pattern-end-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: @space-md; margin-top: @space-xl; padding-top: @space-lg; border-top: 1px solid @line; }
+.pattern-next { margin-top: @space-xl; }
+.pattern-reading-context a:focus-visible, .pattern-return-links a:focus-visible, .pattern-end-links a:focus-visible { .focus-ring(); }
+
+.pattern-examples {
+  margin-block: @space-md;
+  padding: @space-xs @space-sm;
+  border-inline-start: 3px solid @teal;
+  background: @teal-tint;
+  color: @ink;
+}
+.pattern-examples__label { font: 600 0.75rem/1.5 @font-mono; color: @teal-deep; }
+.pattern-examples ul { display: flex; flex-wrap: wrap; gap: @space-2xs @space-md; list-style: none; padding: 0; margin: @space-2xs 0 0; }
+.pattern-examples a { color: @teal-deep; text-decoration: underline; text-underline-offset: 0.18em; }
+.pattern-examples a:focus-visible { .focus-ring(); }

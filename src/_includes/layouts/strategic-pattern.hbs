@@ -1,0 +1,50 @@
+---
+layout: "layouts/marketing.hbs"
+---
+<header class="page-hero strategic-pattern-hero">
+  <div class="shell">
+    {{> breadcrumbs}}
+    <h1 id="pattern-title">{{title}}</h1>
+    <p class="hero-lede">{{description}}</p>
+    <p class="pattern-stack">{{stack}}</p>
+  </div>
+</header>
+<div class="shell field-guide-grid strategic-pattern-grid">
+  <aside class="field-guide-rail strategic-pattern-rail" data-pagefind-ignore>
+    <nav class="journal-entry-toc" aria-label="On this page">
+      <div class="pattern-reading-context">
+        <a href="/strategic-patterns.html">Strategic Patterns</a>
+        <a class="pattern-current-title" href="#pattern-title">{{title}}</a>
+      </div>
+      <span>On this page</span>
+      <ul>
+        {{#each (journalHeadings content)}}
+          <li><a href="#{{id}}">{{text}}</a></li>
+        {{/each}}
+        {{#with (demonstratedReferences demoSlug)}}
+          <li><a href="#pattern-reference-title">The APIs behind this pattern</a></li>
+        {{/with}}
+        <li><a href="#pattern-next-title">Explore further</a></li>
+      </ul>
+      <div class="pattern-return-links">
+        <a class="field-guide-directory-return" href="/strategic-patterns.html">← Find another strategic pattern</a>
+        <a href="/patterns.html">All patterns</a>
+      </div>
+    </nav>
+  </aside>
+  <article class="pattern-reading journal-prose">
+    {{{content}}}
+    {{#with (demonstratedReferences demoSlug)}}
+      <section class="pattern-reference-links" aria-labelledby="pattern-reference-title">
+        <h2 id="pattern-reference-title">The APIs behind this pattern</h2>
+        <p>Use the reference documentation for the full contracts and configuration choices.</p>
+        <ul>{{#each this}}<li><a href="{{reference}}">{{title}}</a></li>{{/each}}</ul>
+      </section>
+    {{/with}}
+    {{> components/pattern-next}}
+  </article>
+</div>
+{{#if mermaid}}
+  <script src="/assets/lib/mermaid.min.js"></script>
+  <script type="module" src="/scripts/mermaid.js"></script>
+{{/if}}

@@ -14,7 +14,11 @@
           <ul>
             {{#each items}}
               <li>
-                <a href="{{this.url}}" class="{{docsActiveClass this.url @root.page.url @root.breadcrumbParent}}">{{title}}</a>
+                {{#if this.url}}
+                  <a href="{{this.url}}" class="{{docsActiveClass this.url @root.page.url @root.breadcrumbParent}}">{{title}}</a>
+                {{else}}
+                  <span class="docs-nav-label">{{title}}</span>
+                {{/if}}
                 {{#if children}}
                   <ul class="docs-nav-children">
                     {{#each children}}
@@ -23,9 +27,6 @@
                   </ul>
                 {{/if}}
               </li>
-              {{#if (eq this.url "/use-cases.html")}}
-                {{> components/field-guide-menu-items collections=@root.collections}}
-              {{/if}}
             {{/each}}
           </ul>
         </section>

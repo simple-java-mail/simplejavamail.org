@@ -1,0 +1,48 @@
+@import "tokens.less";
+@import "../_includes/styles/articles/prose.less";
+@import "../_includes/styles/field-guide/layout.less";
+
+.strategic-pattern-hero { padding-block: @space-xl; }
+.strategic-pattern-hero h1 { max-width: 24ch; font-size: clamp(2.3rem, 4.5vw, 3.5rem); }
+.strategic-pattern-hero .hero-lede { max-width: 62ch; font-size: 1.1rem; }
+
+.pattern-index-jumps { display: flex; flex-wrap: wrap; gap: @space-sm @space-lg; margin-block: @space-lg; }
+.pattern-cards { display: grid; gap: @space-md; list-style: none; margin-top: @space-lg; }
+.legacy-doc-content .pattern-cards { max-width: none; padding: 0; }
+.strategic-pattern-cards, .pattern-collection-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pattern-card { position: relative; display: flex; flex-direction: column; padding: @space-md; background: @surface; border: 1px solid @line; }
+.pattern-cards > .pattern-card { margin-top: 0; }
+.pattern-card:hover, .pattern-card:focus-within { border-color: @teal; }
+.pattern-card h2, .pattern-card h3 { margin: 0 0 @space-xs; font-size: 1.15rem; }
+.pattern-card p { margin-block: @space-xs; }
+.pattern-card p:last-of-type { margin-bottom: @space-md; }
+.pattern-card-prompt { margin-top: auto; padding-top: @space-sm; color: @teal-deep; }
+.pattern-card-link { color: @ink; text-decoration: none; }
+// Stretch the title link across the card, keeping the separate primary action above its hit area.
+.pattern-card-link::after { position: absolute; z-index: 1; inset: 0; content: ""; }
+.pattern-card-link:focus-visible { outline: none; }
+.pattern-card-link:focus-visible::after { .focus-ring(); }
+.pattern-card .pattern-card-start { position: relative; z-index: 2; align-self: flex-start; margin: auto 0 0; white-space: normal; }
+.pattern-stack { color: @steel; font-family: @font-mono; font-size: 0.72rem; }
+.pattern-card-start:focus-visible { .focus-ring(); }
+.strategic-pattern-grid { margin-block: @space-xl @space-2xl; }
+.strategic-pattern-rail nav { display: flex; flex-direction: column; max-height: calc(100dvh - @header-h - 2 * @space-lg); }
+.strategic-pattern-rail ul { min-height: 0; overflow-y: auto; }
+.strategic-pattern-rail li a { padding-left: @space-xs; border-left: 2px solid transparent; }
+.strategic-pattern-rail a.is-active { border-left-color: @teal; color: @teal-deep; font-weight: 600; }
+.pattern-reading #start-here { border-top: 3px solid @teal; padding-top: @space-md; }
+.pattern-reading { min-width: 0; max-width: @reading; }
+// The page already reserves space for the fixed header through scroll-padding-top.
+.pattern-reading h2 { scroll-margin-top: @space-md; }
+.pattern-technology-index { padding-block: @space-lg @space-xl; border-top: 1px solid @line; }
+.pattern-technology-index dl > div { display: grid; grid-template-columns: minmax(9rem, 1fr) 3fr; gap: @space-sm; padding-block: @space-xs; }
+.pattern-technology-index dt { font-weight: 600; }
+.pattern-technology-index dd { margin: 0; }
+@media (max-width: 1000px) {
+  .strategic-pattern-rail nav { max-height: none; }
+  .strategic-pattern-rail ul { overflow: visible; }
+}
+@media (max-width: 760px) {
+  .strategic-pattern-cards, .pattern-collection-cards { grid-template-columns: 1fr; }
+  .pattern-technology-index dl > div { grid-template-columns: 1fr; gap: 0; }
+}

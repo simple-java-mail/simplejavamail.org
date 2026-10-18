@@ -9,6 +9,7 @@ description: "Use another configured Mailer when an SMTP connection fails, witho
 ---
   <section>
     <div class="wide">
+      {{> components/pattern-examples topic="connection-failover"}}
       <p>Your application normally sends through A. If A cannot provide a usable connection, another configured Mailer, B, can take over.
         When A recovers, new work returns to A. You keep calling the same Mailer.</p>
       <p>Connection failover finds a usable SMTP connection; it does not retry submitted messages. Once the provider starts submitting an email,

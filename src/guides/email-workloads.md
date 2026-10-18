@@ -1,7 +1,7 @@
 ---
-title: "When One Email Becomes a Million"
-navigationTitle: "Email workload field guide"
-description: "Find a sending pattern for your workload: occasional emails, scheduled batches, competing priorities, customer-owned servers and recovery after failure."
+title: "Tactical Patterns"
+navigationTitle: "Tactical Patterns"
+description: "From one email to a million: find a focused solution for scheduled batches, competing priorities, customer-owned servers and recovery after failure."
 permalink: "/email-workload-field-guide.html"
 typora-root-url: ..
 typora-copy-images-to: ../assets/guides/email-workloads
@@ -41,6 +41,8 @@ static MailSubmissionReceipt submitOne(Mailer mailer, Email email) {
 
 This returns a [submission receipt](/analyzing-send-results.html#section-get-receipt) on success; a failed submission can throw an exception carrying receipt facts too. Record the result against the job before choosing whether to retry. If losing an occasional notification is acceptable, an [asynchronous send](/sending-and-execution.html#section-send-execution) may be enough, but someone still needs to inspect its completion.
 
+Try the [transactional outbox application](/patterns/transaction-outbox.html) to follow a saved order through to its recorded email result.
+
 ### A nightly invoice run
 
 <p class="field-guide-goal"><strong>Target:</strong> Submit 5,000 invoices between 08:00 and 08:30, preserving progress if the run fails.</p>
@@ -60,6 +62,8 @@ The iterable can produce messages as needed rather than allocating all 5,000 upf
 A simple batch holds its connection between messages. [Long pacing pauses](/sending-and-execution.html#section-sending-limits) may therefore run into the relay's idle timeout. If the run is mostly waiting for permission to send, separately scheduled sends may suit it better. Any configured [whole-operation deadline](/sending-and-execution.html#section-send-deadlines) must also allow the batch to finish.
 
 For a restartable run, a useful failure rehearsal is to reject invoice 101: the next run should neither repeat the hundred known submissions nor skip invoices that were never attempted.
+
+The [restartable batch application](/patterns/restartable-batch.html) lets you stop a run, inspect its checkpoint and resume without starting from invoice one.
 
 ### A million before the deadline
 
@@ -106,6 +110,8 @@ A worker waiting for a pooled connection still occupies a worker slot. Four work
 [Queue rejection](/sending-and-execution.html#section-async-queue) arrives through the returned send's completion as `MailSendRejectedException`; `getReason()` distinguishes `QUEUE_FULL` from other admission failures. Leave a rejected durable job pending and try later with backoff. Don't immediately loop over the same failed call, and don't treat a closed executor as a busy queue. [Staple & Sons](/case-studies/staple-and-sons.html#give-the-servers-a-chance-to-breathe) shows the surrounding dispatch code.
 
 This bounds waiting tasks, not every byte your application might allocate. Thousands of callers constructing large attachments before submission can still exhaust memory.
+
+The [event-driven communications application](/patterns/event-communications.html) shows how a broker and a bounded worker handle the backlog together.
 
 ### The service allows thirty a minute
 
@@ -175,6 +181,8 @@ static Mailer customerMailer(
 Keep the key in your customer configuration and use it consistently for that customer's equivalent relays. It is a connection-group identifier, not an authorization check or a data-security sandbox. Your application must still check whose message it is, select permitted routes and schedule customers fairly.
 
 When A's credentials fail, hold A's jobs while its administrator supplies replacements. [Build replacement Mailers from the new configuration](/configuration.html#section-config-snapshot); B's working server is not a fallback. [RelayDesk](/case-studies/relaydesk.html) takes this through onboarding, credential replacement and customer-specific protection requirements.
+
+Try the [RelayDesk Docker application](/patterns/relaydesk.html) to break one customer's route and check that another customer's mail keeps moving.
 
 ### One hostname or two relays
 
@@ -344,6 +352,8 @@ For messages that also require encrypted onward transport, add [`.withTlsRequire
 
 [Polar Meridian's partner messages](/case-studies/polar-meridian.html#one-protected-message-several-partners) show per-recipient preparation. [RelayDesk](/case-studies/relaydesk.html#protect-kestrel-s-wholesale-replies) instead accommodates a customer's OpenPGP policy. In either design, encrypting the outgoing message leaves any readable application archive unprotected; decide how retained copies and keys will be secured too.
 
+Run the [protected partner documents application](/patterns/protected-partners.html) to inspect signing, encryption and the retained outbound copy together.
+
 ### Reproduce last month's instructions
 
 <p class="field-guide-goal"><strong>Target:</strong> Retrieve the maintenance instructions actually submitted last month without recreating them from today's template and configuration.</p>
@@ -355,6 +365,8 @@ A business-event ID identifies why you sent something; it doesn't preserve what 
 Exact submission bypasses ordinary composition and keeps the supplied bytes, including any accidental `Bcc` header. Reject an unsafe outbound representation before archiving or sending it; silently rewriting protected bytes defeats the point. Archive failure must stop submission if preserving the evidence was a prerequisite.
 
 This can complement existing corporate journaling. The record establishes what the application submitted—not receipt, reading or automatic legal compliance. Access, retention and continued access to encrypted records remain your responsibilities. An archived message is evidence to inspect, not an instruction to resend it.
+
+The [Polar Meridian Docker application](/patterns/polar-meridian.html#protected-archive) includes a protected archive you can inspect alongside the send results.
 
 <p class="field-guide-return"><a href="#scenario-directory">Find another scenario ↑</a></p>
 
@@ -433,7 +445,9 @@ The relay accepted the invoice yesterday. Today the destination reports a full m
 
 Use a monitored [envelope-sender address](/features.html#section-bouncing-emails) for bounce traffic; `Reply-To` directs human replies and is not a substitute. Request the [DSN notifications](/features.html#section-delivery-status-notification) the workflow needs, then retain the receipt's [`getEnvelopeId()`](/features.html#section-dsn-envelope-id) when available. This attempt identifier helps correlate a returned DSN's `Original-Envelope-Id`; keep the [Message-ID](/features.html#section-custom-id) and business-event ID too. Not every relay supports DSN or supplies all those fields.
 
-Simple Java Mail submits the message and reports the submission. Your inbound processor parses and validates bounce feedback, matches it to an attempt and updates invoice follow-up. A later failure may warrant contacting the customer or correcting the address, not blindly sending the invoice again. [RelayDesk's bounce continuation](/case-studies/relaydesk.html#accepted-by-smtp-then-a-bounce-arrives) connects the two stages.
+Convert the received notification through the ordinary MIME/EML converter, then inspect [`Email.getDeliveryStatusReport()`](/delivery-reports.html). Simple Java Mail extracts recipient actions, status codes and the reported envelope identifier; your inbound processor checks trust, matches the report to an attempt and updates invoice follow-up. A later failure may warrant contacting the customer or correcting the address, not blindly sending the invoice again. [RelayDesk's bounce continuation](/case-studies/relaydesk.html#accepted-by-smtp-then-a-bounce-arrives) connects the two stages.
+
+Try the [incoming feedback application](/patterns/incoming-feedback.html) to feed in a delivery report and follow its correlation to a saved job.
 
 ### A slow send is not always slow SMTP
 

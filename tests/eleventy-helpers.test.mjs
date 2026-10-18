@@ -1019,6 +1019,20 @@ test("documentation navigation supports always-visible child pages", () => {
   );
 });
 
+test("documentation group labels need children, while their page links still need valid URLs", () => {
+  const site = {
+    url: "https://www.simplejavamail.org",
+    journal: { author: "Maintainer", indexUrl: "/engineering-journal.html", urlPrefix: "/journal/", feedUrl: "/journal/feed.xml" },
+  };
+  const pages = [{ url: "/engineering-journal.html" }, { url: "/strategic-patterns.html" }];
+  const child = { title: "Strategic Patterns", url: "/strategic-patterns.html" };
+  const navigation = (item) => ({ docsGroups: [{ label: "Start", items: [item] }] });
+  assert.doesNotThrow(() => validateSiteData(site, navigation({ title: "Patterns", children: [child] }), pages));
+  assert.throws(() => validateSiteData(site, navigation({ title: "Patterns", children: [] }), pages), /root-relative URL/);
+  assert.throws(() => validateSiteData(site, navigation({ title: "Patterns", url: "not-a-path", children: [child] }), pages), /root-relative URL/);
+  assert.throws(() => validateSiteData(site, navigation({ title: "Patterns", children: [{ title: "Missing" }] }), pages), /root-relative URL/);
+});
+
 test("journal URLs and feed dates retain the established public format", () => {
   assert.equal(journalArticleUrl({ journal: { urlPrefix: "/journal" } }, "an-entry"), "/journal/an-entry.html");
   assert.equal(formatDate("2026-08-26"), "August 2026");

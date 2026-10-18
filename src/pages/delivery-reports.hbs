@@ -9,6 +9,7 @@ description: "Turn a received delivery notification into recipient actions, stat
 ---
 <section>
   <h2 id="read-a-notification">The relay accepted it. What happened next?</h2>
+  {{> components/pattern-examples topic="delivery-reports"}}
   <p>A successful send tells you that an SMTP server accepted the message, not that it reached a mailbox.
     Later, a delivery notification may say that one address failed, another is still being tried, and a third received the message.
     Convert that notification into an <code>Email</code> as usual. Simple Java Mail makes the report's fields available without asking your application
@@ -116,7 +117,8 @@ DELAYED 4.4.1</code></pre>
 <section>
   <h2 id="teach-the-integration">Connect facts to your application.</h2>
   <p>Simple Java Mail interprets mail. Your job runner, broker or workflow engine owns persistence, scheduling and business transitions.
-    See the <a href="/email-workload-field-guide.html#the-invoice-was-accepted-then-bounced">workload field guide</a> for an accepted invoice that later bounces.</p>
+    Explore <a href="/strategic-patterns.html">Strategic Patterns</a> for runnable Docker applications, or the
+    <a href="/email-workload-field-guide.html#the-invoice-was-accepted-then-bounced">Tactical Pattern for an accepted invoice that later bounces</a>.</p>
   <p>Delivery-status parsing follows <a href="https://www.rfc-editor.org/rfc/rfc3464">RFC 3464</a> and
     <a href="https://www.rfc-editor.org/rfc/rfc6533">RFC 6533</a>. Human-only bounce messages without a machine-readable report remain ordinary Email content.</p>
 </section>

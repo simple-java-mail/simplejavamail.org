@@ -155,6 +155,7 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
 
 <a href="#section-sending-limits" id="section-sending-limits" class="section-link h2">&sect;</a>
 {{#> components/feature-heading-h2 core=true}}Match your SMTP service's sending limits{{/components/feature-heading-h2}}
+{{> components/pattern-examples topic="sending-limits"}}
 <section>
   <div class="view">
     <p>Your SMTP service allows a certain number of messages or recipients per minute, but several workers are sending at once.

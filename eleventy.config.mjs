@@ -32,10 +32,12 @@ import { createSourceForgeMarkupLibrary, decodeSourceForgeEntities } from "./src
 import { journalCodeExample } from "./src/_lib/journal-code-example.mjs";
 import { articleNeighbor, orderCaseStudies } from "./src/_lib/article-context.mjs";
 import { fieldGuideSections } from "./src/_lib/field-guide-sections.mjs";
+import { groupPatterns, indexPatternTechnologies } from "./src/_lib/patterns.mjs";
+import { patternDemonstrations } from "./src/_lib/pattern-demonstrations.mjs";
 import { enforceArticlePolicy, enforceJournalPolicy } from "./src/_lib/article-policy.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const articlePath = /[\\/]src[\\/](?:journal|case-studies|guides)[\\/][^\\/]+\.md$/i;
+const articlePath = /[\\/]src[\\/](?:journal|case-studies|guides|strategic-patterns)[\\/][^\\/]+\.md$/i;
 
 function runPagefind(outputDirectory) {
   const runner = path.join(root, "node_modules", "pagefind", "lib", "runner", "bin.cjs");
@@ -65,6 +67,11 @@ export default function (eleventyConfig) {
   eleventyConfig.addCollection("caseStudies", (collectionApi) => orderCaseStudies(collectionApi
     .getFilteredByTag("caseStudy")));
   eleventyConfig.addCollection("fieldGuides", (collectionApi) => collectionApi.getFilteredByTag("fieldGuide"));
+  eleventyConfig.addCollection("patternGroups", (collectionApi) => groupPatterns([
+    ...collectionApi.getFilteredByTag("fieldGuide"), ...collectionApi.getFilteredByTag("strategicPattern"),
+  ]));
+  eleventyConfig.addCollection("patternTechnologies", (collectionApi) => indexPatternTechnologies(collectionApi.getFilteredByTag("strategicPattern")));
+  eleventyConfig.addCollection("patternTopics", () => patternDemonstrations);
 
   eleventyConfig.addPreprocessor("article-policy", "md", function (data, content) {
     if (!articlePath.test(this.inputPath)) return;

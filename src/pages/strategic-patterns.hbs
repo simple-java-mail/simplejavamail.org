@@ -1,0 +1,58 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/strategic-patterns.html"
+tags: ["publicPage"]
+title: "Strategic Patterns"
+style: "patterns"
+description: "Run a small, complete application with Docker, follow one job through the code, and adapt what fits your stack."
+breadcrumbParent: "/patterns.html"
+---
+<nav class="pattern-index-jumps" aria-label="Find a strategic pattern">
+  <a href="#applications-title">By problem</a>
+  <a href="#technologies-title">By technology</a>
+  <a href="#demonstrations-title">By feature</a>
+</nav>
+<section class="strategic-pattern-index" aria-labelledby="applications-title">
+  <h2 id="applications-title">Find a pattern for your application.</h2>
+  {{#each collections.patternGroups}}
+    {{#if (eq id "strategic")}}
+      <ul class="pattern-cards strategic-pattern-cards">
+        {{#each entries}}
+          <li class="pattern-card">
+            <h3><a class="pattern-card-link" href="{{this.url}}">{{data.title}}</a></h3>
+            <p>{{data.description}}</p>
+            {{#if data.stack}}<p class="pattern-stack">{{data.stack}}</p>{{/if}}
+            {{#if data.demoSlug}}
+              <a class="button button-primary pattern-card-start" href="{{this.url}}#start-here"
+                 aria-label="Run it and follow the code: {{data.title}}">Run it and follow the code →</a>
+            {{/if}}
+          </li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  {{/each}}
+</section>
+<section class="pattern-technology-index" aria-labelledby="technologies-title">
+  <h2 id="technologies-title">Already have a stack in mind?</h2>
+  <p>Find the same problem-led patterns by their supporting technology. Every Strategic Pattern starts with Docker commands, a short route through the code and something useful to try next. These links are another way in, not a second set of tutorials.</p>
+  <dl>
+    {{#each collections.patternTechnologies}}
+      <div>
+        <dt>{{label}}</dt>
+        <dd>{{#each patterns}}<a href="{{this.url}}">{{data.title}}</a>{{#unless @last}} · {{/unless}}{{/each}}</dd>
+      </div>
+    {{/each}}
+  </dl>
+</section>
+<section class="pattern-technology-index" aria-labelledby="demonstrations-title">
+  <h2 id="demonstrations-title">See a feature working in context.</h2>
+  <p>These examples exercise a useful behavior, not merely mention its API. The same links appear beside the relevant reference sections.</p>
+  <dl>
+    {{#each collections.patternTopics}}
+      <div>
+        <dt><a href="{{reference}}">{{title}}</a></dt>
+        <dd>{{#each (patternExamples id)}}<a href="{{href}}">{{label}}</a>{{#unless @last}} · {{/unless}}{{/each}}</dd>
+      </div>
+    {{/each}}
+  </dl>
+</section>

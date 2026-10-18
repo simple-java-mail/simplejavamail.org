@@ -6,6 +6,8 @@ import guideData from "../src/guides/guides.11tydata.mjs";
 import { enforceArticlePolicy } from "../src/_lib/article-policy.mjs";
 import { createMarkdownLibrary } from "../src/_lib/eleventy-helpers.mjs";
 import { fieldGuideSections } from "../src/_lib/field-guide-sections.mjs";
+import { patternCategoryInfo } from "../src/_lib/patterns.mjs";
+import { createTemplateHelpers } from "../src/_lib/template-helpers.mjs";
 
 const source = readFileSync(new URL("../src/guides/email-workloads.md", import.meta.url), "utf8");
 const body = source.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
@@ -47,8 +49,11 @@ test("directory validation rejects ambiguous anchors and missing scenario target
 test("the lookup lists scenarios while the reading rail keeps top-level anchors only", () => {
   const layout = readFileSync(new URL("../src/_includes/layouts/field-guide.hbs", import.meta.url), "utf8");
   Handlebars.registerHelper("fieldGuideSections", fieldGuideSections);
+  Handlebars.registerHelper("patternCategoryInfo", patternCategoryInfo);
+  for (const [name, helper] of Object.entries(createTemplateHelpers())) Handlebars.registerHelper(name, helper);
+  Handlebars.registerPartial("breadcrumbs", readFileSync(new URL("../src/_includes/breadcrumbs.hbs", import.meta.url), "utf8"));
   const render = Handlebars.compile(layout.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, ""));
-  const result = render({ title: "Guide", description: "Patterns", ...directory, content: html });
+  const result = render({ title: "Guide", description: "Patterns", patternCategory: "tactical", ...directory, content: html });
   const lookup = result.split('<div class="shell field-guide-grid">')[0];
   const rail = result.match(/<aside[\s\S]*?<\/aside>/)[0];
   for (const group of groups) {
@@ -59,6 +64,9 @@ test("the lookup lists scenarios while the reading rail keeps top-level anchors 
     }
   }
   assert.doesNotMatch(result, /Working draft/);
+  assert.doesNotMatch(result, /pattern-badge|← Use cases/);
+  assert.equal(guideData.breadcrumbParent, "/patterns.html");
+  assert.match(rail, /href="\/patterns.html">All patterns<\/a>/);
 });
 
 test("visible Java snippets are present verbatim in the downloadable examples", () => {
@@ -117,40 +125,46 @@ test("capability mentions link directly to their relevant deeper explanations", 
   assert.match(body, /RelayDesk's recipient-specific example\]\(\/case-studies\/relaydesk\.html#retry-the-warehouse-s-copy-not-the-buyer-s\)/);
 });
 
-test("field-guide entry points follow their generated collection without draft labels", () => {
-  for (const page of ["docs", "use-cases"]) {
-    const template = readFileSync(new URL(`../src/pages/${page}.hbs`, import.meta.url), "utf8");
-    assert.match(template, /#each collections\.fieldGuides/);
-    assert.doesNotMatch(template, /href="\/email-workload-field-guide\.html"/);
-    assert.doesNotMatch(template, /data\.draft|working draft/i);
-  }
+test("Use cases offers a route to the shared Patterns home", () => {
+  const template = readFileSync(new URL("../src/pages/use-cases.hbs", import.meta.url), "utf8");
+  assert.match(template, /href="\/patterns\.html"/);
+  assert.doesNotMatch(template, /data\.draft|working draft/i);
 });
 
-test("documentation menus place visible guides after Use cases and Why before Use cases", () => {
+test("the Docs dropdown offers one combined Patterns link without badge headings", () => {
   const handlebars = Handlebars.create();
   handlebars.registerHelper("eq", (left, right) => left === right);
   handlebars.registerHelper("activeClass", (url, current) => url === current ? "is-active" : "");
-  handlebars.registerHelper("docsActiveClass", (url, current, parent) => url === current || url === parent ? "is-active" : "");
-  handlebars.registerPartial("components/field-guide-menu-items", readFileSync(
-    new URL("../src/_includes/components/field-guide-menu-items.hbs", import.meta.url), "utf8"));
   const nav = JSON.parse(readFileSync(new URL("../src/_data/nav.json", import.meta.url), "utf8"));
-  const guide = { url: "/email-workload-field-guide.html", data: {
-    title: "When One Email Becomes a Million", navigationTitle: "Email workload field guide"
-  } };
-  assert.match(source, /navigationTitle: "Email workload field guide"/);
-  for (const name of ["docs-sidebar", "site-header"]) {
-    const render = handlebars.compile(readFileSync(new URL(`../src/_includes/${name}.hbs`, import.meta.url), "utf8"));
-    const context = { nav, page: { url: guide.url }, collections: { fieldGuides: [guide] } };
-    const preview = render(context);
-    const menu = name === "docs-sidebar" ? preview : preview.match(/<ul id="primary-docs-submenu"[\s\S]*?<\/ul>/)[0];
-    assert.ok(menu.indexOf('href="/use-cases.html"') < menu.indexOf(`href="${guide.url}"`));
-    assert.match(menu, /class="is-active">Email workload field guide<\/a>/);
-    if (name === "docs-sidebar") {
-      assert.ok(menu.indexOf('href="/why-simple-java-mail.html"') < menu.indexOf('href="/use-cases.html"'));
-    }
-    const withoutGuides = render({ ...context, collections: { fieldGuides: [] } });
-    assert.ok(!withoutGuides.includes(guide.url));
-    const fallback = render({ ...context, collections: { fieldGuides: [{ ...guide, data: { title: "Another guide" } }] } });
-    assert.match(fallback, />Another guide<\/a>/);
+  const template = readFileSync(new URL("../src/_includes/site-header.hbs", import.meta.url), "utf8");
+  assert.doesNotMatch(template, /field-guide-menu-items|pattern-badge/);
+  const preview = handlebars.compile(template)({ nav, page: { url: "/docs.html" } });
+  const menu = preview.match(/<ul id="primary-docs-submenu"[\s\S]*?<\/ul>/)[0];
+  assert.match(menu, /href="\/patterns\.html"[^>]*>Tactical\/strategic patterns<\/a>/);
+  assert.equal((menu.match(/href="\/patterns\.html"/g) || []).length, 1);
+  assert.doesNotMatch(menu, /email-workload-field-guide|strategic-patterns/);
+  assert.match(menu, /href="\/use-cases\.html"/);
+  assert.match(menu, /href="\/modules\.html"/);
+});
+
+test("the docs sidebar gives Patterns a home and retains direct access to both collections", () => {
+  const handlebars = Handlebars.create();
+  handlebars.registerHelper("eq", (left, right) => left === right);
+  handlebars.registerHelper("docsActiveClass", (url, current, parent) => url === current || url === parent ? "is-active" : "");
+  const nav = JSON.parse(readFileSync(new URL("../src/_data/nav.json", import.meta.url), "utf8"));
+  const render = handlebars.compile(readFileSync(new URL("../src/_includes/docs-sidebar.hbs", import.meta.url), "utf8"));
+  for (const [url, parent, activeLabel] of [
+    ["/email-workload-field-guide.html", "/patterns.html", "Tactical Patterns"],
+    ["/strategic-patterns.html", "/patterns.html", "Strategic Patterns"],
+    ["/patterns/transaction-outbox.html", "/strategic-patterns.html", "Strategic Patterns"],
+  ]) {
+    const menu = render({ nav, page: { url }, breadcrumbParent: parent });
+    assert.equal((menu.match(/>Tactical Patterns<\/a>/g) || []).length, 1);
+    assert.equal((menu.match(/>Strategic Patterns<\/a>/g) || []).length, 1);
+    assert.match(menu, new RegExp(`class="is-active">${activeLabel}</a>`));
+    assert.match(menu, /<a href="\/patterns.html"[^>]*>Patterns<\/a>\s*<ul class="docs-nav-children">\s*<li><a href="\/email-workload-field-guide\.html"[^>]*>Tactical Patterns<\/a><\/li>\s*<li><a href="\/strategic-patterns\.html"[^>]*>Strategic Patterns<\/a><\/li>\s*<\/ul>/);
+    assert.doesNotMatch(menu, /pattern-badge|pattern-navigation/);
+    assert.ok(menu.indexOf('href="/use-cases.html"') < menu.indexOf('href="/email-workload-field-guide.html"'));
+    assert.ok(menu.indexOf('href="/why-simple-java-mail.html"') < menu.indexOf('href="/use-cases.html"'));
   }
 });

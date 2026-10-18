@@ -10,6 +10,7 @@ description: "Connect real mail sends to your application's traces and metrics, 
 ---
   <section>
     <div class="wide">
+      {{> components/pattern-examples topic="telemetry"}}
       <p>Your request trace can follow an email from admission through connection acquisition, submission, retries and cleanup.
         The optional OpenTelemetry integration records that work directly; it does not depend on a progress callback arriving or a result observer running.</p>
       <p>Use <a href="/analyzing-send-results.html">receipts and result observers</a> for individual submission decisions,

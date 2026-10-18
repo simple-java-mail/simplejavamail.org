@@ -1,0 +1,24 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/patterns.html"
+tags: ["publicPage"]
+title: "Patterns"
+style: "patterns"
+description: "Find a focused solution to a mail problem, or run an application that puts the pieces together."
+---
+<p>Choose the amount of context you need. Both collections explain the decisions, show the code and link to the full API reference.</p>
+<ul class="pattern-cards pattern-collection-cards" aria-label="Pattern collections">
+  {{#each collections.patternGroups}}
+    <li class="pattern-card">
+      <h2><a class="pattern-card-link" href="{{href}}">{{label}}</a></h2>
+      <p>{{description}}</p>
+      {{#if (eq id "tactical")}}
+        <p>Choose a scenario such as pacing a batch, isolating customer mail routes or handling a later bounce. Read the reasoning and use the Java snippets.</p>
+        <span class="pattern-card-prompt" aria-hidden="true">Find a focused recipe →</span>
+      {{else}}
+        <p>Start a Docker application, follow a job through its code and try a failure. Explore durable jobs, event processing, workflows and non-SMTP handoff.</p>
+        <span class="pattern-card-prompt" aria-hidden="true">Find a runnable application →</span>
+      {{/if}}
+    </li>
+  {{/each}}
+</ul>

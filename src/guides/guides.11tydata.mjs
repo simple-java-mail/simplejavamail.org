@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { patternCategorySchema } from "../_lib/patterns.mjs";
 
 const text = z.string().trim().min(1);
 const groups = z.array(z.object({
@@ -13,9 +14,11 @@ const groups = z.array(z.object({
 export default {
   layout: "layouts/field-guide.hbs",
   tags: ["fieldGuide", "publicPage"],
+  patternCategory: "tactical",
   style: "field-guide",
-  breadcrumbParent: "/use-cases.html",
+  breadcrumbParent: "/patterns.html",
   eleventyDataSchema(data) {
-    z.object({ title: text, navigationTitle: text.optional(), description: text, guideGroups: groups }).parse(data);
+    z.object({ title: text, navigationTitle: text.optional(), description: text, guideGroups: groups,
+      patternCategory: patternCategorySchema.extract(["tactical"]).default("tactical") }).parse(data);
   },
 };
