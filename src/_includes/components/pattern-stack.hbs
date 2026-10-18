@@ -1,0 +1,15 @@
+<ul class="pattern-stack" aria-label="Technology stack">
+  {{#each (patternStack stack)}}
+    <li>
+      {{#if ../stackLinks}}
+        {{#if href}}
+          <a class="pattern-technology" href="{{href}}">{{> components/pattern-technology}}</a>
+        {{else}}
+          <span class="pattern-technology">{{> components/pattern-technology}}</span>
+        {{/if}}
+      {{else}}
+        <span class="pattern-technology">{{> components/pattern-technology}}</span>
+      {{/if}}
+    </li>
+  {{/each}}
+</ul>

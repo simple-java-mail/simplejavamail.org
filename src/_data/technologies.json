@@ -1,0 +1,101 @@
+[
+  {
+    "label": "Spring Boot",
+    "href": "https://spring.io/projects/spring-boot",
+    "logo": "spring.svg"
+  },
+  {
+    "label": "Spring Batch",
+    "href": "https://spring.io/projects/spring-batch",
+    "logo": "spring.svg"
+  },
+  {
+    "label": "Spring Integration",
+    "href": "https://spring.io/projects/spring-integration",
+    "logo": "spring.svg"
+  },
+  {
+    "label": "PostgreSQL",
+    "href": "https://www.postgresql.org/",
+    "logo": "postgresql.ico"
+  },
+  {
+    "label": "JobRunr",
+    "href": "https://www.jobrunr.io/",
+    "logo": "jobrunr.png"
+  },
+  {
+    "label": "Apache Kafka",
+    "aliases": [
+      "Kafka"
+    ],
+    "href": "https://kafka.apache.org/",
+    "logo": "kafka.png",
+    "logoOnLight": true
+  },
+  {
+    "label": "RabbitMQ",
+    "href": "https://www.rabbitmq.com/",
+    "logo": "rabbitmq.svg"
+  },
+  {
+    "label": "Temporal",
+    "href": "https://temporal.io/",
+    "logo": "temporal.svg"
+  },
+  {
+    "label": "Camunda",
+    "href": "https://camunda.com/",
+    "logo": "camunda.png"
+  },
+  {
+    "label": "Apache Camel",
+    "href": "https://camel.apache.org/",
+    "logo": "camel.png"
+  },
+  {
+    "label": "Java",
+    "href": "https://openjdk.org/",
+    "logo": "java.ico"
+  },
+  {
+    "label": "OpenTelemetry",
+    "href": "https://opentelemetry.io/",
+    "logo": "opentelemetry.svg"
+  },
+  {
+    "label": "ECS/Fargate",
+    "href": "https://aws.amazon.com/fargate/",
+    "logo": "aws-fargate.svg"
+  },
+  {
+    "label": "SQS",
+    "href": "https://aws.amazon.com/sqs/",
+    "logo": "aws-sqs.svg"
+  },
+  {
+    "label": "S3",
+    "href": "https://aws.amazon.com/s3/",
+    "logo": "aws-s3.svg"
+  },
+  {
+    "label": "DynamoDB",
+    "href": "https://aws.amazon.com/dynamodb/",
+    "logo": "aws-dynamodb.svg"
+  },
+  {
+    "label": "SES",
+    "href": "https://aws.amazon.com/ses/",
+    "logo": "aws-ses.svg"
+  },
+  {
+    "label": "Terraform",
+    "href": "https://developer.hashicorp.com/terraform",
+    "logo": "terraform.svg"
+  },
+  {
+    "label": "CloudFormation",
+    "href": "https://aws.amazon.com/cloudformation/",
+    "logo": "aws-cloudformation.svg"
+  }
+]

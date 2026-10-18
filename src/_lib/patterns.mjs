@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { patternStack } from "./pattern-technologies.mjs";
 
 export const patternCategorySchema = z.enum(["tactical", "strategic"]);
 
@@ -23,12 +24,11 @@ export function groupPatterns(entries) {
 export function indexPatternTechnologies(entries) {
   const index = new Map();
   for (const entry of entries) {
-    for (const part of entry.data.stack.split("·")) {
-      const technology = part.trim().replace(/ variation$/, "");
-      if (!index.has(technology)) index.set(technology, []);
-      index.get(technology).push(entry);
+    for (const technology of patternStack(entry.data.stack)) {
+      if (!index.has(technology.label)) index.set(technology.label, { ...technology, alternative: false, patterns: [] });
+      index.get(technology.label).patterns.push(entry);
     }
   }
   return [...index].sort(([left], [right]) => left.localeCompare(right))
-    .map(([label, patterns]) => ({ label, patterns }));
+    .map(([, technology]) => technology);
 }

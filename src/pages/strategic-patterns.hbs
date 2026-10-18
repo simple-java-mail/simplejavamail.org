@@ -21,7 +21,7 @@ breadcrumbParent: "/patterns.html"
           <li class="pattern-card">
             <h3><a class="pattern-card-link" href="{{this.url}}">{{data.title}}</a></h3>
             <p>{{data.description}}</p>
-            {{#if data.stack}}<p class="pattern-stack">{{data.stack}}</p>{{/if}}
+            {{#if data.stack}}{{> components/pattern-stack stack=data.stack}}{{/if}}
             {{#if data.demoSlug}}
               <a class="button button-primary pattern-card-start" href="{{this.url}}#start-here"
                  aria-label="Run it and follow the code: {{data.title}}">Run it and follow the code →</a>
@@ -38,7 +38,7 @@ breadcrumbParent: "/patterns.html"
   <dl>
     {{#each collections.patternTechnologies}}
       <div>
-        <dt>{{label}}</dt>
+        <dt><span class="pattern-technology">{{> components/pattern-technology}}</span></dt>
         <dd>{{#each patterns}}<a href="{{this.url}}">{{data.title}}</a>{{#unless @last}} · {{/unless}}{{/each}}</dd>
       </div>
     {{/each}}
@@ -56,3 +56,4 @@ breadcrumbParent: "/patterns.html"
     {{/each}}
   </dl>
 </section>
+{{> components/technology-credits}}

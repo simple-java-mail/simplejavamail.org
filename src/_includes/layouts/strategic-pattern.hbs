@@ -6,7 +6,7 @@ layout: "layouts/marketing.hbs"
     {{> breadcrumbs}}
     <h1 id="pattern-title">{{title}}</h1>
     <p class="hero-lede">{{description}}</p>
-    <p class="pattern-stack">{{stack}}</p>
+    {{> components/pattern-stack stack=stack stackLinks=true}}
   </div>
 </header>
 <div class="shell field-guide-grid strategic-pattern-grid">
@@ -42,6 +42,7 @@ layout: "layouts/marketing.hbs"
       </section>
     {{/with}}
     {{> components/pattern-next}}
+    <p class="pattern-technology-credit-link"><a href="/strategic-patterns.html#technology-credits">Technology credits</a></p>
   </article>
 </div>
 {{#if mermaid}}

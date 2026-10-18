@@ -6,6 +6,7 @@ import { articleNeighbor } from './article-context.mjs';
 import { fieldGuideSections } from './field-guide-sections.mjs';
 import { patternCategoryInfo } from './patterns.mjs';
 import { patternExamples, demonstratedReferences } from './pattern-demonstrations.mjs';
+import { patternStack } from './pattern-technologies.mjs';
 
 // Shared by Eleventy and the local Article Workbench; keep rendering rules in one place.
 export function createTemplateHelpers(markdown = createMarkdownLibrary()) {
@@ -37,6 +38,7 @@ export function createTemplateHelpers(markdown = createMarkdownLibrary()) {
   register("articleNeighbor", articleNeighbor);
   register("fieldGuideSections", fieldGuideSections);
   register("patternCategoryInfo", patternCategoryInfo);
+  register("patternStack", patternStack);
   register("patternExamples", patternExamples);
   register("demonstratedReferences", demonstratedReferences);
   register("journalCollectionSchema", collectionSchema);

@@ -24,4 +24,8 @@ Link Tactical scenarios to relevant runnable applications where they help. Strat
 anchors, and optionally a `caseStudy` with its title and URL. Their shared ending renders these links and the routes back to the collections on every page,
 including narrow screens where the reading rail scrolls away. Keep prerequisites and the complete source-download route beside Start here.
 
+Technology stacks share the registry in `src/_data/technologies.json`. Cards show local marks and readable names; article introductions also link to the
+projects. Keep non-product concepts as text, and label alternate implementations explicitly. The technology directory uses that same registry. Record
+asset sources and usage references in `src/assets/technologies/README.md`; preserve the original artwork and never fetch icons from a third-party service at runtime.
+
 Downloadable examples belong in `src/assets/guides/<guide>/`. Keep their methods and usage contracts synchronized with the visible code. Compile against the API being demonstrated; compilation is not proof of SMTP behavior. Use authorized local fixtures for runtime checks and send no real mail during website verification.

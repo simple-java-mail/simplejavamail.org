@@ -15,7 +15,7 @@
 .pattern-card:hover, .pattern-card:focus-within { border-color: @teal; }
 .pattern-card h2, .pattern-card h3 { margin: 0 0 @space-xs; font-size: 1.15rem; }
 .pattern-card p { margin-block: @space-xs; }
-.pattern-card p:last-of-type { margin-bottom: @space-md; }
+.pattern-card p:last-of-type { margin-bottom: @space-sm; }
 .pattern-card-prompt { margin-top: auto; padding-top: @space-sm; color: @teal-deep; }
 .pattern-card-link { color: @ink; text-decoration: none; }
 // Stretch the title link across the card, keeping the separate primary action above its hit area.
@@ -23,7 +23,22 @@
 .pattern-card-link:focus-visible { outline: none; }
 .pattern-card-link:focus-visible::after { .focus-ring(); }
 .pattern-card .pattern-card-start { position: relative; z-index: 2; align-self: flex-start; margin: auto 0 0; white-space: normal; }
-.pattern-stack { color: @steel; font-family: @font-mono; font-size: 0.72rem; }
+.pattern-stack { display: flex; flex-wrap: wrap; gap: @space-sm @space-md; list-style: none; color: @steel; font-family: @font-mono; font-size: 0.72rem; }
+.legacy-doc-content .pattern-stack, .strategic-pattern-hero .pattern-stack { max-width: none; margin: @space-sm 0 @space-md; padding: 0; }
+.pattern-stack > li, .pattern-stack > li + li { margin: 0; padding: 0; }
+.pattern-technology { display: inline-flex; align-items: center; gap: @space-xs; color: @steel; line-height: 1.4; text-decoration: none; }
+a.pattern-technology:hover { color: @ink; text-decoration: underline; }
+.pattern-technology .pattern-technology-mark { display: block; flex: none; width: 1.25rem; height: 1.25rem; margin: 0; border: 0; object-fit: contain; }
+// The official Kafka mark is black. A small light backing preserves it unchanged in both themes.
+.pattern-technology .pattern-technology-mark--light { padding: 2px; background: #fff; border-radius: 2px; }
+.pattern-technology-note { color: @steel; font-size: 0.9em; }
+.strategic-pattern-hero .pattern-stack { margin-top: @space-lg; font-size: 0.85rem; }
+.strategic-pattern-hero .pattern-technology-mark { width: 1.6rem; height: 1.6rem; }
+.pattern-technology-credits { margin-top: @space-xl; border-top: 1px solid @line; padding-top: @space-md; }
+.pattern-technology-credits summary, .pattern-technology-credit-link { color: @steel; font-family: @font-mono; font-size: 0.7rem; }
+.pattern-technology-credits summary { cursor: pointer; }
+.pattern-technology-credits p { margin-top: @space-sm; font-size: 0.8rem; }
+.pattern-technology-credit-link { margin-top: @space-lg; }
 .pattern-card-start:focus-visible { .focus-ring(); }
 .strategic-pattern-grid { margin-block: @space-xl @space-2xl; }
 .strategic-pattern-rail nav { display: flex; flex-direction: column; max-height: calc(100dvh - @header-h - 2 * @space-lg); }

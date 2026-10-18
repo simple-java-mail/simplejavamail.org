@@ -104,6 +104,8 @@ export default function (eleventyConfig) {
   eleventyConfig.ignores.add("src/case-studies/README.md");
   eleventyConfig.ignores.add("src/guides/README.md");
   eleventyConfig.ignores.add("src/assets/guides/*/README.md");
+  // Asset provenance is for maintainers; the Patterns directory renders the public credits.
+  eleventyConfig.ignores.add("src/assets/technologies/README.md");
   eleventyConfig.ignores.add("src/styles/tokens.less");
 
   eleventyConfig.addTransform("external-link-safety", function (content) {

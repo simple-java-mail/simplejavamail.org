@@ -7,11 +7,12 @@ import strategicData from "../src/strategic-patterns/strategic-patterns.11tydata
 import { patternDemonstrations, patternExamples, demonstratedReferences } from "../src/_lib/pattern-demonstrations.mjs";
 import { createMarkdownLibrary, headingsFromHtml } from "../src/_lib/eleventy-helpers.mjs";
 import { createTemplateHelpers } from "../src/_lib/template-helpers.mjs";
+import { patternStack } from "../src/_lib/pattern-technologies.mjs";
 
 function patternTemplates() {
   const handlebars = Handlebars.create();
   for (const [name, helper] of Object.entries(createTemplateHelpers())) handlebars.registerHelper(name, helper);
-  for (const partial of ["breadcrumbs", "components/pattern-next"]) {
+  for (const partial of ["breadcrumbs", "components/pattern-next", "components/pattern-technology", "components/pattern-stack", "components/technology-credits"]) {
     handlebars.registerPartial(partial, readFileSync(new URL(`../src/_includes/${partial}.hbs`, import.meta.url), "utf8"));
   }
   return handlebars;
@@ -110,8 +111,37 @@ test("technology discovery points to the same problem-led pages, including varia
   assert.equal(index[0].patterns[0], workflow);
 });
 
+test("stack marks retain names and alternatives while plain concepts stay readable", () => {
+  const stack = "Spring Boot · PostgreSQL · RabbitMQ variation · HTTPS";
+  const technologies = patternStack(stack);
+  assert.deepEqual(technologies.map(({ label, alternative }) => [label, alternative]), [
+    ["Spring Boot", false], ["PostgreSQL", false], ["RabbitMQ", true], ["HTTPS", false],
+  ]);
+  assert.equal(technologies[3].logo, undefined);
+  assert.deepEqual(patternStack("Future queue"), [{ label: "Future queue", alternative: false }]);
+  const render = patternTemplates().compile('{{> components/pattern-stack}}');
+  const card = render({ stack });
+  assert.equal((card.match(/<img /g) || []).length, 3);
+  assert.match(card, /\(alternative\)/);
+  assert.doesNotMatch(card, /<a /);
+  const introduction = render({ stack, stackLinks: true });
+  assert.match(introduction, /href="https:\/\/spring.io\/projects\/spring-boot"/);
+  assert.match(introduction, /href="https:\/\/www.rabbitmq.com\/"/);
+  for (const [, asset] of introduction.matchAll(/<img[^>]+src="([^"]+)"/g)) {
+    assert.ok(asset.startsWith("/assets/technologies/"), asset);
+    assert.ok(existsSync(new URL(`../src${asset}`, import.meta.url)), asset);
+  }
+  const directory = new URL("../src/strategic-patterns/", import.meta.url);
+  for (const name of readdirSync(directory).filter((entry) => entry.endsWith(".md"))) {
+    const source = readFileSync(new URL(name, directory), "utf8");
+    for (const technology of patternStack(source.match(/^stack: "([^"]+)"/m)[1])) {
+      if (technology.logo) assert.ok(existsSync(new URL(`../src/assets/technologies/${technology.logo}`, import.meta.url)), `${name}: ${technology.label}`);
+    }
+  }
+});
+
 test("the strategic hub lists application patterns directly, without a category chooser", () => {
-  const handlebars = Handlebars.create();
+  const handlebars = patternTemplates();
   handlebars.registerHelper("eq", (left, right) => left === right);
   // Eleventy registers a URL helper: links must explicitly reference this.url rather than accidentally invoke that helper.
   handlebars.registerHelper("url", () => { throw new Error("Use the entry's URL, not the URL helper"); });
