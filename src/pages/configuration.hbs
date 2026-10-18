@@ -570,6 +570,8 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
         Static inbound methods on <code class="inline language-java">EmailConverter</code> use the conventional default snapshot. Use
         <code class="inline language-java">mail.converter()</code> when parsing should produce builders backed by an explicit factory snapshot.
       </p>
+        For example, <code>mail.converter().fromEml(emlPath).toEmailBuilder()</code> keeps that snapshot without restricting the supported conversion routes.
+        See <a href="/features.html#section-converting">source-first conversion</a> for the complete shape and receive-side options.
       <p>
         When replacing a <code class="inline language-java">Mailer</code>, let any work already using the old instance finish and then
         <a href="/sending-and-execution.html#section-mailer-lifecycle">close it</a>.

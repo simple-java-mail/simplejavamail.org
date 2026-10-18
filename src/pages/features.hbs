@@ -421,6 +421,11 @@ recipient.withName("Alice").withAddress("alice@example.org")
         String inputs may be separate addresses or comma- and semicolon-delimited lists, and every parsed address becomes its own recipient.
       </p>
       <p>
+        For a named single recipient, use <code>mail.recipientBuilder().to(name, address)</code>, <code>cc(name, address)</code> or
+        <code>bcc(name, address)</code>. Each shortcut sets the name, address and type and returns the built Recipient. Certificate and notification
+        options already set on that builder are retained. Use the group builder when you need to split an address list.
+      </p>
+      <p>
         Default names and default certificates only fill missing values. Fixed names and fixed certificates override source data for the whole group.
         <code class="inline">clearingSmimeCertificates()</code> removes certificate state from reused recipients when the current email should use its own
         S/MIME fallback instead.
@@ -432,7 +437,7 @@ recipient.withName("Alice").withAddress("alice@example.org")
 
     <div class="side">
 <pre><code class="small">// One named recipient with exactly one address
-Recipient alice = mail.recipientBuilder().withName("Alice").withAddress("alice@example.com").withType(Message.RecipientType.TO).build();
+Recipient alice = mail.recipientBuilder().to("Alice", "alice@example.com");
 
 // Separate inputs and delimited lists can be combined
 Collection&lt;Recipient&gt; reviewers = SimpleJavaMail.fromDefaults().recipientsBuilder()
@@ -1484,7 +1489,8 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
         submission receipt alongside your application record; there is nothing to configure for automatic generation.
       </p>
       <p>
-        A later DSN can return it in <code>Original-Envelope-ID</code>. Simple Java Mail does not read those notifications for you, and an immediate
+        A later DSN can return it in <code>Original-Envelope-ID</code>. Your application receives those notifications and can
+        <a href="/delivery-reports.html">read their structured report through the converted Email</a>. An immediate
         <a href="/analyzing-send-results.html">submission receipt</a> still describes submission, not final delivery. Requesting DSN does not guarantee
         that a notification will arrive.
       </p>
@@ -1519,6 +1525,16 @@ Status: 5.1.1</code></pre>
       <p>If you already have an identifier, fix it explicitly, just like a Message-ID:</p>
 <pre><code class="language-java small">emailBuilder.fixingEnvelopeId("order-42-attempt-1");</code></pre>
     </div>
+      <p>When editing an existing DSN request, <code>clearReturnOption()</code> removes only the choice about returning headers or the full message.
+        Notification events and a fixed envelope identifier stay unchanged:</p>
+<pre><code class="language-java small">DeliveryStatusNotification request = DeliveryStatusNotification.builder()
+    .returnOption(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY)
+    .notifyOptions(DeliveryStatusNotification.NotifyOption.FAILURE)
+    .build();
+
+DeliveryStatusNotification withoutReturnPreference = request.toBuilder()
+    .clearReturnOption()
+    .build();</code></pre>
     <div class="wide full-width-example">
       <h4>What to expect</h4>
       <ul>
@@ -1919,6 +1935,12 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       </p>
       <p>
         If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
+      <p>
+        Start with <code>mail.converter().fromEml(...)</code>, <code>fromMimeMessage(...)</code>, <code>fromEmail(...)</code> or
+        <code>fromOutlookMsg(...)</code>, then choose the result you need. Completion offers the supported targets for that source.
+        You can set receive-side security and attachment options before creating an Email, rather than filling unused arguments with <code>null</code>.
+        The existing static <code>EmailConverter</code> methods remain available.
+      </p>
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
       </p>
       <p>
@@ -1944,24 +1966,31 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       </p>
     </div>
 
+      <p>
+        Selecting a source does not read it. Configure the conversion, then choose one <code>to...</code> result; start a fresh source selection for
+        another conversion, including after a failed read. Imported Email builders retain the factory's configuration snapshot.
+        Exporting an Email does not silently apply templates; use <code>withEmailGovernance(...)</code> when you want that explicitly.
+        Direct MIME/EML routes do not rebuild the message through an editable Email.
+      </p>
     <div class="side">
 <pre><code class="language-java small">Path emlPath = Path.of("received.eml");
 Path msgPath = Path.of("received.msg");
 
-// from Email or MimeMessage
-byte[] emlBytes = EmailConverter.emailToEMLByteArray(yourEmail);
-String emlText = EmailConverter.emailToEML(yourEmail);
-MimeMessage mimeMessage = EmailConverter.emailToMimeMessage(yourEmail, yourSession);
-Email email = EmailConverter.mimeMessageToEmail(yourMimeMessage);
+// Choose the source first, then the format you need
+byte[] emlBytes = mail.converter().fromEmail(yourEmail).toEmlBytes();
+String emlText = mail.converter().fromEmail(yourEmail).toEml();
+MimeMessage mimeMessage = mail.converter().fromEmail(yourEmail)
+    .withSession(yourSession).toMimeMessage();
+Email email = mail.converter().fromMimeMessage(yourMimeMessage).toEmail();
 
 // Simple Java Mail closes the stream it opens for each Path
-Email parsedEml = EmailConverter.emlToEmail(emlPath);
-EmailPopulatingBuilder editableEml = EmailConverter.emlToEmailBuilder(emlPath);
-MimeMessage parsedMimeMessage = EmailConverter.emlToMimeMessage(emlPath);
+Email parsedEml = mail.converter().fromEml(emlPath).toEmail();
+EmailPopulatingBuilder editableEml = mail.converter().fromEml(emlPath).toEmailBuilder();
+MimeMessage parsedMimeMessage = mail.converter().fromEml(emlPath).toMimeMessage();
 
-Email parsedMsg = EmailConverter.outlookMsgToEmail(msgPath);
+Email parsedMsg = mail.converter().fromOutlookMsg(msgPath).toEmail();
 OutlookEmailConversionResult msgWithSourceData =
-    EmailConverter.outlookMsgToEmailBuilderWithOutlookData(msgPath);
+    mail.converter().fromOutlookMsg(msgPath).toEmailBuilderWithOutlookData();
 
 Pkcs12Config myKeyInfo = Pkcs12Config.builder()
     .pkcs12Store(Path.of("my_smime_keystore.pkcs12"))
@@ -1975,10 +2004,13 @@ OpenPgpReceiveConfig openPgpKeys = OpenPgpReceiveConfig.builder()
     .addDecryptionKeyRing(recipientSecretKeyRing, recipientPassphrase)
     .build();
 
-// One full Path entry point covers Session and receive-side security options
+// Receive-side security options do not require placeholder null arguments
 Email protectedEmail = mail.converter()
-    .emlToEmailBuilder(emlPath, myKeyInfo, openPgpKeys, yourSession)
-    .buildEmail();
+    .fromEml(emlPath)
+    .withSmimeDecryption(myKeyInfo)
+    .withOpenPgpReceiveConfig(openPgpKeys)
+    .withSession(yourSession)
+    .toEmail();
 </code></pre>
     </div>
   </section>
@@ -1994,7 +2026,7 @@ Email protectedEmail = mail.converter()
 
     <div class="side">
 <pre><code class="language-java small">OutlookEmailConversionResult result =
-    EmailConverter.outlookMsgToEmailBuilderWithOutlookData(msgFile);
+    mail.converter().fromOutlookMsg(msgFile).toEmailBuilderWithOutlookData();
 
 Email email = result.buildEmail();
 OutlookMessageData outlookData = result.getOutlookMessageData();

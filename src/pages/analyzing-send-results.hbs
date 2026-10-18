@@ -853,12 +853,13 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
   <section>
     <div class="view">
       <p>
-        Inside <code>withOpenConnection(...)</code>, <code>MailSender.sendMailAndGetReceipt(email)</code> returns the same receipt synchronously while
+        Inside <code>withOpenConnection(...)</code>, <code>MailSender.sendMail(email)</code> returns the same receipt synchronously while
         reusing the callback's connection. This is useful when a job needs to record each successful submission before advancing to the next email.
         The example prints the receipt and rethrows a failure so the callback stops.
       </p>
       <p>
-        Simple-batch methods return a <code>MailSend&lt;Void&gt;</code> handle, not a list of receipts. Use the configured observer for each email actually attempted.
+        An asynchronous simple batch returns a <code>MailSend&lt;Void&gt;</code> handle; a synchronous batch waits and returns no value. Neither collects receipts.
+        Use the configured observer for each email actually attempted.
         Batches stop at their first failure; untouched emails have no outcomes. Pooling changes how a connection is obtained, not how to read a
         receipt. <code>withOpenConnection</code> uses the built-in transport path and cannot be combined with a
         <a href="/features.html#section-custom-mailer">CustomMailer</a>.
@@ -867,7 +868,7 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-open-connection-receipt">mailer.withOpenConnection(sender -&gt; {
     try {
-        printReceipt(sender.sendMailAndGetReceipt(email));
+        printReceipt(sender.sendMail(email));
     } catch (MailSubmissionException failure) {
         printReceipt(failure.getSubmissionReceipt());
         throw failure;

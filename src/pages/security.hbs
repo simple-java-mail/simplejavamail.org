@@ -840,8 +840,10 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 				</p>
 			</div>
 			<div class="wide full-width-example">
-<pre><code class="small">Email mergedEmail = EmailConverter.outlookMsgToEmail("yourSMIMESignedMessage.msg"); // or
-Email mergedEmail = EmailConverter.emlToEmail("yourSMIMESignedMessage.eml");
+<pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+Email mergedEmail = mail.converter().fromOutlookMsg(Path.of("yourSMIMESignedMessage.msg")).toEmail();
+// Or read an EML file:
+// Email mergedEmail = mail.converter().fromEml(Path.of("yourSMIMESignedMessage.eml")).toEmail();
 
 // all attachments as-is:
 mergedEmail.getAttachments(); // smime.p7m, my-doc.docx
@@ -940,8 +942,8 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
                 .buildEmail();
 
 // or by configuring the intermediary builder:
-emailBuilder = EmailConverter.outlookMsgToEmailBuilder(msgFile); // or
-emailBuilder = EmailConverter.emlToEmailBuilder(emlFile);
+emailBuilder = mail.converter().fromOutlookMsg(msgFile).toEmailBuilder(); // or
+emailBuilder = mail.converter().fromEml(emlFile).toEmailBuilder();
 Email nonMergedEmail = emailBuilder
                 .notMergingSingleSMIMESignedAttachment()
                 .buildEmail();</code></pre>
@@ -990,8 +992,11 @@ nonMergedEmail.getSmimeSignedEmail();
       .keyPassword("letmein")
       .build();
 
-EmailConverter.outlookMsgToEmail("yourSMIMEEncryptedMessage.msg", yourPkcs12Config); // or
-EmailConverter.emlToEmail("yourSMIMEEncryptedMessage.eml", yourPkcs12Config);
+Email mergedEmail = mail.converter()
+      .fromOutlookMsg(Path.of("yourSMIMEEncryptedMessage.msg"))
+      .withSmimeDecryption(yourPkcs12Config)
+      .toEmail();
+// For an EML file, choose .fromEml(Path.of("yourSMIMEEncryptedMessage.eml")) instead.
 
 mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENCRYPTED
 </code></pre>
@@ -1119,9 +1124,10 @@ OpenPgpEncryptionConfig encryption = OpenPgpEncryptionConfig.builder()
     .addDecryptionKeyRing(recipientSecretKeyRing, recipientPassphrase)
     .build();
 
-Email received = EmailConverter.emlToEmailWithOpenPgp(
-    emlInputStream,
-    receive);
+Email received = mail.converter()
+    .fromEml(emlInputStream)
+    .withOpenPgpReceiveConfig(receive)
+    .toEmail();
 
 OriginalOpenPgpDetails details =
     received.getOriginalOpenPgpDetails();</code></pre>

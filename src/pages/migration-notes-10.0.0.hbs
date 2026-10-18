@@ -111,8 +111,7 @@ breadcrumbParent: "/migration-notes.html"
 IRecipientBuilder recipient = mail.recipientBuilder();
 IRecipientsBuilder recipients = mail.recipientsBuilder();
 
-Recipient alice = recipient.withName("Alice").withAddress("alice@example.org")
-    .withType(Message.RecipientType.TO).build();</code></pre>
+Recipient alice = recipient.to("Alice", "alice@example.org");</code></pre>
     <p>Import the builder interfaces from <code>org.simplejavamail.api.email</code>. Also update imports of the template-suppression selector
       from <code>org.simplejavamail.internal.config.EmailProperty</code> to <code>org.simplejavamail.api.email.EmailProperty</code>;
       the selected fields and suppression behavior are unchanged.</p>
@@ -120,9 +119,10 @@ Recipient alice = recipient.withName("Alice").withAddress("alice@example.org")
       Keep receiving and inspecting them through sending or conversion calls; remove direct constructor calls.
       Recompile integrations compiled against the old concrete classes. Adapter implementations return
       <code>MailTransportResult</code> rather than constructing an application receipt.</p>
-    <p><code>MailSender.sendMailAndGetReceipt(Email)</code> no longer has a default implementation that calls the void send method and
-      creates a receipt without transport facts. If you implemented a wrapper or test double, implement both methods and delegate receipt-producing
-      calls to the real sender. Code using the sender supplied to <code>withOpenConnection(...)</code> needs no change for this.</p>
+    <p>Inside <code>withOpenConnection(...)</code>, use <code>sender.sendMail(email)</code> whether or not you need a receipt. It now returns
+      <code>MailSubmissionReceipt</code>, just like the synchronous Mailer view. Replace calls to the removed
+      <code>sender.sendMailAndGetReceipt(email)</code> with <code>sender.sendMail(email)</code>. Calls that ignore the result need no source change,
+      but recompile existing integrations because the return type changed. Update wrappers or test doubles to return the real sender's receipt.</p>
     <p>Previously serialized Java objects containing <code>MailSubmissionReceipt</code> or <code>OutlookMessageData</code> cannot be read by
       the new implementations. Before upgrading, read those stored reports with the old library and export the observations your application needs.
       This does not remove compatibility for serialized <code>Email</code>, <code>Recipient</code> or attachment data.</p>
@@ -585,8 +585,8 @@ Email convertedWithDefaults = EmailConverter
         .buildEmail();</code></pre>
 <pre><code class="language-java">// Uses main-mail.properties from mainMail above
 Email convertedWithMainMail = mainMail.converter()
-        .mimeMessageToEmailBuilder(mimeMessage)
-        .buildEmail();</code></pre>
+        .fromMimeMessage(mimeMessage)
+        .toEmail();</code></pre>
     </div>
   </section>
 
@@ -1047,7 +1047,8 @@ Transport.send(message);</code></pre>
       Recompile integrations and custom Mailer implementations against 10.0.0 rather than relying on old binary signatures.</p>
     <p class="wide"><code>sync()</code> and <code>async()</code> use the same Mailer, executor and connections. Neither starts another Mailer or needs separate closing.
       Configuration getters, validation, <code>withOpenConnection(...)</code> and shutdown remain on Mailer.
-      The scoped <code>MailSender</code> inside <code>withOpenConnection</code> is unchanged, including its receipt-specific method.</p>
+      The scoped <code>MailSender</code> inside <code>withOpenConnection</code> remains synchronous; its <code>sendMail(email)</code> now returns the receipt
+      directly instead of exposing a separate receipt-specific method.</p>
     <div class="wide table-scroll"><table>
       <thead><tr><th>Released 9.x call</th><th>10.0.0 call</th><th>Result</th></tr></thead>
       <tbody>
@@ -1105,8 +1106,14 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
     <p class="wide">
       <strong>What changes:</strong> Calling <code>Mailer.close()</code> can now wait while sends you already started finish. With the built-in executor,
       it waits for asynchronous work accepted for execution before closing the connection pool, rather than closing connections that work may still need.
-      If you want to start shutdown without waiting in that call, use <code>shutdownConnectionPool()</code>; its future completes after the work and
+      If you want to start shutdown without waiting in that call, use <code>closeAsync()</code>; its future completes after the work and
       connection cleanup finish. New async tasks are rejected once shutdown starts. Check each send's own completion result to see whether it succeeded.
+    </p>
+    <p class="wide">
+      Replace the removed <code>shutdownConnectionPool()</code> method with <code>closeAsync()</code>. The name now reflects that it closes the
+      whole Mailer, even without pooling. The return type is <code>CompletableFuture&lt;Void&gt;</code>, so existing <code>Future&lt;Void&gt;</code>
+      variables can still hold it. Recompile integrations. Repeated calls return independent views of the same cleanup operation; completing or
+      cancelling a view cannot interrupt cleanup or falsely complete another caller's view.
     </p>
     <p class="wide">
       Call <code>close()</code> from application shutdown code, not from a send worker or a callback running as part of that send: that would wait for

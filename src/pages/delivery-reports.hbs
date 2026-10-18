@@ -20,8 +20,8 @@ description: "Turn a received delivery notification into recipient actions, stat
 ├── message/delivery-status: recipient actions, status codes and diagnostics
 └── Original message or its headers (optional)</code></pre>
   <pre><code class="language-java">Email notification = mail.converter()
-    .mimeMessageToEmailBuilder(incomingMessage)
-    .buildEmail();
+    .fromMimeMessage(incomingMessage)
+    .toEmail();
 
 DeliveryStatusReport report = notification.getDeliveryStatusReport();
 if (report != null) {

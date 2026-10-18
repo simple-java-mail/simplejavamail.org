@@ -410,8 +410,8 @@ batch.getCompletion().join(); // optional: wait for the whole sequential batch
 			or clustered load balancing, use <a href="#section-reusing-connections">pooled connections</a>.
 		</p>
 		<p>
-			Use <code class="inline language-java">sender.sendMailAndGetReceipt(next)</code> instead when the checkpoint needs provider-neutral submission
-			status, accepted or unsent recipient groups, and any SMTP response exposed by the provider. A failed or partial submission throws
+			Keep the receipt returned by <code class="inline language-java">sender.sendMail(next)</code> when the checkpoint needs provider-neutral submission
+			status, accepted or unsent recipient groups, and any SMTP response exposed by the provider. You can ignore it when completion is enough. A failed or partial submission throws
 			<code class="inline language-java">MailSubmissionException</code> with the same facts, so mark the queue item only after inspecting that outcome.
 		</p>
 	</div>
@@ -789,14 +789,17 @@ observationWorkers.shutdown(); // application owns this executor
         <code class="inline language-java">withExecutorService(...)</code>.
       </p>
       <p class="wide">
-        The older <code class="inline language-java">shutdownConnectionPool()</code> method starts the same cleanup and returns a future for draining the
-        Mailer-owned work and closing the pool. Repeated calls return the same cleanup future. Despite its name, it also works without a connection pool.
+        Use <code class="inline language-java">closeAsync()</code> to start the same cleanup without waiting in that call. Its
+        <code class="inline language-java">CompletableFuture&lt;Void&gt;</code> completes after accepted work and owned resources have finished cleanup,
+        including when there is no connection pool. Repeated calls join the same cleanup operation through independent completion views.
+        Completing or cancelling one of those views does not stop cleanup or affect another caller.
         A successful cleanup does not mean that every send succeeded; those results remain on the individual send futures.
       </p>
       <p class="wide">
         Graceful shutdown does not request cancellation or add a deadline; configured send deadlines still apply. It can wait for slow I/O or an application callback. Call blocking
         <code class="inline language-java">close()</code> from the application's owning thread, not within a send operation or inline observer, which would wait for itself.
       </p>
+        You may start <code class="inline language-java">closeAsync()</code> there, but do not wait for its future from that same send or observer.
     </div>
   </section>
 
