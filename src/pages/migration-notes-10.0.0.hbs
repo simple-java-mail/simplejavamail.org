@@ -61,6 +61,10 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#pool-setting-validation">Replace negative pool settings</a></li>
       <li><a href="#dkim-validation-timing">Handle invalid DKIM header exclusions when signing</a></li>
       <li><a href="#message-snapshots">Stop changing emails through retained lists or arrays</a></li>
+      <li><a href="#operational-snapshots">Configure Mailers through their builders</a></li>
+      <li><a href="#header-replacement">Check custom headers that differ only in capitalization</a></li>
+      <li><a href="#recipient-equality">Check Email equality with repeated recipients</a></li>
+      <li><a href="#eml-export-failures">Handle content failures during email conversion</a></li>
       <li><a href="#address-only-name">Check names when importing only a recipient address</a></li>
       <li><a href="#requested-smime-module">Include S/MIME support when requesting decryption</a></li>
       <li><a href="#async-preparation">Account for validation running during async execution</a></li>
@@ -149,6 +153,45 @@ breadcrumbParent: "/migration-notes.html"
       a replacement instead. A collection change can now throw <code>UnsupportedOperationException</code>, or affect only your detached copy.</p>
     <p>This does not freeze arbitrary attachment sources or forwarded <code>MimeMessage</code> objects. Keep those borrowed resources available
       and stable while sending, converting or serializing the Email.</p>
+  </div></section>
+
+  <h2 id="operational-snapshots">Configure Mailers through their builders</h2>
+  <section><div class="wide">
+    <p>Changing the properties returned by <code>mailerBuilder.getProperties()</code> or
+      <code>mailer.getOperationalConfig().getProperties()</code> now changes only a separate inspection copy. Previously those containers shared
+      mutable storage, so reusing a builder could also change an earlier Mailer's reported configuration.</p>
+    <p>Before construction, use <code>withProperty(...)</code>, <code>withProperties(...)</code> or <code>clearProperties()</code>.
+      If you deliberately need to change an existing Session, use <code>mailer.getSession().getProperties()</code>; its settings and lifetime remain
+      your responsibility. The operational snapshot does not track those later Session changes.</p>
+    <p>Trusted-host arrays and builder inspection lists are also copied. Use <code>trustingSSLHosts(...)</code> to replace the builder's choice
+      rather than changing a retained array or a returned list.</p>
+  </div></section>
+
+  <h2 id="header-replacement">Check custom headers that differ only in capitalization</h2>
+  <section><div class="wide">
+    <p><code>X-Route</code> and <code>x-route</code> now identify the same custom header when composing an Email or applying its templates.
+      A replacing <code>withHeader(..., true)</code> call and an overriding template replace the earlier collection of values regardless of spelling.
+      Previously, different capitalization could leave both values in the message.</p>
+    <p>If you intended multiple values, add them without the replacement flag. Review templates that depended on capitalization to keep a conflicting
+      value. Exact EML submission retains its original bytes.</p>
+  </div></section>
+
+  <h2 id="recipient-equality">Check Email equality with repeated recipients</h2>
+  <section><div class="wide">
+    <p>Email equality now counts repeated recipient entries correctly. An Email addressed to Alice and Bob does not equal one addressed to Alice twice;
+      previously the answer could depend on which Email was on the left of <code>equals(...)</code>.</p>
+    <p>Recipient order is still ignored for equality. Review any deduplication or collection lookup that relied on the incorrect comparison;
+      sending continues to preserve recipient occurrences.</p>
+  </div></section>
+
+  <h2 id="eml-export-failures">Handle content failures during email conversion</h2>
+  <section><div class="wide">
+    <p>If an attachment cannot be read or message content cannot be written when converting an Email to MIME or exporting MIME as EML, the operation
+      now throws a conversion exception in the <code>MailException</code> family with an explanation and the original cause.
+      Previously these failures threw <code>IllegalStateException</code>, sometimes saying <code>"This should never happen"</code>, even for an
+      ordinary unavailable attachment.</p>
+    <p>If your code specifically caught that <code>IllegalStateException</code>, catch <code>MailException</code> around the conversion instead.
+      Keep borrowed attachment sources available until export completes.</p>
   </div></section>
 
   <h2 id="address-only-name">Check names when importing only a recipient address</h2>
