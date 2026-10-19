@@ -55,6 +55,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
       <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
       <li><a href="#copied-template-suppression">Check copies of emails that skip defaults or overrides</a></li>
+      <li><a href="#forwarded-templates">Check forwarded messages in Email templates</a></li>
       <li><a href="#copied-receipt-requests">Check receipt requests on copied emails</a></li>
       <li><a href="#copied-delivery-overrides">Keep test-inbox routing when copying emails</a></li>
       <li><a href="#attachment-reader-ownership">Let attachment convenience readers close their streams</a></li>
@@ -97,6 +98,17 @@ breadcrumbParent: "/migration-notes.html"
     <p><code>EmailProperty.ALL_RECIPIENTS</code> now excludes To, Cc and Bcc template additions together; earlier releases ignored that selector.
       If you used it but still relied on a template supplying recipients, remove the exclusion or select only the recipient types you want to skip.
       Your explicitly supplied recipients and the separately controlled delivery-recipient override are unchanged.</p>
+  </div></section>
+
+  <h2 id="forwarded-templates">Check forwarded messages in Email templates</h2>
+  <section><div class="wide">
+    <p>If an Email defaults or overrides template contains a message to forward, that message now participates in preparation. Previously the
+      template's forwarded message was ignored even though its other fields, such as the subject, could apply. A default fills a missing source;
+      an override replaces the source supplied on the Email.</p>
+    <p>If you depended on the source being ignored, remove it from the template or use
+      <code>dontApplyDefaultValueFor(EmailProperty.MAIL_TO_FORWARD)</code> or
+      <code>dontApplyOverrideValueFor(EmailProperty.MAIL_TO_FORWARD)</code> on that Email. These exclusions preserve a source explicitly supplied on
+      the Email. Subject selection remains independent, and exact EML submission still bypasses ordinary templates.</p>
   </div></section>
 
   <h2 id="copied-receipt-requests">Check receipt requests on copied emails</h2>
