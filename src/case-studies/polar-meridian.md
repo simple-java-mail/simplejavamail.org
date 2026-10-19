@@ -315,9 +315,6 @@ Mailer mailer = composed.mailer;
 EmailPopulatingBuilder attempt = mail.emailBuilder()
     .copying(composed.email)
     .fixingMessageId("<" + randomUUID() + "@mail.polarmeridian.com>");
-if (!composed.email.getOverrideReceivers().isEmpty()) {
-    attempt.withOverrideReceivers(composed.email.getOverrideReceivers());
-}
 Email email = attempt.buildEmail();
 
 MailRehearsal rehearsal = mailer.rehearse(email);
@@ -493,12 +490,12 @@ MailerRegularBuilder<?> configuredMailerBuilder(String host, String username, St
         .trustingSSLHosts()
         .verifyingServerIdentity(true)
         // keep protocol transcripts and log-only message dumps out of production
-        .withDebugLogging(false)
+        .withDebugConfig(SessionDebugConfig.builder().withEnabled(false).build())
         .withTransportModeLoggingOnly(false)
         // reject messages above ten MiB after MIME encoding
         .withMaximumEmailSize(10 * 1024 * 1024)
         // don't occupy a worker indefinitely while waiting for a connection
-        .withConnectionPoolClaimTimeoutMillis(2000)
+        .withConnectionPoolClaimTimeout(Duration.ofSeconds(2))
         // includes preparation and the local queue, not the application's queue
         .withMailSendTimeout(Duration.ofSeconds(15));
 }
@@ -737,7 +734,7 @@ List<Mailer> mailers = new ArrayList<>();
 for (MailerRegularBuilder<?> builder :
         List.of(urgentABuilder, urgentBBuilder, bulkBuilder)) {
     mailers.add(builder
-        .withMailSendResultObserver(observationSink, observationWorkers)
+        .withSendHandlers(MailSendHandlers.builder().withResultObserver(observationSink, observationWorkers).build())
         .buildMailer());
 }
 ```

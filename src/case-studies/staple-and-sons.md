@@ -217,8 +217,8 @@ When the attempt finishes, the completion observer updates that record with the 
 
 ```java
 Mailer mailer = mailerBuilder
-    .withMailSendResultObserver(outcome ->
-        archive.recordOutcome(outcome.getInitialMessageId(), outcome))
+    .withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome ->
+        archive.recordOutcome(outcome.getInitialMessageId(), outcome)).build())
     .buildMailer();
 ```
 
@@ -300,7 +300,7 @@ mailerBuilder
     // no more than two connections to the relay from this pool
     .withConnectionPoolMaxSize(2)
     // give up after two seconds waiting for a pooled connection
-    .withConnectionPoolClaimTimeoutMillis(2000)
+    .withConnectionPoolClaimTimeout(Duration.ofSeconds(2))
     // budget for the send, including preparation and time in the queue
     .withMailSendTimeout(Duration.ofSeconds(30));
 ```

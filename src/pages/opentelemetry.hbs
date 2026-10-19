@@ -46,20 +46,24 @@ description: "Connect real mail sends to your application's traces and metrics, 
     &lt;version&gt;{{site.version}}&lt;/version&gt;
 &lt;/dependency&gt;</code></pre></div>
   </section>
-  <section><div class="wide full-width-example"><pre><code class="language-java">import org.simplejavamail.otel.OtelAdapter;
+  <section><div class="wide full-width-example"><pre><code class="language-java">import org.simplejavamail.api.mailer.config.MailSendTelemetryConfig;
+import org.simplejavamail.otel.OtelAdapter;
 
 Mailer mailer = mail.mailerBuilder()
     .withSMTPServer("relay.example.org", 587, user, password)
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .withMailSendTelemetry(OtelAdapter.wrap(openTelemetry))
+    .withTelemetryConfig(MailSendTelemetryConfig.builder()
+        .withEnabled(true)
+        .withIntegration(OtelAdapter.wrap(openTelemetry))
+        .build())
     .buildMailer();
 
 mailer.async().sendMail(email);</code></pre></div></section>
   <section><div class="wide">
     <p>The adapter retains your exact OpenTelemetry instance in an immutable handle that is safe to reuse. Wrapping it starts no telemetry work
       and does not install a global instance. Configure sending preferences through the Mailer builder or properties.
-      Registering another handle replaces it and enables telemetry;
-      <code>getMailSendTelemetry()</code> returns the supplied value. Each Mailer resolves its own configuration.
+      <code>withIntegration(...)</code> selects the handle without changing activation; choose <code>withEnabled(true)</code> to enable it.
+      <code>mailerBuilder.getTelemetryConfig().getIntegration()</code> returns the supplied handle. Each Mailer resolves its own configuration.
       Progress and result observers remain independently configurable.</p>
     <p>For property-driven applications, configure this once in the factory's captured sources:</p>
     <pre><code class="language-properties">simplejavamail.telemetry.enabled=true
@@ -73,12 +77,16 @@ Mailer second = mail.mailerBuilder().withSMTPServer("relay-b.example.org", 587).
 
 // Replace the inherited choice for this Mailer, unless the configuration owner locked it.
 Mailer quiet = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587)
-    .withMailSendTelemetryEnabled(false).buildMailer();</code></pre>
-    <p><code>withMailSendTelemetryEnabled(false)</code> disables instrumentation without discarding a supplied integration;
-      <code>resetMailSendTelemetryEnabled()</code> explicitly chooses the built-in false default.
-      <code>clearMailSendTelemetry()</code> removes a supplied integration and restores activation from captured properties,
-      so clearing does not mean off when those properties enable it. Read <code>getOperationalConfig().isMailSendTelemetryEnabled()</code>
-      for the resolved choice. A conflicting <code>simplejavamail.locked.telemetry.enabled</code> value rejects construction.</p>
+    .withTelemetryConfig(MailSendTelemetryConfig.builder().withEnabled(false).build()).buildMailer();</code></pre>
+    <p>On <code>MailSendTelemetryConfig.builder()</code>, <code>withEnabled(false)</code> disables instrumentation and
+      <code>resetEnabled()</code> explicitly chooses the built-in false default. <code>clearIntegration()</code> removes the supplied handle
+      without changing activation; enabled telemetry then uses the application's global instance.
+      <code>useConfiguredEnabled()</code> restores activation from the factory snapshot.</p>
+    <p>Supplying a new telemetry group replaces its supplied choices; omitted fields inherit the factory snapshot, not the previous group.
+      To edit an existing group, use <code>mailerBuilder.getTelemetryConfig().toBuilder()</code> and supply the rebuilt group.
+      <code>useConfiguredTelemetryConfig()</code> restores the whole group to snapshot inheritance.
+      Read <code>mailer.getOperationalConfig().getTelemetryConfig().getEnabled()</code> for the resolved choice.
+      A conflicting <code>simplejavamail.locked.telemetry.enabled</code> value rejects construction.</p>
     <p>For SDK and exporter setup, follow the <a href="https://opentelemetry.io/docs/languages/java/sdk/">OpenTelemetry Java SDK guidance</a>.
       Prefer application-owned batching: custom processors can run synchronously, so telemetry is not guaranteed to be free of delay.</p>
   </div></section>
@@ -165,8 +173,11 @@ simplejavamail.mail.send.active             0</code></pre>
   <section><div class="wide">
     <p>SMTP host and port are excluded by default. Allow them when your trace backend should identify the selected relay:</p>
     <pre><code class="language-java">mailerBuilder
-    .withMailSendTelemetry(OtelAdapter.wrap(openTelemetry))
-    .withMailSendTelemetrySmtpEndpointAttributes(true);</code></pre>
+    .withTelemetryConfig(MailSendTelemetryConfig.builder()
+        .withEnabled(true)
+        .withIntegration(OtelAdapter.wrap(openTelemetry))
+        .withSmtpEndpointAttributes(true)
+        .build());</code></pre>
     <p>This permits bounded <code>server.address</code> and <code>server.port</code> attributes on submission spans only when the actual transport exposes them.
       A missing port remains missing; it is not copied from the initiating Mailer's settings or guessed from a protocol default.</p>
     <p>The same permission can come from captured configuration:</p>
@@ -177,12 +188,12 @@ simplejavamail.locked.telemetry.smtp.endpointattributes=false</code></pre>
     <p>The two lines illustrate different choices; a locked value wins over its ordinary counterpart.
       An explicit fluent choice overrides an ordinary property, but a conflicting lock rejects Mailer construction.</p>
     <ul>
-      <li><code>resetMailSendTelemetrySmtpEndpointAttributes()</code> explicitly chooses the built-in false value on the builder.</li>
-      <li><code>clearMailSendTelemetrySmtpEndpointAttributes()</code> restores the captured property's value.</li>
-      <li><code>isMailSendTelemetrySmtpEndpointAttributesEnabled()</code> reads the builder's current permission.</li>
-      <li><code>mailer.getOperationalConfig().isMailSendTelemetrySmtpEndpointAttributesEnabled()</code> describes the resolved permission.</li>
+      <li><code>resetSmtpEndpointAttributes()</code> on the telemetry group builder explicitly chooses the built-in false value.</li>
+      <li><code>useConfiguredSmtpEndpointAttributes()</code> restores inheritance from the captured property.</li>
+      <li><code>getSmtpEndpointAttributes()</code> reads the group's supplied permission; null means inherit.</li>
+      <li><code>mailer.getOperationalConfig().getTelemetryConfig().getSmtpEndpointAttributes()</code> describes the resolved permission.</li>
     </ul>
-    <p>Each Mailer has its own permission. Replacing or clearing a telemetry handle leaves that setting alone,
+    <p>Each Mailer has its own permission. Editing or clearing the handle on the group's <code>toBuilder()</code> leaves that setting alone,
       and reusing a handle with another Mailer does not carry over the first Mailer's choice.</p>
     <p>Endpoint permission alone does not activate telemetry. Activation has its own <code>simplejavamail.telemetry.enabled</code> property
       and independent locked counterpart. A lock on activation restricts this Mailer's choice; it does not install an SDK or guarantee export.</p>
@@ -209,8 +220,8 @@ MailSendTelemetry mailTelemetry(OpenTelemetry openTelemetry) {
       for activation. The standalone CLI includes the optional module, but no SDK or exporter setup.</p>
     <p>With the OpenTelemetry Java instrumentation agent, property activation uses its installed global instance. You can also pass that instance explicitly, following
       <a href="https://opentelemetry.io/docs/languages/java/api/">OpenTelemetry's manual-instrumentation guidance</a>:</p>
-    <pre><code class="language-java">mailerBuilder.withMailSendTelemetry(
-    OtelAdapter.wrap(GlobalOpenTelemetry.get()));</code></pre>
+    <pre><code class="language-java">mailerBuilder.withTelemetryConfig(MailSendTelemetryConfig.builder().withIntegration(
+    OtelAdapter.wrap(GlobalOpenTelemetry.get())).withEnabled(true).build());</code></pre>
     <p>The explicit registration above selects the same source that property-only activation uses.
       Do not create a competing SDK merely for mail when the agent already owns one. The agent remains optional.
       SJM's logical/submission spans can coexist with legitimate lower-level spans from other instrumentation; arbitrary vendor duplicate suppression is not promised.</p>

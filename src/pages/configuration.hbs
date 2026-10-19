@@ -277,9 +277,9 @@ mail.mailerBuilder(session)
         The mailer builder also covers validation, diagnostics, timeouts, local binding, shared signing defaults, and
         <a href="features.html#section-extension-points">extension points</a>.
       </p>
-      <p><code>withSessionTimeout(1000)</code> sets connection, read and write timeouts together, in milliseconds. On a caller-supplied Session,
+      <p><code>withSessionTimeout(Duration.ofSeconds(1))</code> sets connection, read and write timeouts together. On a caller-supplied Session,
         leaving that setter unused preserves all three original values. Inspect the common configured value through
-        <code>mailer.getOperationalConfig().getSessionTimeout()</code>. It returns an <code>Integer</code>, or <code>null</code> when the values
+        <code>mailer.getOperationalConfig().getSessionTimeout()</code>. It returns a <code>Duration</code>, or <code>null</code> when the values
         differ, are missing or cannot be interpreted. Null does not mean unlimited, and the getter does not guess provider defaults.
         These inspection values describe construction; they do not track direct Session mutations after the Mailer is built.</p>
     </div>
@@ -296,14 +296,19 @@ mailerBuilder.withMaximumEmailSize(10_000_000);</code></pre>
         see <a href="/analyzing-send-results.html#section-message-size">message size diagnostics</a>.</p>
 		<pre><code class="small">// make the underlying Jakarta Mail Session produce debug output
 mailerBuilder
-    .withDebugLogging(true)
-    .withDebugOutput(SessionDebugOutput.SLF4J); // STDOUT, STDERR or SLF4J
+    .withDebugConfig(SessionDebugConfig.builder()
+        .withEnabled(true)
+        .withOutput(SessionDebugOutput.SLF4J) // STDOUT, STDERR or SLF4J
+        .build());
 </code></pre>
-      <p>When reusing a builder, <code>clearDebugPrinter()</code> or <code>clearDebugOutput()</code> restores the output target from its factory's
-        captured configuration, or leaves the Session's own output unchanged when none was configured. Both clear the same output selection;
-        neither turns logging off or closes a stream you supplied. Use <code>getDebugOutput()</code> to inspect a built-in selection
-        (<code>null</code> means no built-in selection), and <code>getDebugPrinter()</code> for the selected stream.
-        <code>resetDebugLogging()</code> restores the library's disabled logging default.</p>
+      <p><code>SessionDebugConfig</code> keeps the enabled flag and output selection together. On its builder, <code>withOutput(...)</code>
+        and <code>withPrinter(...)</code> select one destination. <code>useConfiguredOutput()</code> restores the factory's captured output
+        selection, leaving a supplied Session's output unchanged when no output was configured. Borrowed streams are never closed.</p>
+      <p><code>getEnabled()</code>, <code>getOutput()</code> and <code>getPrinter()</code> inspect supplied choices; null means no explicit choice.
+        <code>resetEnabled()</code> chooses the built-in false default, while <code>useConfiguredEnabled()</code> restores inheritance.
+        Replace the complete group with <code>withDebugConfig(...)</code>, edit existing choices through <code>getDebugConfig().toBuilder()</code>,
+        or restore all inherited choices with <code>useConfiguredDebugConfig()</code>. Omitted fields inherit the factory snapshot.
+        <code>mailer.getOperationalConfig().getDebugConfig()</code> exposes the resolved choices.</p>
       <pre><code class="small">// skip actually sending email, just log it
 mailerBuilder.withTransportModeLoggingOnly(true);
 </code></pre>
@@ -376,10 +381,10 @@ mailerBuilder.verifyingServerIdentity(false);
 // restore the secure default
 mailerBuilder.resetVerifyingServerIdentity();
 </code></pre>
-<pre><code class="small">// pooled-delivery executor defaults
+<pre><code class="small">// explicit worker settings apply with or without the batch module
 mailerBuilder.withThreadPoolSize(3);
-// 0: core threads stay alive, !0: threads die after delay (default 1)
-mailerBuilder.withThreadPoolKeepAliveTime(5000);
+// Duration.ZERO: core threads stay alive; positive values retire idle workers
+mailerBuilder.withThreadPoolKeepAliveTime(Duration.ofSeconds(5));
 
 // optional bound on waiting async tasks, separate from worker count
 mailerBuilder.withAsyncQueueCapacity(100);
@@ -391,8 +396,11 @@ mailerBuilder.resetAsyncQueue()
     .withExecutorService(new MyAwesomeCustomThreadPoolExecutor());
 </code></pre>
 		  <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
-mailerBuilder.withSessionTimeout(10 * 1000); // 10 seconds for quick disconnect
+mailerBuilder.withSessionTimeout(Duration.ofSeconds(10)); // 10 seconds for quick disconnect
 </code></pre>
+      <p>Unspecified worker settings retain the one-worker default without batch and ten-worker default with batch.
+        Java session, executor and pool time settings use <code>Duration</code>; the corresponding properties and CLI arguments still use
+        numeric milliseconds. These migrated settings reject fractional milliseconds and overflow. Application-owned executors keep their own tuning.</p>
       <p>When write timeouts are enabled, Simple Java Mail shares one background timeout-monitoring thread across the connections from each Angus Session
         it creates, rather than using a thread for every connection. This thread watches for writes that take too long; it does not send emails.
         It stops when the last connection is closed. Returning a connection to the pool keeps it open, so the monitoring thread stays available too.
@@ -928,8 +936,8 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 			while the Email is being used; applying templates does not read or copy its body. Exact EML still bypasses ordinary templates.
 		</p>
 		<p class="wide">
-			Repeated <code>withEmailDefaults(...)</code> calls replace the template. <code>clearEmailDefaults()</code> restores the snapshot-derived
-			defaults; it does not switch them off. Use an empty explicit template to omit all default message settings, or the per-email opt-outs below.
+			Repeated <code>withEmailDefaults(...)</code> calls replace the template. <code>useConfiguredEmailDefaults()</code> restores the snapshot-derived
+			defaults. <code>withoutEmailDefaults()</code> omits ordinary message defaults while retaining configuration locks; per-email opt-outs remain available below.
 		</p>
 		<p class="wide">
 			To remove only default DKIM signing while preserving other property defaults, materialize the defaults, copy that Email, call
@@ -963,6 +971,10 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 			<p>Use <code>EmailProperty.ALL_RECIPIENTS</code> to exclude ordinary To, Cc and Bcc additions together, or choose one recipient type
 				to exclude only that type. Your Email's own recipients remain. Delivery-recipient overrides use the separate
 				<code>OVERRIDE_RECEIVERS</code> selector, and none of these exclusions removes recipients required by locked properties.</p>
+			<p>Repeated suppression calls accumulate exclusions; an empty call changes nothing. Use <code>allowDefaultValueFor(...)</code>
+				or <code>allowOverrideValueFor(...)</code> to remove selected exclusions, and <code>clearDefaultValueSuppressions()</code>
+				or <code>clearOverrideValueSuppressions()</code> to remove all exclusions in that family. These edits leave global
+				<code>ignoringDefaults()</code>/<code>ignoringOverrides()</code> choices and configuration locks unchanged.</p>
 		</div>
 
 		<div class="side">

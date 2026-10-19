@@ -43,7 +43,7 @@ description: "Install Simple Java Mail from Maven Central, send a first email, v
 
 Email email = mail.emailBuilder().startingBlank()
     .from("Sender", "sender@example.org")
-    .withRecipients(mail.recipientBuilder().withName("Recipient").withAddress("recipient@example.net").withType(Message.RecipientType.TO).build())
+    .to("Recipient", "recipient@example.net")
     .withSubject("It works")
     .withPlainText("Your first Simple Java Mail message.")
     .buildEmail();</code></pre>
@@ -81,7 +81,7 @@ mailer.sync().sendMail(email);</code></pre>
         </article>
         <article>
           <h3>Validate the message</h3>
-          <p>Check the supplied email's sender, recipients, addresses, and injection-sensitive values without submitting it.</p>
+          <p>Prepare the complete email, including defaults, signing and size checks, without submitting it. Validation returns normally or throws.</p>
           <pre><code class="language-java">mailer.validate(email);</code></pre>
         </article>
       </div>

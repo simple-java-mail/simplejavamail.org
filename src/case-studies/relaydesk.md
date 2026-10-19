@@ -274,8 +274,8 @@ static Mailer createMailer(SimpleJavaMail mail, UUID clusterKey,
         .withClusterKey(clusterKey)
         .withConnectionPoolCoreSize(0) // no need to stay connected while quiet
         .withConnectionPoolMaxSize(maxConnectionsPerRelay) // within Kestrel's connection allocation
-        .withConnectionPoolExpireAfterMillis(30_000) // retire idle connections
-        .withConnectionPoolClaimTimeoutMillis(2_000) // don't wait forever for a pool
+        .withConnectionPoolExpireAfter(Duration.ofSeconds(30)) // retire idle connections
+        .withConnectionPoolClaimTimeout(Duration.ofSeconds(2)) // don't wait forever for a pool
         .withMailSendTimeout(Duration.ofSeconds(20)) // bound each send attempt
         .withThreadPoolSize(asyncWorkersPerMailer) // operations executing, including preparation
         .withAsyncQueueCapacity(waitingOperationsPerMailer) // waiting in memory, not the durable backlog
@@ -283,7 +283,7 @@ static Mailer createMailer(SimpleJavaMail mail, UUID clusterKey,
         .withRecipientRateLimit(recipientsPerPeriod, sendingRatePeriod) // this instance's share of Kestrel's rate
         .withRateLimitGroup(sendingRateGroup) // both approved relays share the local limit
         .withRateLimitBurstsAllowed(false) // pace the backlog after recovery
-        .withMailSendResultObserver(observer, observerWorkers)
+        .withSendHandlers(MailSendHandlers.builder().withResultObserver(observer, observerWorkers).build())
         .buildMailer();
 }
 ```
@@ -366,9 +366,6 @@ EmailPopulatingBuilder protectedReplyBuilder = mail.emailBuilder()
     .ignoringDefaults().ignoringOverrides() // don't apply them again after key selection
     .signWithOpenPgp(keys.requireSigningConfig(customerId))
     .encryptWithOpenPgp(encryption.build());
-if (!effectiveReply.getOverrideReceivers().isEmpty()) {
-    protectedReplyBuilder.withOverrideReceivers(effectiveReply.getOverrideReceivers());
-}
 Email protectedReply = protectedReplyBuilder.buildEmail();
 ```
 
