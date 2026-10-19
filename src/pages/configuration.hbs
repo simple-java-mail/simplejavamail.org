@@ -346,6 +346,9 @@ mailer.getSession().getProperties().setProperty("mail.smtp.timeout", "10000");
       <p>The builder and <code>mailer.getOperationalConfig()</code> return separate property containers for inspection. Editing those returned
         containers does not reconfigure either object. Use builder methods before construction, or explicitly access the Session for an advanced
         runtime change. Object-valued provider settings, such as a socket factory, retain their supplied identity.</p>
+      <p><code>mailerBuilder.withProperties(properties)</code> copies only entries stored directly in that Java <code>Properties</code> object,
+        not values inherited from its defaults. Add any inherited value explicitly with <code>withProperty(...)</code> if the Session needs it.
+        This differs from <code>ConfigLoader.builder().withProperties(...)</code>, which includes inherited string defaults when loading factory settings.</p>
       <p>For recipient-rejection handling, prefer the Email API over a raw provider property:
         <code>emailBuilder.withSendingToAcceptedRecipients(true)</code> continues for accepted recipients, and <code>false</code> withholds content after
         a known recipient rejection. Configure <code>simplejavamail.defaults.sendtoacceptedrecipients</code> for an ordinary Email default, or
@@ -951,6 +954,9 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 			<p>
 				You can even exclude specific fields from the defaults or overrides if you want to make very specific exceptions.
 			</p>
+			<p>Use <code>EmailProperty.ALL_RECIPIENTS</code> to exclude ordinary To, Cc and Bcc additions together, or choose one recipient type
+				to exclude only that type. Your Email's own recipients remain. Delivery-recipient overrides use the separate
+				<code>OVERRIDE_RECEIVERS</code> selector, and none of these exclusions removes recipients required by locked properties.</p>
 		</div>
 
 		<div class="side">

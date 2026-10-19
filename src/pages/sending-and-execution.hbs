@@ -741,6 +741,10 @@ observationWorkers.shutdown(); // application owns this executor
         Live-progress reporting is separate: shutdown discards pending updates after sending drains, without waiting for or interrupting progress callbacks.
       </p>
       <p class="wide">
+        Once shutdown starts, connection tests and probes cannot open another connection. An asynchronous connection test checks again when its
+        task starts, in case the Mailer closed while it waited. Build a new Mailer if you need to reconnect after closing this one.
+      </p>
+      <p class="wide">
         Enabled write timeouts also need a background monitoring thread. Connections from each Angus Session created by Simple Java Mail share that thread;
         it stops when the last connection closes, not when a reusable connection goes back to the pool. You do not need to manage it yourself.
         If you supplied your own timeout scheduler, it remains yours to close. See the
