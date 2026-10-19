@@ -922,6 +922,12 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 			An explicit recipient S/MIME certificate still wins over the Email-level fallback, even when that fallback came from an override template.
 		</p>
 		<p class="wide">
+			A template can also supply the message being forwarded. A default fills a missing forwarded message; an override replaces the one supplied
+			on the Email. Use <code>EmailProperty.MAIL_TO_FORWARD</code> with the per-field opt-outs below to skip that template contribution.
+			The subject still follows its own precedence. The selected <code>MimeMessage</code> remains borrowed, so keep it available and unchanged
+			while the Email is being used; applying templates does not read or copy its body. Exact EML still bypasses ordinary templates.
+		</p>
+		<p class="wide">
 			Repeated <code>withEmailDefaults(...)</code> calls replace the template. <code>clearEmailDefaults()</code> restores the snapshot-derived
 			defaults; it does not switch them off. Use an empty explicit template to omit all default message settings, or the per-email opt-outs below.
 		</p>
