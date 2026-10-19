@@ -618,7 +618,7 @@ currentMailerBuilder
 				</p>
 				<p>
 					Likewise, exclude a header only when that specific relay rewrites it. <code class="inline language-java">From</code>
-					is mandatory in a DKIM signature, so Simple Java Mail rejects it as an exclusion.
+					is mandatory in a DKIM signature, so the DKIM module rejects that exclusion when signing, before reading message content.
 				</p>
 				<p>
 					Inspect a builder's choices before building it, or clear just an optional preference when reusing it. For example,

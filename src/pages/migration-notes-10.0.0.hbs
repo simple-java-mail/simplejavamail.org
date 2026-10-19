@@ -57,6 +57,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#copied-receipt-requests">Check receipt requests on copied emails</a></li>
       <li><a href="#attachment-reader-ownership">Let attachment convenience readers close their streams</a></li>
       <li><a href="#pool-setting-validation">Replace negative pool settings</a></li>
+      <li><a href="#dkim-validation-timing">Handle invalid DKIM header exclusions when signing</a></li>
       <li><a href="#message-snapshots">Stop changing emails through retained lists or arrays</a></li>
       <li><a href="#address-only-name">Check names when importing only a recipient address</a></li>
       <li><a href="#requested-smime-module">Include S/MIME support when requesting decryption</a></li>
@@ -109,11 +110,21 @@ breadcrumbParent: "/migration-notes.html"
 
   <h2 id="pool-setting-validation">Replace negative pool settings</h2>
   <section><div class="wide">
-    <p>Negative pool sizes and timeouts are now rejected consistently instead of being accepted on some configuration paths or failing later
-      inside the pool. Use a core size of <code>0</code> to stop keeping a minimum number of connections open, a claim timeout of <code>0</code> for an immediate claim,
+    <p>When connection pooling is used, negative pool sizes and timeouts are now rejected consistently instead of being accepted on some configuration paths or failing later
+      inside the pool. The batch module checks the effective settings before creating pool resources. Without that module, pool settings are unused.
+      Use a core size of <code>0</code> to stop keeping a minimum number of connections open, a claim timeout of <code>0</code> for an immediate claim,
       or an idle expiry of <code>0</code> to disable idle expiration.</p>
     <p>The maximum size must be at least <code>1</code>, and the effective core size cannot exceed it after cluster overrides are applied.
       A configured creation-age expiry must remain positive; clear that setting to disable it.</p>
+  </div></section>
+
+  <h2 id="dkim-validation-timing">Handle invalid DKIM header exclusions when signing</h2>
+  <section><div class="wide">
+    <p>If your DKIM configuration excludes the <code>From</code> header, that remains an error: a valid DKIM signature must cover it.
+      Previously, creating the configuration failed immediately. The check now runs in the DKIM module when a message is signed,
+      during conversion, rehearsal or sending. Configuration objects only retain the supplied choices.</p>
+    <p>Remove <code>From</code> from the exclusion list. If your code catches configuration errors only around the builder, also handle
+      signing failures at the operation that uses it. An asynchronous send reports the failure through its completion handle.</p>
   </div></section>
 
   <h2 id="message-snapshots">Stop changing emails through retained lists or arrays</h2>
