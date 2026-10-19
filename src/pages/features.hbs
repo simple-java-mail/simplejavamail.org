@@ -1223,6 +1223,9 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
         Sometimes you need extra headers in your email because your email server, recipient server or your email client needs it. Or perhaps you have
         a proxy or monitoring setup in between mail servers. Whatever the case, adding headers is easy.
       </p>
+      <p>Header names ignore capitalization. To replace all earlier values for a header, pass <code>true</code> as the third argument:
+        <code>withHeader("x-route", "new route", true)</code> also replaces a previously configured <code>X-Route</code>.
+        Without that flag, calls add values. Email templates use the same header identity when applying defaults and overrides.</p>
     </div>
 
     <div class="side">

@@ -424,6 +424,9 @@ Transport security:
         <code class="inline language-java">SimpleJavaMailConfig</code> getters and <code class="inline language-java">asMap()</code> return real values,
         including credentials, so do not log those directly.
       </p>
+      <p>Rendering a Mailer or its operational configuration redacts recognized secret property names, including advanced Jakarta Mail passwords
+        and tokens. Explicit property getters still return actual values. The operational snapshot stays as it was when the Mailer was built;
+        changing a builder afterwards or editing a returned property container cannot alter it.</p>
     </div>
 
     <div class="side">

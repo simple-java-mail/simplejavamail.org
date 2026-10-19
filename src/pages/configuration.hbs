@@ -311,6 +311,9 @@ mailerBuilder.withTransportModeLoggingOnly(true);
 mailerBuilder.withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
 mailerBuilder.withCustomSSLFactoryInstance(mySSLFactoryInstance);
 </code></pre>
+      <p>An instance takes precedence over a class name. Inspect it with <code>getCustomSSLFactoryInstance()</code>, or inspect the class name with
+        <code>getCustomSSLFactory()</code>. Use <code>clearCustomSSLFactoryInstance()</code> to return to the configured class, or
+        <code>clearCustomSSLFactoryClass()</code> to remove that class choice. Clearing one leaves the other intact; configuration locks still apply.</p>
       <p>If your custom factory fails, the connection attempt fails too when Simple Java Mail creates the Angus Session. It does not quietly switch to
         the standard factory, which might not use your client certificate or custom certificate checks. To deliberately allow that fallback, use the
         existing advanced property:</p>
@@ -340,6 +343,9 @@ mailerBuilder.withProperty("mail.smtp.timeout", 10000);
 // or directly modify the internal Session instance:
 mailer.getSession().getProperties().setProperty("mail.smtp.timeout", "10000");
 </code></pre>
+      <p>The builder and <code>mailer.getOperationalConfig()</code> return separate property containers for inspection. Editing those returned
+        containers does not reconfigure either object. Use builder methods before construction, or explicitly access the Session for an advanced
+        runtime change. Object-valued provider settings, such as a socket factory, retain their supplied identity.</p>
       <p>For recipient-rejection handling, prefer the Email API over a raw provider property:
         <code>emailBuilder.withSendingToAcceptedRecipients(true)</code> continues for accepted recipients, and <code>false</code> withholds content after
         a known recipient rejection. Configure <code>simplejavamail.defaults.sendtoacceptedrecipients</code> for an ordinary Email default, or
@@ -536,6 +542,8 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
         supplied stream immediately. Maps, <code class="inline language-java">Properties</code>, and custom sources are sampled at load time. The snapshot
         detaches their values before returning.
       </p>
+      <p>A Java <code>Properties</code> input includes its inherited string defaults, including locked settings. Direct entries take precedence
+        over those defaults, and the combined input is sampled again on each <code>load()</code>. The usual source ordering and validation still apply.</p>
     </div>
   </section>
 
