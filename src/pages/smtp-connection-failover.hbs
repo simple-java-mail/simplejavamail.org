@@ -104,7 +104,10 @@ try (Mailer alternative = mail.mailerBuilder()
         <tr><td><code>withFailoverOnCertificateVerificationFailure(true)</code></td><td>false</td><td>Allow another destination after certificate or server-identity checks fail</td></tr>
       </tbody></table></div>
     <p>Every policy setting has a matching reset method. Read the resolved policy through
-      <code>mailer.getOperationalConfig().getFailoverPolicy()</code>; it is absent when no relationship is configured.</p>
+      <code>mailer.getOperationalConfig().getFailoverPolicy()</code>; it is absent when no relationship is configured.
+      Before building, <code>mailerBuilder.getFailoverMailer()</code> returns the directly supplied Mailer and
+      <code>getFailoverPolicy()</code> returns the stored policy. Inspecting a named destination does not create it, so its Mailer getter remains
+      <code>null</code>.</p>
     <p>Extra connection attempts don't skip recovery steps. With three attempts and a 30-second initial interval, the first recheck
       is still due 30 seconds after the last failed attempt. A failed recheck increases the next interval once, even if it tried connecting three times.</p>
     <p>For example, an expired certificate on A need not stop mail if your deployment permits another independently trusted relay.
