@@ -299,6 +299,11 @@ mailerBuilder
     .withDebugLogging(true)
     .withDebugOutput(SessionDebugOutput.SLF4J); // STDOUT, STDERR or SLF4J
 </code></pre>
+      <p>When reusing a builder, <code>clearDebugPrinter()</code> or <code>clearDebugOutput()</code> restores the output target from its factory's
+        captured configuration, or leaves the Session's own output unchanged when none was configured. Both clear the same output selection;
+        neither turns logging off or closes a stream you supplied. Use <code>getDebugOutput()</code> to inspect a built-in selection
+        (<code>null</code> means no built-in selection), and <code>getDebugPrinter()</code> for the selected stream.
+        <code>resetDebugLogging()</code> restores the library's disabled logging default.</p>
       <pre><code class="small">// skip actually sending email, just log it
 mailerBuilder.withTransportModeLoggingOnly(true);
 </code></pre>

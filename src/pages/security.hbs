@@ -620,6 +620,14 @@ currentMailerBuilder
 					Likewise, exclude a header only when that specific relay rewrites it. <code class="inline language-java">From</code>
 					is mandatory in a DKIM signature, so Simple Java Mail rejects it as an exclusion.
 				</p>
+				<p>
+					Inspect a builder's choices before building it, or clear just an optional preference when reusing it. For example,
+					<code>clearSigningAlgorithm()</code>, <code>clearHeaderCanonicalization()</code> and
+					<code>clearExcludedHeadersFromDkimDefaultSigningList()</code> leave the key and domain untouched.
+					S/MIME offers <code>clearSignatureAlgorithm()</code>, <code>clearKeyEncapsulationAlgorithm()</code> and
+					<code>clearCipherAlgorithm()</code>. Clearing restores the downstream library's choice rather than selecting another algorithm.
+					Keep these objects and their serialized forms private even though automatic rendering hides known key material.
+				</p>
 			</div>
 			<div class="side">
 <pre><code class="small">DkimConfig.builder()

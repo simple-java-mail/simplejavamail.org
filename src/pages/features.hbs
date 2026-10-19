@@ -471,7 +471,7 @@ Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
   {{#> components/feature-heading-h3 core=true}}Authentication and OAuth2 support{{/components/feature-heading-h3}}
   <section>
 	  <p class="wide">
-		  Use <code class="inline language-java">SimpleJavaMail.mailerBuilder()</code> to define server properties such as host, port, username, and password.
+		  Use <code class="inline language-java">mail.mailerBuilder()</code> on your configured <code>SimpleJavaMail</code> instance to define server properties such as host, port, username, and password.
 	  </p>
 	  <p class="wide">
 		  Simple Java Mail supports plain SMTP (default, but not recommended), SMTPS (legacy SSL) or TLS (recommended). The last authentication option to join the family
