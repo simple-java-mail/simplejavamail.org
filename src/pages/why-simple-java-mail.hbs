@@ -44,11 +44,11 @@ showOpenSourceBadges: true
 
 Email email = mail.emailBuilder().startingBlank()
     .from("Sender", "sender@example.org")
-    .withRecipients(recipient)
+    .to("reader@example.net")
     .withSubject("Quarterly report")
     .withPlainText("Report attached.")
     .withHTMLText("&lt;p&gt;Report &lt;b&gt;attached&lt;/b&gt;.&lt;/p&gt;")
-    .withAttachment("report.pdf", reportData)
+    .withAttachment(Path.of("report.pdf"))
     .buildEmail();</code></pre>
         </div>
       </div>

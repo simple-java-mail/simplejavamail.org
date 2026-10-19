@@ -78,9 +78,9 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
   <section>
     <div class="view">
       <p>
-        Every single-email send produces a receipt. <code>mailer.sync().sendMail(email)</code> returns it directly; ignore it when only completion matters. It follows the ordinary synchronous send
+        A successful single-email send returns a receipt. <code>mailer.sync().sendMail(email)</code> returns it directly; ignore it when only completion matters. It follows the ordinary synchronous send
         path, but returns a <code>MailSubmissionReceipt</code>. A failed or partial submission throws <code>MailSubmissionException</code> instead;
-        <code>getSubmissionReceipt()</code> gives you the facts from that same attempt. The exception's <code>getStatus()</code> delegates to the
+        <code>getSubmissionReceipt()</code> returns an Optional containing the facts from that same attempt. The exception's <code>getStatus()</code> delegates to the
         receipt, and <code>getCause()</code> retains the original Jakarta Mail failure.
       </p>
       <p>
@@ -98,10 +98,20 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
 try {
     receipt = mailer.sync().sendMail(email);
 } catch (MailSubmissionException failure) {
-    receipt = failure.getSubmissionReceipt();
+    receipt = failure.getSubmissionReceipt().orElseThrow();
 }
 
 printReceipt(receipt);</code></pre>
+      <p>For one failure boundary covering submission, timeout, cancellation and per-email cleanup, catch <code>MailSendException</code>.
+        Its <code>Optional&lt;MailSubmissionReceipt&gt;</code> exposes whatever submission facts were available. A <code>MailSendCleanupException</code>
+        can retain an accepted receipt even though cleanup failed; do not turn that into an automatic resend. Preparation and admission failures
+        keep their existing exception types, and a connection-scope batch cleanup failure cannot stand in for one email's receipt.</p>
+<pre><code class="language-java small">try {
+    printReceipt(mailer.sync().sendMail(email));
+} catch (MailSendException failure) {
+    failure.getSubmissionReceipt().ifPresent(MyDiagnostics::printReceipt);
+    recordFailure(failure);
+}</code></pre>
     </div>
   </section>
   <section>
@@ -174,7 +184,7 @@ printReceipt(receipt);</code></pre>
 try {
     receipt = mailer.sync().sendMail(email);
 } catch (MailSubmissionException failure) {
-    receipt = failure.getSubmissionReceipt();
+    receipt = failure.getSubmissionReceipt().orElseThrow();
 }
 
 System.out.println("Submission: " + receipt.getStatus());
@@ -208,11 +218,11 @@ SMTP reply present: false</code></pre>
         exists do not enter this callback's <code>ifPresent</code> block:</p>
     </div>
     <div class="wide full-width-example">
-<pre><code class="language-java small">mailerBuilder.withMailSendResultObserver(outcome -&gt;
+<pre><code class="language-java small">mailerBuilder.withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -&gt;
     outcome.getSubmissionReceipt().ifPresent(receipt -&gt;
         System.out.printf("%s: content=%s bytes, server limit=%s bytes%n",
             receipt.getStatus(), receipt.getMessageSize(),
-            receipt.getServerMaximumMessageSize())));</code></pre>
+            receipt.getServerMaximumMessageSize()))).build());</code></pre>
 <pre><code class="language-text small">ACCEPTED: content=3250 bytes, server limit=10000000 bytes
 REJECTED: content=12345678 bytes, server limit=10000000 bytes</code></pre>
     </div>
@@ -251,7 +261,7 @@ Email email = mail.emailBuilder().startingBlank()
 try {
     printReceipt(mailer.sync().sendMail(email));
 } catch (MailSubmissionException failure) {
-    printReceipt(failure.getSubmissionReceipt());
+    failure.getSubmissionReceipt().ifPresent(MyDiagnostics::printReceipt);
 }
 
 // Use false instead to stop after a recipient rejection.
@@ -568,8 +578,8 @@ Retry: DUPLICATE_RISK</code></pre>
         while (cause instanceof CompletionException &amp;&amp; cause.getCause() != null) {
             cause = cause.getCause();
         }
-        if (cause instanceof MailSubmissionException) {
-            printReceipt(((MailSubmissionException) cause).getSubmissionReceipt());
+        if (cause instanceof MailSendException) {
+            ((MailSendException) cause).getSubmissionReceipt().ifPresent(MyDiagnostics::printReceipt);
         } else {
             System.out.println("Failed without a submission receipt: "
                 + cause.getClass().getSimpleName());
@@ -583,8 +593,9 @@ Retry: DUPLICATE_RISK</code></pre>
   <section>
     <div class="view">
       <p>
-        If you want one reporting point for ordinary sends, asynchronous sends and batches, configure <code>withMailSendResultObserver(...)</code> on
-        the builder. Its <code>MailSendResultObserver.onMailSendCompleted(MailSendOutcome)</code> callback receives the whole attempt, including preparation
+        If you want one reporting point for ordinary sends, asynchronous sends and batches, configure <code>withResultObserver(...)</code> on
+        <code>MailSendHandlers.builder()</code> and supply the group with <code>withSendHandlers(...)</code>. Its
+        <code>MailSendResultObserver.onMailSendCompleted(MailSendOutcome)</code> callback receives the whole attempt, including preparation
         and scheduling failures, rather than only SMTP facts. The optional <code>getSubmissionReceipt()</code> is the same receipt returned to the
         caller or attached to <code>MailSubmissionException</code>.
       </p>
@@ -598,19 +609,20 @@ Retry: DUPLICATE_RISK</code></pre>
         attempts handoff before completion without waiting for the callback. For dispatch, ownership, timestamps, and the progress demos, see
         <a href="/sending-and-execution.html#section-mail-send-observer">the observer configuration guide</a>.
       </p>
-      <p>When reusing a builder, <code>clearMailSendResultObserver()</code> removes its result callback and dispatch executor.
-        <code>clearMailSendProgressObserver()</code> does the same for progress, independently. Neither changes Mailers already built from it.
+      <p>When editing <code>MailSendHandlers</code> through <code>toBuilder()</code>, <code>clearResultObserver()</code> removes its result callback and dispatch executor.
+        <code>clearProgressObserver()</code> does the same for progress, independently. Supply the rebuilt group to the Mailer builder;
+        neither operation changes Mailers already built from it.
         A no-op callback still enables observation; clearing the registration avoids that work when no other observation facility needs it.</p>
     </div>
     <div class="wide full-width-example">
-<pre><code class="language-java small" id="example-observer-receipt">mailerBuilder.withMailSendResultObserver(outcome -&gt; {
+<pre><code class="language-java small" id="example-observer-receipt">mailerBuilder.withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -&gt; {
     String submission = outcome.getSubmissionReceipt()
         .map(receipt -&gt; receipt.getStatus().name())
         .orElse("none");
 
     System.out.printf("successful=%s, loggingOnly=%s, submission=%s%n",
         outcome.isSuccessful(), outcome.isLoggingOnly(), submission);
-});</code></pre>
+}).build());</code></pre>
       <strong>Illustrative outcomes from separate attempts</strong>
 <pre><code class="language-text small" id="output-observer-receipt">successful=false, loggingOnly=false, submission=PARTIALLY_ACCEPTED
 successful=false, loggingOnly=false, submission=none
@@ -629,13 +641,12 @@ successful=true, loggingOnly=true, submission=UNKNOWN</code></pre>
     <div class="wide full-width-example">
 <pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
     .withSMTPServer("smtp.example.org", 587)
-    .withMailSendProgressObserver(progress -&gt; System.out.println(progress))
-    .withMailSendResultObserver(outcome -&gt; {
+    .withSendHandlers(MailSendHandlers.builder().withProgressObserver(progress -&gt; System.out.println(progress)).withResultObserver(outcome -&gt; {
         System.out.println("Result " + outcome.getObservationId()
             + ": successful=" + outcome.isSuccessful());
         outcome.getSubmissionReceipt().ifPresent(receipt -&gt;
             System.out.println("SMTP submission: " + receipt.getStatus()));
-    })
+    }).build())
     .buildMailer();
 
 try (mailer) {
@@ -731,7 +742,7 @@ Result 8ef1…: successful=true</code></pre>
         No commands, recipient addresses, credentials or raw replies are included.</p>
       <h4>Callback speed and shutdown</h4>
       <p>Progress runs on a lazily started, dedicated daemon dispatcher. The optional
-        <code>withMailSendProgressObserver(observer, applicationExecutor)</code> overload hands work to your executor from that dispatcher, never from a send
+        <code>withProgressObserver(observer, applicationExecutor)</code> overload hands work to your executor from that dispatcher, never from a send
         thread. Callbacks are serialized per Mailer. Sending, cancellation and completion never wait for a progress callback.
         Keep a supplied executor separate from mail-sending workers; if you deliberately share their executor, slow reporting can occupy those workers.</p>
       <p>Only the newest pending snapshot per ID is kept, up to 1,024 pending IDs plus one callback in flight; overflow discards the oldest pending snapshot.
@@ -759,7 +770,7 @@ Result 8ef1…: successful=true</code></pre>
         attempt, including failures before SMTP. Nothing is sent or read a second time to collect them.</p>
     </div>
     <div class="wide full-width-example">
-<pre><code class="language-java small" id="example-send-timings">mailerBuilder.withMailSendResultObserver(outcome -&gt; {
+<pre><code class="language-java small" id="example-send-timings">mailerBuilder.withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -&gt; {
     outcome.getDiagnostics().ifPresent(report -&gt; {
         log.info("{}", report);
 
@@ -774,7 +785,7 @@ Result 8ef1…: successful=true</code></pre>
     // SMTP acceptance remains a separate fact from whole-attempt success.
     outcome.getSubmissionReceipt().ifPresent(this::recordSubmissionResult);
     outcome.getFailure().ifPresent(this::recordFailure);
-});</code></pre>
+}).build());</code></pre>
       <p><a href="/smtp-connection-failover.html#section-observation">Connection history examples</a> show a failed primary followed by an acquired
         failover connection. The same walkthrough includes an <a href="/smtp-connection-failover.html#section-retry">observer-based retry recipe</a>.
         Automatic failover stops at provider invocation; it never replays a partially accepted or uncertain submission.</p>
@@ -871,7 +882,7 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
     try {
         printReceipt(sender.sendMail(email));
     } catch (MailSubmissionException failure) {
-        printReceipt(failure.getSubmissionReceipt());
+        failure.getSubmissionReceipt().ifPresent(MyDiagnostics::printReceipt);
         throw failure;
     }
 });</code></pre>

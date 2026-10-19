@@ -1,3 +1,4 @@
+import org.simplejavamail.api.mailer.MailSendHandlers;
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.EmailPopulatingBuilder;
@@ -49,8 +50,8 @@ public final class RelayDeskMailExamples {
             .withClusterKey(clusterKey)
             .withConnectionPoolCoreSize(0) // no need to stay connected while quiet
             .withConnectionPoolMaxSize(maxConnectionsPerRelay) // within Kestrel's connection allocation
-            .withConnectionPoolExpireAfterMillis(30_000) // retire idle connections
-            .withConnectionPoolClaimTimeoutMillis(2_000) // don't wait forever for a pool
+            .withConnectionPoolExpireAfter(Duration.ofSeconds(30)) // retire idle connections
+            .withConnectionPoolClaimTimeout(Duration.ofSeconds(2)) // don't wait forever for a pool
             .withMailSendTimeout(Duration.ofSeconds(20)) // bound each send attempt
             .withThreadPoolSize(asyncWorkersPerMailer) // operations executing, including preparation
             .withAsyncQueueCapacity(waitingOperationsPerMailer) // waiting in memory, not the durable backlog
@@ -58,7 +59,7 @@ public final class RelayDeskMailExamples {
             .withRecipientRateLimit(recipientsPerPeriod, sendingRatePeriod) // this instance's share of the customer's rate
             .withRateLimitGroup(sendingRateGroup) // both approved relays spend the same local share
             .withRateLimitBurstsAllowed(false) // spread the recovered backlog instead of releasing a burst
-            .withMailSendResultObserver(observer, observerWorkers)
+            .withSendHandlers(MailSendHandlers.builder().withResultObserver(observer, observerWorkers).build())
             .buildMailer();
     }
 
@@ -101,9 +102,6 @@ public final class RelayDeskMailExamples {
                 .ignoringDefaults().ignoringOverrides() // don't apply them again after key selection
                 .signWithOpenPgp(Objects.requireNonNull(keys.requireSigningConfig(customerId)))
                 .encryptWithOpenPgp(encryption.build());
-        if (!effectiveReply.getOverrideReceivers().isEmpty()) {
-            protectedReplyBuilder.withOverrideReceivers(effectiveReply.getOverrideReceivers());
-        }
         Email protectedReply = protectedReplyBuilder.buildEmail();
         return protectedReply;
     }

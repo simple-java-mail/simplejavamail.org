@@ -53,8 +53,8 @@ description: "Choose a diagnostic tool, inspect prepared messages and SMTP conne
             <tr><td>What happened to an actual send?</td><td><a href="/analyzing-send-results.html">Submission receipt and mail-send outcome</a></td><td>Available server responses, recipient results and the send's success or failure</td><td>The send does</td></tr>
             <tr><td>What does this received delivery notification say?</td><td><a href="/delivery-reports.html"><code>Email.getDeliveryStatusReport()</code></a></td><td>Reported recipient actions, status codes and correlation facts after ordinary MIME/EML conversion; your application supplies and trusts the mail</td><td>No</td></tr>
             <tr><td>Where did a slow or failed send spend its time?</td><td><a href="/analyzing-send-results.html#section-send-timings"><code>outcome.getDiagnostics()</code></a> in the observer</td><td>Available per-phase measurements and where a failure was observed</td><td>No additional connection</td></tr>
-            <tr><td>What is this email doing right now?</td><td><a href="/analyzing-send-results.html#section-live-progress"><code>withMailSendProgressObserver(...)</code></a></td><td>Latest work, supported greeting/TLS/authentication/envelope stages, retry attempt and upload counts; final results remain authoritative</td><td>No additional connection</td></tr>
-            <tr><td>How does mail sending fit into my application's traces and metrics?</td><td><a href="/opentelemetry.html"><code>withMailSendTelemetry(...)</code></a></td><td>Logical sends, actual submission attempts and available timing measurements through your own OpenTelemetry instance</td><td>No additional connection</td></tr>
+            <tr><td>What is this email doing right now?</td><td><a href="/analyzing-send-results.html#section-live-progress"><code>MailSendHandlers</code> progress observer</a></td><td>Latest work, supported greeting/TLS/authentication/envelope stages, retry attempt and upload counts; final results remain authoritative</td><td>No additional connection</td></tr>
+            <tr><td>How does mail sending fit into my application's traces and metrics?</td><td><a href="/opentelemetry.html"><code>withTelemetryConfig(...)</code></a></td><td>Logical sends, actual submission attempts and available timing measurements through your own OpenTelemetry instance</td><td>No additional connection</td></tr>
           </tbody>
         </table>
       </div>
@@ -152,7 +152,7 @@ currentEmailBuilder.withOverrideReceivers(tester1Recipient, testGroupInboxRecipi
         to stdout, stderr or SLF4J without touching the internal Session instance directly.
       </p>
 	  <p>
-		  Use <code class="inline language-java">withDebugPrinter(PrintStream)</code> when the built-in targets do not fit. Simple Java Mail passes that
+		  Use <code class="inline language-java">SessionDebugConfig.builder().withPrinter(PrintStream)</code> when the built-in targets do not fit. Simple Java Mail passes that
 		  stream to Jakarta Mail but does not close it. Keep it open for as long as the Mailer may use it, then close it yourself.
 	  </p>
 	  <p>
@@ -166,8 +166,7 @@ currentEmailBuilder.withOverrideReceivers(tester1Recipient, testGroupInboxRecipi
 <pre><code>SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 Mailer mailer = mail.mailerBuilder()
     .withSMTPServer("host", 587, "username", "password")
-    .withDebugLogging(true)
-    .withDebugOutput(SessionDebugOutput.SLF4J)
+    .withDebugConfig(SessionDebugConfig.builder().withEnabled(true).withOutput(SessionDebugOutput.SLF4J).build())
     .buildMailer();
 
 // or
@@ -197,8 +196,7 @@ simplejavamail.javaxmail.debug.out=SLF4J
         Files.newOutputStream(Paths.get("jakarta-mail-debug.log")));
      Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
         .withSMTPServer("host", 587, "username", "password")
-        .withDebugLogging(true)
-        .withDebugPrinter(jakartaMailDebug)
+        .withDebugConfig(SessionDebugConfig.builder().withEnabled(true).withPrinter(jakartaMailDebug).build())
         .buildMailer()) {
 
     mailer.sync().testConnection();

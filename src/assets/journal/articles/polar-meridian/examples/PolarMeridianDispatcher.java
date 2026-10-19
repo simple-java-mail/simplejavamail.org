@@ -126,9 +126,6 @@ public final class PolarMeridianDispatcher {
         EmailPopulatingBuilder attempt = mail.emailBuilder()
                 .copying(composed.email)
                 .fixingMessageId("<" + randomUUID() + "@mail.polarmeridian.com>");
-        if (!composed.email.getOverrideReceivers().isEmpty()) {
-            attempt.withOverrideReceivers(composed.email.getOverrideReceivers());
-        }
         Email email = attempt.buildEmail();
 
         MailRehearsal rehearsal = mailer.rehearse(email);

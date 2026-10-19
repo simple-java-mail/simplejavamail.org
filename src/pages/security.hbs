@@ -693,6 +693,9 @@ currentMailerBuilder
 					You can <strong>sign individual emails</strong> or <strong>sign all emails</strong> by configuring S/MIME defaults on the
 					<em>Mailer</em> or through properties.
 				</p>
+				<p><code>clearSmimeSigning()</code> and <code>clearSmimeEncryption()</code> remove one local choice independently;
+					<code>clearSmime()</code> removes both. These operations retain recipient certificates and permit ordinary template fallback.
+					Use the per-field suppression controls when a template should not supply the cleared choice again.</p>
 				<p>
 					For encryption, Simple Java Mail can use one email-level encryption certificate, or different certificates per recipient. When any
 					TO/CC/BCC recipient carries a certificate, that recipient certificate is used first. Recipients without a certificate fall back to the
@@ -1074,7 +1077,8 @@ mailer.sync().sendMail(protectedEmail);</code></pre>
 				<p>To reuse OpenPGP settings, put them on an Email template and pass it to <code>withEmailDefaults(...)</code> or
 					<code>withEmailOverrides(...)</code>, just as you would for S/MIME or DKIM. Each signing or encryption configuration is one complete
 					choice: an override replaces the supplied choice, which otherwise wins over a default. Encryption key-ring lists are not merged.</p>
-				<p><code>clearOpenPgp()</code> removes the draft's choices and permits template fallback. To exclude a template instead, use the ordinary
+				<p><code>clearOpenPgpSigning()</code> and <code>clearOpenPgpEncryption()</code> remove one local choice independently;
+					<code>clearOpenPgp()</code> removes both. They permit template fallback. To exclude a template instead, use the ordinary
 					defaults/overrides suppression controls with <code>OPENPGP_SIGNING_CONFIG</code> or <code>OPENPGP_ENCRYPTION_CONFIG</code>.
 					Exact EML remains untouched, and OpenPGP key material is still not included in Email serialization.</p>
 				<p>On the signing-config builder, <code>clearSigningKeyId()</code> returns to automatic key selection and

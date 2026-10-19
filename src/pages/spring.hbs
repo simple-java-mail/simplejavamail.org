@@ -196,7 +196,7 @@ public class MailConfiguration {
     public Mailer customMailer(SimpleJavaMail mail) {
         return mail.mailerBuilder()
                 .resetThreadPoolSize()
-                .withThreadPoolKeepAliveTime(5000)
+                .withThreadPoolKeepAliveTime(Duration.ofSeconds(5))
                 .withProxyBridgePort(7777)
                 .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
                 .buildMailer();

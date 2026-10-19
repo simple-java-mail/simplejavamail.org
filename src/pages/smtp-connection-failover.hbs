@@ -202,14 +202,14 @@ Emails 41 onward: A sends under A's rate rules.</code></pre>
       send outcome, not a separate application failure callback.</p>
     <p>With a <code>MailSendResultObserver</code>, an individual send also records its connection route:</p>
   </div><div class="wide full-width-example">
-<pre><code class="language-java small">.withMailSendResultObserver(outcome -> outcome.getDiagnostics().ifPresent(report -> {
+<pre><code class="language-java small">.withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -> outcome.getDiagnostics().ifPresent(report -> {
     report.getConnectionHistory().forEach(step -> {
         System.out.printf("attempted=%s acquired=%s elapsed=%s detail=%s%n",
             step.isConnectionAttempted(), step.isConnectionAcquired(),
             step.getElapsed(), step.getExplanation());
     });
     System.out.println("omitted steps=" + report.getOmittedConnectionSteps());
-}))</code></pre>
+})).build())</code></pre>
 <pre><code class="language-text small">attempted=true  acquired=false elapsed=Optional[PT0.02S] detail=Optional[Connection unavailable]
 attempted=true  acquired=true  elapsed=Optional[PT0.08S] detail=Optional.empty
 omitted steps=0</code></pre>
@@ -231,7 +231,7 @@ omitted steps=0</code></pre>
       count and backoff, and correlate the outcome to the original job. An observer receives an outcome, not the original Email or a durable job.</p>
     <p>This sketch hands work to an application queue. <code>jobs</code> and <code>retryQueue</code> are application services, not library APIs:</p>
   </div><div class="wide full-width-example">
-<pre><code class="language-java small">.withMailSendResultObserver(outcome -> {
+<pre><code class="language-java small">.withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -> {
     if (outcome.isSuccessful()) {
         return;
     }
@@ -249,7 +249,7 @@ omitted steps=0</code></pre>
                 break;
         }
     });
-})</code></pre>
+}).build())</code></pre>
   </div><div class="wide">
     <p>Build any later submission for only the recipients the job policy permits. Never blindly replay a partially accepted message, and stop automatic
       retries when acceptance is uncertain. Also check locks and template-added recipients: a mandatory archive BCC can receive another copy even when

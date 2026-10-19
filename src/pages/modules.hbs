@@ -434,7 +434,8 @@ com.example.ExampleMailTransportAdapter</code></pre>
   <h2 id="open-telemetry-module" class="with-back-to-top">OpenTelemetry support</h2>
   <section><div class="view">
     <p>Add <code>open-telemetry-module</code> to connect real sends to your application's traces and metrics.
-      Register <code>OtelAdapter.wrap(openTelemetry)</code> with <code>withMailSendTelemetry(...)</code>, or set
+      Register <code>OtelAdapter.wrap(openTelemetry)</code> through <code>MailSendTelemetryConfig.builder().withIntegration(...)</code>
+      and enable the group with <code>withEnabled(true)</code>, or set
       <code>simplejavamail.telemetry.enabled=true</code> to use the application's global instance for Mailers from that factory.
       The module uses only the OpenTelemetry API/context; your application owns its SDK, exporters and shutdown.</p>
     <p>Adding the dependency does not activate telemetry. SMTP endpoint attributes are opt-in, and message content,

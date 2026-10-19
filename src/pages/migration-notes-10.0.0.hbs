@@ -36,6 +36,8 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#api-construction">Use public contracts instead of constructing library results</a></li>
       <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
       <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
+      <li><a href="#grouped-configuration">Move debug, telemetry and observers into configuration groups</a></li>
+      <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#smtp-content-compatibility">Check sends with international addresses or unencoded non-ASCII text</a></li>
       <li><a href="#smtp-size-check">Account for rejection before sending oversized email</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
@@ -92,9 +94,12 @@ breadcrumbParent: "/migration-notes.html"
     <p>If an Email opts out of some defaults or overrides, copying it now keeps those choices. Earlier releases forgot them during
       <code>emailBuilder().copying(email)</code>, so a copied draft could receive values the original draft had excluded.</p>
     <p>Review code that depended on copying to restore templates. Re-enable global inheritance with <code>ignoringDefaults(false)</code> and
-      <code>ignoringOverrides(false)</code>. Calling <code>dontApplyDefaultValueFor()</code> or <code>dontApplyOverrideValueFor()</code> with no
-      arguments clears the corresponding per-field exclusions on the copy's builder. Keep the inherited exclusions when the copy should retain
+      <code>ignoringOverrides(false)</code>. Call <code>clearDefaultValueSuppressions()</code> or <code>clearOverrideValueSuppressions()</code>
+      to clear the corresponding per-field exclusions on the copy's builder. Keep the inherited exclusions when the copy should retain
       the original Email's choices. These controls still cannot remove locked settings.</p>
+    <p>Repeated <code>dontApplyDefaultValueFor(...)</code> and <code>dontApplyOverrideValueFor(...)</code> calls now accumulate exclusions;
+      earlier calls replaced the entire set. Empty calls are now no-ops. For replacement, clear first and then supply the desired exclusions.
+      Use <code>allowDefaultValueFor(...)</code> and <code>allowOverrideValueFor(...)</code> to remove individual exclusions.</p>
     <p><code>EmailProperty.ALL_RECIPIENTS</code> now excludes To, Cc and Bcc template additions together; earlier releases ignored that selector.
       If you used it but still relied on a template supplying recipients, remove the exclusion or select only the recipient types you want to skip.
       Your explicitly supplied recipients and the separately controlled delivery-recipient override are unchanged.</p>
@@ -378,9 +383,9 @@ Mailer mailer = mail.mailerBuilder()
       <tr><td><code class="inline language-java">MailerBuilder.withSMTPServerPort(port)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServerPort(port)</code></td></tr>
       <tr><td><code class="inline language-java">MailerBuilder.withSMTPServerUsername(username)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServerUsername(username)</code></td></tr>
       <tr><td><code class="inline language-java">MailerBuilder.withSMTPServerPassword(password)</code></td><td><code class="inline language-java">mail.mailerBuilder().withSMTPServerPassword(password)</code></td></tr>
-      <tr><td><code class="inline language-java">MailerBuilder.withDebugLogging(enabled)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugLogging(enabled)</code></td></tr>
-      <tr><td><code class="inline language-java">MailerBuilder.withDebugPrinter(printStream)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugPrinter(printStream)</code></td></tr>
-      <tr><td><code class="inline language-java">MailerBuilder.withDebugOutput(output)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugOutput(output)</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withDebugLogging(enabled)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugConfig(SessionDebugConfig.builder().withEnabled(enabled).build())</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withDebugPrinter(printStream)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugConfig(SessionDebugConfig.builder().withPrinter(printStream).build())</code></td></tr>
+      <tr><td><code class="inline language-java">MailerBuilder.withDebugOutput(output)</code></td><td><code class="inline language-java">mail.mailerBuilder().withDebugConfig(SessionDebugConfig.builder().withOutput(output).build())</code></td></tr>
       <tr><td><code class="inline language-java">MailerBuilder.withCustomMailer(customMailer)</code></td><td><code class="inline language-java">mail.mailerBuilder().withCustomMailer(customMailer)</code></td></tr>
       <tr><td><code class="inline language-java">MailerBuilder.withTransportModeLoggingOnly()</code></td><td><code class="inline language-java">mail.mailerBuilder().withTransportModeLoggingOnly()</code></td></tr>
       </tbody>
@@ -449,7 +454,8 @@ mailerBuilder.withEmailDefaults(unsignedDefaults);</code></pre>
       <a href="configuration.html#section-config-mailer">the full defaults and overrides contract</a> for collection and recipient behavior.
     </p>
     <p class="wide">
-      <code>clearEmailDefaults()</code> restores property-derived defaults, rather than disabling them. An empty explicit template omits all
+      <code>useConfiguredEmailDefaults()</code> replaces the old <code>clearEmailDefaults()</code> name and restores property-derived defaults.
+      <code>withoutEmailDefaults()</code> omits ordinary defaults while retaining locks. An empty explicit template also omits all
       default message settings. Inspect your explicit template through <code>mailerBuilder.getEmailDefaults()</code>, or the Mailer's effective defaults and overrides through
       <code>mailer.getEmailGovernance()</code>; there is no separate DKIM configured flag.
       DKIM property keys and Spring configuration are unchanged.
@@ -462,6 +468,58 @@ mailerBuilder.withEmailDefaults(unsignedDefaults);</code></pre>
     </p>
   </section>
 
+  <h2 id="grouped-configuration">Move debug, telemetry and observers into configuration groups</h2>
+  <section><div class="wide">
+    <p>Java Mailer builders now take <code>SessionDebugConfig</code>, <code>MailSendTelemetryConfig</code> and <code>MailSendHandlers</code>.
+      The old flat setters and observer registrations have been removed. Configure related choices together, then supply the immutable group:</p>
+    <pre><code class="language-java">mailerBuilder
+    .withDebugConfig(SessionDebugConfig.builder()
+        .withEnabled(true)
+        .withOutput(SessionDebugOutput.SLF4J)
+        .build())
+    .withTelemetryConfig(MailSendTelemetryConfig.builder()
+        .withEnabled(true)
+        .withIntegration(OtelAdapter.wrap(openTelemetry))
+        .build())
+    .withSendHandlers(MailSendHandlers.builder()
+        .withResultObserver(resultObserver, observationExecutor)
+        .withProgressObserver(progressObserver)
+        .build());</code></pre>
+    <p>For debug and telemetry, omitted choices inherit the factory's captured configuration. Replacing a group replaces supplied choices;
+      omitted fields do not retain values from the previous group. Edit a group through <code>toBuilder()</code> when retaining those values matters.
+      Group getters inspect supplied choices; the groups on <code>OperationalConfig</code> contain resolved choices.
+      <code>useConfiguredDebugConfig()</code> and <code>useConfiguredTelemetryConfig()</code> restore whole-group inheritance.</p>
+    <p>Telemetry activation is independent of its integration: <code>withIntegration(...)</code> and <code>clearIntegration()</code> do not
+      turn it on or off. Set <code>withEnabled(true)</code> explicitly or inherit an enabled property. Enabled telemetry without an explicit
+      integration uses the application's global OpenTelemetry instance. Streams, callbacks and executors remain application-owned.</p>
+    <p>Move independent observer clears to <code>MailSendHandlers.Builder.clearResultObserver()</code> and <code>clearProgressObserver()</code>,
+      or remove the whole fixed group with <code>clearSendHandlers()</code>. Per-send context belongs in
+      <a href="/sending-and-execution.html#section-mail-send-observer"><code>withSendHandlersFactory(...)</code></a>.
+      Existing scalar property keys and CLI debug/telemetry options retain their names and meanings.</p>
+    <p><code>MailSubmissionException.getSubmissionReceipt()</code> now returns <code>Optional&lt;MailSubmissionReceipt&gt;</code> through the common
+      <code>MailSendException</code> contract. Use <code>ifPresent(...)</code> to inspect available facts across submission, timeout, cancellation and
+      per-email cleanup failures. A submission exception still carries its receipt; code that requires it can use <code>orElseThrow()</code>.
+      Preparation and admission failures retain their existing exception types. See <a href="/analyzing-send-results.html#section-get-receipt">failure receipts</a>.</p>
+  </div></section>
+
+  <h2 id="duration-settings">Pass Duration values for time settings</h2>
+  <section><div class="wide">
+    <p>Java time settings, their getters, configuration constructors and published constants now use <code>Duration</code>.
+      Methods whose names ended in <code>Millis</code> drop that suffix:</p>
+    <table><thead><tr><th>Previous call</th><th>10.0.0 call</th></tr></thead><tbody>
+      <tr><td><code>withSessionTimeout(1000)</code></td><td><code>withSessionTimeout(Duration.ofSeconds(1))</code></td></tr>
+      <tr><td><code>withThreadPoolKeepAliveTime(5000)</code></td><td><code>withThreadPoolKeepAliveTime(Duration.ofSeconds(5))</code></td></tr>
+      <tr><td><code>withAsyncQueueWaitTimeoutMillis(250)</code></td><td><code>withAsyncQueueWaitTimeout(Duration.ofMillis(250))</code></td></tr>
+      <tr><td><code>withConnectionPoolClaimTimeoutMillis(60000)</code></td><td><code>withConnectionPoolClaimTimeout(Duration.ofMinutes(1))</code></td></tr>
+      <tr><td><code>withConnectionPoolExpireAfterMillis(30000)</code></td><td><code>withConnectionPoolExpireAfter(Duration.ofSeconds(30))</code></td></tr>
+      <tr><td><code>withConnectionPoolExpireAfterCreationMillis(300000)</code></td><td><code>withConnectionPoolExpireAfterCreation(Duration.ofMinutes(5))</code></td></tr>
+    </tbody></table>
+    <p>Defaults, supported zero values and optional settings retain their meanings. Fractional milliseconds and overflow are rejected rather than
+      truncated or wrapped. Property files and existing CLI options still use numeric milliseconds; do not change those to ISO duration strings.</p>
+    <p>Explicit worker count and keep-alive settings now apply even without the batch module. Previously that configuration could be ignored.
+      Unspecified worker defaults remain one without batch and ten with batch, and caller-supplied executors remain application-owned.</p>
+  </div></section>
+
   <a href="#mailer-validation" id="mailer-validation" class="section-link h2">&sect;</a>
   <h2>Update assumptions about Mailer validation</h2>
 
@@ -471,6 +529,9 @@ mailerBuilder.withEmailDefaults(unsignedDefaults);</code></pre>
       complete email it would send, including its defaults and overrides. In 9.x it only checked the Email you passed in. Validation can therefore
       fail on configured signing keys or the final email size even when that original Email is valid.
     </p>
+    <p class="wide">Both <code>Mailer.validate</code> overloads and <code>MailerHelper.validate</code>/<code>validateLenient</code> now return
+      <code>void</code>. Replace boolean assignments and conditions with direct calls. Strict validation still throws on failure;
+      lenient helper validation still logs ordinary findings. A normal return never promised server acceptance.</p>
     <p class="wide">
       The default method now runs ordinary validation, builds the complete MIME message, applies configured signing and encryption, and checks the
       final encoded-size limit. This can read attachments and key files, so do not treat it as a cheap field-only check. It does not connect to SMTP
@@ -938,7 +999,7 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
     </p>
     <p class="wide">
       If you relied on those automatic replacements, call the relevant builder setters explicitly or put the intended values on your Session.
-      For example, <code class="inline language-java">withSessionTimeout(1000)</code> replaces all three socket timeouts with one second.
+      For example, <code class="inline language-java">withSessionTimeout(Duration.ofSeconds(1))</code> replaces all three socket timeouts with one second.
       Standard SMTP/SMTPS Sessions support these choices directly. A custom protocol now rejects a convenience setting it cannot map rather
       than silently ignoring it; use its provider-specific names through <code>withProperty(...)</code> instead.
       Clearing a setting inherited through <code>Properties</code> defaults is also rejected when removal would simply reactivate that default.
@@ -946,16 +1007,16 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
     </p>
     <h3>Allow for a missing common timeout when inspecting configuration</h3>
     <p class="wide">
-      <code class="inline language-java">OperationalConfig.getSessionTimeout()</code> now returns <code>Integer</code> instead of
-      <code>int</code>. Recompile integrations and check for null before unboxing. Null means the connection, read and write settings do not
+      <code class="inline language-java">OperationalConfig.getSessionTimeout()</code> now returns nullable <code>Duration</code> instead of
+      an integer millisecond count. Recompile integrations and check for null. Null means the connection, read and write settings do not
       have one known common value, not that the connection has no timeout. Previously this getter could report the builder's default even
       when the supplied Session used different values. The Mailer builder's own getter still reports its configured choice.
       Local-binding, client-hostname and certificate-trust inspection also reflects the effective construction settings rather than unrelated
       factory defaults or inactive trust choices. Later direct Session mutations are not tracked by this snapshot.
     </p>
-    <pre class="full-width-example"><code class="language-java">Integer commonTimeoutMillis = mailer.getOperationalConfig().getSessionTimeout();
-if (commonTimeoutMillis != null) {
-    log.info("Common socket timeout: {} ms", commonTimeoutMillis);
+    <pre class="full-width-example"><code class="language-java">Duration commonTimeout = mailer.getOperationalConfig().getSessionTimeout();
+if (commonTimeout != null) {
+    log.info("Common socket timeout: {}", commonTimeout);
 } else {
     log.info("Inspect the Session's separate connection, read and write settings");
 }</code></pre>

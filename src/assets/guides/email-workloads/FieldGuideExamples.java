@@ -1,3 +1,4 @@
+import org.simplejavamail.api.mailer.MailSendHandlers;
 import java.time.Duration;
 import jakarta.mail.Message;
 import java.util.Collections;
@@ -130,8 +131,8 @@ public final class FieldGuideExamples {
     static Mailer observedMailer(MailerRegularBuilder smtpBuilder,
                                  Consumer<MailSendDiagnostics> recordTimings) {
         return smtpBuilder
-            .withMailSendResultObserver(outcome ->
-                outcome.getDiagnostics().ifPresent(recordTimings))
+            .withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome ->
+                outcome.getDiagnostics().ifPresent(recordTimings)).build())
             .buildMailer();
     }
 

@@ -338,7 +338,7 @@ description: "Reuse SMTP connections without giving up the API or framework that
         .withSMTPServer("smtp.example.com", 587, "user", "secret")
         .withConnectionPoolCoreSize(2)
         .withConnectionPoolMaxSize(10)
-        .withConnectionPoolExpireAfterMillis(30_000)
+        .withConnectionPoolExpireAfter(Duration.ofSeconds(30))
         .buildMailer()) {
     mailer.sync().sendMail(email); // or mailer.async().sendMail(email) for background work
 }</code></pre>
@@ -394,8 +394,8 @@ Session session = Session.getInstance(properties, new Authenticator() {
 try (BatchTransportExecutor&lt;String&gt; batch =
              BatchTransportExecutor.&lt;String&gt;builder()
                      .withMaxPoolSize(8)
-                     .withClaimTimeoutMillis(30_000)
-                     .withExpireAfterMillis(60_000)
+                     .withClaimTimeout(Duration.ofSeconds(30))
+                     .withExpireAfter(Duration.ofMinutes(1))
                      .build()) {
     batch.registerSession("transactional", session);
 

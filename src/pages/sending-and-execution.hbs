@@ -126,7 +126,7 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
       </p>
 <pre><code class="language-java small">mailerBuilder.withAsyncQueueCapacity(100)
     .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.WAIT_FOR_CAPACITY)
-    .withAsyncQueueWaitTimeoutMillis(250);</code></pre>
+    .withAsyncQueueWaitTimeout(Duration.ofMillis(250));</code></pre>
     </div>
     <div class="side">
       <h4>Know what the bound counts</h4>
@@ -286,8 +286,8 @@ simplejavamail.defaults.mailsend.timeout=PT30S</code></pre>
       <thead><tr><th>Limit</th><th>What it bounds</th><th>What it does not mean</th></tr></thead>
       <tbody>
         <tr><td><code>withSessionTimeout(...)</code></td><td>Individual socket connect/read/write waits.</td><td>Not a budget for the whole send.</td></tr>
-        <tr><td><code>withAsyncQueueWaitTimeoutMillis(...)</code></td><td>Caller-side WAIT_FOR_CAPACITY admission.</td><td>Does not cancel already admitted SMTP work.</td></tr>
-        <tr><td><code>withConnectionPoolClaimTimeoutMillis(...)</code></td><td>Waiting to obtain a pooled transport.</td><td>Not a deadline for using that transport.</td></tr>
+        <tr><td><code>withAsyncQueueWaitTimeout(...)</code></td><td>Caller-side WAIT_FOR_CAPACITY admission.</td><td>Does not cancel already admitted SMTP work.</td></tr>
+        <tr><td><code>withConnectionPoolClaimTimeout(...)</code></td><td>Waiting to obtain a pooled transport.</td><td>Not a deadline for using that transport.</td></tr>
         <tr><td><code>withMailSendTimeout(...)</code></td><td>One budget across preparation, admission, pool acquisition, connection/TLS/authentication,
           MIME/security work, SMTP, and required cleanup.</td><td>Not proof of non-acceptance, and not an unconditional return-by time.</td></tr>
       </tbody>
@@ -445,8 +445,8 @@ batch.getCompletion().join(); // optional: wait for the whole sequential batch
 	   .(..)
 	   .withConnectionPoolCoreSize(2) // keep 2 connections up at all times, automatically refreshed after expiry policy closes it (default 0)
 	   .withConnectionPoolMaxSize(10) // scale up to max 10 connections until expiry policy kicks in and cleans up (default 4)
-	   .withConnectionPoolClaimTimeoutMillis(TimeUnit.MINUTES.toMillis(1)) // wait max 1 minute for available connection (default about 24.9 days)
-	   .withConnectionPoolExpireAfterMillis(TimeUnit.MINUTES.toMillis(30)) // keep connections spinning for half an hour (default 5 seconds)
+	   .withConnectionPoolClaimTimeout(Duration.ofMinutes(1)) // wait max 1 minute for available connection (default about 24.9 days)
+	   .withConnectionPoolExpireAfter(Duration.ofMinutes(30)) // keep connections spinning for half an hour (default 5 seconds)
 	   .buildMailer();
 	</code></pre>
 				<p class="wide">
@@ -495,8 +495,8 @@ Mailer clusteredMailer = mailerBuilder
     .withClusterKey(ordersCluster)
     .withConnectionPoolCoreSize(2)
     .withConnectionPoolMaxSize(10)
-    .withConnectionPoolClaimTimeoutMillis(60000)
-    .withConnectionPoolExpireAfterMillis(1800000)
+    .withConnectionPoolClaimTimeout(Duration.ofMinutes(1))
+    .withConnectionPoolExpireAfter(Duration.ofMinutes(30))
     .withConnectionPoolLoadBalancingStrategy(LoadBalancingStrategy.ROUND_ROBIN)
     .buildMailer();</code></pre>
 				or using properties:
@@ -601,8 +601,8 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
     .withSMTPServer(
         "smtp.example.org", 587,
         "user", "password")
-    .withMailSendResultObserver(
-        this::recordMailSendOutcome)
+    .withSendHandlers(MailSendHandlers.builder().withResultObserver(
+        this::recordMailSendOutcome).build())
     .buildMailer();
 
 private void recordMailSendOutcome(
@@ -650,7 +650,7 @@ private void recordMailSendOutcome(
 }
 
 Mailer mailer = mail.mailerBuilder()
-    .withMailSendResultObserver(new MetricsMailSendObserver())
+    .withSendHandlers(MailSendHandlers.builder().withResultObserver(new MetricsMailSendObserver()).build())
     .buildMailer();</code></pre>
       <p>
         <code class="inline language-java">requestedAt</code> records when the individual attempt begins,
@@ -686,12 +686,13 @@ Mailer mailer = mail.mailerBuilder()
   <div class="wide">
     <h3>Choose where the observer runs</h3>
     <table><thead><tr><th>Registration</th><th>Before send completion</th><th>Application responsibility</th></tr></thead><tbody>
-      <tr><td><code>withMailSendResultObserver(observer)</code></td><td>The callback returns before the synchronous call or async completion.</td>
+      <tr><td><code>withResultObserver(observer)</code></td><td>The callback returns before the synchronous call or async completion.</td>
         <td>Keep it quick and thread-safe; slow work delays that completion and occupies its notifying thread.</td></tr>
-      <tr><td><code>withMailSendResultObserver(observer, executor)</code></td><td>SJM attempts one handoff before completing, without waiting for the callback.</td>
+      <tr><td><code>withResultObserver(observer, executor)</code></td><td>SJM attempts one handoff before completing, without waiting for the callback.</td>
         <td>Own the executor, its queue, rejection policy, and shutdown. Track downstream completion yourself.</td></tr>
     </tbody></table>
     <p>Either overload replaces the whole registration; the one-argument overload restores inline dispatch.
+      These methods belong to <code>MailSendHandlers.builder()</code>; install the immutable group with <code>withSendHandlers(...)</code>.
       These are runtime Java integrations, not properties or CLI values, and they are not exposed through OperationalConfig.</p>
     <p>Default callback threads are the calling thread for synchronous sends and preparation/admission failures, the send worker for running async
       work, and a private Mailer completion worker for cancelled/expired work that never started. Different sends can notify concurrently.
@@ -708,7 +709,7 @@ Mailer mailer = mail.mailerBuilder()
   </div>
   <div class="wide full-width-example"><pre><code class="language-java">ExecutorService observationWorkers = Executors.newFixedThreadPool(2);
 Mailer mailer = mail.mailerBuilder()
-    .withMailSendResultObserver(outcome -&gt; auditQueue.publish(outcome), observationWorkers)
+    .withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -&gt; auditQueue.publish(outcome), observationWorkers).build())
     .buildMailer();
 
 // Sends may complete before publish() runs. A broker acknowledgement
@@ -724,6 +725,25 @@ observationWorkers.shutdown(); // application owns this executor
       requests cancellation and uses an executor-backed observer. It awaits send completion and observer aggregation separately.</p>
   </div>
 </section>
+  <section><div class="wide">
+    <h3>Choose handlers for each send</h3>
+    <p>Use <code>withSendHandlersFactory(sendId -&gt; ...)</code> when each send needs its own application context or callbacks.
+      Simple Java Mail generates one UUID and calls the factory once per logical email, before preparation and individual-send admission.
+      Retries and failover retain that identity and those handlers. Sending the same Email twice creates two separate identities.</p>
+    <pre><code class="language-java">mailerBuilder.withSendHandlersFactory(sendId -&gt; MailSendHandlers.builder()
+    .withProgressObserver(progress -&gt; dashboard.update(sendId, progress))
+    .withResultObserver(outcome -&gt; audit.record(sendId, outcome))
+    .build());</code></pre>
+    <p>Fixed handlers and factory-produced handlers both receive notifications, fixed first, with callback failures isolated independently.
+      For a single send the factory runs on the caller thread; lazy batches invoke it only for each reached Email on the executing thread.
+      Rehearsals and connection tests do not invoke it. A factory exception or null result stops that email before submission; fixed handlers
+      and enabled telemetry can still report a factory failure once an ID exists.</p>
+    <p><code>withSendIdGenerator(...)</code> replaces the UUID generator when your application owns send identities. It must be thread-safe and
+      return unique, non-null IDs. Generation failure stops the send without an observation ID. Keep the default when no custom identity is needed.</p>
+    <p>Use a group's <code>toBuilder()</code> to edit result or progress registration independently, then supply the rebuilt group.
+      <code>clearSendHandlers()</code> removes fixed registrations; <code>clearSendHandlersFactory()</code> removes the per-send factory;
+      <code>resetSendIdGenerator()</code> restores random UUIDs. Existing Mailers and borrowed executors remain unchanged.</p>
+  </div></section>
   <a href="#section-mailer-lifecycle" id="section-mailer-lifecycle" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 batch=true spring=true}}Mailer lifecycle and resource ownership{{/components/feature-heading-h2}}
 
