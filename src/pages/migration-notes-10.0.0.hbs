@@ -32,6 +32,7 @@ breadcrumbParent: "/migration-notes.html"
     <ul>
       <li><a href="#java-11">Run on Java 11 or newer</a></li>
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
+      <li><a href="#email-construction">Build Email objects through buildEmail()</a></li>
       <li><a href="#api-construction">Use public contracts instead of constructing library results</a></li>
       <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
       <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
@@ -55,6 +56,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
       <li><a href="#copied-template-suppression">Check copies of emails that skip defaults or overrides</a></li>
       <li><a href="#copied-receipt-requests">Check receipt requests on copied emails</a></li>
+      <li><a href="#copied-delivery-overrides">Keep test-inbox routing when copying emails</a></li>
       <li><a href="#attachment-reader-ownership">Let attachment convenience readers close their streams</a></li>
       <li><a href="#pool-setting-validation">Replace negative pool settings</a></li>
       <li><a href="#dkim-validation-timing">Handle invalid DKIM header exclusions when signing</a></li>
@@ -97,6 +99,16 @@ breadcrumbParent: "/migration-notes.html"
       cannot silently turn it back on.</p>
     <p>If your code relied on copying to remove a request, call <code>clearDispositionNotificationTo()</code> or
       <code>clearReturnReceiptTo()</code> on the copy instead. These message-header receipt requests are separate from SMTP delivery-status notifications.</p>
+  </div></section>
+
+  <h2 id="copied-delivery-overrides">Keep test-inbox routing when copying emails</h2>
+  <section><div class="wide">
+    <p>If an Email uses <code>withOverrideReceivers(...)</code> to deliver to a test inbox, copying it now keeps that routing.
+      Earlier releases lost the override when copying, so the copy could be sent to the real To/Cc/Bcc recipients instead.</p>
+    <p>Both copying an Email and copying its builder now retain the override list, including its order and repeated recipients.
+      If your application intentionally relied on a copy to restore ordinary delivery, call <code>clearOverrideReceivers()</code> on the copy's
+      builder before <code>buildEmail()</code>. Configured defaults, overrides and locks still apply. The visible headers remain separate from the
+      delivery envelope.</p>
   </div></section>
 
   <h2 id="attachment-reader-ownership">Let attachment convenience readers close their streams</h2>
@@ -145,6 +157,9 @@ breadcrumbParent: "/migration-notes.html"
       matching the overload that accepts an <code>InternetAddress</code>. Earlier releases unexpectedly replaced it with the parsed display name.</p>
     <p>If you relied on that replacement, set the desired name explicitly with <code>withName(...)</code>, or use
       <code>withAddressAndNameOrDefault(source, null)</code> when you want both the parsed name and address.</p>
+    <p>The address-import helpers also keep nonempty text when Jakarta Mail parses it into no mailbox, for example <code>"(comment only)"</code>.
+      Earlier releases could throw <code>ArrayIndexOutOfBoundsException</code> during construction. Handle invalid addresses through your normal
+      validation path; retaining the input does not allow it to pass sending validation.</p>
   </div></section>
 
   <h2 id="requested-smime-module">Include S/MIME support when requesting decryption</h2>
@@ -174,6 +189,27 @@ breadcrumbParent: "/migration-notes.html"
       Upgrade the application runtime before moving to 10.0.0. If the application must stay on Java 8, keep using the Simple Java Mail 9.x line.
     </p>
   </section>
+
+  <h2 id="email-construction">Build Email objects through buildEmail()</h2>
+  <section><div class="wide">
+    <p>Replace direct <code>new Email(builder)</code> calls with <code>builder.buildEmail()</code>. The constructor is now protected for library
+      implementation use. Its former public visibility allowed applications to create plain Email objects that copying and sending could not use.</p>
+<pre><code class="language-java">// Before
+Email email = new Email(builder);
+
+// After
+Email email = builder.buildEmail();</code></pre>
+    <p>This is a source and binary compatibility break: update direct calls and recompile integrations against 10.0.0.
+      An already compiled direct constructor call can fail with an access error. Application Email subclasses are not a supported extension mechanism;
+      use the factory's email builders instead.</p>
+    <p>The internal bookkeeping interface <code>org.simplejavamail.api.email.EmailWithDefaultsAndOverridesApplied</code> has been removed.
+      Remove imports, casts and implementations of it. Applications configure their templates through the Mailer builder and receive the resulting
+      Email through ordinary library operations.</p>
+    <p>The Email serialized-data format is retained. A stored plain Email remains readable through its getters, but deserialization does not make it
+      suitable for operations that require a builder-produced Email. Supply the fields you need from its getters to a fresh email builder before
+      sending or converting it; passing the plain object to <code>copying(...)</code> is not a reconstruction route.
+      Emails created through the library's builders retain their implementation identity across serialization; exact-message rules still apply.</p>
+  </div></section>
 
   <h2 id="api-construction">Use public contracts instead of constructing library results</h2>
   <section><div class="wide">

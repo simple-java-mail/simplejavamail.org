@@ -65,6 +65,7 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
     <p class="wide">
       <code class="inline language-java">Email</code> and <code class="inline language-java">Mailer</code> have many optional settings, so Simple Java Mail
       uses <a href="https://martinfowler.com/bliki/FluentInterface.html" target="_blank">fluent builders</a> instead of long constructors and chains of setters.
+      Finish an email with <code>buildEmail()</code>; direct <code>Email</code> construction and application subclasses are not supported entry points.
     </p>
     <ol class="indent" style="margin-bottom: 1em">
       <li>The builder API can offer <strong>useful combinations</strong> while keeping invalid ones out.</li>
@@ -432,6 +433,11 @@ recipient.withName("Alice").withAddress("alice@example.org")
         For a named single recipient, use <code>mail.recipientBuilder().to(name, address)</code>, <code>cc(name, address)</code> or
         <code>bcc(name, address)</code>. Each shortcut sets the name, address and type and returns the built Recipient. Certificate and notification
         options already set on that builder are retained. Use the group builder when you need to split an address list.
+      </p>
+      <p>
+        When an address-import helper cannot find a mailbox, it keeps the supplied text for inspection and later validation. For example,
+        <code>withAddressOnlyFrom("(comment only)")</code> keeps that text when parsing finds no mailbox, and preserves the name already configured
+        on the builder. This does not make the text a valid address: normal sending validation still rejects it before submission.
       </p>
       <p>
         Default names and default certificates only fill missing values. Fixed names and fixed certificates override source data for the whole group.
@@ -1551,6 +1557,10 @@ Status: 5.1.1</code></pre>
 DeliveryStatusNotification withoutReturnPreference = request.toBuilder()
     .clearReturnOption()
     .build();</code></pre>
+      <p>The request builder also has <code>clearNotifyOptions()</code> and <code>clearEnvelopeId()</code>; each removes only its own choice.
+        Inspect its stored choices with <code>getReturnOption()</code>, <code>getNotifyOptions()</code> and <code>getEnvelopeId()</code> before building.
+        The returned event set is an editable copy. Inspection also works while you are changing an incomplete request, but
+        <code>build()</code> still requires at least one valid DSN option.</p>
       <p>On composed and exact Email builders, use <code>clearDeliveryStatusNotificationReturnOption()</code>,
         <code>clearDeliveryStatusNotificationNotifyOptions()</code> or <code>clearEnvelopeId()</code> to remove just that part of the request.
         Other choices stay in place; when no request components remain, the builder has no shared DSN request.
@@ -2045,6 +2055,15 @@ Email protectedEmail = mail.converter()
     .withSession(yourSession)
     .toEmail();
 </code></pre>
+      <p>PKCS12 and OpenPGP configuration builders can be inspected before <code>build()</code>, even when the configuration is incomplete.
+        For example, <code>getPkcs12StoreData()</code> returns the supplied store bytes, or <code>null</code> before a store is supplied.
+        Key and password getters return copies; changing those arrays does not change the builder or an earlier configuration.</p>
+      <p>For received OpenPGP mail, <code>getVerificationKeyRings()</code> and <code>getDecryptionKeyRings()</code> return editable copies of the stored
+        lists. Remove just one set with <code>clearVerificationKeyRings()</code> or <code>clearDecryptionKeyRings()</code>.
+        <code>clearPassphraseProvider()</code> returns to the passphrases supplied with the decryption keys. Inspecting the provider never calls it.</p>
+      <p>The signing and encryption builders likewise expose their stored key material and algorithm choices.
+        <code>clearSigningKeyId()</code> returns to automatic signing-key selection; <code>clearRecipientPublicKeyRings()</code> removes encryption keys
+        without changing the cipher. Supply replacement encryption keys before building. Algorithm reset methods restore the documented library defaults.</p>
     </div>
   </section>
 
@@ -2233,6 +2252,10 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
     .appendText("\n\nContact support@example.com")
     .appendTextHTML("&lt;p&gt;Contact support@example.com&lt;/p&gt;")
     .buildEmail();</code></pre>
+
+      <p class="wide">Copying keeps the draft's delivery-recipient overrides as well as its visible To/Cc/Bcc fields. If a draft routes to a test inbox,
+        changing its subject or body on a copy still routes to that inbox. Call <code>clearOverrideReceivers()</code> explicitly to remove the copied
+        routing choice; configured defaults, overrides and locks still apply. See <a href="debugging.html#section-override-receivers">test-inbox routing</a>.</p>
 
       <p class="wide">
         See <a href="https://javadoc.io/doc/org.simplejavamail/core-module/latest/org/simplejavamail/api/email/EmailPopulatingBuilder.html" target="_blank"><code class="inline language-java">EmailPopulatingBuilder</code></a>
