@@ -409,7 +409,7 @@ mailerBuilder.withTlsConfig(TlsConfig.builder()
     .build());
 </code></pre>
       <p>On <code>TlsConfig</code> and its builder, inspect the instance with <code>getCustomSSLFactoryInstance()</code>, or inspect the class name with
-        <code>getCustomSSLFactory()</code>. Use <code>clearCustomSSLFactoryInstance()</code> to return to the configured class, or
+        <code>getCustomSSLFactoryClass()</code>. Use <code>clearCustomSSLFactoryInstance()</code> to return to the configured class, or
         <code>clearCustomSSLFactoryClass()</code> to remove that class choice. Clearing one leaves the other intact; configuration locks still apply.</p>
       <p>If your custom factory fails, the connection attempt fails too when Simple Java Mail creates the Angus Session. It does not quietly switch to
         the standard factory, which might not use your client certificate or custom certificate checks. To deliberately allow that fallback, use the
