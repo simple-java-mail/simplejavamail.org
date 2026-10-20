@@ -72,6 +72,16 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
       <li>Changes happen in the builders, so the objects they produce can remain mostly <strong>immutable</strong>.</li>
       <li>The builder methods also give the Javadocs one clear place to explain every option.</li>
     </ol>
+    <p class="wide">Everyday composition stays on the Email builder. Advanced image resolution uses
+      <code>withImageResolutionConfig(ImageResolutionConfig)</code>; body transfer encodings use
+      <code>withContentEncodingConfig(ContentEncodingConfig)</code>; template opt-outs use
+      <code>withTemplateOptions(EmailTemplateOptions)</code>; and SMTP-only delivery choices use
+      <code>withSmtpDeliveryOptions(SmtpDeliveryOptions)</code>. These immutable values have their own builders and <code>toBuilder()</code>
+      for edits. Supplying a second value replaces that group's supplied choices, so edit the existing value when preserving earlier choices.
+      Recipient-specific notification preferences, read receipts and explicit embedded images remain directly accessible.</p>
+    <p class="wide">Signing and encryption also stay direct: pass <code>DkimConfig</code> to <code>signWithDomainKey(...)</code>,
+      <code>SmimeSigningConfig</code> to <code>signWithSmime(...)</code>, or <code>SmimeEncryptionConfig</code> to <code>encryptWithSmime(...)</code>.
+      Their value builders hold the key, certificate and algorithm details. OpenPGP uses its typed signing/encryption values in the same way.</p>
 
     <h3>How does Simple Java Mail compare to other mail APIs?</h3>
     <p class="wide">
@@ -256,8 +266,10 @@ mail.mailerBuilder()
     </p>
 	<div class="wide full-width-example">
 <pre><code class="language-java">Email email = mail.emailBuilder().copying(original)
-    .ignoringDefaults()
-    .ignoringOverrides()
+    .withTemplateOptions(EmailTemplateOptions.builder()
+        .ignoringDefaults()
+        .ignoringOverrides()
+        .build())
     .withSubject("A separate copy")
     .buildEmail();
 </code></pre>
@@ -372,7 +384,9 @@ Collection&lt;Recipient&gt; reusedWithoutCertificates = SimpleJavaMail.fromDefau
     .buildRecipients();
 currentEmailBuilder
     .withRecipients(reusedWithoutCertificates)
-    .encryptWithSmime(emailLevelFallbackCertificate);</code></pre>
+    .encryptWithSmime(SmimeEncryptionConfig.builder()
+        .x509Certificate(emailLevelFallbackCertificate)
+        .build());</code></pre>
       <p>Through properties:</p>
       <pre><code class="language-properties">simplejavamail.defaults.bcc.name=
 simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;honey@sweets.com
@@ -418,6 +432,21 @@ recipient.withName("Alice").withAddress("alice@example.org")
 
   <section>
     <div class="view">
+      <p>
+        Email conveniences such as <code>to("Alice &lt;alice@example.org&gt;")</code> interpret one mailbox, separating its display name and address.
+        The same rule applies to <code>from</code>, <code>cc</code>, <code>bcc</code>, Reply-To, bounce and receipt-request address conveniences.
+        A nonblank explicit name wins: <code>cc("Accounts", "Audit &lt;audit@example.org&gt;")</code> produces Accounts / audit@example.org.
+        A null or blank name uses the embedded name instead. Equivalent <code>InternetAddress</code> overloads follow the same precedence.
+        A quoted name containing a comma remains one mailbox. Successfully parsed lists and RFC address groups throw an
+        <code>IllegalArgumentException</code>; use <code>mail.recipientsBuilder()</code> for several addresses.
+        Nonempty malformed text is retained for your configured send-time validator; parsing does not validate delivery or query DNS.
+      </p>
+      <p>
+        <code>to</code>, <code>cc</code>, <code>bcc</code> and <code>withRecipients</code> append to existing recipients, including those retained by
+        <code>copying(...)</code>. Repeated calls preserve order and duplicates; an empty prepared-recipient collection adds nothing.
+        <code>from</code> and <code>withBounceTo</code> replace their scalar address. Already prepared Recipient values keep their supplied fields
+        and metadata when added with <code>withRecipients</code>; they are not reparsed by the Email conveniences.
+      </p>
       <p>
         If a recipient needs to be assembled outside an email builder call, use the dedicated recipient builders. This keeps address parsing,
         recipient type and optional recipient metadata in one small object before it is added to an email. When several recipients belong together,
@@ -480,8 +509,9 @@ Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
 		  Use <code class="inline language-java">mail.mailerBuilder()</code> on your configured <code>SimpleJavaMail</code> instance to define server properties such as host, port, username, and password.
 	  </p>
 	  <p class="wide">
-		  Simple Java Mail supports plain SMTP (default, but not recommended), SMTPS (legacy SSL) or TLS (recommended). The last authentication option to join the family
-		  is OAuth2 (by means of XOAUTH2 which comes built-in in Jakarta Mail, the underlying SMTP framework).
+		  Simple Java Mail supports opportunistic SMTP (the default), required STARTTLS and implicit TLS (SMTPS).
+		  OAuth2 uses XOAUTH2 over either required STARTTLS (<code>SMTP_OAUTH2</code>, default port 587) or implicit TLS
+		  (<code>SMTPS_OAUTH2</code>, default port 465).
 	  </p>
 	  <p class="wide">
 		  For a long-lived Mailer, an <code class="inline language-java">OAuth2AccessTokenProvider</code> supplies a current token whenever Simple Java Mail opens
@@ -509,6 +539,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 	  </div>
 	  <p class="wide">
 		  The existing fixed-token form remains supported: pass the token as the SMTP password when it will stay valid for the Mailer's lifetime.
+		  The provider form works with either OAuth2 strategy; for implicit TLS use <code>SMTPS_OAUTH2</code> and port 465.
 	  </p>
 
 	  <p class="wide">
@@ -541,7 +572,7 @@ MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
 			on how to set thread-pool defaults or configure the executor service, and to
       <a href="sending-and-execution.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for orderly shutdown.</p>
       <p>
-        If a background producer can outrun SMTP, <code>withAsyncQueueCapacity(...)</code> bounds waiting tasks without changing your send calls.
+        If a background producer can outrun SMTP, <code>AsyncExecutionConfig.Builder.withQueueCapacity(...)</code> bounds waiting tasks without changing your send calls.
         See <a href="sending-and-execution.html#section-async-queue">queue limits and backpressure</a> for immediate rejection or a bounded caller-side wait,
         and <a href="debugging.html#section-async-queue">queue diagnostics</a> for counts and rejection reasons. Queues remain unbounded by default.
       </p>
@@ -598,10 +629,12 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
     </div>
     <div class="side">
 <pre><code class="language-java small">mailerBuilder
-    .withMessageRateLimit(30, Duration.ofMinutes(1))
-    .withRecipientRateLimit(100, Duration.ofMinutes(1))
-    .withRateLimitGroup("company-account")
-    .withRateLimitBurstsAllowed(false);</code></pre>
+    .withSendingLimitsConfig(SendingLimitsConfig.builder()
+        .withMessageRateLimit(30, Duration.ofMinutes(1))
+        .withRecipientRateLimit(100, Duration.ofMinutes(1))
+        .withRateLimitGroup("company-account")
+        .withRateLimitBurstsAllowed(false)
+        .build());</code></pre>
       <p>See <a href="sending-and-execution.html#section-sending-limits">the sending-limit guide</a> for Java, property, Spring, and CLI configuration,
         plus <a href="analyzing-send-results.html#section-send-timings">per-email wait diagnostics</a>.</p>
     </div>
@@ -649,7 +682,7 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
       <p>Your Session is the starting point for connection settings. Its timeouts, local address, EHLO hostname and certificate-trust choices stay
         unchanged unless you explicitly replace them on the Mailer builder or a configured lock requires a value. Ordinary Simple Java Mail
         connection defaults do not overwrite them, including when you reuse a Session after its previous Mailer has shut down.</p>
-      <p>For example, <code>withSessionTimeout(Duration.ofSeconds(1))</code> deliberately sets connection, read and write timeouts to one second. Additional Jakarta
+      <p>For example, <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> deliberately sets connection, read and write timeouts to one second. Additional Jakarta
         Mail properties and configured proxy routing still apply. Standard <code>smtp</code> and <code>smtps</code> Sessions need no special marker;
         for a custom protocol, configure its provider-specific properties instead. See <a href="configuration.html#section-programmatic-api-other">timeout inspection</a>.</p>
     </div>
@@ -693,7 +726,9 @@ We should meet up!
 
 	  <div class="wide full-width-example">
 		  <p><strong>Base64</strong>, on the other hand, produces the following:</p>
-		  <pre><code class="small">currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64);
+		  <pre><code class="small">currentEmailBuilder.withContentEncodingConfig(ContentEncodingConfig.builder()
+    .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+    .build());
 </code></pre>
 		  <pre><code class="language-text small">------=_Part_2_1226020905.1657715871203
 Content-Type: text/plain; charset=UTF-8
@@ -730,28 +765,30 @@ new AttachmentResource(..., ContentTransferEncoding.BINARY)
 	  </p>
 
 	  <div class="wide">
-<pre><code>currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE);
+<pre><code>ContentEncodingConfig.Builder encoding = ContentEncodingConfig.builder();
+encoding.withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BASE_64);
+encoding.withContentTransferEncoding(ContentTransferEncoding.BASE_64);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BINARY);
+encoding.withContentTransferEncoding(ContentTransferEncoding.BINARY);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.B);
+encoding.withContentTransferEncoding(ContentTransferEncoding.B);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.Q);
+encoding.withContentTransferEncoding(ContentTransferEncoding.Q);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BIT7);
+encoding.withContentTransferEncoding(ContentTransferEncoding.BIT7);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.BIT8);
+encoding.withContentTransferEncoding(ContentTransferEncoding.BIT8);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.UU);
+encoding.withContentTransferEncoding(ContentTransferEncoding.UU);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.X_UU);
+encoding.withContentTransferEncoding(ContentTransferEncoding.X_UU);
 // or:
-currentEmailBuilder.withContentTransferEncoding(ContentTransferEncoding.X_UUE);
+encoding.withContentTransferEncoding(ContentTransferEncoding.X_UUE);
 
-// Or restore the quoted-printable default:
-currentEmailBuilder.clearContentTransferEncoding();
+// Or clear the local choice to use the configured/default encoding:
+encoding.clearContentTransferEncoding();
+currentEmailBuilder.withContentEncodingConfig(encoding.build());
 </code></pre>
 	  </div>
 	  </section>
@@ -769,10 +806,12 @@ currentEmailBuilder.clearContentTransferEncoding();
 
 	  <div class="side">
 <pre><code class="language-java small">currentEmailBuilder
-    .withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
-    .withPlainTextContentTransferEncoding(ContentTransferEncoding.BIT7)
-    .withHTMLTextContentTransferEncoding(ContentTransferEncoding.BASE_64)
-    .withCalendarTextContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE);
+    .withContentEncodingConfig(ContentEncodingConfig.builder()
+        .withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+        .withPlainTextContentTransferEncoding(ContentTransferEncoding.BIT7)
+        .withHTMLTextContentTransferEncoding(ContentTransferEncoding.BASE_64)
+        .withCalendarTextContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+        .build());
 </code></pre>
 <pre><code class="language-properties small">simplejavamail.defaults.content.transfer.encoding=QUOTED_PRINTABLE
 simplejavamail.defaults.body.text.content.transfer.encoding=BIT7
@@ -863,7 +902,7 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
       <p>Managed Angus sends also check the prepared email against the connected server's SIZE limit before submission.
         Receipts retain the <a href="/analyzing-send-results.html#section-message-size">measured content size and advertised server maximum</a>
         when known, including on a local oversized rejection. This is automatic and separate from your own local size limit.</p>
-      <p>Choose <code>emailBuilder.withSendingToAcceptedRecipients(true)</code> to continue for accepted recipients after another address is rejected,
+      <p>Choose <code>SmtpDeliveryOptions.Builder.withSendingToAcceptedRecipients(true)</code> to continue for accepted recipients after another address is rejected,
         or <code>false</code> to withhold content for everyone after a known rejection. Continuing still fails the overall operation with a partial receipt.
         Leaving the choice unset preserves defaults and existing provider settings. The
         <a href="/analyzing-send-results.html#section-partial-send">three-recipient walkthrough</a> shows both choices, their receipts, defaults,
@@ -932,11 +971,13 @@ mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTPS);
 mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTP_TLS);
 // or:
 mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
+// or:
+mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTPS_OAUTH2);
 </code></pre>
 
 		Or with property default:
 <pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP
-# or: SMTPS, SMTP_TLS, SMTP_OAUTH2
+# or: SMTPS, SMTP_TLS, SMTP_OAUTH2, SMTPS_OAUTH2
 </code></pre>
     </div>
   </section>
@@ -952,8 +993,10 @@ mail.mailerBuilder().withTransportStrategy(TransportStrategy.SMTP_OAUTH2);
 
 	  <div class="side">
 <pre><code>mailerBuilder
-	.withCustomSSLFactoryClass(theClassName)
-	.withCustomSSLFactoryInstance(theInstance) // takes precedence
+	.withTlsConfig(TlsConfig.builder()
+	    .withCustomSSLFactoryClass(theClassName)
+	    .withCustomSSLFactoryInstance(theInstance) // takes precedence
+	    .build())
 	.buildMailer();
 </code></pre>
 
@@ -1177,23 +1220,22 @@ email.getEmbeddedImages(); // now contains two data sources!
 				To enable this:
 			</p>
 			<pre><code class="small">emailBuilder
-	// enable auto resolution
-	.withEmbeddedImageAutoResolutionForFiles(true) // default false
-	.withEmbeddedImageAutoResolutionForClassPathResources(true) // default false
-	.withEmbeddedImageAutoResolutionForURLs(true) // default false
-
-	// contain resolution to these locations (recommended for editable HTML)
-	.withEmbeddedImageBaseDir(RESOURCES_PATH + "/images")
-	.withEmbeddedImageBaseUrl("https://www.simplejavamail.org/static/")
-	.withEmbeddedImageBaseClassPath("/images")
-
-	// optional escape hatches; do not enable these for editable HTML
-	// .allowingEmbeddedImageOutsideBaseDir(true) // default false
-	// .allowingEmbeddedImageOutsideBaseClassPath(true) // default false
-	// .allowingEmbeddedImageOutsideBaseUrl(true) // default false
-
-	// fail if a resource couldn't be resolved
-	.embeddedImageAutoResolutionMustBeSuccesful(true) // default false (lenient mode)
+	.withImageResolutionConfig(ImageResolutionConfig.builder()
+	    // enable auto resolution
+	    .withEmbeddedImageAutoResolutionForFiles(true) // default false
+	    .withEmbeddedImageAutoResolutionForClassPathResources(true) // default false
+	    .withEmbeddedImageAutoResolutionForURLs(true) // default false
+	    // contain resolution to these locations (recommended for editable HTML)
+	    .withEmbeddedImageBaseDir(RESOURCES_PATH + "/images")
+	    .withEmbeddedImageBaseUrl("https://www.simplejavamail.org/static/")
+	    .withEmbeddedImageBaseClassPath("/images")
+	    // optional escape hatches; leave these disabled for editable HTML
+	    // .allowingEmbeddedImageOutsideBaseDir(true) // default false
+	    // .allowingEmbeddedImageOutsideBaseClassPath(true) // default false
+	    // .allowingEmbeddedImageOutsideBaseUrl(true) // default false
+	    // fail if a resource couldn't be resolved
+	    .embeddedImageAutoResolutionMustBeSuccesful(true) // default false (lenient mode)
+	    .build());
 </code></pre>
 			Also works with properties:
 			<pre><code class="language-properties small">simplejavamail.embeddedimages.dynamicresolution.enable.dir=true
@@ -1330,7 +1372,9 @@ simplejavamail.javaxmail.debug.out=SLF4J
 <pre><code class="language-java small">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user", "password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .withLocalBindAddress("203.0.113.10")
+    .withConnectionConfig(ConnectionConfig.builder()
+        .withLocalBindAddress("203.0.113.10")
+        .build())
     .buildMailer();
 </code></pre>
 <pre><code class="language-properties small">simplejavamail.smtp.localaddress=203.0.113.10
@@ -1361,7 +1405,9 @@ simplejavamail.smtp.localport=25252
 <pre><code class="language-java small">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user", "password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .withSmtpClientHostname("orders-service.prod.example.com")
+    .withConnectionConfig(ConnectionConfig.builder()
+        .withSmtpClientHostname("orders-service.prod.example.com")
+        .build())
     .buildMailer();
 </code></pre>
 <pre><code class="language-properties small">simplejavamail.smtp.clienthostname=orders-service.prod.example.com
@@ -1494,10 +1540,12 @@ Session session = mailer.getSession();
         .withType(Message.RecipientType.TO)
         .build())
     .withPlainText("Hello")
-    .withDeliveryStatusNotification(
-        DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
-        DeliveryStatusNotification.NotifyOption.FAILURE,
-        DeliveryStatusNotification.NotifyOption.DELAY)
+    .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+        .withDeliveryStatusNotification(
+            DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+            DeliveryStatusNotification.NotifyOption.FAILURE,
+            DeliveryStatusNotification.NotifyOption.DELAY)
+        .build())
     .buildEmail();
 </code></pre>
 <pre><code class="language-properties small">simplejavamail.defaults.delivery.status.notification.notify=FAILURE,DELAY
@@ -1533,10 +1581,12 @@ simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
         .withType(Message.RecipientType.TO)
         .build())
     .withPlainText("Your order confirmation")
-    .withDeliveryStatusNotification(
-        DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
-        DeliveryStatusNotification.NotifyOption.FAILURE,
-        DeliveryStatusNotification.NotifyOption.DELAY)
+    .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+        .withDeliveryStatusNotification(
+            DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+            DeliveryStatusNotification.NotifyOption.FAILURE,
+            DeliveryStatusNotification.NotifyOption.DELAY)
+        .build())
     .buildEmail();
 
 MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
@@ -1553,7 +1603,9 @@ Action: failed
 Status: 5.1.1</code></pre>
       <p>The notification's <code>5.1.1</code> means a bad destination mailbox address; it is not the result of the Java send call.</p>
       <p>If you already have an identifier, fix it explicitly, just like a Message-ID:</p>
-<pre><code class="language-java small">emailBuilder.fixingEnvelopeId("order-42-attempt-1");</code></pre>
+<pre><code class="language-java small">emailBuilder.withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+    .fixingEnvelopeId("order-42-attempt-1")
+    .build());</code></pre>
       <p>When editing an existing DSN request, <code>clearReturnOption()</code> removes only the choice about returning headers or the full message.
         Notification events and a fixed envelope identifier stay unchanged:</p>
 <pre><code class="language-java small">DeliveryStatusNotification request = DeliveryStatusNotification.builder()
@@ -1568,9 +1620,10 @@ DeliveryStatusNotification withoutReturnPreference = request.toBuilder()
         Inspect its stored choices with <code>getReturnOption()</code>, <code>getNotifyOptions()</code> and <code>getEnvelopeId()</code> before building.
         The returned event set is an editable copy. Inspection also works while you are changing an incomplete request, but
         <code>build()</code> still requires at least one valid DSN option.</p>
-      <p>On composed and exact Email builders, use <code>clearDeliveryStatusNotificationReturnOption()</code>,
+      <p>On <code>SmtpDeliveryOptions.Builder</code>, use <code>clearDeliveryStatusNotificationReturnOption()</code>,
         <code>clearDeliveryStatusNotificationNotifyOptions()</code> or <code>clearEnvelopeId()</code> to remove just that part of the request.
-        Other choices stay in place; when no request components remain, the builder has no shared DSN request.
+        Supply the edited value through <code>withSmtpDeliveryOptions(...)</code> on the composed or exact Email builder.
+        Other choices stay in place; when no request components remain, the group has no shared DSN request.
         Composed emails can then receive configured defaults again, whereas exact emails continue to bypass ordinary templates.
         Clearing does not remove locks or recipient-specific notification preferences.</p>
     </div>
@@ -1580,7 +1633,7 @@ DeliveryStatusNotification withoutReturnPreference = request.toBuilder()
         <li>Automatic generation is best-effort. If the actual connection does not advertise usable DSN support, sending continues normally without
           ENVID and <code>receipt.getEnvelopeId()</code> is <code>null</code>. The check uses the connection after TLS/authentication, not an earlier probe.</li>
         <li>A fixed identifier is a requirement: without DSN support, sending throws <code>MailSubmissionException</code> before <code>MAIL FROM</code>.
-          Remove <code>fixingEnvelopeId(...)</code>, or pass <code>null</code>, to resume automatic generation; alternatively use a DSN-capable server.</li>
+          Remove <code>SmtpDeliveryOptions.Builder.fixingEnvelopeId(...)</code>, or pass <code>null</code>, to resume automatic generation; alternatively use a DSN-capable server.</li>
         <li>For a fixed identifier, pass the unencoded value: non-empty printable ASCII, at most 94 characters after SMTP xtext encoding (100 including
           <code>ENVID=</code>). Spaces, <code>+</code> and <code>=</code> each use three encoded characters. Nothing is trimmed. Avoid secrets or personal information.</li>
         <li>Generated identifiers belong to individual submissions, not the Email object. Reusing an Email, including concurrent sends, generates
@@ -1596,7 +1649,7 @@ DeliveryStatusNotification withoutReturnPreference = request.toBuilder()
           identifier. <code>CustomMailer</code> receives a fixed value on the Email and owns its envelope handling; Simple Java Mail does not generate
           or report an effective identifier for CustomMailer. Logging-only sends also report none. Validation and rehearsal do not submit ENVID.</li>
         <li>Unrelated raw MAIL parameters are retained. Existing ENVID in <code>mail.smtp.mailextension</code> or <code>mail.smtps.mailextension</code>
-          suppresses automatic generation; that unvalidated raw value is not reported on the receipt. Combining raw ENVID with <code>fixingEnvelopeId(...)</code>
+          suppresses automatic generation; that unvalidated raw value is not reported on the receipt. Combining raw ENVID with <code>SmtpDeliveryOptions.Builder.fixingEnvelopeId(...)</code>
           is rejected. Use the typed API for validation and receipt correlation.</li>
       </ul>
       <p>The CLI supports both construction paths. Add the appropriate option to your existing <code>sjm send</code> command:</p>
@@ -1641,7 +1694,9 @@ Email email = mail.emailBuilder().startingBlank()
     .from("sender@example.com")
     .withRecipients(team)
     .withRecipients(archive)
-    .withDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE, NotifyOption.DELAY)
+    .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+        .withDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE, NotifyOption.DELAY)
+        .build())
     .withPlainText("Your order confirmation")
     .buildEmail();
 
@@ -1693,8 +1748,10 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
         preferences without changing supplied bytes. Its shared notification and return methods also accept the same enums:</p>
 <pre><code class="language-java small">Email exact = mail.emailBuilder().startingFromExactEml(emlBytes)
     .withEnvelopeRecipients(customer, archive)
-    .withDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE, NotifyOption.DELAY)
-    .withDeliveryStatusNotificationReturnOption(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY)
+    .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+        .withDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE, NotifyOption.DELAY)
+        .withDeliveryStatusNotificationReturnOption(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY)
+        .build())
     .buildEmail();</code></pre>
       <p>The same rules apply to synchronous/asynchronous sends, simple batches, and open connections.</p>
       <p>A caller-owned Session using ordinary Angus has no managed recipient-command hook: it retains shared Email NOTIFY/RET and ENVID support,
@@ -1752,15 +1809,16 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
 	  </div>
 
 	  <div class="wide full-width-example">
-<pre><code>currentMailerBuilder
-    .withEmailValidator(
-		JMail.strictValidator()
-    		.requireOnlyTopLevelDomains(TopLevelDomain.DOT_COM)
-    		.withRule(email -> email.localPart().startsWith("allowed"))
-	)
-    // or
-    .clearEmailValidator() // retain completeness, encoded-word and CRLF checks
-    .resetEmailValidator() // restore the default strict JMail address validator
+<pre><code>ValidationConfig.Builder validation = ValidationConfig.builder()
+    .withEmailValidator(JMail.strictValidator()
+        .requireOnlyTopLevelDomains(TopLevelDomain.DOT_COM)
+        .withRule(email -> email.localPart().startsWith("allowed")));
+currentMailerBuilder.withValidationConfig(validation.build());
+
+// Or retain only completeness, encoded-word and CRLF checks:
+currentMailerBuilder.withValidationConfig(validation.clearEmailValidator().build());
+// Or restore the default strict JMail address validator:
+currentMailerBuilder.withValidationConfig(validation.resetEmailValidator().build());
 </code></pre>
 		  <pre><code>// inspect complete send preparation, without SMTP:
 MailRehearsal rehearsal = mailer.rehearse(email);
@@ -1790,20 +1848,22 @@ JMail.strictValidator()
   <section>
 	  <div class="view">
 		  <p>
-			  <code class="inline language-java">clearEmailValidator()</code> clears only the configurable JMail address policy. Required sender and
+			  <code class="inline language-java">ValidationConfig.Builder.clearEmailValidator()</code> clears only the configurable JMail address policy. Required sender and
 			  recipient checks, encoded-word protection and CRLF injection scanning remain active.
 		  </p>
 		  <p>
-			  <code class="inline language-java">disablingAllClientValidation(true)</code> changes client-side validation findings into warnings so
+			  <code class="inline language-java">ValidationConfig.Builder.disablingAllClientValidation(true)</code> changes client-side validation findings into warnings so
 			  SMTP handling can continue. Use this mode when the application deliberately assigns the acceptance decision to the SMTP server.
 		  </p>
 	  </div>
 
 	  <div class="wide full-width-example">
-<pre><code>currentMailerBuilder
-    .disablingAllClientValidation(true) // report validation findings as warnings
-    // or
-    .resetDisableAllClientValidations() // restore blocking validation
+<pre><code>ValidationConfig.Builder validation = currentMailerBuilder.getValidationConfig().toBuilder()
+    .disablingAllClientValidation(true); // report findings as warnings
+currentMailerBuilder.withValidationConfig(validation.build());
+
+// Or restore blocking validation:
+currentMailerBuilder.withValidationConfig(validation.resetDisableAllClientValidations().build());
 </code></pre>
 	  </div>
   </section>
@@ -1836,6 +1896,9 @@ JMail.strictValidator()
 			  Named <code>clearEnvelopeRecipients()</code>, <code>clearEnvelopeSender()</code>, DSN-component clears and <code>clearEnvelopeId()</code>
 			  let you remove a choice. Clearing recipients requires replacements before building; clearing a sender restores provider fallback,
 			  not an empty SMTP sender. These methods neither rewrite preserved bytes nor remove configured locks.</p>
+		  <p><code>copying(exactEmail)</code> starts editable composition. It no longer guarantees the original MIME bytes or the validity of
+			  signatures already applied to those bytes, and it does not automatically remove or re-sign old signatures. For unchanged resubmission,
+			  reuse the original exact Email. When constructing a new envelope, start from the authoritative finalized input again.</p>
 	  </div>
 
 	  <div class="side">
@@ -1850,6 +1913,16 @@ JMail.strictValidator()
 
 MailSubmissionReceipt receipt =
     mailer.sync().sendMail(email);</code></pre>
+<pre><code class="language-java small">// Resubmit the original exact Email with the same envelope
+mailer.sync().sendMail(email);
+
+// Retain the authoritative MIME input while constructing a new envelope
+Email rerouted = mail.emailBuilder()
+    .startingFromExactEml(finalizedEmlBytes)
+    .withEnvelopeRecipients("new-recipient@example.org")
+    .withEnvelopeSender("bounces@example.org")
+    .buildEmail();</code></pre>
+		  <p><code>finalizedEmlBytes</code> is the authoritative finalized input retained by your application, not an ordinary export of an edited copy.</p>
 	  </div>
   </section>
 
@@ -1931,7 +2004,9 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
           </p>
 <pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
     .withSMTPServer("legacy-relay.example.org", 587)
-    .withLegacySmtpContentSupport(true)
+    .withConnectionConfig(ConnectionConfig.builder()
+        .withLegacySmtpContentSupport(true)
+        .build())
     .buildMailer();</code></pre>
 <pre><code class="language-properties small">simplejavamail.smtp.legacycontentsupport=true</code></pre>
           <p>
@@ -2263,6 +2338,10 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
       <p class="wide">Copying keeps the draft's delivery-recipient overrides as well as its visible To/Cc/Bcc fields. If a draft routes to a test inbox,
         changing its subject or body on a copy still routes to that inbox. Call <code>clearOverrideReceivers()</code> explicitly to remove the copied
         routing choice; configured defaults, overrides and locks still apply. See <a href="debugging.html#section-override-receivers">test-inbox routing</a>.</p>
+      <p class="wide">Copied collections, including Reply-To and attachments, are already populated. Later additive calls retain their entries unless
+        cleared; the original Email stays unchanged. A copy is editable composition: copying an <a href="#section-exact-eml">exact Email</a> gives up
+        original byte identity and any guarantee about already applied signatures. It does not automatically remove or re-sign those signatures.
+        Reuse the original exact Email or build another exact envelope from the authoritative input when preservation is required.</p>
 
       <p class="wide">
         See <a href="https://javadoc.io/doc/org.simplejavamail/core-module/latest/org/simplejavamail/api/email/EmailPopulatingBuilder.html" target="_blank"><code class="inline language-java">EmailPopulatingBuilder</code></a>
@@ -2280,8 +2359,9 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
         current message's To, CC, or BCC recipients.
       </p>
       <p>
-        Call <code class="inline language-java">withReplyTo(...)</code> more than once, or pass a <code class="inline language-java">List&lt;Recipient&gt;</code>,
-        when replies may go to more than one address.
+        Each <code class="inline language-java">withReplyTo(...)</code> call appends to the existing reply destinations. Repeated calls and the
+        <code class="inline language-java">List&lt;Recipient&gt;</code> overload retain order and duplicate occurrences; an empty list does nothing.
+        Copying an Email starts with its Reply-To list already populated. Clear that list first when replacing it; edits leave the original Email unchanged.
       </p>
     </div>
 
@@ -2294,6 +2374,11 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
     .withSubject("Service notice")
     .withPlainText("Planned maintenance starts at 22:00.")
     .buildEmail();</code></pre>
+      <pre><code class="language-java">Email revised = SimpleJavaMail.fromDefaults().emailBuilder().copying(email)
+    .clearReplyTo()
+    .withReplyTo("Support &lt;support@example.com&gt;")
+    .buildEmail();</code></pre>
+      <p>Clearing edits this copy's local collection. Configured defaults, overrides and mandatory locks still apply when sending.</p>
     </div>
   </section>
 
@@ -2325,10 +2410,17 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
 
     <div>
 <pre><code>// anonymous proxy
-currentMailerBuilder.withProxy("proxy.host.com", 1080)
+currentMailerBuilder.withProxyConfig(SocksProxyConfig.builder()
+    .withHost("proxy.host.com")
+    .withPort(1080)
+    .withHost("proxy.host.com")
+    .withPort(1080)
+    .withUsername("proxy username")
+    .withPassword("proxy password")
+    .build())
 
 // authenticated proxy
-currentMailerBuilder.withProxy("proxy.host.com", 1080, "proxy username", "proxy password");
+currentMailerBuilder;
 </code></pre>
       <p>See <a href="configuration.html#section-proxy-bridge-ports">Authenticated proxy bridge ports</a> for automatic loopback ports,
         optional fixed ports, and applications that use more than one authenticated-proxy Mailer.</p>
@@ -2379,7 +2471,8 @@ CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 			<li>Attachments, embedded images and decrypted attachments are stored with their bytes and MIME metadata.</li>
 			<li>A forwarded message is stored in RFC 822 form and restored with a neutral mail session.</li>
 			<li>S/MIME signing configuration is kept, including its PKCS12 data and passwords.</li>
-			<li>OpenPGP key rings and passphrases are deliberately not serialized. Add the OpenPGP configuration again before sending a restored email.</li>
+			<li>OpenPGP signing and encryption configuration is kept, including signing key selection, hash and cipher preferences.
+				Signing configuration includes its secret key ring and passphrase; encryption-only configuration includes recipient public key rings.</li>
 		</ul>
 		<p class="wide">
 			A custom <code class="inline language-java">DataSource</code> is read in full while the email is serialized. After deserialization it is a
@@ -2390,8 +2483,28 @@ CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 			Treat the serialized data as sensitive. It can contain the complete message, attachments, credentials, private keys and passwords.
 		</p>
 		<p class="wide">
+			For a composed email such as <code>protectedEmail</code> from the <a href="security.html#section-sending-openpgp">OpenPGP example</a>,
+			the restored email retains the configuration needed to sign and encrypt when sent. Java serialization does not itself apply cryptography.
+			For <a href="#section-exact-eml">exact protected EML</a>, restoration retains the authoritative bytes and does not sign or encrypt them again.
+		</p>
+<pre class="wide"><code class="language-java">byte[] snapshot;
+try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+     ObjectOutputStream output = new ObjectOutputStream(bytes)) {
+    output.writeObject(protectedEmail);
+    snapshot = bytes.toByteArray();
+}
+
+Email restored;
+try (ObjectInputStream input = new ObjectInputStream(
+        new ByteArrayInputStream(snapshot))) {
+    restored = (Email) input.readObject();
+}
+
+mailer.sync().sendMail(restored);</code></pre>
+		<p class="wide">
 			Legacy serialized forms can lack attachment bytes, forwarded MIME content or S/MIME signing configuration. That missing data cannot be
-			recovered from the serialized form. Reading or sending an unavailable attachment fails with a clear error.
+			recovered from the serialized form. Reading or sending an unavailable attachment fails with a clear error. Earlier unreleased 10.0.0 snapshots
+			also omitted OpenPGP configuration; reading such a snapshot leaves it absent rather than recovering keys that were never written.
 		</p>
 	</section>
 
@@ -2566,7 +2679,8 @@ private static String render(
         </p>
     <hr/>
 		<p class="wide">
-			The following throws an EmailTooBig exception as the <em>cause</em> in a parent MailerException instance
+			The following throws <code>EmailTooBigException</code> directly. It belongs to the <code>MailException</code> family and has kind
+			<code>MESSAGE_SIZE</code>, so either a specific catch or your common library-failure handler can inspect it.
 		</p>
 		<p class="wide">
 			For <a href="#section-exact-eml">exact EML</a>, the measured size is the supplied wire-byte length; Simple Java Mail does not rebuild the
@@ -2575,15 +2689,17 @@ private static String render(
         <div class="wide">
 		    <pre><code>Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
       .(..)
-      .withMaximumEmailSize(4) // 4 bytes, that's not much
+      .withValidationConfig(ValidationConfig.builder()
+          .withMaximumEmailSize(4) // 4 bytes, that's not much
+          .build())
       .buildMailer();
 
 try {
 	mailer.sync().sendMail(emailBiggerThan4Bytes);
-} catch(Exception e) {
-	// cause: EmailTooBigException
+} catch (EmailTooBigException e) {
+	// failure: EmailTooBigException (kind MESSAGE_SIZE)
 	// msg: "Email size of 277 bytes exceeds maximum allowed size of 4 bytes"
-	e.getCause().printStackTrace();
+	e.printStackTrace();
 }
 </code></pre>
       </div>

@@ -64,6 +64,7 @@ description: "Configure mailers in Java, property files, or environment variable
 	  <li><a href="#section-proxy-bridge-ports" class="indent">Authenticated proxy bridge ports</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
 	  <li><a href="#section-config-snapshot" class="indent">When changes take effect</a></li>
+	  <li><a href="#section-typed-config-keys" class="indent">Read configuration values in Java</a></li>
 	  <li><a href="#section-environment-variables" class="indent">Environment variable names</a></li>
       <li><a href="#section-available-properties" class="indent">Available properties</a></li>
       <li><a href="#section-locked-configuration">Keep centrally supplied settings fixed</a></li>
@@ -207,37 +208,45 @@ mailerBuilder.withTransportStrategy(TransportStrategy.SMTP_TLS);
 
 // separate choice: explicitly skip STARTTLS for a plain SMTP connection
 mailerBuilder.withTransportStrategy(TransportStrategy.SMTP)
-  .withOpportunisticTLS(false);
+  .withTlsConfig(TlsConfig.builder()
+      .withOpportunisticTLS(false)
+      .build());
 
-// or instead adding anonymous proxy configuration
-mailerBuilder.withProxy("proxy.host.com", 1080);
-// or
-mailerBuilder
-  .withProxyHost("proxy.host.com")
-  .withProxyPort(1080);
+// anonymous SOCKS proxy
+mailerBuilder.withProxyConfig(SocksProxyConfig.builder()
+    .withHost("proxy.host.com")
+    .withPort(1080)
+    .build());
 
 // or authenticated proxy
 mailerBuilder
-  .withProxy("proxy.host.com", 1080, "proxy username", "proxy password");
-// or
-mailerBuilder
-  .withProxyHost("proxy.host.com")
-  .withProxyPort(1080)
-  .withProxyUsername("proxy username")
-  .withProxyPassword("proxy password");
+  .withProxyConfig(SocksProxyConfig.builder()
+      .withHost("proxy.host.com")
+      .withPort(1080)
+      .withUsername("proxy username")
+      .withPassword("proxy password")
+      .build());
 </code></pre>
       <pre><code class="small">
 // anonymous smtp + anonymous proxy + default SMTP protocol strategy
 mailerBuilder
         .withSMTPServerHost("smtp.host.com").withSMTPServerPort(25)
-        .withProxyHost("proxy.host.com").withProxyPort(1080);
+        .withProxyConfig(SocksProxyConfig.builder()
+            .withHost("proxy.host.com")
+            .withPort(1080)
+            .build());
 </code></pre>
       <pre><code class="small">
 // configure everything!
 mail.mailerBuilder()
         .withSMTPServer("smtp.host.com", 587, "user@host.com", "password")
         .withTransportStrategy(TransportStrategy.SMTP_TLS)
-        .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password")
+        .withProxyConfig(SocksProxyConfig.builder()
+            .withHost("socksproxy.host.com")
+            .withPort(1080)
+            .withUsername("proxy user")
+            .withPassword("proxy password")
+            .build())
         .buildMailer()
         .sync().sendMail(email);
 </code></pre>
@@ -247,11 +256,19 @@ mail.mailerBuilder(session);
 
 // preconfigured but you need anonymous proxy?
 mail.mailerBuilder(session)
-        .withProxy("socksproxy.host.com", 1080);
+        .withProxyConfig(SocksProxyConfig.builder()
+            .withHost("socksproxy.host.com")
+            .withPort(1080)
+            .build());
 
 // preconfigured but you need authenticated proxy?
 mail.mailerBuilder(session)
-        .withProxy("socksproxy.host.com", 1080, "proxy user", "proxy password");
+        .withProxyConfig(SocksProxyConfig.builder()
+            .withHost("socksproxy.host.com")
+            .withPort(1080)
+            .withUsername("proxy user")
+            .withPassword("proxy password")
+            .build());
 </code></pre>
       <p>Use one Mailer per Session. Another Mailer cannot use that Session, or a second Session sharing its
         <code class="inline language-java">Properties</code>, until the first Mailer has shut down successfully. Reuse the existing Mailer for
@@ -277,20 +294,92 @@ mail.mailerBuilder(session)
         The mailer builder also covers validation, diagnostics, timeouts, local binding, shared signing defaults, and
         <a href="features.html#section-extension-points">extension points</a>.
       </p>
-      <p><code>withSessionTimeout(Duration.ofSeconds(1))</code> sets connection, read and write timeouts together. On a caller-supplied Session,
+      <p>Keep SMTP setup direct and collect advanced settings into immutable values. Build a value without opening connections or starting workers,
+        then supply it through the corresponding Mailer method:</p>
+      <table><thead><tr><th>Mailer method</th><th>Configuration value</th><th>Settings</th></tr></thead><tbody>
+        <tr><td><code>withConnectionPoolConfig(...)</code></td><td><code>ConnectionPoolConfig</code></td><td>Connection counts, claim timeout, expiration and clustering.</td></tr>
+        <tr><td><code>withAsyncExecutionConfig(...)</code></td><td><code>AsyncExecutionConfig</code></td><td>Worker count, keep-alive, waiting queue and admission, or a supplied executor.</td></tr>
+        <tr><td><code>withProxyConfig(...)</code></td><td><code>SocksProxyConfig</code></td><td>SOCKS endpoint, credentials and local bridge port.</td></tr>
+        <tr><td><code>withSendingLimitsConfig(...)</code></td><td><code>SendingLimitsConfig</code></td><td>Message/recipient rates and shared allowance.</td></tr>
+        <tr><td><code>withConnectionConfig(...)</code></td><td><code>ConnectionConfig</code></td><td>Socket timeouts, local binding, EHLO hostname and legacy content compatibility.</td></tr>
+        <tr><td><code>withTlsConfig(...)</code></td><td><code>TlsConfig</code></td><td>Trust, hostname checks, SSL factories and optional STARTTLS.</td></tr>
+        <tr><td><code>withValidationConfig(...)</code></td><td><code>ValidationConfig</code></td><td>Address policy, warning behavior and maximum prepared email size.</td></tr>
+      </tbody></table>
+      <p>Each setter replaces that group's supplied choices. Omitted fields inherit the factory snapshot rather than keeping the previous group's values.
+        Use <code>mailerBuilder.getConnectionPoolConfig().toBuilder()</code>, for example, to retain choices while editing a group, or
+        <code>useConfiguredConnectionPoolConfig()</code> to restore inheritance for the whole group. Group builders own detailed inspection and
+        clear/reset methods; root getters inspect supplied groups. Effective settings remain available on the built Mailer.</p>
+      <p>An explicit empty Java string remains a supplied choice and follows that setting's validation or clearing rules.
+        It does not restore a captured value. This differs from blank entries in property sources, which are treated as absent.
+        Use the named clear or <code>useConfigured...</code> operation to express either intent explicitly.</p>
+      <p><code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> sets connection, read and write timeouts together. On a caller-supplied Session,
         leaving that setter unused preserves all three original values. Inspect the common configured value through
         <code>mailer.getOperationalConfig().getSessionTimeout()</code>. It returns a <code>Duration</code>, or <code>null</code> when the values
         differ, are missing or cannot be interpreted. Null does not mean unlimited, and the getter does not guess provider defaults.
         These inspection values describe construction; they do not track direct Session mutations after the Mailer is built.</p>
     </div>
 
+    <div class="wide">
+      <h4 id="configuration-operations">Setting, clearing and restoring a choice</h4>
+      <table><thead><tr><th>Operation</th><th>Meaning at the documented scope</th></tr></thead><tbody>
+        <tr><td><code>withX(value)</code></td><td>Supply a choice. Group setters replace the supplied group; collection methods can append where their contract says so.</td></tr>
+        <tr><td><code>clearX()</code></td><td>Remove that scope's choice. Another fallback can apply; some clears explicitly remove a captured setting too.</td></tr>
+        <tr><td><code>resetX()</code></td><td>Select the published built-in fallback, including absence when that is the fallback.</td></tr>
+        <tr><td><code>useConfiguredX()</code></td><td>Restore captured configuration for that member or group.</td></tr>
+        <tr><td>Builder group getters</td><td>Inspect supplied choices, including absence and explicit-clear flags, without resolving runtime settings or allocating resources.</td></tr>
+        <tr><td>Built Mailer configuration getters</td><td>Inspect the effective construction settings. They do not track later direct Session mutations.</td></tr>
+      </tbody></table>
+      <p>Not every setting has every operation. The setter's contract defines its scope, and configuration locks still apply.
+        For example, <code>resetMaxSize()</code> chooses the library pool maximum, while <code>useConfiguredMaxSize()</code> restores the captured maximum.
+        Neither changes the other supplied members.</p>
+      <p>Suppose the factory captured <code>simplejavamail.defaults.connectionpool.maxsize=7</code>. Replacing the pool group discards its previous
+        supplied maximum and claim timeout:</p>
+      <pre><code class="language-java">ConnectionPoolConfig firstPoolChoices = ConnectionPoolConfig.builder()
+    .withMaxSize(9)
+    .withClaimTimeout(Duration.ofSeconds(2))
+    .build();
+mailerBuilder.withConnectionPoolConfig(firstPoolChoices);
+
+mailerBuilder.withConnectionPoolConfig(ConnectionPoolConfig.builder()
+    .withCoreSize(1)
+    .build());
+// Supplied max size and claim timeout are now null.
+// The built Mailer resolves max size to the captured 7.</code></pre>
+      <p>To make the same core-size change while retaining the original supplied maximum and claim timeout, edit that value instead:</p>
+      <pre><code class="language-java">mailerBuilder.withConnectionPoolConfig(firstPoolChoices.toBuilder()
+    .withCoreSize(1)
+    .build());
+// Supplied max size remains 9 and claim timeout remains two seconds.</code></pre>
+      <p>Use <code>mailerBuilder.getConnectionPoolConfig().toBuilder()</code> when editing the builder's current group.
+        These pool-group edits leave previously built values and Mailers unchanged. For a caller-owned Session, removing an explicit connection choice restores that
+        Session's baseline where applicable; it does not start applying ordinary factory connection defaults.</p>
+      <p>Clearing creation-age expiration explicitly disables even a captured age setting. Restoring inheritance is a separate operation;
+        both retain the group's other choices, including idle expiration:</p>
+      <pre><code class="language-java">ConnectionPoolConfig noCreationAge = mailerBuilder.getConnectionPoolConfig().toBuilder()
+    .clearExpireAfterCreation()
+    .build();
+mailerBuilder.withConnectionPoolConfig(noCreationAge);
+// getExpireAfterCreation() is null; isExpireAfterCreationCleared() is true.
+
+ConnectionPoolConfig inheritedCreationAge = noCreationAge.toBuilder()
+    .useConfiguredExpireAfterCreation()
+    .build();
+mailerBuilder.withConnectionPoolConfig(inheritedCreationAge);
+// getExpireAfterCreation() is still null; isExpireAfterCreationCleared() is false.
+// The built Mailer can use the factory's captured age setting again.</code></pre>
+    </div>
+
     <div class="wide full-width-example">
       <pre><code class="small">// report missing fields, invalid addresses and CRLF suspicions as warnings,
 // then continue with SMTP handling
-mailerBuilder.disablingAllClientValidation(true);
+mailerBuilder.withValidationConfig(ValidationConfig.builder()
+    .disablingAllClientValidation(true)
+    .build());
 </code></pre>
       <pre><code class="small">// apply your own local email-size limit, independently of the SMTP server
-mailerBuilder.withMaximumEmailSize(10_000_000);</code></pre>
+mailerBuilder.withValidationConfig(ValidationConfig.builder()
+    .withMaximumEmailSize(10_000_000)
+    .build());</code></pre>
       <p>Managed Angus sends also check the prepared content against the connected server's advertised SIZE limit automatically.
         There is no additional property or builder setting. This connected check is separate from the local limit above and offline rehearsal;
         see <a href="/analyzing-send-results.html#section-message-size">message size diagnostics</a>.</p>
@@ -313,10 +402,13 @@ mailerBuilder
 mailerBuilder.withTransportModeLoggingOnly(true);
 </code></pre>
       <pre><code class="small">// custom SSL connection factory (note: breaks setups with authenticated proxy!)
-mailerBuilder.withCustomSSLFactoryClass("org.mypackage.MySSLFactory");
-mailerBuilder.withCustomSSLFactoryInstance(mySSLFactoryInstance);
+mailerBuilder.withTlsConfig(TlsConfig.builder()
+    .withCustomSSLFactoryClass("org.mypackage.MySSLFactory")
+    // or an already constructed factory; an instance takes precedence over the class
+    .withCustomSSLFactoryInstance(mySSLFactoryInstance)
+    .build());
 </code></pre>
-      <p>An instance takes precedence over a class name. Inspect it with <code>getCustomSSLFactoryInstance()</code>, or inspect the class name with
+      <p>On <code>TlsConfig</code> and its builder, inspect the instance with <code>getCustomSSLFactoryInstance()</code>, or inspect the class name with
         <code>getCustomSSLFactory()</code>. Use <code>clearCustomSSLFactoryInstance()</code> to return to the configured class, or
         <code>clearCustomSSLFactoryClass()</code> to remove that class choice. Clearing one leaves the other intact; configuration locks still apply.</p>
       <p>If your custom factory fails, the connection attempt fails too when Simple Java Mail creates the Angus Session. It does not quietly switch to
@@ -328,16 +420,18 @@ mailerBuilder.withCustomSSLFactoryInstance(mySSLFactoryInstance);
         See <a href="security.html#section-custom-ssl-factory">custom SSL factories</a> for connection cleanup and module-access details.</p>
       <pre><code class="small">
 // change email validation strategy
-mailerBuilder.withEmailValidator(
-	JMail.strictValidator()
-		.requireOnlyTopLevelDomains(TopLevelDomain.DOT_COM)
-		.withRule(email -> email.localPart().startsWith("allowed"))
-)
+ValidationConfig.Builder validation = ValidationConfig.builder()
+    .withEmailValidator(
+        JMail.strictValidator()
+            .requireOnlyTopLevelDomains(TopLevelDomain.DOT_COM)
+            .withRule(email -> email.localPart().startsWith("allowed")));
+mailerBuilder.withValidationConfig(validation.build());
 
 // restore the default strict JMail address validator:
-mailerBuilder.resetEmailValidator();
+validation.resetEmailValidator();
 // clear the JMail address policy; keep completeness, encoded-word and CRLF checks:
-mailerBuilder.clearEmailValidator();
+validation.clearEmailValidator();
+mailerBuilder.withValidationConfig(validation.build());
 </code></pre>
 <pre><code class="small">
 // set custom properties
@@ -355,48 +449,57 @@ mailer.getSession().getProperties().setProperty("mail.smtp.timeout", "10000");
         not values inherited from its defaults. Add any inherited value explicitly with <code>withProperty(...)</code> if the Session needs it.
         This differs from <code>ConfigLoader.builder().withProperties(...)</code>, which includes inherited string defaults when loading factory settings.</p>
       <p>For recipient-rejection handling, prefer the Email API over a raw provider property:
-        <code>emailBuilder.withSendingToAcceptedRecipients(true)</code> continues for accepted recipients, and <code>false</code> withholds content after
+        <code>SmtpDeliveryOptions.Builder.withSendingToAcceptedRecipients(true)</code> continues for accepted recipients, and <code>false</code> withholds content after
         a known recipient rejection. Configure <code>simplejavamail.defaults.sendtoacceptedrecipients</code> for an ordinary Email default, or
         <code>simplejavamail.locked.defaults.sendtoacceptedrecipients</code> to keep the choice fixed within this factory. Ordinary defaults can be
         overridden or suppressed; a lock cannot. See <a href="analyzing-send-results.html#section-partial-send">both choices and their resulting receipts</a>,
         including why an advanced <code>sendpartial=true</code> property conflicts with an Email choosing false.</p>
 <pre><code class="small">
 /* Secure TLS defaults. These calls are optional. */
-mailerBuilder.trustingAllHosts(false);
-mailerBuilder.verifyingServerIdentity(true);
+TlsConfig.Builder tls = TlsConfig.builder()
+    .trustingAllHosts(false)
+    .verifyingServerIdentity(true);
+mailerBuilder.withTlsConfig(tls.build());
 
 // preferred for private PKI: add the issuing CA to the JVM trust store
 // narrow compatibility exception if that is not possible:
-mailerBuilder.trustingSSLHosts("smtp.internal.example");
+tls.trustingSSLHosts("smtp.internal.example");
 // broad compatibility escape hatch; avoid in production:
-mailerBuilder.trustingAllHosts(true);
+tls.trustingAllHosts(true);
 
 // clear or reset trust exceptions
-mailerBuilder.clearTrustedSSLHosts();
-mailerBuilder.resetTrustingAllHosts();
+tls.clearTrustedSSLHosts().resetTrustingAllHosts();
+mailerBuilder.withTlsConfig(tls.build());
 </code></pre>
 <pre><code class="small">
 // compatibility escape hatch; disables hostname verification
-mailerBuilder.verifyingServerIdentity(false);
+TlsConfig.Builder tls = mailerBuilder.getTlsConfig().toBuilder()
+    .verifyingServerIdentity(false);
+mailerBuilder.withTlsConfig(tls.build());
 // restore the secure default
-mailerBuilder.resetVerifyingServerIdentity();
+mailerBuilder.withTlsConfig(tls.resetVerifyingServerIdentity().build());
 </code></pre>
 <pre><code class="small">// explicit worker settings apply with or without the batch module
-mailerBuilder.withThreadPoolSize(3);
-// Duration.ZERO: core threads stay alive; positive values retire idle workers
-mailerBuilder.withThreadPoolKeepAliveTime(Duration.ofSeconds(5));
-
-// optional bound on waiting async tasks, separate from worker count
-mailerBuilder.withAsyncQueueCapacity(100);
-mailerBuilder.withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT);
+mailerBuilder.withAsyncExecutionConfig(AsyncExecutionConfig.builder()
+    .withThreadPoolSize(3)
+    // Duration.ZERO: core threads stay alive; positive values retire idle workers
+    .withKeepAliveTime(Duration.ofSeconds(5))
+    // optional bound on waiting async tasks, separate from worker count
+    .withQueueCapacity(100)
+    .rejectWhenFull()
+    .build());
 
 // completely replace the thread pool executor with your own
-// discard built-in queue settings; configure your executor's queue yourself
-mailerBuilder.resetAsyncQueue()
-    .withExecutorService(new MyAwesomeCustomThreadPoolExecutor());
+// replacing the group discards the earlier explicit built-in settings
+// configure your executor's queue yourself
+mailerBuilder.withAsyncExecutionConfig(AsyncExecutionConfig.builder()
+    .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
+    .build());
 </code></pre>
 		  <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
-mailerBuilder.withSessionTimeout(Duration.ofSeconds(10)); // 10 seconds for quick disconnect
+mailerBuilder.withConnectionConfig(ConnectionConfig.builder()
+    .withSessionTimeout(Duration.ofSeconds(10))
+    .build()); // 10 seconds for quick disconnect
 </code></pre>
       <p>Unspecified worker settings retain the one-worker default without batch and ten-worker default with batch.
         Java session, executor and pool time settings use <code>Duration</code>; the corresponding properties and CLI arguments still use
@@ -411,13 +514,21 @@ mailerBuilder.withSessionTimeout(Duration.ofSeconds(10)); // 10 seconds for quic
         not the total time taken to send an email.</p>
 		  <pre><code class="small">// bind the outgoing SMTP socket to a local/source address
 // the local port is advanced and usually should be omitted
-mailerBuilder.withLocalBindAddress("203.0.113.10");
-mailerBuilder.withLocalBindAddress("203.0.113.10", 25252);
+mailerBuilder.withConnectionConfig(ConnectionConfig.builder()
+    .withLocalBindAddress("203.0.113.10")
+    .build());
+mailerBuilder.withConnectionConfig(ConnectionConfig.builder()
+    .withLocalBindAddress("203.0.113.10", 25252)
+    .build());
 </code></pre>
 		  <pre><code class="small">// identify the SMTP client hostname sent in EHLO/HELO
 // useful for corporate relay policy, logging, tracing and diagnostics
-mailerBuilder.withSmtpClientHostname("orders-service.prod.example.com");
-mailerBuilder.clearSmtpClientHostname();
+mailerBuilder.withConnectionConfig(ConnectionConfig.builder()
+    .withSmtpClientHostname("orders-service.prod.example.com")
+    .build());
+mailerBuilder.withConnectionConfig(ConnectionConfig.builder()
+    .clearSmtpClientHostname()
+    .build());
 </code></pre>
 		  <pre><code class="small">// message policy uses Email templates, including signing
 Email signingDefaults = mail.emailBuilder().startingBlank()
@@ -440,7 +551,9 @@ mailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test co
       <p>Reuse one Mailer for ASCII and international mail; the bundled managed Angus transport negotiates each message separately.
         Only enable this compatibility option after verifying that the server and onward delivery route preserve internationalized addresses,
         raw UTF-8 headers and raw 8-bit bodies without advertising the corresponding extensions. It defaults to false:</p>
-<pre><code class="small">mailerBuilder.withLegacySmtpContentSupport(true);
+<pre><code class="small">mailerBuilder.withConnectionConfig(ConnectionConfig.builder()
+    .withLegacySmtpContentSupport(true)
+    .build());
 boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnabled();</code></pre>
       <p>This does not relax TLS, REQUIRETLS, explicit DSN or content-safety checks. An accepted submission does not prove downstream delivery.
         In a shared cluster, the selected Session's configuration supplies this permission, not the Mailer you happened to call.
@@ -467,7 +580,7 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
       <p>
         Simple Java Mail writes the selected port to the effective Session before opening the SMTP connection. The value is available as
         <code class="inline language-properties">mail.smtp.socks.port</code> or <code class="inline language-properties">mail.smtps.socks.port</code>
-        and can change when a stopped bridge starts again. Use <code class="inline language-java">withProxyBridgePort(...)</code>, or the
+        and can change when a stopped bridge starts again. Use <code class="inline language-java">SocksProxyConfig.Builder.withBridgePort(...)</code>, or the
         <code class="inline language-properties">simplejavamail.proxy.socks5bridge.port</code> property, only when you need a fixed positive port.
       </p>
     </div>
@@ -478,15 +591,25 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
 Mailer mailer = mail.mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
+    .withProxyConfig(SocksProxyConfig.builder()
+        .withHost("proxy.example.com")
+        .withPort(1080)
+        .withUsername("proxy-user")
+        .withPassword("proxy-password")
+        .build())
     .buildMailer();
 
 // Only if the local bridge must use a fixed port:
 Mailer fixedPortMailer = mail.mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "smtp-user", "smtp-password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .withProxy("proxy.example.com", 1080, "proxy-user", "proxy-password")
-    .withProxyBridgePort(1081)
+    .withProxyConfig(SocksProxyConfig.builder()
+        .withHost("proxy.example.com")
+        .withPort(1080)
+        .withUsername("proxy-user")
+        .withPassword("proxy-password")
+        .withBridgePort(1081)
+        .build())
     .buildMailer();
 </code></pre>
     </div>
@@ -508,6 +631,15 @@ Mailer fixedPortMailer = mail.mailerBuilder()
         priority and call <code class="inline language-java">load()</code>. A later non-blank value wins. A blank value is treated as absent, so it does
         not hide a useful value from an earlier source.
       </p>
+      <pre><code class="language-properties small"># Earlier source
+simplejavamail.smtp.username=relay-user
+
+# Later source: does not clear relay-user
+simplejavamail.smtp.username=</code></pre>
+      <p>Null map values and whitespace-only strings are absent too. To deliberately remove a captured SMTP username in Java, use
+        <code>clearSMTPServerUsername()</code>; the password remains a separate choice. Clearing both stored credentials requires
+        <code>clearSMTPServerPassword()</code> as well, and configuration locks still apply. See the
+        <a href="#configuration-operations">operation table</a> for the distinction between clearing and restoring configuration.</p>
       <p>
         Only the winning value is parsed. A malformed lower-priority value therefore causes no error when a valid higher-priority source replaces it:
       </p>
@@ -602,7 +734,7 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
         with <code class="inline language-java">withConfig(previous)</code> when the replacement should override only part of it.
       </p>
       <p>
-        Inspect resolved values with <code class="inline language-java">hasProperty(...)</code>, the typed getters, and
+        Inspect captured values with <code class="inline language-java">get(ConfigKeys.SMTP_PORT)</code>, <code>hasProperty(ConfigKeys.SMTP_PORT)</code>, and
         <code class="inline language-java">getPropertySource(...)</code>. <code class="inline language-java">asMap()</code> and the wildcard maps it
         contains are unmodifiable.
       </p>
@@ -636,6 +768,56 @@ Mailer failoverMailer = failoverMail.mailerBuilder().buildMailer();
 productionMailer.close();
 </code></pre>
     </div>
+  </section>
+
+  <a href="#section-typed-config-keys" id="section-typed-config-keys" class="section-link h3">&sect;</a>
+  <h3>Read configuration values in Java</h3>
+  <section>
+    <p class="wide">
+      Each <code>ConfigKeys</code> key carries its Java value type. Use the same key for reading, presence/source inspection
+      and explicit/configured/fallback selection. The compiler rejects a port assigned to String or a String fallback for an Integer key.
+      These are captured input values; built-in and derived Mailer defaults are resolved by the builders.
+    </p>
+    <pre class="full-width-example"><code class="language-java">SimpleJavaMailConfig config = ConfigLoader.builder()
+    .withMap("deployment", Map.of(
+        "simplejavamail.smtp.port", "587",
+        "simplejavamail.defaults.sessiontimeoutmillis", "1500"))
+    .load();
+
+Integer port = config.get(ConfigKeys.SMTP_PORT);
+Duration timeout = config.get(ConfigKeys.SESSION_TIMEOUT);
+Integer selectedPort = config.valueOrProperty(null, ConfigKeys.SMTP_PORT, 25);
+String source = config.getPropertySource(ConfigKeys.SESSION_TIMEOUT);
+boolean configured = config.hasProperty(ConfigKeys.SMTP_PORT);
+// String wrong = config.get(ConfigKeys.SMTP_PORT); // does not compile</code></pre>
+    <p class="wide">
+      All time-valued key reads return <code>Duration</code>. Existing numeric-millisecond input names still accept their
+      integer representation and retain signed Integer bounds and whole-millisecond precision; ISO-duration inputs keep
+      their existing precision and validation. A Java read of 1500 above returns <code>Duration.ofMillis(1500)</code>.
+      Dynamic map inputs do not change units or gain a different parser because the key's Java view is Duration.
+    </p>
+    <p class="wide">
+      Missing scalars and aggregate configuration maps return null: an absent key does not fabricate an empty configured
+      map or a runtime default. Present maps retain complete types—<code>Map&lt;String, String&gt;</code> for extra properties,
+      <code>Map&lt;UUID, ConnectionPoolClusterConfig&gt;</code> for clusters, and <code>Map&lt;String, SimpleJavaMailConfig&gt;</code>
+      for named Mailers—and are detached and unmodifiable. This configuration convention is separate from operation-result collections.
+    </p>
+    <pre class="full-width-example"><code class="language-java">Map&lt;String, String&gt; extras = config.valueOrProperty(
+    null, ConfigKeys.EXTRA_PROPERTIES, Map.of()); // application fallback; the absent key stays absent
+
+SimpleJavaMailConfig copied = ConfigLoader.builder().withConfig(config).load();
+Duration sameTimeout = copied.get(ConfigKeys.SESSION_TIMEOUT);</code></pre>
+    <p class="wide">
+      <code>valueOrProperty</code> keeps a nonempty explicit value, otherwise the configured value, otherwise its supplied
+      fallback. An empty String is absent; whitespace Strings, zero and false retain their usual meaning. Explicit and
+      fallback objects remain application-owned. Neither a read nor this helper changes sources or bypasses locks.
+    </p>
+    <p class="wide">
+      <code>ConfigLoader.Property</code> and <code>config.asMap()</code> remain available for dynamic integration. That
+      heterogeneous map retains parser values, including Integer milliseconds for the legacy timeout keys; ordinary Java
+      reads use <code>get(ConfigKey&lt;T&gt;)</code>. Typed reads and raw maps can expose credentials: use
+      <code>getDiagnostics()</code> for safe logging and source provenance.
+    </p>
   </section>
 
   <a href="#section-environment-variables" id="section-environment-variables" class="section-link h3">&sect;</a>
@@ -678,7 +860,7 @@ SIMPLEJAVAMAIL_DEFAULTS_FROM_ADDRESS=sender@example.com
 	  <p>
 		<code class="inline language-properties">simplejavamail.opportunistic.tls</code> only affects the optional STARTTLS upgrade used by plain
 		<code class="inline language-text">SMTP</code>. It does not weaken <code class="inline language-text">SMTP_TLS</code>, OAuth2 transport, or
-		<code class="inline language-text">SMTPS</code>. An explicit <code class="inline language-java">withOpportunisticTLS(...)</code> call wins over the property.
+		<code class="inline language-text">SMTPS</code>. An explicit <code class="inline language-java">TlsConfig.Builder.withOpportunisticTLS(...)</code> call wins over the property.
 	  </p>
 	  <p>
 		For <code class="inline language-properties">simplejavamail.dkim.signing.private_key_file_or_data</code>, prefix a path with
@@ -923,12 +1105,21 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 	</section>
 
 	<section>
-		<p class="wide">
-			For single values such as subject or signing configuration, the order is override, submitted Email, then default.
-			Compound settings such as DKIM configuration are selected as a whole. Recipient and attachment lists are additive in that order;
-			headers combine by name, with an override replacing the entire value list for the same name.
-			An explicit recipient S/MIME certificate still wins over the Email-level fallback, even when that fallback came from an override template.
-		</p>
+		<div class="wide">
+			<h4 id="configuration-precedence">Which scope supplies the value?</h4>
+			<table><thead><tr><th>Scope or value</th><th>Resolution</th></tr></thead><tbody>
+				<tr><td>Property sources</td><td>Later non-blank values win. Blank or null entries do not erase an earlier value.</td></tr>
+				<tr><td>Single values and complete policy values</td><td>Applicable override, then submitted Email, then applicable default. Compound crypto configurations are selected as a whole.</td></tr>
+				<tr><td>Recipients, Reply-To, attachments and embedded images</td><td>Add contributions in override, submitted Email, then default order.</td></tr>
+				<tr><td>Headers</td><td>Combine names case-insensitively. For one name, an override replaces its entire value list; otherwise submitted values replace the default list.</td></tr>
+				<tr><td>Recipient certificates and NOTIFY preferences</td><td>Group policy constructs the recipient metadata. The resulting explicit recipient value wins over the governance-resolved Email fallback, including an Email override.</td></tr>
+				<tr><td>Configuration locks</td><td>Separate mandatory restrictions remain binding through ordinary clears, template replacement and suppression.</td></tr>
+			</tbody></table>
+			<p>The per-email exclusions below determine which ordinary template contributions apply. Exact EML remains outside this
+				message-governance layer; its final bytes are not rewritten by templates or security transformations. Compatible envelope locks still apply;
+				locks that would require changing the preserved content are rejected.
+				See the <a href="security.html#section-sending-smime">recipient certificate rules</a> for the separate group-policy choices.</p>
+		</div>
 		<p class="wide">
 			A template can also supply the message being forwarded. A default fills a missing forwarded message; an override replaces the one supplied
 			on the Email. Use <code>EmailProperty.MAIL_TO_FORWARD</code> with the per-field opt-outs below to skip that template contribution.
@@ -944,6 +1135,21 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 			<code>clearDkim()</code>, and pass the result to <code>withEmailDefaults(...)</code>. Materialization still reads any configured signing key.
 			The <a href="migration-notes-10.0.0.html#dkim-defaults">migration example</a> shows both replacing and removing the default signature.
 		</p>
+		<div class="wide">
+			<p>Clearing a submitted Email's local DKIM choice has a different scope: ordinary templates can supply signing again.
+				Exclude those template contributions separately when that is intended:</p>
+			<pre><code class="language-java">EmailPopulatingBuilder draft = mail.emailBuilder()
+    .copying(original)
+    .clearDkim();
+// The local choice is gone; ordinary signing defaults or overrides can still apply.
+
+draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
+    .dontApplyDefaultValueFor(EmailProperty.DKIM_SIGNING_CONFIG)
+    .dontApplyOverrideValueFor(EmailProperty.DKIM_SIGNING_CONFIG)
+    .build());</code></pre>
+			<p>Editing the existing options retains unrelated exclusions. This suppresses ordinary DKIM template contributions for that Email;
+				it does not remove mandatory configuration locks or change the original Email.</p>
+		</div>
 	</section>
 
 	<section>
@@ -955,8 +1161,10 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 
 		<div class="side">
 <pre><code class="language-java">Email email = mail.emailBuilder().startingBlank()
-    .ignoringDefaults()
-    .ignoringOverrides()
+    .withTemplateOptions(EmailTemplateOptions.builder()
+        .ignoringDefaults()
+        .ignoringOverrides()
+        .build())
     // add the email content
     .buildEmail();
 </code></pre>
@@ -971,7 +1179,7 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 			<p>Use <code>EmailProperty.ALL_RECIPIENTS</code> to exclude ordinary To, Cc and Bcc additions together, or choose one recipient type
 				to exclude only that type. Your Email's own recipients remain. Delivery-recipient overrides use the separate
 				<code>OVERRIDE_RECEIVERS</code> selector, and none of these exclusions removes recipients required by locked properties.</p>
-			<p>Repeated suppression calls accumulate exclusions; an empty call changes nothing. Use <code>allowDefaultValueFor(...)</code>
+			<p>On <code>EmailTemplateOptions.Builder</code>, repeated suppression calls accumulate exclusions; an empty call changes nothing. Use <code>allowDefaultValueFor(...)</code>
 				or <code>allowOverrideValueFor(...)</code> to remove selected exclusions, and <code>clearDefaultValueSuppressions()</code>
 				or <code>clearOverrideValueSuppressions()</code> to remove all exclusions in that family. These edits leave global
 				<code>ignoringDefaults()</code>/<code>ignoringOverrides()</code> choices and configuration locks unchanged.</p>
@@ -979,8 +1187,10 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 
 		<div class="side">
 <pre><code class="language-java">emailBuilder
-	.dontApplyDefaultValueFor(EmailProperty.FROM_RECIPIENT, EmailProperty.REPLYTO_RECIPIENT)
-	.dontApplyOverrideValueFor(EmailProperty.DKIM_SIGNING_CONFIG)
+	.withTemplateOptions(EmailTemplateOptions.builder()
+	    .dontApplyDefaultValueFor(EmailProperty.FROM_RECIPIENT, EmailProperty.REPLYTO_RECIPIENT)
+	    .dontApplyOverrideValueFor(EmailProperty.DKIM_SIGNING_CONFIG)
+	    .build())
 </code></pre>
 		</div>
 	</section>

@@ -71,7 +71,7 @@ uncorrelated feedback reaches a dead-letter queue rather than silently changing 
 
 ## Identify the application to SES
 
-A container's generated hostname is not necessarily a useful SMTP client identity. The worker uses `withSmtpClientHostname("correspondence.example.test")`
+A container's generated hostname is not necessarily a useful SMTP client identity. The worker uses `ConnectionConfig.Builder.withSmtpClientHostname("correspondence.example.test")`
 instead of depending on that runtime default. Choose your deployment's approved hostname for real correspondence. This changes EHLO/HELO, not the sender,
 SES endpoint or TLS certificate checks, and requires no DNS changes from the demo script.
 

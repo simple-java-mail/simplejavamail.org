@@ -36,7 +36,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#api-construction">Use public contracts instead of constructing library results</a></li>
       <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
       <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
-      <li><a href="#grouped-configuration">Move debug, telemetry and observers into configuration groups</a></li>
+      <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#smtp-content-compatibility">Check sends with international addresses or unencoded non-ASCII text</a></li>
       <li><a href="#smtp-size-check">Account for rejection before sending oversized email</a></li>
@@ -69,6 +69,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#recipient-equality">Review Email comparisons</a></li>
       <li><a href="#eml-export-failures">Handle content failures during email conversion</a></li>
       <li><a href="#address-only-name">Check names when importing only a recipient address</a></li>
+      <li><a href="#email-convenience-mailboxes">Pass one mailbox to singular Email address conveniences</a></li>
       <li><a href="#requested-smime-module">Include S/MIME support when requesting decryption</a></li>
       <li><a href="#async-preparation">Account for validation running during async execution</a></li>
       <li><a href="#async-shutdown">Allow shutdown to wait for sends already in progress</a></li>
@@ -93,9 +94,9 @@ breadcrumbParent: "/migration-notes.html"
   <section><div class="wide">
     <p>If an Email opts out of some defaults or overrides, copying it now keeps those choices. Earlier releases forgot them during
       <code>emailBuilder().copying(email)</code>, so a copied draft could receive values the original draft had excluded.</p>
-    <p>Review code that depended on copying to restore templates. Re-enable global inheritance with <code>ignoringDefaults(false)</code> and
+    <p>Review code that depended on copying to restore templates. Edit the copy's <code>EmailTemplateOptions</code> and re-enable global inheritance with <code>ignoringDefaults(false)</code> and
       <code>ignoringOverrides(false)</code>. Call <code>clearDefaultValueSuppressions()</code> or <code>clearOverrideValueSuppressions()</code>
-      to clear the corresponding per-field exclusions on the copy's builder. Keep the inherited exclusions when the copy should retain
+      to clear the corresponding per-field exclusions, then pass the edited value to <code>withTemplateOptions(...)</code>. Keep the inherited exclusions when the copy should retain
       the original Email's choices. These controls still cannot remove locked settings.</p>
     <p>Repeated <code>dontApplyDefaultValueFor(...)</code> and <code>dontApplyOverrideValueFor(...)</code> calls now accumulate exclusions;
       earlier calls replaced the entire set. Empty calls are now no-ops. For replacement, clear first and then supply the desired exclusions.
@@ -112,7 +113,7 @@ breadcrumbParent: "/migration-notes.html"
       an override replaces the source supplied on the Email.</p>
     <p>If you depended on the source being ignored, remove it from the template or use
       <code>dontApplyDefaultValueFor(EmailProperty.MAIL_TO_FORWARD)</code> or
-      <code>dontApplyOverrideValueFor(EmailProperty.MAIL_TO_FORWARD)</code> on that Email. These exclusions preserve a source explicitly supplied on
+      <code>dontApplyOverrideValueFor(EmailProperty.MAIL_TO_FORWARD)</code> on that Email's <code>EmailTemplateOptions.Builder</code>. These exclusions preserve a source explicitly supplied on
       the Email. Subject selection remains independent, and exact EML submission still bypasses ordinary templates.</p>
   </div></section>
 
@@ -183,7 +184,7 @@ breadcrumbParent: "/migration-notes.html"
     <p>Before construction, use <code>withProperty(...)</code>, <code>withProperties(...)</code> or <code>clearProperties()</code>.
       If you deliberately need to change an existing Session, use <code>mailer.getSession().getProperties()</code>; its settings and lifetime remain
       your responsibility. The operational snapshot does not track those later Session changes.</p>
-    <p>Trusted-host arrays and builder inspection lists are also copied. Use <code>trustingSSLHosts(...)</code> to replace the builder's choice
+    <p>Trusted-host arrays and builder inspection lists are also copied. Use <code>TlsConfig.Builder.trustingSSLHosts(...)</code> to replace the group's choice
       rather than changing a retained array or a returned list.</p>
   </div></section>
 
@@ -228,7 +229,33 @@ breadcrumbParent: "/migration-notes.html"
       validation path; retaining the input does not allow it to pass sending validation.</p>
   </div></section>
 
-  <h2 id="requested-smime-module">Include S/MIME support when requesting decryption</h2>
+    <h2 id="email-convenience-mailboxes">Pass one mailbox to singular Email address conveniences</h2>
+    <section><div class="wide">
+      <p><code>from(...)</code>, <code>withReplyTo(...)</code>, <code>withBounceTo(...)</code>,
+        <code>withDispositionNotificationTo(...)</code> and <code>withReturnReceiptTo(...)</code> now consistently interpret one mailbox.
+        In 9.x their String overloads could silently keep only the first address from a successfully parsed list. Such lists and RFC address groups
+        now throw <code>IllegalArgumentException</code>, including a group with one member or no members. Equivalent
+        <code>InternetAddress</code> arguments cannot bypass the single-mailbox check.</p>
+      <p>For several Reply-To destinations, build the recipients explicitly and supply the list. Repeated <code>withReplyTo(...)</code> calls remain
+        additive; there is no replacement behavior to migrate. See <a href="features.html#section-reply-forward">copying and reply destinations</a>.</p>
+      <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+List&lt;Recipient&gt; replies = new ArrayList&lt;&gt;(mail.recipientsBuilder()
+    .withRecipientsWithDefaultName(null, Message.RecipientType.TO,
+        "Support &lt;support@example.org&gt;, Accounts &lt;accounts@example.org&gt;")
+    .buildRecipients());
+Email email = mail.emailBuilder().startingBlank()
+    .from("sender@example.org")
+    .to("customer@example.org")
+    .withReplyTo(replies)
+    .withPlainText("Hello")
+    .buildEmail();</code></pre>
+      <p>A nonblank explicit name still wins over an embedded name. A null or blank explicit name now falls back to the embedded name consistently,
+        including <code>InternetAddress</code> overloads; set a desired name explicitly when that matters. Nonempty unparseable or comment-only input
+        is retained for the configured send-time validator. Missing required inputs still fail, and <code>withBounceTo((String) null)</code> still clears
+        the local bounce address. The separate Recipient builder parsing APIs retain their existing contracts.</p>
+    </div></section>
+
+    <h2 id="requested-smime-module">Include S/MIME support when requesting decryption</h2>
   <section><div class="wide">
     <p>If you supply decryption keys to an EML, MIME or Outlook conversion, Simple Java Mail now requires <code>smime-module</code> on the runtime
       classpath. Previously the request could be silently ignored when the module was missing.</p>
@@ -468,8 +495,89 @@ mailerBuilder.withEmailDefaults(unsignedDefaults);</code></pre>
     </p>
   </section>
 
-  <h2 id="grouped-configuration">Move debug, telemetry and observers into configuration groups</h2>
+  <h2 id="grouped-configuration">Move advanced builder settings into configuration groups</h2>
   <section><div class="wide">
+    <p>The advanced scalar methods on Java Mailer and Email builders have moved into immutable configuration values.
+      Their root setter, getter and clear/reset aliases are removed. Common SMTP setup, recipients, content, attachments,
+      Email defaults/overrides and the send calls remain directly available.</p>
+    <p>For settings used in released 9.x code, move the corresponding Java calls as follows:</p>
+    <table><thead><tr><th>Previous root methods</th><th>Value supplied to the root builder</th></tr></thead><tbody>
+      <tr><td><code>withConnectionPoolCoreSize</code>, <code>withConnectionPoolMaxSize</code>, pool expiration/claim settings,
+        <code>withClusterKey</code> and load balancing</td><td><code>withConnectionPoolConfig(ConnectionPoolConfig)</code>;
+        its builder uses <code>withCoreSize</code>, <code>withMaxSize</code>, <code>withClaimTimeout</code>, <code>withExpireAfter</code>,
+        <code>withExpireAfterCreation</code>, <code>withClusterKey</code> and <code>withLoadBalancingStrategy</code>.</td></tr>
+      <tr><td><code>withThreadPoolSize</code>, <code>withThreadPoolKeepAliveTime</code>, <code>withExecutorService</code></td>
+        <td><code>withAsyncExecutionConfig(AsyncExecutionConfig)</code>; keep-alive becomes <code>withKeepAliveTime</code> inside the group.</td></tr>
+      <tr><td><code>withProxy</code>, <code>withProxyHost</code>, <code>withProxyPort</code>, credentials and bridge port</td>
+        <td><code>withProxyConfig(SocksProxyConfig)</code>; its builder uses <code>withHost</code>, <code>withPort</code>,
+        <code>withUsername</code>, <code>withPassword</code> and <code>withBridgePort</code>.</td></tr>
+      <tr><td><code>withSessionTimeout</code>, <code>withLocalBindAddress</code>, <code>withSmtpClientHostname</code></td>
+        <td><code>withConnectionConfig(ConnectionConfig)</code>, retaining those setting names.</td></tr>
+      <tr><td><code>trustingSSLHosts</code>, <code>trustingAllHosts</code>, <code>verifyingServerIdentity</code>, custom SSL factories</td>
+        <td><code>withTlsConfig(TlsConfig)</code>, retaining those setting names.</td></tr>
+      <tr><td><code>withEmailValidator</code>, <code>disablingAllClientValidation</code>, <code>withMaximumEmailSize</code></td>
+        <td><code>withValidationConfig(ValidationConfig)</code>, retaining those setting names.</td></tr>
+      <tr><td>Automatic embedded-image resolution, bases and containment settings</td>
+        <td><code>withImageResolutionConfig(ImageResolutionConfig)</code> on the Email builder.</td></tr>
+      <tr><td>Shared and body-specific content-transfer encoding</td>
+        <td><code>withContentEncodingConfig(ContentEncodingConfig)</code> on the Email builder.</td></tr>
+      <tr><td><code>ignoringDefaults</code>, <code>ignoringOverrides</code> and per-property template exclusions</td>
+        <td><code>withTemplateOptions(EmailTemplateOptions)</code> on the Email builder.</td></tr>
+      <tr><td>Shared Email DSN notification and return options</td>
+        <td><code>withSmtpDeliveryOptions(SmtpDeliveryOptions)</code> on the Email builder; Java calls use the typed DSN enums.</td></tr>
+    </tbody></table>
+<pre><code class="language-java">mailerBuilder
+    .withConnectionPoolConfig(ConnectionPoolConfig.builder()
+        .withMaxSize(8)
+        .withClaimTimeout(Duration.ofSeconds(2))
+        .build())
+    .withProxyConfig(SocksProxyConfig.builder()
+        .withHost("proxy.example.org")
+        .withPort(1080)
+        .build());
+
+emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
+    .ignoringDefaults()
+    .dontApplyOverrideValueFor(EmailProperty.SUBJECT)
+    .build());</code></pre>
+    <p>Replacing a group replaces its supplied choices. Omitted fields inherit the captured configuration rather than values from
+      the previous group. When earlier code set fields in several statements, combine them into one value or edit the existing value:</p>
+<pre><code class="language-java">mailerBuilder.withConnectionPoolConfig(mailerBuilder.getConnectionPoolConfig().toBuilder()
+    .withMaxSize(12) // retains the earlier claim timeout
+    .build());</code></pre>
+    <p>Detailed getters and clear/reset methods belong to each value's builder. On the root builder,
+      <code>getConnectionPoolConfig()</code> inspects supplied choices and <code>useConfiguredConnectionPoolConfig()</code>
+      restores inheritance for that group; the other Mailer groups follow the same pattern. Read effective settings from the built Mailer.
+      Property keys, Spring configuration and the CLI's scalar option syntax retain their contracts.
+      See the <a href="/configuration.html#section-programmatic-api-other">current group reference</a> for the complete Mailer groups.</p>
+
+    <h3>Pass typed signing and encryption configurations</h3>
+    <p>The released positional <code>signWithDomainKey(byte[], String, String, Set&lt;String&gt;)</code>,
+      <code>signWithSmime(File, String, String, String, String)</code> and
+      <code>encryptWithSmime(File, String, String)</code> conveniences are removed. Their existing typed configuration overloads remain direct
+      on the Email builder; use them as follows:</p>
+<pre><code class="language-java">emailBuilder
+    .signWithDomainKey(DkimConfig.builder()
+        .dkimPrivateKeyData(privateKeyBytes)
+        .dkimSigningDomain(signingDomain)
+        .dkimSelector(selector)
+        .excludedHeadersFromDkimDefaultSigningList(excludedHeaders)
+        .build())
+    .signWithSmime(SmimeSigningConfig.builder()
+        .pkcs12Config(keyStoreFile, storePassword, keyAlias, keyPassword)
+        .signatureAlgorithm(signatureAlgorithm)
+        .build())
+    .encryptWithSmime(SmimeEncryptionConfig.builder()
+        .x509Certificate(certificateFile)
+        .keyEncapsulationAlgorithm(keyAlgorithm)
+        .cipherAlgorithm(cipherAlgorithm)
+        .build());</code></pre>
+    <p>The example shows independent DKIM, S/MIME signing and S/MIME encryption choices; retain the ones your message already uses.
+      The config builders accept <code>File</code> or <code>Path</code>. Store/certificate files are still read immediately and the streams opened
+      for them are closed; key bytes are copied. A null algorithm still selects the existing module default. Preserve alias, key/store passwords,
+      header exclusions and failure timing. When arguments have side effects, evaluate them in their original order before constructing the value;
+      do not move file reads earlier than those evaluations. This does not change signing/encryption policy or introduce a fallback.</p>
+
     <p>Java Mailer builders now take <code>SessionDebugConfig</code>, <code>MailSendTelemetryConfig</code> and <code>MailSendHandlers</code>.
       The old flat setters and observer registrations have been removed. Configure related choices together, then supply the immutable group:</p>
     <pre><code class="language-java">mailerBuilder
@@ -496,23 +604,18 @@ mailerBuilder.withEmailDefaults(unsignedDefaults);</code></pre>
       or remove the whole fixed group with <code>clearSendHandlers()</code>. Per-send context belongs in
       <a href="/sending-and-execution.html#section-mail-send-observer"><code>withSendHandlersFactory(...)</code></a>.
       Existing scalar property keys and CLI debug/telemetry options retain their names and meanings.</p>
-    <p><code>MailSubmissionException.getSubmissionReceipt()</code> now returns <code>Optional&lt;MailSubmissionReceipt&gt;</code> through the common
-      <code>MailSendException</code> contract. Use <code>ifPresent(...)</code> to inspect available facts across submission, timeout, cancellation and
-      per-email cleanup failures. A submission exception still carries its receipt; code that requires it can use <code>orElseThrow()</code>.
-      Preparation and admission failures retain their existing exception types. See <a href="/analyzing-send-results.html#section-get-receipt">failure receipts</a>.</p>
   </div></section>
 
   <h2 id="duration-settings">Pass Duration values for time settings</h2>
   <section><div class="wide">
     <p>Java time settings, their getters, configuration constructors and published constants now use <code>Duration</code>.
       Methods whose names ended in <code>Millis</code> drop that suffix:</p>
-    <table><thead><tr><th>Previous call</th><th>10.0.0 call</th></tr></thead><tbody>
-      <tr><td><code>withSessionTimeout(1000)</code></td><td><code>withSessionTimeout(Duration.ofSeconds(1))</code></td></tr>
-      <tr><td><code>withThreadPoolKeepAliveTime(5000)</code></td><td><code>withThreadPoolKeepAliveTime(Duration.ofSeconds(5))</code></td></tr>
-      <tr><td><code>withAsyncQueueWaitTimeoutMillis(250)</code></td><td><code>withAsyncQueueWaitTimeout(Duration.ofMillis(250))</code></td></tr>
-      <tr><td><code>withConnectionPoolClaimTimeoutMillis(60000)</code></td><td><code>withConnectionPoolClaimTimeout(Duration.ofMinutes(1))</code></td></tr>
-      <tr><td><code>withConnectionPoolExpireAfterMillis(30000)</code></td><td><code>withConnectionPoolExpireAfter(Duration.ofSeconds(30))</code></td></tr>
-      <tr><td><code>withConnectionPoolExpireAfterCreationMillis(300000)</code></td><td><code>withConnectionPoolExpireAfterCreation(Duration.ofMinutes(5))</code></td></tr>
+    <table><thead><tr><th>Previous root call</th><th>Group builder</th><th>10.0.0 group call</th></tr></thead><tbody>
+      <tr><td><code>withSessionTimeout(1000)</code></td><td><code>ConnectionConfig.Builder</code></td><td><code>withSessionTimeout(Duration.ofSeconds(1))</code></td></tr>
+      <tr><td><code>withThreadPoolKeepAliveTime(5000)</code></td><td><code>AsyncExecutionConfig.Builder</code></td><td><code>withKeepAliveTime(Duration.ofSeconds(5))</code></td></tr>
+      <tr><td><code>withConnectionPoolClaimTimeoutMillis(60000)</code></td><td><code>ConnectionPoolConfig.Builder</code></td><td><code>withClaimTimeout(Duration.ofMinutes(1))</code></td></tr>
+      <tr><td><code>withConnectionPoolExpireAfterMillis(30000)</code></td><td><code>ConnectionPoolConfig.Builder</code></td><td><code>withExpireAfter(Duration.ofSeconds(30))</code></td></tr>
+      <tr><td><code>withConnectionPoolExpireAfterCreationMillis(300000)</code></td><td><code>ConnectionPoolConfig.Builder</code></td><td><code>withExpireAfterCreation(Duration.ofMinutes(5))</code></td></tr>
     </tbody></table>
     <p>Defaults, supported zero values and optional settings retain their meanings. Fractional milliseconds and overflow are rejected rather than
       truncated or wrapped. Property files and existing CLI options still use numeric milliseconds; do not change those to ISO duration strings.</p>
@@ -571,7 +674,9 @@ mailer.validate(email);</code></pre>
       <code class="inline language-java">MailTransportCompatibilityException</code> cause. Prefer a server advertising the needed capabilities.
       If you have verified that the existing server and onward route preserve the original content, explicitly retain that legacy behavior:
     </p>
-<pre><code class="language-java">mailerBuilder.withLegacySmtpContentSupport(true);</code></pre>
+<pre><code class="language-java">mailerBuilder.withConnectionConfig(ConnectionConfig.builder()
+    .withLegacySmtpContentSupport(true)
+    .build());</code></pre>
 <pre><code class="language-properties">simplejavamail.smtp.legacycontentsupport=true</code></pre>
     <p class="wide">
       This option is disabled by default and applies to the server configuration actually selected for the send, including in a connection-pool cluster.
@@ -609,7 +714,7 @@ mailer.validate(email);</code></pre>
       <code>SMTPMessage.setMailExtension(...)</code> or <code>mail.smtp.mailextension</code> / <code>mail.smtps.mailextension</code>,
       remove the manual value to use automatic calculation. A single valid estimate is preserved, but malformed or duplicate declarations now fail locally.</p>
     <p class="wide">Counting adds a serialization pass, so caller-owned attachment and content sources must stay readable and repeatable.
-      The server's limit is separate from your own <code>withMaximumEmailSize(...)</code> limit. Caller-owned ordinary Angus transports retain their behavior.
+      The server's limit is separate from your own <code>ValidationConfig.Builder.withMaximumEmailSize(...)</code> limit. Caller-owned ordinary Angus transports retain their behavior.
       See <a href="/analyzing-send-results.html#section-message-size">message size diagnostics</a> for receipts and illustrative output.</p>
   </section>
 
@@ -683,23 +788,35 @@ Mailer mailer = mail.mailerBuilder().buildMailer();</code></pre>
         .load();</code></pre>
 
     <h3>Old read calls</h3>
+    <p class="wide">
+      Select the snapshot that replaces your old process-wide configuration, then use a schema-bound key for ordinary reads.
+      The following examples assume the released call requested the property's actual value type; conversion cases need the extra review below.
+    </p>
     <table>
-      <thead>
-      <tr><th>Removed static call</th><th>10.0.0 call</th></tr>
-      </thead>
+      <thead><tr><th>Removed static call</th><th>Target call for a matching key</th></tr></thead>
       <tbody>
-      <tr><td><code class="inline language-java">ConfigLoader.hasProperty(property)</code></td><td><code class="inline language-java">config.hasProperty(property)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.getProperty(property)</code></td><td><code class="inline language-java">config.getProperty(property)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.getStringProperty(property)</code></td><td><code class="inline language-java">config.getStringProperty(property)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.getIntegerProperty(property)</code></td><td><code class="inline language-java">config.getIntegerProperty(property)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.getBooleanProperty(property)</code></td><td><code class="inline language-java">config.getBooleanProperty(property)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.valueOrProperty(value, property)</code></td><td><code class="inline language-java">config.valueOrProperty(value, property)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.valueOrProperty(value, property, fallback)</code></td><td><code class="inline language-java">config.valueOrProperty(value, property, fallback)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.valueOrPropertyAsString(...)</code></td><td><code class="inline language-java">config.valueOrProperty(stringValue, property, stringFallback)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.valueOrPropertyAsBoolean(...)</code></td><td><code class="inline language-java">config.valueOrProperty(booleanValue, property, booleanFallback)</code></td></tr>
-      <tr><td><code class="inline language-java">ConfigLoader.valueOrPropertyAsInteger(...)</code></td><td><code class="inline language-java">config.valueOrProperty(integerValue, property, integerFallback)</code></td></tr>
+        <tr><td><code>ConfigLoader.hasProperty(Property.SMTP_PORT)</code></td><td><code>config.hasProperty(ConfigKeys.SMTP_PORT)</code></td></tr>
+        <tr><td><code>ConfigLoader.getProperty(Property.SMTP_PORT)</code></td><td><code>config.get(ConfigKeys.SMTP_PORT)</code>, with an Integer target</td></tr>
+        <tr><td><code>ConfigLoader.getStringProperty(Property.SMTP_HOST)</code></td><td><code>config.get(ConfigKeys.SMTP_HOST)</code></td></tr>
+        <tr><td><code>ConfigLoader.getIntegerProperty(Property.SMTP_PORT)</code></td><td><code>config.get(ConfigKeys.SMTP_PORT)</code></td></tr>
+        <tr><td><code>ConfigLoader.getBooleanProperty(Property.JAVAXMAIL_DEBUG)</code></td><td><code>config.get(ConfigKeys.JAVAXMAIL_DEBUG)</code></td></tr>
+        <tr><td><code>ConfigLoader.valueOrProperty(port, Property.SMTP_PORT)</code></td><td><code>config.valueOrProperty(port, ConfigKeys.SMTP_PORT)</code></td></tr>
+        <tr><td><code>ConfigLoader.valueOrProperty(port, Property.SMTP_PORT, 25)</code></td><td><code>config.valueOrProperty(port, ConfigKeys.SMTP_PORT, 25)</code></td></tr>
+        <tr><td><code>ConfigLoader.valueOrPropertyAsString/AsBoolean/AsInteger(...)</code></td><td>Use a matching typed key only when the old conversion is unnecessary; otherwise preserve the reviewed conversion explicitly.</td></tr>
       </tbody>
     </table>
+    <p class="wide">
+      Released scalar getters performed conversions. For example, <code>ConfigLoader.getStringProperty(Property.SMTP_PORT)</code>
+      could return numeric port text. The key-based port read returns Integer. Preserve String/null behavior explicitly if the application needs that boundary:
+    </p>
+    <pre class="full-width-example"><code class="language-java">Integer configuredPort = config.get(ConfigKeys.SMTP_PORT);
+String portText = configuredPort == null ? null : configuredPort.toString();</code></pre>
+    <p class="wide">
+      Review dynamic Property arguments, explicit/fallback conversions, method references and numeric timeout consumers instead of applying
+      a blanket method rename. The existing <code>Property</code> enum and <code>config.asMap().get(property)</code> support explicit raw integration,
+      with Object values rather than a caller-inferred type. Time-valued Java reads use Duration while numeric property-file inputs keep their old units.
+      See the <a href="configuration.html#section-typed-config-keys">normal configuration guide</a> for the final read contract.
+    </p>
     <p class="wide">
       <code class="inline language-java">config.asMap()</code> is read-only. Unlike the map returned in 9.x, it will not change underneath you when
       somebody loads another set of properties later. Code that mutated the old map must instead load a new configuration with the intended values.
@@ -769,13 +886,14 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
       <tbody>
       <tr><td>Host names, usernames, passwords, paths, algorithms, and other text</td><td><code class="inline language-java">String</code></td><td>Text such as <code class="inline language-text">true</code> or <code class="inline language-text">25</code> remains text.</td></tr>
       <tr><td>True/false settings</td><td><code class="inline language-java">Boolean</code></td><td>Text sources accept <code class="inline language-text">true/false</code>, <code class="inline language-text">yes/no</code>, and <code class="inline language-text">1/0</code>.</td></tr>
-      <tr><td>Ports, pool sizes, and timeouts</td><td><code class="inline language-java">Integer</code></td><td>A malformed winning value fails with the property key and source name.</td></tr>
+      <tr><td>Ports and pool sizes</td><td><code class="inline language-java">Integer</code></td><td>A malformed winning value fails with the property key and source name.</td></tr>
+      <tr><td>Time settings read through ConfigKeys</td><td><code>Duration</code></td><td>Legacy numeric-millisecond inputs retain signed Integer limits and whole-millisecond precision; ISO-duration settings keep their own precision.</td></tr>
       <tr><td>Transport, debug output, encoding, DSN return, pool balancing, and DKIM canonicalization choices</td><td>The matching enum</td><td>A map may contain either the enum value or its supported String form.</td></tr>
       <tr><td>Extra Jakarta Mail properties and connection-pool clusters</td><td>Read-only maps</td><td>Entries under the wildcard property prefixes are combined by their complete key.</td></tr>
       </tbody>
     </table>
     <p class="wide">
-      If you put an already typed value into a map, make sure it matches the type above. A wrong type now fails while loading the config. The error tells
+      For dynamic map inputs, retain the parser representation: legacy numeric time settings still take Integer milliseconds or integer text, even though their key-based Java read returns Duration. Other values must match their schema input type. A wrong type now fails while loading the config. The error tells
       you which key and source caused it, but leaves out the actual value so credentials and private key data do not end up in logs.
     </p>
   </section>
@@ -827,7 +945,7 @@ Email convertedWithMainMail = mainMail.converter()
     <p class="wide" style="font-size:smaller">
       <strong>What breaks:</strong> If you disabled automatic encryption upgrades with
       <code class="inline language-java">TransportStrategy.SMTP.setOpportunisticTLS(false)</code>, move that choice to
-      <code class="inline language-java">withOpportunisticTLS(false)</code> on the Mailer builder. The old setter, which changed the shared default for
+      <code class="inline language-java">withOpportunisticTLS(false)</code> on <code>TlsConfig.Builder</code>, supplied through <code>withTlsConfig(...)</code>. The old setter, which changed the shared default for
       new Mailers using <code class="inline language-java">SMTP</code>, has been removed. This option controls whether plain SMTP tries to upgrade to an
       encrypted connection when the server offers STARTTLS; it does not require encryption.
     </p>
@@ -840,7 +958,9 @@ Mailer mailer = MailerBuilder
 <pre><code class="language-java">// 10.0.0
 Mailer mailer = mail.mailerBuilder()
         .withTransportStrategy(TransportStrategy.SMTP)
-        .withOpportunisticTLS(false)
+        .withTlsConfig(TlsConfig.builder()
+            .withOpportunisticTLS(false)
+            .build())
         .buildMailer();</code></pre>
     </div>
     <p class="wide">
@@ -849,7 +969,7 @@ Mailer mailer = mail.mailerBuilder()
       <code class="inline language-java">SMTP_TLS</code>, OAuth2 transport, or implicit TLS with
       <code class="inline language-java">SMTPS</code>. The property <code class="inline language-properties">simplejavamail.opportunistic.tls</code>
       still supplies the starting value. A builder call overrides it for that Mailer. If you want the property or the normal default, do not call
-      <code class="inline language-java">withOpportunisticTLS(...)</code> at all.
+      <code class="inline language-java">TlsConfig.Builder.withOpportunisticTLS(...)</code> at all.
     </p>
     <p class="wide">
       If you call <code class="inline language-java">TransportStrategy.SMTP.generateProperties()</code> yourself, it now always includes the properties
@@ -917,7 +1037,7 @@ Mailer mailer = mail.mailerBuilder()
       the Session properties, you therefore get that wrapper, not your original object. Keep your original reference if you need methods specific
       to your factory implementation.</p>
     <p class="wide">For a class-based SSL factory in a modular application, export its implementation package to
-      <code>org.simplejavamail.mailprovider.angus</code>, or use <code>withCustomSSLFactoryInstance(...)</code>.
+      <code>org.simplejavamail.mailprovider.angus</code>, or use <code>TlsConfig.Builder.withCustomSSLFactoryInstance(...)</code>.
       The cleanup wrapper calls its public static <code>getDefault()</code> method and follows the normal Java module-access rules.
       See <a href="security.html#section-custom-ssl-factory">custom SSL factory guidance</a>.</p>
   </section>
@@ -943,8 +1063,13 @@ Mailer mailer = mail.mailerBuilder()
       predictable local port:
     </p>
     <pre class="full-width-example"><code class="language-java">Mailer mailer = mail.mailerBuilder()
-        .withProxy("proxy.example.com", 1080, "user", "password")
-        .withProxyBridgePort(7777)
+        .withProxyConfig(SocksProxyConfig.builder()
+            .withHost("proxy.example.com")
+            .withPort(1080)
+            .withUsername("user")
+            .withPassword("password")
+            .withBridgePort(7777)
+            .build())
         .buildMailer();</code></pre>
   </section>
 
@@ -999,7 +1124,7 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
     </p>
     <p class="wide">
       If you relied on those automatic replacements, call the relevant builder setters explicitly or put the intended values on your Session.
-      For example, <code class="inline language-java">withSessionTimeout(Duration.ofSeconds(1))</code> replaces all three socket timeouts with one second.
+      For example, <code class="inline language-java">ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> replaces all three socket timeouts with one second.
       Standard SMTP/SMTPS Sessions support these choices directly. A custom protocol now rejects a convenience setting it cannot map rather
       than silently ignoring it; use its provider-specific names through <code>withProperty(...)</code> instead.
       Clearing a setting inherited through <code>Properties</code> defaults is also rejected when removal would simply reactivate that default.
@@ -1036,7 +1161,9 @@ if (commonTimeout != null) {
     <pre class="full-width-example"><code class="language-java">Mailer configuredMailer = mail.mailerBuilder()
         .withSMTPServer("smtp.example.com", 587, "user", "password")
         .withTransportStrategy(TransportStrategy.SMTP)
-        .withOpportunisticTLS(false)
+        .withTlsConfig(TlsConfig.builder()
+            .withOpportunisticTLS(false)
+            .build())
         .buildMailer();
 
 Session configuredSession = configuredMailer.getSession();</code></pre>
@@ -1087,7 +1214,9 @@ private SimpleJavaMail mail;
 @Bean(destroyMethod = "close")
 Mailer customMailer() {
     return mail.mailerBuilder()
-            .withProxyBridgePort(7777)
+            .withProxyConfig(SocksProxyConfig.builder()
+                .withBridgePort(7777)
+                .build())
             .buildMailer();
 }</code></pre>
     </div>
@@ -1387,6 +1516,11 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
     <p class="wide">
       See <a href="sending-and-execution.html#section-mailer-lifecycle">lifecycle guidance</a> for the complete shutdown contract.
     </p>
+    <p class="wide"><code>Mailer.close()</code> now declares <code>ExecutionException</code> and <code>InterruptedException</code>, replacing the broader
+      released <code>throws Exception</code> contract (inherited from <code>AutoCloseable</code> in earlier 9.x).
+      If you implement Mailer yourself, narrow an override that declares broader checked exceptions. Review catches for other checked exception types
+      when closing the Mailer was their only throwing call; those catches may no longer compile. The JVM method descriptor and cleanup behavior are
+      unchanged by this declaration refinement. Interrupted waiting still does not cancel cleanup.</p>
   </section>
 
   <a href="#mail-send-execution-control" id="mail-send-execution-control" class="section-link h2">&sect;</a>
@@ -1415,12 +1549,32 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
       those still fail the overall call.
     </p>
     <p class="wide">
-      <code class="inline language-java">MailSubmissionReceipt.isAcceptedByServer()</code> now means at least one recipient is known to have been
-      accepted, rather than just checking whether the captured SMTP reply was positive. It can be true for a partially accepted submission even
-      though the send failed. If your code uses it to mean that every recipient was accepted, check for
-      <code class="inline language-java">MailSubmissionStatus.ACCEPTED</code> instead:
+      <code>EmailTooBigException</code> now extends <code>MailException</code> and reaches the caller directly instead of being hidden as a wrapper's
+      cause. Catch it before <code>MailException</code> when size needs special handling. The released batch exception
+      <code>BatchTransportException</code> also joins that root. A multi-catch combining either subtype with <code>MailException</code> is now invalid;
+      use separate ordered catches or catch the common root. Review handlers that depended on the former wrapper or cause chain.
     </p>
-    <pre class="full-width-example"><code class="language-java">boolean allRecipientsAccepted = receipt.getStatus() == MailSubmissionStatus.ACCEPTED;</code></pre>
+    <p class="wide">Execution admission rejection is now <code>MailSendRejectedException</code>, also in the <code>MailException</code> family,
+      including rejection by a borrowed executor. Move any special scheduling handler from <code>RejectedExecutionException</code> to that type;
+      its cause retains the borrowed executor's original rejection. Keep ordinary application-executor errors outside this SJM-specific migration.</p>
+    <p class="wide">Application exceptions are also more visible: RuntimeExceptions from your <code>CustomMailer</code> or lazy batch iterable
+      propagate as those original exceptions, rather than being hidden inside the released sending wrapper. Review <code>catch (MailException ...)</code>
+      blocks that previously doubled as handlers for your integration's own failures. Handle those application exceptions explicitly; invalid arguments,
+      programming errors and JVM Errors are outside the common library-failure promise.</p>
+    <p class="wide">
+      <code class="inline language-java">MailSubmissionReceipt.isAcceptedByServer()</code> has been removed. In released 9.x it tested the captured
+      SMTP response for a positive completion reply. The new predicates express submission status, so choose according to the caller's intent:
+    </p>
+    <pre class="full-width-example"><code class="language-java" id="example-acceptance-migration">boolean anyRecipientAccepted = receipt.isAcceptedForAtLeastOneRecipient();
+boolean allRecipientsAccepted = receipt.isFullyAcceptedForSubmission();
+
+// Retain the old 9.x positive-response test when that is what the application needs:
+boolean positiveReply = receipt.getSmtpResponse()
+    .map(SmtpServerResponse::isPositiveCompletionReply)
+    .orElse(false);</code></pre>
+    <p class="wide">The any-recipient predicate is true for partial acceptance even though that send fails. The full predicate is true only for
+      <code>ACCEPTED</code>. Both are false for <code>UNKNOWN</code>, which is not proof of rejection. Full submission acceptance can remain true
+      when later cleanup fails, and it does not establish final delivery. Do not mechanically rename a released 9.x reply test into either predicate.</p>
     <p class="wide">
       With Angus, <code class="inline language-properties">mail.smtp.reportsuccess=true</code> no longer makes a fully accepted transaction fail.
       Simple Java Mail collects success-reporting exceptions internally and returns an accepted receipt. Genuine failures still retain their original
@@ -1455,7 +1609,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
   <section>
     <p class="wide" style="font-size:smaller">
       <strong>You can skip this section</strong> unless you compare exact EML in tests or set
-      <code class="inline language-java">withMaximumEmailSize(...)</code>.
+      <code class="inline language-java">ValidationConfig.Builder.withMaximumEmailSize(...)</code>.
     </p>
     <p class="wide">
       If a test compares a complete <code class="inline language-text">.eml</code> file byte for byte, you may need to update its expected output.
@@ -1463,7 +1617,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
       the separators between message parts, Date and Message-ID. Signed messages retain the exact bytes covered by their signatures.
     </p>
     <p class="wide">
-      If you set <code class="inline language-java">withMaximumEmailSize(...)</code>, the limit now applies to the complete encoded email, including
+      If you set <code class="inline language-java">ValidationConfig.Builder.withMaximumEmailSize(...)</code>, the limit now applies to the complete encoded email, including
       attachment encoding and bytes added by signing or encryption. That can be larger than the original text and files, so a message close to your
       limit may now be rejected where 9.x accepted it. MIME logging shows that same encoded message.
     </p>

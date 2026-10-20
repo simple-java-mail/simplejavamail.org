@@ -1,3 +1,5 @@
+import org.simplejavamail.api.mailer.config.ConnectionPoolConfig;
+import org.simplejavamail.api.email.EmailPopulatingBuilder;
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.config.DeliveryStatusNotification;
@@ -69,8 +71,10 @@ public final class RelayDeskMailExamplesTest {
             "Preserve the reply content");
         check(Boolean.TRUE.equals(first.getSendingToAcceptedRecipients()),
             "The support reply explicitly permits partial submission");
-        check(Boolean.FALSE.equals(mail.emailBuilder().copying(first)
-                .withSendingToAcceptedRecipients(false).buildEmail().getSendingToAcceptedRecipients()),
+        EmailPopulatingBuilder allRecipients = mail.emailBuilder().copying(first);
+        allRecipients.withSmtpDeliveryOptions(allRecipients.getSmtpDeliveryOptions().toBuilder()
+                .withSendingToAcceptedRecipients(false).build());
+        check(Boolean.FALSE.equals(allRecipients.buildEmail().getSendingToAcceptedRecipients()),
             "Another message can require all recipients without rebuilding its Mailer");
 
         DeliveryStatusNotification dsn = first.getDeliveryStatusNotification();
@@ -101,7 +105,7 @@ public final class RelayDeskMailExamplesTest {
         MailSendOutcome preparationFailure = MailSendOutcomeImpl.builder().initialMessageId(first.getId())
             .requestedAt(now).completedAt(now).failure(new IllegalArgumentException("Synthetic preparation failure")).build();
         assertRecordedUnchanged(first.getId(), preparationFailure);
-        check(preparationFailure.getStartedAt().isEmpty(), "A pre-send failure has no start timestamp");
+        check(preparationFailure.getStartedAt() == null, "A pre-send failure has no start timestamp");
         Feedback noReceiptFeedback = new Feedback();
         RelayDeskMailExamples.presentOutcome(preparationFailure, noReceiptFeedback);
         check(noReceiptFeedback.updates == 0, "No receipt does not invent submission facts for the ticket");
@@ -161,7 +165,7 @@ public final class RelayDeskMailExamplesTest {
                 .withAddress("archive@recipient.invalid").withType(jakarta.mail.Message.RecipientType.BCC).build())
                 .buildEmail();
         try (Mailer mailer = mail.mailerBuilder().withSMTPServer("127.0.0.1", 1)
-                .withConnectionPoolCoreSize(0).withEmailDefaults(defaults).buildMailer()) {
+                .withConnectionPoolConfig(ConnectionPoolConfig.builder().withCoreSize(0).build()).withEmailDefaults(defaults).buildMailer()) {
             Email reply = mail.emailBuilder().startingBlank().from("support@kestrel-outfitters.com")
                     .withRecipients(mail.recipientBuilder().withAddress("buyer@recipient.invalid").withType(jakarta.mail.Message.RecipientType.TO).build(),
                             mail.recipientBuilder().withAddress("accounts@recipient.invalid").withType(jakarta.mail.Message.RecipientType.CC).build())

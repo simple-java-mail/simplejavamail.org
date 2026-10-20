@@ -138,7 +138,10 @@ initiatingMailerBuilder.withMailSendRetryPolicy(resources);
 <h2>Read the final result and attempt history</h2>
 <section><div class="wide full-width-example">
 <pre><code class="language-java small">outcome.getDiagnostics().ifPresent(report -> {
-    report.getRetryWait().getElapsed().ifPresent(metrics::recordRetryWaiting);
+    Duration retryWait = report.getRetryWait().getElapsed();
+    if (retryWait != null) {
+        metrics.recordRetryWaiting(retryWait);
+    }
     for (MailSendSubmissionStep step : report.getSubmissionHistory()) {
         log.info("Attempt {}: {}, code={}, elapsed={}, next delay={}",
             step.getAttemptNumber(), step.getSubmissionStatus(),

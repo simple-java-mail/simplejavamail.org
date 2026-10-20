@@ -1,3 +1,7 @@
+import org.simplejavamail.api.mailer.config.ConnectionPoolConfig;
+import org.simplejavamail.api.email.config.SmtpDeliveryOptions;
+import org.simplejavamail.api.email.config.SmimeSigningConfig;
+import org.simplejavamail.api.email.config.SmimeEncryptionConfig;
 import org.h2.jdbcx.JdbcDataSource;
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.email.Email;
@@ -388,7 +392,7 @@ public final class PolarMeridianDispatcherTest {
 
         void dispatch() throws Exception {
             Mailer renderingMailer = mail.mailerBuilder().withSMTPServer("127.0.0.1", 1)
-                    .withConnectionPoolCoreSize(0).buildMailer();
+                    .withConnectionPoolConfig(ConnectionPoolConfig.builder().withCoreSize(0).build()).buildMailer();
             PolarMeridianDispatcher.Job job = new PolarMeridianDispatcher.Job(
                     "leonie-order", "unique-claim-token", workload);
             Mailer.Async async = (Mailer.Async) Proxy.newProxyInstance(Mailer.class.getClassLoader(),
@@ -457,14 +461,19 @@ public final class PolarMeridianDispatcherTest {
                                     mail.recipientBuilder().withName("Service").withAddress("service@partner.com")
                                             .withType(jakarta.mail.Message.RecipientType.CC).build())
                             .withSubject("Test only").withPlainText("Never sent\r\n")
-                            .withTlsRequiredForOnwardDelivery()
-                            .withDeliveryStatusNotification(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY, FAILURE)
-                            .fixingEnvelopeId("test-envelope-id");
+                            .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+                                    .withTlsRequiredForOnwardDelivery()
+                                    .withDeliveryStatusNotification(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY, FAILURE)
+                                    .fixingEnvelopeId("test-envelope-id").build());
                     if (!missingSender) builder.withBounceTo("bounces@polarmeridian.com");
                     if (smime) builder
-                            .signWithSmime(testResources.resolve("pkcs12/smime_keystore.pkcs12"),
-                                    "letmein", "smime_test_user_alias_rsa", "letmein", null)
-                            .encryptWithSmime(testResources.resolve("pkcs12/smime_test_user.pem.standard.crt"), null, null);
+                            .signWithSmime(SmimeSigningConfig.builder()
+                                    .pkcs12Config(testResources.resolve("pkcs12/smime_keystore.pkcs12"),
+                                            "letmein", "smime_test_user_alias_rsa", "letmein")
+                                    .signatureAlgorithm(null).build())
+                            .encryptWithSmime(SmimeEncryptionConfig.builder()
+                                    .x509Certificate(testResources.resolve("pkcs12/smime_test_user.pem.standard.crt"))
+                                    .keyEncapsulationAlgorithm(null).cipherAlgorithm(null).build());
                     if (overrideRecipients) builder.withOverrideReceivers(List.of(
                             mail.recipientBuilder().withAddress("actual-one@partner.com").withType(jakarta.mail.Message.RecipientType.TO).build(),
                             mail.recipientBuilder().withAddress("actual-two@partner.com").withType(jakarta.mail.Message.RecipientType.TO).build(),

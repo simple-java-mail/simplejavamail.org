@@ -1,3 +1,7 @@
+import org.simplejavamail.api.mailer.config.AsyncExecutionConfig;
+import org.simplejavamail.api.mailer.config.ConnectionPoolConfig;
+import org.simplejavamail.api.mailer.config.SendingLimitsConfig;
+import org.simplejavamail.api.mailer.config.TlsConfig;
 import org.simplejavamail.api.mailer.MailSendHandlers;
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.email.Email;
@@ -14,7 +18,6 @@ import org.simplejavamail.api.mailer.MailSendOutcome;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.MailSubmissionReceipt;
 import org.simplejavamail.api.mailer.SmtpConnectionReport;
-import org.simplejavamail.api.mailer.config.AsyncQueueOverflowPolicy;
 import org.simplejavamail.api.mailer.config.TransportStrategy;
 
 import java.time.Duration;
@@ -44,21 +47,29 @@ public final class RelayDeskMailExamples {
         return mail.mailerBuilder()
             .withSMTPServer(smtpHost, 587, username, password)
             .withTransportStrategy(TransportStrategy.SMTP_TLS)
-            .trustingAllHosts(false)
-            .trustingSSLHosts() // clear any host-specific trust exceptions
-            .verifyingServerIdentity(true)
-            .withClusterKey(clusterKey)
-            .withConnectionPoolCoreSize(0) // no need to stay connected while quiet
-            .withConnectionPoolMaxSize(maxConnectionsPerRelay) // within Kestrel's connection allocation
-            .withConnectionPoolExpireAfter(Duration.ofSeconds(30)) // retire idle connections
-            .withConnectionPoolClaimTimeout(Duration.ofSeconds(2)) // don't wait forever for a pool
+            .withTlsConfig(TlsConfig.builder()
+                .trustingAllHosts(false)
+                .trustingSSLHosts() // clear any host-specific trust exceptions
+                .verifyingServerIdentity(true)
+                .build())
+            .withConnectionPoolConfig(ConnectionPoolConfig.builder()
+                .withClusterKey(clusterKey)
+                .withCoreSize(0) // no need to stay connected while quiet
+                .withMaxSize(maxConnectionsPerRelay) // within Kestrel's connection allocation
+                .withExpireAfter(Duration.ofSeconds(30)) // retire idle connections
+                .withClaimTimeout(Duration.ofSeconds(2)) // don't wait forever for a pool
+                .build())
             .withMailSendTimeout(Duration.ofSeconds(20)) // bound each send attempt
-            .withThreadPoolSize(asyncWorkersPerMailer) // operations executing, including preparation
-            .withAsyncQueueCapacity(waitingOperationsPerMailer) // waiting in memory, not the durable backlog
-            .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT) // refuse work when workers and queue are full
-            .withRecipientRateLimit(recipientsPerPeriod, sendingRatePeriod) // this instance's share of the customer's rate
-            .withRateLimitGroup(sendingRateGroup) // both approved relays spend the same local share
-            .withRateLimitBurstsAllowed(false) // spread the recovered backlog instead of releasing a burst
+            .withAsyncExecutionConfig(AsyncExecutionConfig.builder()
+                .withThreadPoolSize(asyncWorkersPerMailer) // operations executing, including preparation
+                .withQueueCapacity(waitingOperationsPerMailer) // waiting in memory, not the durable backlog
+                .rejectWhenFull() // refuse work when workers and queue are full
+                .build())
+            .withSendingLimitsConfig(SendingLimitsConfig.builder()
+                .withRecipientRateLimit(recipientsPerPeriod, sendingRatePeriod) // this instance's share of the customer's rate
+                .withRateLimitGroup(sendingRateGroup) // both approved relays spend the same local share
+                .withRateLimitBurstsAllowed(false) // spread the recovered backlog instead of releasing a burst
+                .build())
             .withSendHandlers(MailSendHandlers.builder().withResultObserver(observer, observerWorkers).build())
             .buildMailer();
     }
@@ -98,8 +109,12 @@ public final class RelayDeskMailExamples {
                     keys.requireRecipientKey(customerId, address), "Missing approved recipient key"));
         }
 
-        EmailPopulatingBuilder protectedReplyBuilder = mail.emailBuilder().copying(effectiveReply)
-                .ignoringDefaults().ignoringOverrides() // don't apply them again after key selection
+        EmailPopulatingBuilder protectedReplyBuilder = mail.emailBuilder().copying(effectiveReply);
+        protectedReplyBuilder
+                .withTemplateOptions(protectedReplyBuilder.getTemplateOptions().toBuilder()
+                    .ignoringDefaults()
+                    .ignoringOverrides() // don't apply them again after key selection
+                    .build())
                 .signWithOpenPgp(Objects.requireNonNull(keys.requireSigningConfig(customerId)))
                 .encryptWithOpenPgp(encryption.build());
         Email protectedReply = protectedReplyBuilder.buildEmail();
@@ -126,17 +141,19 @@ public final class RelayDeskMailExamples {
     public static Email prepareKestrelReply(EmailPopulatingBuilder replyEmailBuilder,
             UUID conversationToken, UUID attemptToken) {
         return replyEmailBuilder
-            .withSendingToAcceptedRecipients(true) // this reply may proceed for recipients the relay accepts
+            .withSmtpDeliveryOptions(replyEmailBuilder.getSmtpDeliveryOptions().toBuilder()
+                .withSendingToAcceptedRecipients(true) // this reply may proceed for recipients the relay accepts
+                .withDeliveryStatusNotification(
+                    DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+                    DeliveryStatusNotification.NotifyOption.FAILURE,
+                    DeliveryStatusNotification.NotifyOption.DELAY)
+                .fixingEnvelopeId(attemptToken.toString())
+                .build())
             .fixingMessageId("<" + attemptToken + "@mail.relaydesk.com>")
             .from("Kestrel Support", "support@kestrel-outfitters.com")
             .withReplyTo("Kestrel Support",
                 "ticket+" + conversationToken + "@replies.kestrel-outfitters.com")
             .withBounceTo("bounce+" + attemptToken + "@bounces.kestrel-outfitters.com")
-            .withDeliveryStatusNotification(
-                DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
-                DeliveryStatusNotification.NotifyOption.FAILURE,
-                DeliveryStatusNotification.NotifyOption.DELAY)
-            .fixingEnvelopeId(attemptToken.toString())
             .buildEmail();
     }
 
