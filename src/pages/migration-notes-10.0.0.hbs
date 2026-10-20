@@ -123,7 +123,11 @@ breadcrumbParent: "/migration-notes.html"
       Earlier releases lost those address-free requests. Copies also keep an explicit choice to disable a request, so ordinary defaults
       cannot silently turn it back on.</p>
     <p>If your code relied on copying to remove a request, call <code>clearDispositionNotificationTo()</code> or
-      <code>clearReturnReceiptTo()</code> on the copy instead. These message-header receipt requests are separate from SMTP delivery-status notifications.</p>
+      <code>clearReturnReceiptTo()</code> on the copy instead. These methods restore unset request flags and addresses, so Email defaults or overrides
+      may request a receipt again. To exclude inherited requests, use the existing template suppression for
+      <code>USE_DISPOSITION_NOTIFICATION_TO</code> and <code>USE_RETURN_RECEIPT_TO</code>.
+      There are no dedicated property keys for these requests; configured From/Reply-To addresses can supply an automatic destination.
+      These message-header receipt requests are separate from SMTP delivery-status notifications.</p>
   </div></section>
 
   <h2 id="copied-delivery-overrides">Keep test-inbox routing when copying emails</h2>
@@ -252,7 +256,11 @@ Email email = mail.emailBuilder().startingBlank()
       <p>A nonblank explicit name still wins over an embedded name. A null or blank explicit name now falls back to the embedded name consistently,
         including <code>InternetAddress</code> overloads; set a desired name explicitly when that matters. Nonempty unparseable or comment-only input
         is retained for the configured send-time validator. Missing required inputs still fail, and <code>withBounceTo((String) null)</code> still clears
-        the local bounce address. The separate Recipient builder parsing APIs retain their existing contracts.</p>
+        the local bounce address.</p>
+      <p><code>recipientBuilder().withAddress(String)</code> now also extracts the mailbox and embedded name from a single parseable address.
+        A separately supplied name wins in either setter order; <code>withName(null)</code> restores the embedded name.
+        Groups, multiple-mailbox strings and unparseable input remain intact for validation. The explicit address-only and
+        default/fixed-name parsing helpers retain their existing contracts.</p>
     </div></section>
 
     <h2 id="requested-smime-module">Include S/MIME support when requesting decryption</h2>
