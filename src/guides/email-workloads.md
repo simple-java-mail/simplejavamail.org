@@ -94,11 +94,15 @@ The producer can enqueue much faster than the relay can accept mail. [Bound that
 ```java
 static Mailer boundedPool(MailerRegularBuilder smtpBuilder) {
     return smtpBuilder
-        .withThreadPoolSize(4)                 // four active asynchronous jobs
-        .withAsyncQueueCapacity(20)            // twenty more may wait in memory
-        .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT)
-        .withConnectionPoolCoreSize(0)         // no permanently warm connections
-        .withConnectionPoolMaxSize(2)          // at most two pooled connections
+        .withAsyncExecutionConfig(smtpBuilder.getAsyncExecutionConfig().toBuilder()
+            .withThreadPoolSize(4) // four active asynchronous jobs
+            .withQueueCapacity(20) // twenty more may wait in memory
+            .rejectWhenFull()
+            .build())
+        .withConnectionPoolConfig(smtpBuilder.getConnectionPoolConfig().toBuilder()
+            .withCoreSize(0) // no permanently warm connections
+            .withMaxSize(2) // at most two pooled connections
+            .build())
         .buildMailer();
 }
 ```
@@ -122,9 +126,11 @@ For a limit expressed in messages, use a [message-rate rule](/sending-and-execut
 ```java
 static Mailer pacedMailer(MailerRegularBuilder smtpBuilder) {
     return smtpBuilder
-        .withMessageRateLimit(30, Duration.ofMinutes(1))
-        .withRateLimitGroup("transactional-account")
-        .withRateLimitBurstsAllowed(false)
+        .withSendingLimitsConfig(smtpBuilder.getSendingLimitsConfig().toBuilder()
+            .withMessageRateLimit(30, Duration.ofMinutes(1))
+            .withRateLimitGroup("transactional-account")
+            .withRateLimitBurstsAllowed(false)
+            .build())
         .buildMailer();
 }
 ```
@@ -169,9 +175,11 @@ Keep each customer's approved SMTP configuration and reusable Mailers separate. 
 static Mailer customerMailer(
         MailerRegularBuilder customerSmtpBuilder, UUID customerClusterKey) {
     return customerSmtpBuilder
-        .withClusterKey(customerClusterKey)
-        .withConnectionPoolCoreSize(0)
-        .withConnectionPoolMaxSize(2)
+        .withConnectionPoolConfig(customerSmtpBuilder.getConnectionPoolConfig().toBuilder()
+            .withClusterKey(customerClusterKey)
+            .withCoreSize(0)
+            .withMaxSize(2)
+            .build())
         .buildMailer();
 }
 ```
@@ -348,7 +356,7 @@ An empty `Optional` means the probe didn't establish the capability set; `false`
 
 Prepare a separately encrypted message for each partner using [S/MIME](/security.html#section-sending-smime), or use [OpenPGP](/security.html#section-sending-openpgp) where that is the established partner requirement. Resolve approved recipient keys from your application configuration; if a key is unavailable or expired, hold the message rather than sending plaintext. Choosing who owns a key is not a side effect of [email-address validation](/features.html#section-email-validation).
 
-For messages that also require encrypted onward transport, add [`.withTlsRequiredForOnwardDelivery()`](/security.html#section-requiretls) to the email builder. S/MIME protects the content; REQUIRETLS tells cooperating SMTP servers to retain transport encryption. The submission server must support the requirement or the send fails—there is no silent fallback. Neither mechanism proves final delivery.
+For messages that also require encrypted onward transport, add [`SmtpDeliveryOptions.builder().withTlsRequiredForOnwardDelivery().build()`](/security.html#section-requiretls) through `withSmtpDeliveryOptions(...)` on the email builder. S/MIME protects the content; REQUIRETLS tells cooperating SMTP servers to retain transport encryption. The submission server must support the requirement or the send fails—there is no silent fallback. Neither mechanism proves final delivery.
 
 [Polar Meridian's partner messages](/case-studies/polar-meridian.html#one-protected-message-several-partners) show per-recipient preparation. [RelayDesk](/case-studies/relaydesk.html#protect-kestrel-s-wholesale-replies) instead accommodates a customer's OpenPGP policy. In either design, encrypting the outgoing message leaves any readable application archive unprotected; decide how retained copies and keys will be secured too.
 
@@ -398,8 +406,11 @@ The buyer, warehouse and supplier are copied on one reply. The relay accepts the
 
 ```java
 static Email allowPartialReply(SimpleJavaMail mail, Email supportReply) {
-    return mail.emailBuilder().copying(supportReply)
-        .withSendingToAcceptedRecipients(true)
+    EmailPopulatingBuilder reply = mail.emailBuilder().copying(supportReply);
+    return reply
+        .withSmtpDeliveryOptions(reply.getSmtpDeliveryOptions().toBuilder()
+            .withSendingToAcceptedRecipients(true)
+            .build())
         .buildEmail();
 }
 ```
@@ -479,6 +490,8 @@ Submission: PT0.11S
 *Most of this wait is deliberate pacing; another connection won't remove it.*
 
 Combine this timing handler with your existing result-recording observer; don't replace the archive callback just to add a metric. Keep the handler lightweight, or delegate storage through the [observer executor](/sending-and-execution.html#section-mail-send-observer).
+
+To associate each invoice or application job with its progress and full outcome through one shared Mailer, use the [job-correlation pattern](/sending-and-execution.html#section-correlate-application-jobs). Its complete helper captures the job ID in factory-created handlers and clears the submitting thread's context immediately after each individual async call, including when the same Email is reused.
 
 Scheduling measures local admission-to-worker delay, not time spent in your durable job store. Connection acquisition includes connection setup or pool wait; it is not a separate DNS/TLS stopwatch. Unavailable measurements are not zero. Compare these phases with queue age and outcomes, as [Noor's monitoring](/case-studies/polar-meridian.html#noor-monitors-for-performance-degradation) does, before deciding what to tune. You don't need [raw SMTP debug logs](/debugging.html#section-debug-logging), potentially containing sensitive messages, to measure these waits.
 

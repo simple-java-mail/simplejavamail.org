@@ -108,7 +108,8 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 					There are four strategies:
 				</p>
 				<pre><code>TransportStrategy strategy = TransportStrategy.SMTP;
-// or: TransportStrategy.SMTPS, TransportStrategy.SMTP_TLS, TransportStrategy.SMTP_OAUTH2
+// or: TransportStrategy.SMTPS, TransportStrategy.SMTP_TLS,
+//     TransportStrategy.SMTP_OAUTH2, TransportStrategy.SMTPS_OAUTH2
 
 SimpleJavaMail.fromDefaults().mailerBuilder()
   .withSMTPServer("host", port, "username", passwordOrOAUTH2Token)
@@ -118,7 +119,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 					Or with property default:
 				</p>
 				<pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP
-# or: SMTPS, SMTP_TLS, SMTP_OAUTH2
+# or: SMTPS, SMTP_TLS, SMTP_OAUTH2, SMTPS_OAUTH2
 </code></pre>
 				<div class="doc-table-wrap" tabindex="0" aria-label="Scrollable SMTP transport strategy comparison">
 					<table class="security-route-table">
@@ -128,6 +129,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 							<tr><th><code>SMTP_TLS</code></th><td>Require STARTTLS before authentication or mail</td><td>Fail the connection</td><td>587</td></tr>
 							<tr><th><code>SMTPS</code></th><td>TLS from the start of the connection</td><td>Not applicable; no STARTTLS upgrade</td><td>465</td></tr>
 							<tr><th><code>SMTP_OAUTH2</code></th><td>Require STARTTLS before sending the access token</td><td>Fail the connection</td><td>587</td></tr>
+							<tr><th><code>SMTPS_OAUTH2</code></th><td>TLS from the start, then XOAUTH2 authentication</td><td>Not applicable; no STARTTLS upgrade</td><td>465</td></tr>
 						</tbody>
 					</table>
 				</div>
@@ -137,6 +139,10 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 					<code class="inline language-java">SMTP_TLS</code> or <code class="inline language-java">SMTP_OAUTH2</code>.
 					Remove that override to keep mandatory TLS. For opportunistic username/password authentication, choose
 					<code class="inline language-java">SMTP</code> instead. See the <a href="migration-notes-10.0.0.html#mandatory-starttls">migration example</a>.
+				</p>
+				<p class="wide">
+					For <code>SMTPS_OAUTH2</code>, an extra <code>mail.transport.protocol</code> must retain <code>smtps</code>;
+					a contradictory protocol override is rejected before connections or workers are started.
 				</p>
 				<p class="wide">
 					This check runs when Simple Java Mail creates the Session, including logging-only builds. A caller-supplied Session or
@@ -198,7 +204,9 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 			<div class="side">
       <pre><code class="language-java">SimpleJavaMail.fromDefaults().mailerBuilder()
 	  .withTransportStrategy(TransportStrategy.SMTP)
-	  .withOpportunisticTLS(false);
+	  .withTlsConfig(TlsConfig.builder()
+	      .withOpportunisticTLS(false)
+	      .build());
 </code></pre>
 
 Or with properties:
@@ -270,10 +278,29 @@ Or with properties:
 				for obtaining the access token from its provider.
 			</p>
 		</section>
+		<a href="#section-transport-strategy-smtps-oauth2" id="section-transport-strategy-smtps-oauth2" class="section-link h3">&sect;</a>
+		<h3>TransportStrategy.SMTPS_OAUTH2</h3>
+		<section>
+			<p class="wide">
+				Use <code>SMTPS_OAUTH2</code> when the SMTP service requires XOAUTH2 over implicit TLS. The connection is encrypted from its
+				first byte, uses port 465 when no port is supplied, and does not negotiate STARTTLS. Certificate-chain and server-identity
+				validation follow the same defaults as <code>SMTPS</code>. Both OAuth2 strategies accept a fixed token or a runtime provider.
+			</p>
+			<pre class="full-width-example"><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
+    .withSMTPServer("smtp.example.com", 465, "user@example.com", accessToken)
+    .withTransportStrategy(TransportStrategy.SMTPS_OAUTH2)
+    .buildMailer();</code></pre>
+			<p class="wide">The existing property configuration also accepts the preset:</p>
+			<pre><code class="language-properties">simplejavamail.transportstrategy=SMTPS_OAUTH2
+simplejavamail.smtp.host=smtp.example.com
+simplejavamail.smtp.username=user@example.com
+# Fixed-token route only; omit this property when registering a provider in Java.
+simplejavamail.smtp.password=your-access-token</code></pre>
+		</section>
 		<section>
 			<p class="wide">
 				For a long-lived Mailer, use an <code class="inline language-java">OAuth2AccessTokenProvider</code> so an expired token can be replaced without
-				rebuilding the Mailer. The provider can use whichever OAuth client, token endpoint, cache, or refresh flow your application already uses.
+				rebuilding the Mailer. It works with both OAuth2 strategies and can use whichever OAuth client, token endpoint, cache, or refresh flow your application already uses.
 			</p>
 			<pre class="full-width-example"><code class="language-java">OAuth2AccessTokenProvider accessTokens =
     () -&gt; tokenService.currentAccessToken();
@@ -281,6 +308,12 @@ Or with properties:
 Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user@example.com")
     .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
+    .withOAuth2AccessTokenProvider(accessTokens)
+    .buildMailer();</code></pre>
+			<p class="wide">For the same provider over implicit TLS, choose port 465 and <code>SMTPS_OAUTH2</code>:</p>
+			<pre class="full-width-example"><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
+    .withSMTPServer("smtp.example.com", 465, "user@example.com")
+    .withTransportStrategy(TransportStrategy.SMTPS_OAUTH2)
     .withOAuth2AccessTokenProvider(accessTokens)
     .buildMailer();</code></pre>
 			<p class="wide">
@@ -294,7 +327,8 @@ Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
 			</p>
 			<p class="wide">
 				A supplied Jakarta Mail Session can use the provider too;
-				configure that Session for <code class="inline language-properties">mail.smtp.auth.mechanisms=XOAUTH2</code> and then call
+				configure that Session for <code class="inline language-properties">mail.smtp.auth.mechanisms=XOAUTH2</code>, or
+				<code class="inline language-properties">mail.smtps.auth.mechanisms=XOAUTH2</code> when its protocol is <code>smtps</code>, and then call
 				<code class="inline language-java">mail.mailerBuilder(session).withOAuth2AccessTokenProvider(...)</code>.
 			</p>
 			<p class="wide">
@@ -320,7 +354,9 @@ Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withRecipients(mail.recipientBuilder().withName("Recipient").withAddress("recipient@example.net").withType(Message.RecipientType.TO).build())
     .withSubject("Sensitive report")
     .withPlainText("...")
-    .withTlsRequiredForOnwardDelivery()
+    .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+        .withTlsRequiredForOnwardDelivery()
+        .build())
     .buildEmail();
 
 MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
@@ -351,16 +387,18 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 				<p>
 					Calling <code class="inline language-java">clearTlsRequiredForOnwardDelivery()</code> removes a value set directly on that builder and resumes the
 					normal defaults/overrides fallback. To opt one composed Email out of a configured default or override, suppress that source explicitly.
-					Exact EML uses <code class="inline language-java">withTlsRequiredForOnwardDelivery()</code> too, but keeps bypassing Email templates and preserves
+					Exact EML accepts the same <code class="inline language-java">SmtpDeliveryOptions</code> requirement, but keeps bypassing Email templates and preserves
 					its source bytes unchanged.
 				</p>
 			</div>
 			<div class="side">
 				<pre><code class="language-java">Email email = mail.emailBuilder().startingBlank()
-    .dontApplyDefaultValueFor(
-        EmailProperty.TLS_REQUIRED_FOR_ONWARD_DELIVERY)
-    .dontApplyOverrideValueFor(
-        EmailProperty.TLS_REQUIRED_FOR_ONWARD_DELIVERY)
+    .withTemplateOptions(EmailTemplateOptions.builder()
+        .dontApplyDefaultValueFor(
+            EmailProperty.TLS_REQUIRED_FOR_ONWARD_DELIVERY)
+        .dontApplyOverrideValueFor(
+            EmailProperty.TLS_REQUIRED_FOR_ONWARD_DELIVERY)
+        .build())
     // compose the email
     .buildEmail();</code></pre>
 			</div>
@@ -394,8 +432,10 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 			</div>
 			<div class="side">
 <pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
-	.withCustomSSLFactoryClass(theClassName) // or:
-	.withCustomSSLFactoryInstance(theInstance) // takes precedence
+	.withTlsConfig(TlsConfig.builder()
+	    .withCustomSSLFactoryClass(theClassName) // or:
+	    .withCustomSSLFactoryInstance(theInstance) // takes precedence
+	    .build())
 	.buildMailer();
 </code></pre>
 				Or with property default:
@@ -442,16 +482,22 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 	.withSMTPServer("smtp.example.com", 587)
 	.withTransportStrategy(TransportStrategy.SMTP_TLS)
 	// secure default; shown explicitly here
-	.trustingAllHosts(false)
-	.verifyingServerIdentity(true);
+	.withTlsConfig(TlsConfig.builder()
+	    .trustingAllHosts(false)
+	    .verifyingServerIdentity(true)
+	    .build());
 
 // narrow exception when the issuing CA cannot be added to the JVM trust store
 SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.example", 587)
-	.trustingSSLHosts("smtp.internal.example");
+	.withTlsConfig(TlsConfig.builder()
+	    .trustingSSLHosts("smtp.internal.example")
+	    .build());
 
 // broad compatibility escape hatch; avoid in production
 SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.example", 587)
-	.trustingAllHosts(true);
+	.withTlsConfig(TlsConfig.builder()
+	    .trustingAllHosts(true)
+	    .build());
 </code></pre>
 				Or with property default:
 				<pre><code class="language-properties small">simplejavamail.defaults.trustallhosts=false
@@ -475,11 +521,15 @@ simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 			</p>
 <pre><code>// enabled by default
 SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.example.com", 587)
-	.verifyingServerIdentity(true);
+	.withTlsConfig(TlsConfig.builder()
+	    .verifyingServerIdentity(true)
+	    .build());
 
 // compatibility escape hatch; avoid in production
 SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.example", 587)
-	.verifyingServerIdentity(false);
+	.withTlsConfig(TlsConfig.builder()
+	    .verifyingServerIdentity(false)
+	    .build());
 </code></pre>
 				Or with property default:
 				<pre><code class="language-properties small">simplejavamail.defaults.verifyserveridentity=true</code></pre>
@@ -534,7 +584,9 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 				The checks still run. ENVID validation and encoding are unaffected: an invalid fixed envelope identifier is still rejected.
 			</p>
 <pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
-	.disablingAllClientValidation(true);
+	.withValidationConfig(ValidationConfig.builder()
+	    .disablingAllClientValidation(true)
+	    .build());
 </code></pre>
 		</section>
 
@@ -695,7 +747,9 @@ currentMailerBuilder
 				</p>
 				<p><code>clearSmimeSigning()</code> and <code>clearSmimeEncryption()</code> remove one local choice independently;
 					<code>clearSmime()</code> removes both. These operations retain recipient certificates and permit ordinary template fallback.
-					Use the per-field suppression controls when a template should not supply the cleared choice again.</p>
+					Use the per-field suppression controls when a template should not supply the cleared choice again. Recipient certificates can
+					still request encryption after the Email choices are cleared. The <a href="configuration.html#configuration-precedence">scope and precedence table</a>
+					explains these separate sources; ordinary suppression cannot remove configuration locks.</p>
 				<p>
 					For encryption, Simple Java Mail can use one email-level encryption certificate, or different certificates per recipient. When any
 					TO/CC/BCC recipient carries a certificate, that recipient certificate is used first. Recipients without a certificate fall back to the
@@ -710,6 +764,12 @@ currentMailerBuilder
 					To keep each original recipient's certificate instead, use <code class="inline language-java">resetSmimeCertificatePolicy()</code>.
 					It removes the group rule, not the recipients' certificates, and leaves any group notification policy unchanged.
 				</p>
+				<table><thead><tr><th>Recipient-group operation</th><th>Certificates on produced recipients</th></tr></thead><tbody>
+					<tr><td><code>withDefaultSmimeCertificate(c)</code></td><td>Fill missing certificates only.</td></tr>
+					<tr><td><code>withFixedSmimeCertificate(c)</code></td><td>Replace every recipient certificate with <code>c</code>.</td></tr>
+					<tr><td><code>clearingSmimeCertificates()</code></td><td>Strip certificates, permitting the Email fallback.</td></tr>
+					<tr><td><code>resetSmimeCertificatePolicy()</code></td><td>Stop applying the group rule and preserve the original recipients' certificates.</td></tr>
+				</tbody></table>
 				<br/>
 				<p>
 					For maximum flexibility, you can configure all algorithms and certificates specific to S/MIME signing and encryption. This includes
@@ -802,6 +862,19 @@ Email emailToBeEncrypted = currentEmailBuilder
     .encryptWithSmime(emailLevelSmimeEncryptConfig)
     .buildEmail();
 </code></pre>
+				Resetting a group rule preserves the original metadata instead:
+				<pre><code class="language-java">IRecipientsBuilder group = mail.recipientsBuilder()
+    .withRecipients(previousRecipients);
+
+Collection&lt;Recipient&gt; cleared =
+    group.clearingSmimeCertificates().buildRecipients();
+
+Collection&lt;Recipient&gt; preserved =
+    group.resetSmimeCertificatePolicy().buildRecipients();</code></pre>
+				<p>The previously built <code>cleared</code> list remains cleared, and the source recipients are unchanged.
+					Resetting this certificate policy leaves the group's NOTIFY policy unchanged. Neither the group clear nor the Email's
+					<code>clearSmime()</code> is a universal encryption-disable operation: Email templates or recipients added directly to the Email later can still supply
+					protection choices.</p>
 				Sign all emails by default from Java:
 				<pre><code>SmimeSigningConfig signingDefaults = SmimeSigningConfig.builder()
     .pkcs12Config(myKeyInfo)
@@ -1080,7 +1153,7 @@ mailer.sync().sendMail(protectedEmail);</code></pre>
 				<p><code>clearOpenPgpSigning()</code> and <code>clearOpenPgpEncryption()</code> remove one local choice independently;
 					<code>clearOpenPgp()</code> removes both. They permit template fallback. To exclude a template instead, use the ordinary
 					defaults/overrides suppression controls with <code>OPENPGP_SIGNING_CONFIG</code> or <code>OPENPGP_ENCRYPTION_CONFIG</code>.
-					Exact EML remains untouched, and OpenPGP key material is still not included in Email serialization.</p>
+					Exact EML remains untouched, including after Java serialization.</p>
 				<p>On the signing-config builder, <code>clearSigningKeyId()</code> returns to automatic key selection and
 					<code>resetHashAlgorithm()</code> restores SHA-256. The encryption-config builder's <code>resetSymmetricAlgorithm()</code>
 					restores AES-256. These companions keep the supplied keys and passphrases; previously built configurations do not change.</p>
@@ -1105,9 +1178,11 @@ Mailer protectedMailer = mail.mailerBuilder()
 					available for interoperability needs. You can also select a signing key ID when a secret key ring contains more than one signing key.
 				</p>
 				<p>
-					Key-ring data and passphrases are copied into the configuration object, hidden from <code class="inline language-java">toString()</code>, and
-					not written when an <code class="inline language-java">Email</code> is serialized. Supply the OpenPGP configuration again after deserializing
-					an email that still needs to be protected and sent.
+					Key-ring data and passphrases are copied into the configuration object and hidden from <code class="inline language-java">toString()</code>.
+					Both configurations are serializable and are retained when an <code class="inline language-java">Email</code> is serialized, including the
+					selected signing key, hash and cipher. A signing snapshot contains the secret key ring and passphrase; encryption-only configuration
+					contains recipient public key rings and the cipher preference. Protect these snapshots as you would S/MIME private keys and passwords.
+					See <a href="features.html#section-serializing-emails">Serializing Email objects</a> for a round-trip example and older-stream limitations.
 				</p>
 			</div>
 			<div class="side">

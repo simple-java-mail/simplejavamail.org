@@ -268,21 +268,29 @@ static Mailer createMailer(SimpleJavaMail mail, UUID clusterKey,
     return mail.mailerBuilder()
         .withSMTPServer(smtpHost, 587, username, password)
         .withTransportStrategy(TransportStrategy.SMTP_TLS)
-        .trustingAllHosts(false)
-        .trustingSSLHosts() // clear any host-specific trust exceptions
-        .verifyingServerIdentity(true)
-        .withClusterKey(clusterKey)
-        .withConnectionPoolCoreSize(0) // no need to stay connected while quiet
-        .withConnectionPoolMaxSize(maxConnectionsPerRelay) // within Kestrel's connection allocation
-        .withConnectionPoolExpireAfter(Duration.ofSeconds(30)) // retire idle connections
-        .withConnectionPoolClaimTimeout(Duration.ofSeconds(2)) // don't wait forever for a pool
+        .withTlsConfig(TlsConfig.builder()
+            .trustingAllHosts(false)
+            .trustingSSLHosts() // clear any host-specific trust exceptions
+            .verifyingServerIdentity(true)
+            .build())
+        .withConnectionPoolConfig(ConnectionPoolConfig.builder()
+            .withClusterKey(clusterKey)
+            .withCoreSize(0) // no need to stay connected while quiet
+            .withMaxSize(maxConnectionsPerRelay) // within Kestrel's connection allocation
+            .withExpireAfter(Duration.ofSeconds(30)) // retire idle connections
+            .withClaimTimeout(Duration.ofSeconds(2)) // don't wait forever for a pool
+            .build())
         .withMailSendTimeout(Duration.ofSeconds(20)) // bound each send attempt
-        .withThreadPoolSize(asyncWorkersPerMailer) // operations executing, including preparation
-        .withAsyncQueueCapacity(waitingOperationsPerMailer) // waiting in memory, not the durable backlog
-        .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT) // refuse work when workers and queue are full
-        .withRecipientRateLimit(recipientsPerPeriod, sendingRatePeriod) // this instance's share of Kestrel's rate
-        .withRateLimitGroup(sendingRateGroup) // both approved relays share the local limit
-        .withRateLimitBurstsAllowed(false) // pace the backlog after recovery
+        .withAsyncExecutionConfig(AsyncExecutionConfig.builder()
+            .withThreadPoolSize(asyncWorkersPerMailer) // operations executing, including preparation
+            .withQueueCapacity(waitingOperationsPerMailer) // waiting in memory, not the durable backlog
+            .rejectWhenFull() // refuse work when workers and queue are full
+            .build())
+        .withSendingLimitsConfig(SendingLimitsConfig.builder()
+            .withRecipientRateLimit(recipientsPerPeriod, sendingRatePeriod) // this instance's share of Kestrel's rate
+            .withRateLimitGroup(sendingRateGroup) // both approved relays share the local limit
+            .withRateLimitBurstsAllowed(false) // pace the backlog after recovery
+            .build())
         .withSendHandlers(MailSendHandlers.builder().withResultObserver(observer, observerWorkers).build())
         .buildMailer();
 }
@@ -362,8 +370,12 @@ for (String address : rehearsal.getEnvelopeRecipients()) {
 }
 
 EmailPopulatingBuilder protectedReplyBuilder = mail.emailBuilder()
-    .copying(effectiveReply)
-    .ignoringDefaults().ignoringOverrides() // don't apply them again after key selection
+    .copying(effectiveReply);
+protectedReplyBuilder
+    .withTemplateOptions(protectedReplyBuilder.getTemplateOptions().toBuilder()
+        .ignoringDefaults()
+        .ignoringOverrides() // don't apply them again after key selection
+        .build())
     .signWithOpenPgp(keys.requireSigningConfig(customerId))
     .encryptWithOpenPgp(encryption.build());
 Email protectedReply = protectedReplyBuilder.buildEmail();
@@ -489,7 +501,9 @@ Another support reply includes a buyer, a warehouse contact and a former colleag
 
 ```java
 Email multiRecipientReply = replyEmailBuilder
-    .withSendingToAcceptedRecipients(true)
+    .withSmtpDeliveryOptions(replyEmailBuilder.getSmtpDeliveryOptions().toBuilder()
+        .withSendingToAcceptedRecipients(true)
+        .build())
     .buildEmail();
 ```
 
@@ -563,17 +577,19 @@ Starting with the recipient, content and attachments already in the reply builde
 
 ```java
 Email reply = replyEmailBuilder
-    .withSendingToAcceptedRecipients(true) // approved for this support reply
+    .withSmtpDeliveryOptions(replyEmailBuilder.getSmtpDeliveryOptions().toBuilder()
+        .withSendingToAcceptedRecipients(true) // approved for this support reply
+        .withDeliveryStatusNotification(
+            DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+            DeliveryStatusNotification.NotifyOption.FAILURE,
+            DeliveryStatusNotification.NotifyOption.DELAY)
+        .fixingEnvelopeId(attemptToken.toString())
+        .build())
     .fixingMessageId("<" + attemptToken + "@mail.relaydesk.com>")
     .from("Kestrel Support", "support@kestrel-outfitters.com")
     .withReplyTo("Kestrel Support",
         "ticket+" + conversationToken + "@replies.kestrel-outfitters.com")
     .withBounceTo("bounce+" + attemptToken + "@bounces.kestrel-outfitters.com")
-    .withDeliveryStatusNotification(
-        DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
-        DeliveryStatusNotification.NotifyOption.FAILURE,
-        DeliveryStatusNotification.NotifyOption.DELAY)
-    .fixingEnvelopeId(attemptToken.toString())
     .buildEmail();
 ```
 

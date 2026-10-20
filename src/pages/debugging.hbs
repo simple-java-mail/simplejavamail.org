@@ -244,13 +244,16 @@ simplejavamail.javaxmail.debug.out=SLF4J
 
     report.getEffectiveCapabilities().ifPresent(capabilities -&gt; {
         logger.info("DSN advertised: {}", capabilities.supports("DSN"));
-        capabilities.getMaximumMessageSize().ifPresent(bytes -&gt;
-            logger.info("Advertised SIZE limit: {} bytes", bytes));
+        Long maximum = capabilities.getMaximumMessageSize();
+        if (maximum != null) {
+            logger.info("Advertised SIZE limit: {} bytes", maximum);
+        }
     });
 
-    report.getFailurePhase().ifPresent(phase -&gt;
-        logger.warn("{}: {}", phase,
-            report.getFailureDescription().orElse("No detail available")));
+    if (report.getFailurePhase() != null) {
+        logger.warn("{}: {}", report.getFailurePhase(),
+            report.getFailureDescription());
+    }
 }</code></pre>
 <pre><code class="language-java small">// On a Mailer with credentials already configured:
 SmtpConnectionReport withAuthentication = mailer.sync().probeConnection(true);
@@ -589,7 +592,10 @@ mailer.getEmailGovernance();
     <div class="view">
       <p>
         During a synchronous send, Simple Java Mail throws a <code class="inline language-java">MailException</code> if preparation, validation or sending
-        fails. This includes checked exceptions translated from the underlying frameworks.
+        fails. This includes checked exceptions translated from the underlying frameworks, local size rejection, and execution-capacity failures.
+        Specific exception types remain useful; <code>getKind()</code>, <code>getCause()</code> and the optional
+        <code>getSubmissionReceipt()</code> are available on the common root. Invalid arguments, programming errors and application extension
+        exceptions retain their own documented boundaries.
       </p>
       <p>
         An asynchronous send reports those failures through its <code class="inline language-java">CompletableFuture</code>. See

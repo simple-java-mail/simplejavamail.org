@@ -188,7 +188,9 @@ They also try a subject and recipient name containing CR/LF characters. Simple J
 They cap the finished email at five MiB, including MIME encoding and attachments:
 
 ```java
-mailerBuilder.withMaximumEmailSize(5 * 1024 * 1024);
+mailerBuilder.withValidationConfig(ValidationConfig.builder()
+    .withMaximumEmailSize(5 * 1024 * 1024)
+    .build());
 ```
 
 The portal's input limits still apply; this check happens after the message has been built.
@@ -290,17 +292,17 @@ Their setup uses `batch-module` for the workers and connection pool; this trial 
 ```java
 mailerBuilder
     // at most two async sends at a time from this Mailer
-    .withThreadPoolSize(2)
-    // keep the in-memory backlog small; leave the rest in the database
-    .withAsyncQueueCapacity(20)
-    // tell the dispatcher to back off when the queue fills up
-    .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT)
+    .withAsyncExecutionConfig(AsyncExecutionConfig.builder()
+        .withThreadPoolSize(2) // at most two executing async sends
+        .withQueueCapacity(20) // keep the rest in the database
+        .rejectWhenFull() // tell the dispatcher to back off when full
+        .build())
     // no need to stay connected at all times
-    .withConnectionPoolCoreSize(0)
-    // no more than two connections to the relay from this pool
-    .withConnectionPoolMaxSize(2)
-    // give up after two seconds waiting for a pooled connection
-    .withConnectionPoolClaimTimeout(Duration.ofSeconds(2))
+    .withConnectionPoolConfig(ConnectionPoolConfig.builder()
+        .withCoreSize(0) // no need to stay connected at all times
+        .withMaxSize(2) // at most two connections to this relay
+        .withClaimTimeout(Duration.ofSeconds(2)) // don't wait indefinitely for a lease
+        .build())
     // budget for the send, including preparation and time in the queue
     .withMailSendTimeout(Duration.ofSeconds(30));
 ```
@@ -316,7 +318,7 @@ MailSend<MailSubmissionReceipt> send = sendArchived(queued.getAccountId(), queue
 CompletableFuture<MailSubmissionReceipt> completion = send.getCompletion();
 ```
 
-The call still returns normally. With `REJECT`, that completion has already failed with `MailSendRejectedException`, with reason `QUEUE_FULL`. The queue-full part of their completion handler stops fetching more work and returns this message to `outbox` with a five-second delay:
+The call still returns normally. With `rejectWhenFull()`, that completion has already failed with `MailSendRejectedException`, with reason `QUEUE_FULL`. The queue-full part of their completion handler stops fetching more work and returns this message to `outbox` with a five-second delay:
 
 ```java
 completion.handle((receipt, failure) -> {
@@ -427,10 +429,14 @@ They keep the two-worker `mailer` for bulk work and build a smaller one for acco
 
 ```java
 Mailer accountMailer = mailerBuilder
-    .withClusterKey(randomUUID())
-    .withThreadPoolSize(1)
-    .withAsyncQueueCapacity(5)
-    .withConnectionPoolMaxSize(1)
+    .withConnectionPoolConfig(mailerBuilder.getConnectionPoolConfig().toBuilder()
+        .withClusterKey(randomUUID())
+        .withMaxSize(1)
+        .build())
+    .withAsyncExecutionConfig(mailerBuilder.getAsyncExecutionConfig().toBuilder()
+        .withThreadPoolSize(1)
+        .withQueueCapacity(5)
+        .build())
     .buildMailer();
 
 MailDispatcher accountDispatcher = new MailDispatcher(
@@ -444,7 +450,7 @@ bulkDispatcher.startDispatching();
 
 `forWorkload()` returns a filtered view of the same database outbox. Its claim query selects only that workload, with password resets and invoices marked `account`, and newsletters and quotation sharing marked `bulk` when queued. Each dispatcher has its own polling thread, Mailer workers and waiting slots, so newsletters cannot fill the account-mail queue. They stop both dispatchers at application shutdown. Both still use the relays, of course; the developers have to watch the combined load from all those deployments.
 
-They compare the timing figures while adjusting limits and watching the relays. Their ordinary 2,000 messages a day and occasional 20,000-message newsletter are a rather different workload from that 2.7-million-message half-hour. Once the legitimate traffic is comfortably handled, they can retire the extra relays. They're no longer trying to find the largest number that fits in `withConnectionPoolMaxSize()`.
+They compare the timing figures while adjusting limits and watching the relays. Their ordinary 2,000 messages a day and occasional 20,000-message newsletter are a rather different workload from that 2.7-million-message half-hour. Once the legitimate traffic is comfortably handled, they can retire the extra relays. They're no longer trying to find the largest number that fits in `ConnectionPoolConfig.Builder.withMaxSize(...)`.
 
 ---
 
@@ -452,7 +458,7 @@ They compare the timing figures while adjusting limits and watching the relays. 
 
 <img src="/assets/journal/company-logos/relaydesk.png" alt="RelayDesk" class="journal-paragraph-image image-align-left" style="width:200px;" />
 
-RelayDesk's quiet customer routes also suit a core size of zero. For a busy support team, though, `withConnectionPoolCoreSize(1)` could be worth keeping a connection ready, saving repeated connection, TLS and authentication setup between bursts. That costs a connection per pool and worker replica, so it would be a choice for that route, not a default for every customer.
+RelayDesk's quiet customer routes also suit a core size of zero. For a busy support team, though, `ConnectionPoolConfig.Builder.withCoreSize(1)` could be worth keeping a connection ready, saving repeated connection, TLS and authentication setup between bursts. That costs a connection per pool and worker replica, so it would be a choice for that route, not a default for every customer.
 
 <img src="/assets/journal/company-logos/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />
 
@@ -577,8 +583,10 @@ A developer sets up a test SMTP server to impersonate the real relay, using a ce
 ```java
 // Unsafe workaround left in production:
 mailerBuilder
-    .trustingAllHosts(true)          // trust any server certificate
-    .verifyingServerIdentity(false); // don't check the hostname
+    .withTlsConfig(TlsConfig.builder()
+        .trustingAllHosts(true) // trust any server certificate
+        .verifyingServerIdentity(false)
+        .build()); // don't check the hostname
 ```
 
 ```mermaid
@@ -600,9 +608,11 @@ The connection is encrypted, but their impersonator can still read the message. 
 ```java
 mailerBuilder
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .trustingAllHosts(false)
-    .trustingSSLHosts()
-    .verifyingServerIdentity(true);
+    .withTlsConfig(TlsConfig.builder()
+        .trustingAllHosts(false)
+        .trustingSSLHosts()
+        .verifyingServerIdentity(true)
+        .build());
 ```
 
 These settings restore the normal [certificate and hostname checks](https://www.rfc-editor.org/rfc/rfc8314.html#section-5.3). The empty `trustingSSLHosts()` call clears host-specific exceptions too. They check Session properties and custom socket factories for other overrides, and add the relay's private CA to the trust store if needed. On the next test run, untrusted certificates, wrong hostnames and missing TLS all stop the send.

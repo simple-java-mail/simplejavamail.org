@@ -1,3 +1,4 @@
+import org.simplejavamail.api.email.config.SmtpDeliveryOptions;
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.EmailPopulatingBuilder;
@@ -159,13 +160,14 @@ public final class PolarMeridianDispatcher {
         ExactEmailBuilder exact = mail.emailBuilder().startingFromExactEml(eml)
                 .withEnvelopeRecipients(evidence.recipients.toArray(new Recipient[0]))
                 .withEnvelopeSender(evidence.envelopeSender);
+        SmtpDeliveryOptions.Builder delivery = SmtpDeliveryOptions.builder();
         if (evidence.dsn != null) {
-            exact.withDeliveryStatusNotification(evidence.dsn);
+            delivery.withDeliveryStatusNotification(evidence.dsn);
         }
         if (evidence.requireTls) {
-            exact.withTlsRequiredForOnwardDelivery();
+            delivery.withTlsRequiredForOnwardDelivery();
         }
-        return exact.buildEmail();
+        return exact.withSmtpDeliveryOptions(delivery.build()).buildEmail();
     }
 
     void recordResult(Job job, String attemptId, MailSubmissionReceipt receipt,

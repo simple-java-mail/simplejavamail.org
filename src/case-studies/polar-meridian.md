@@ -378,7 +378,9 @@ Email maintenanceUpdate(SmimeSigningConfig partnerSigningConfig,
         .withPlainText(approvedMaintenanceUpdateText)
         .signWithSmime(partnerSigningConfig)
         .encryptWithSmime(partnerEncryptionConfig)
-        .withTlsRequiredForOnwardDelivery() // reject relays that cannot honor onward TLS
+        .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+            .withTlsRequiredForOnwardDelivery() // reject relays that cannot honor onward TLS
+            .build())
         .buildEmail();
 }
 ```
@@ -486,16 +488,22 @@ MailerRegularBuilder<?> configuredMailerBuilder(String host, String username, St
     return mail.mailerBuilder()
         .withSMTPServer(host, 587, username, password)
         .withTransportStrategy(TransportStrategy.SMTP_TLS)
-        .trustingAllHosts(false)
-        .trustingSSLHosts()
-        .verifyingServerIdentity(true)
+        .withTlsConfig(TlsConfig.builder()
+            .trustingAllHosts(false)
+            .trustingSSLHosts()
+            .verifyingServerIdentity(true)
+            .build())
         // keep protocol transcripts and log-only message dumps out of production
         .withDebugConfig(SessionDebugConfig.builder().withEnabled(false).build())
         .withTransportModeLoggingOnly(false)
         // reject messages above ten MiB after MIME encoding
-        .withMaximumEmailSize(10 * 1024 * 1024)
+        .withValidationConfig(ValidationConfig.builder()
+            .withMaximumEmailSize(10 * 1024 * 1024)
+            .build())
         // don't occupy a worker indefinitely while waiting for a connection
-        .withConnectionPoolClaimTimeout(Duration.ofSeconds(2))
+        .withConnectionPoolConfig(ConnectionPoolConfig.builder()
+            .withClaimTimeout(Duration.ofSeconds(2))
+            .build())
         // includes preparation and the local queue, not the application's queue
         .withMailSendTimeout(Duration.ofSeconds(15));
 }
@@ -573,25 +581,30 @@ UUID urgentCluster = randomUUID();
 
 for (MailerRegularBuilder<?> builder : List.of(urgentABuilder, urgentBBuilder)) {
     builder
-        .withClusterKey(urgentCluster)
-        .withThreadPoolSize(5)
-        .withAsyncQueueCapacity(10)
-        .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT)
-        // keep one connection ready per relay pool
-        .withConnectionPoolCoreSize(1)
-        // per relay pool, in this process
-        .withConnectionPoolMaxSize(10)
-        .withConnectionPoolLoadBalancingStrategy(LoadBalancingStrategy.ROUND_ROBIN);
+        .withAsyncExecutionConfig(builder.getAsyncExecutionConfig().toBuilder()
+            .withThreadPoolSize(5)
+            .withQueueCapacity(10)
+            .rejectWhenFull()
+            .build())
+        .withConnectionPoolConfig(builder.getConnectionPoolConfig().toBuilder()
+            .withClusterKey(urgentCluster)
+            .withCoreSize(1) // keep one connection ready per relay pool
+            .withMaxSize(10) // per relay pool, in this process
+            .withLoadBalancingStrategy(LoadBalancingStrategy.ROUND_ROBIN)
+            .build());
 }
 
 bulkBuilder
-    .withClusterKey(randomUUID())
-    .withThreadPoolSize(2)
-    .withAsyncQueueCapacity(20)
-    .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT)
-    // no connection needs to remain open between bulk runs
-    .withConnectionPoolCoreSize(0)
-    .withConnectionPoolMaxSize(2);
+    .withConnectionPoolConfig(bulkBuilder.getConnectionPoolConfig().toBuilder()
+        .withClusterKey(randomUUID())
+        .withCoreSize(0) // no connection needs to remain open between bulk runs
+        .withMaxSize(2)
+        .build())
+    .withAsyncExecutionConfig(AsyncExecutionConfig.builder()
+        .withThreadPoolSize(2)
+        .withQueueCapacity(20)
+        .rejectWhenFull()
+        .build());
 ```
 
 *Urgent sends can use either approved relay; bulk work cannot borrow their connections.*
@@ -624,13 +637,14 @@ ExactEmailBuilder exact = mail.emailBuilder()
     .startingFromExactEml(evidence.getEmlBytes().orElseThrow())
     .withEnvelopeRecipients(evidence.recipients.toArray(new Recipient[0]))
     .withEnvelopeSender(evidence.envelopeSender);
+SmtpDeliveryOptions.Builder delivery = SmtpDeliveryOptions.builder();
 if (evidence.dsn != null) {
-    exact.withDeliveryStatusNotification(evidence.dsn);
+    delivery.withDeliveryStatusNotification(evidence.dsn);
 }
 if (evidence.requireTls) {
-    exact.withTlsRequiredForOnwardDelivery();
+    delivery.withTlsRequiredForOnwardDelivery();
 }
-return exact.buildEmail();
+return exact.withSmtpDeliveryOptions(delivery.build()).buildEmail();
 ```
 
 *Keep the protected bytes unchanged, with the same recipients and transport requirements.*
@@ -666,10 +680,12 @@ MailSendResultObserver observationSink = outcome -> {
 
     try {
         stageLog.record(attemptMessageId, "REQUESTED", outcome.getRequestedAt());
-        outcome.getReadyAt().ifPresent(at ->
-            stageLog.record(attemptMessageId, "READY", at));
-        outcome.getStartedAt().ifPresent(at ->
-            stageLog.record(attemptMessageId, "STARTED", at));
+        if (outcome.getReadyAt() != null) {
+            stageLog.record(attemptMessageId, "READY", outcome.getReadyAt());
+        }
+        if (outcome.getStartedAt() != null) {
+            stageLog.record(attemptMessageId, "STARTED", outcome.getStartedAt());
+        }
         stageLog.record(attemptMessageId, "COMPLETED", outcome.getCompletedAt());
         monitoring.recordAttempt(outcome);
     } catch (RuntimeException failure) {

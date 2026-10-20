@@ -195,10 +195,14 @@ public class MailConfiguration {
     @Bean(destroyMethod = "close")
     public Mailer customMailer(SimpleJavaMail mail) {
         return mail.mailerBuilder()
-                .resetThreadPoolSize()
-                .withThreadPoolKeepAliveTime(Duration.ofSeconds(5))
-                .withProxyBridgePort(7777)
-                .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
+                .withAsyncExecutionConfig(AsyncExecutionConfig.builder()
+                    .resetThreadPoolSize()
+                    .withKeepAliveTime(Duration.ofSeconds(5))
+                    .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
+                    .build())
+                .withProxyConfig(SocksProxyConfig.builder()
+                    .withBridgePort(7777)
+                    .build())
                 .buildMailer();
     }
 }
@@ -223,7 +227,8 @@ public class MailConfiguration {
 	<section>
 		<div class="wide full-width-example">
 			<p>
-				When the default Mailer uses <code class="inline language-java">SMTP_OAUTH2</code>, a single
+				When the default Mailer uses <code class="inline language-java">SMTP_OAUTH2</code> (required STARTTLS) or
+				<code class="inline language-java">SMTPS_OAUTH2</code> (implicit TLS), a single
 				<code class="inline language-java">OAuth2AccessTokenProvider</code> bean is picked up automatically:
 			</p>
 			<pre><code class="small">@Bean
@@ -298,7 +303,7 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <section>
     <div class="view">
       <p>Plain Spring and the Boot starter load the same Boolean Email default. This example permits sending to accepted recipients when another
-        recipient is rejected. Individual emails may choose false with <code>withSendingToAcceptedRecipients(false)</code>; clearing leaves the default
+        recipient is rejected. Individual emails may choose false with <code>SmtpDeliveryOptions.Builder.withSendingToAcceptedRecipients(false)</code>; clearing leaves the default
         available again. Partial acceptance still fails the operation with its receipt.</p>
       <p>To keep the choice fixed within the injected factory, move the property under <code>locked.defaults</code> instead.
         For example, <code>simplejavamail.locked.defaults.sendtoacceptedrecipients=false</code> requires stopping on known recipient rejection.

@@ -24,6 +24,10 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       </p>
       <p>For a visual map of the pieces producing these results and observer callbacks, see
         <a href="/sending-and-execution.html#section-send-architecture">Inside a mail send</a>.</p>
+      <p>In outgoing send results and connection-probe reports, unavailable scalar facts return <code>null</code>: identifiers, timestamps,
+        durations, endpoint values, counts and boxed Booleans. A known zero or false stays a real value. Required facts remain non-null;
+        optional whole receipts, diagnostics, failures, SMTP responses, capability snapshots and TLS details use <code>Optional</code>.
+        Collections are non-null, with empty meaning no reported entries. This convention does not change the separate received-Email parsing model.</p>
       <p>To join actual sends to application traces and aggregated metrics, use the optional
         <a href="/opentelemetry.html">OpenTelemetry integration</a>. It records terminal completion directly,
         independently of progress coalescing or result-observer dispatch.</p>
@@ -102,16 +106,24 @@ try {
 }
 
 printReceipt(receipt);</code></pre>
-      <p>For one failure boundary covering submission, timeout, cancellation and per-email cleanup, catch <code>MailSendException</code>.
+      <p>For one failure boundary covering library-owned validation, message-size, admission, connection, submission, timeout, cancellation and cleanup
+        failures, catch <code>org.simplejavamail.MailException</code>.
         Its <code>Optional&lt;MailSubmissionReceipt&gt;</code> exposes whatever submission facts were available. A <code>MailSendCleanupException</code>
-        can retain an accepted receipt even though cleanup failed; do not turn that into an automatic resend. Preparation and admission failures
-        keep their existing exception types, and a connection-scope batch cleanup failure cannot stand in for one email's receipt.</p>
-<pre><code class="language-java small">try {
+        can retain an accepted receipt even though cleanup failed; do not turn that into an automatic resend. Specific exception types remain
+        available for focused catches. A connection-scope batch cleanup failure cannot stand in for one email's receipt.</p>
+<pre><code class="language-java small" id="example-common-failure">try {
     printReceipt(mailer.sync().sendMail(email));
-} catch (MailSendException failure) {
-    failure.getSubmissionReceipt().ifPresent(MyDiagnostics::printReceipt);
+} catch (MailException failure) {
+    failure.getSubmissionReceipt().ifPresent(this::printReceipt);
     recordFailure(failure);
 }</code></pre>
+      <p><code>failure.getKind()</code> returns a typed <code>MailFailureKind</code> such as <code>VALIDATION</code>, <code>MESSAGE_SIZE</code>,
+        <code>PREPARATION</code>, <code>CAPACITY</code>, <code>CONNECTION</code>, <code>SUBMISSION</code>, <code>TIMEOUT</code>,
+        <code>CANCELLED</code> or <code>CLEANUP</code>. Configuration and conversion failures have their own kinds too.
+        The kind describes the problem; it never establishes retry safety. Inspect the receipt and its retry guidance when available.
+        Missing facts do not prove rejection.</p>
+      <p>Invalid API arguments and programming errors are outside that common catch. Application factories, iterators and CustomMailer can throw
+        their own exceptions; those retain their documented identity. Result/progress observer RuntimeExceptions remain isolated from sending.</p>
     </div>
   </section>
   <section>
@@ -133,8 +145,8 @@ printReceipt(receipt);</code></pre>
       </div>
       <p>
         <code>ACCEPTED</code> at <code>RCPT TO</code> only means the server accepted the address. An <code>ACCEPTED</code> recipient disposition
-        means the message was accepted for that recipient. An <code>ACCEPTED</code> receipt means that happened for every submitted recipient and
-        the send completed successfully. None of these confirms mailbox delivery.
+        means the message was accepted for that recipient. An <code>ACCEPTED</code> receipt means that happened for every submitted recipient.
+        Later cleanup can still fail the operation while retaining that receipt. None of these confirms mailbox delivery.
       </p>
     </div>
   </section>
@@ -144,7 +156,7 @@ printReceipt(receipt);</code></pre>
         <table>
           <thead><tr><th><code>receipt.getStatus()</code></th><th>What happened</th></tr></thead>
           <tbody>
-            <tr><td><code>ACCEPTED</code></td><td>Every submitted envelope recipient was accepted, and the send completed successfully.</td></tr>
+            <tr><td><code>ACCEPTED</code></td><td>Every submitted envelope recipient was accepted. A later cleanup failure can still fail the overall operation.</td></tr>
             <tr><td><code>PARTIALLY_ACCEPTED</code></td><td>At least one recipient was accepted, but the attempt was not a clean success for the whole envelope. The send fails.</td></tr>
             <tr><td><code>REJECTED</code></td><td>No recipient was accepted for submission. The send fails; inspect the replies and retry guidance for the reason.</td></tr>
             <tr><td><code>UNKNOWN</code></td><td>The send path cannot determine acceptance. This can describe a failed SMTP attempt or successful processing in logging-only mode or a custom mailer.</td></tr>
@@ -163,9 +175,10 @@ printReceipt(receipt);</code></pre>
         configuration and trust checks behind this value.
       </p>
       <p>
-        <code>isAcceptedByServer()</code> means <em>at least one</em> recipient was accepted, so it is also true for <code>PARTIALLY_ACCEPTED</code>.
-        <code>hasServerAcceptanceInformation()</code> is false for <code>UNKNOWN</code>. Neither method is a shortcut for confirming that everyone
-        received the message.
+        <code>isAcceptedForAtLeastOneRecipient()</code> is true for <code>ACCEPTED</code> and <code>PARTIALLY_ACCEPTED</code>.
+        <code>isFullyAcceptedForSubmission()</code> is true only for <code>ACCEPTED</code>. Both are false for <code>UNKNOWN</code>, which
+        does not prove rejection; <code>hasServerAcceptanceInformation()</code> distinguishes it from known rejection. These predicates describe
+        submission, not final delivery. Partial submission still fails the send, and full acceptance can survive a later cleanup failure.
       </p>
     </div>
   </section>
@@ -210,7 +223,7 @@ SMTP reply present: false</code></pre>
       <p>Either field can be <code>null</code>. Incomplete measurement does not become a partial count. Logging-only sends, CustomMailer,
         ordinary caller-owned Angus Sessions and providers that do not report sizes leave these facts unavailable. A known server limit can
         survive a failure that happened before counting finished. Being under the limit does not guarantee acceptance or final delivery.</p>
-      <p>This is separate from your application's <code>withMaximumEmailSize(...)</code> guard and
+      <p>This is separate from your application's <code>ValidationConfig.Builder.withMaximumEmailSize(...)</code> guard and
         <code>mailer.rehearse(email).getEncodedSize()</code>, which work without a server. Rehearsal EML can differ from SMTP content after
         provider conversion or omitted headers. A <a href="/debugging.html#section-smtp-capabilities">connection probe</a> is useful for diagnosis,
         but may connect to a different server in a cluster; sending always checks its own connection.</p>
@@ -238,7 +251,7 @@ REJECTED: content=12345678 bytes, server limit=10000000 bytes</code></pre>
         This is one choice for the whole Email, not a separate preference on each recipient.
       </p>
       <p>
-        Use <code>withSendingToAcceptedRecipients(true)</code> to continue, or <code>false</code> to withhold content after a known recipient rejection.
+        Use <code>SmtpDeliveryOptions.Builder.withSendingToAcceptedRecipients(true)</code> to continue, or <code>false</code> to withhold content after a known recipient rejection.
         Continuing does not turn this into a successful send: Bob and Carol were still rejected, so the operation fails with its partial receipt.
         Stopping is not atomic delivery and cannot prevent a later bounce after an otherwise accepted submission.
       </p>
@@ -255,7 +268,9 @@ Email email = mail.emailBuilder().startingBlank()
         to("Carol", "carol@example.org"))
     .withSubject("An update for all three recipients")
     .withPlainText("The message content")
-    .withSendingToAcceptedRecipients(true)
+    .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+        .withSendingToAcceptedRecipients(true)
+        .build())
     .buildEmail();
 
 try {
@@ -301,8 +316,8 @@ carol@example.org: rcpt=PERMANENTLY_REJECTED (550), submitted=INVALID
     System.out.println("Retry: " + receipt.getRetryDisposition());
 
     for (MailRecipientResult recipient : receipt.getRecipientResults()) {
-        String address = recipient.getEnvelopeAddress()
-            .orElse(recipient.getOriginalAddress());
+        String address = Objects.requireNonNullElse(
+            recipient.getEnvelopeAddress(), recipient.getOriginalAddress());
         String code = recipient.getRcptResponse()
             .map(reply -&gt; Integer.toString(reply.getReturnCode()))
             .orElse("unavailable");
@@ -339,7 +354,7 @@ carol@example.org: rcpt=PERMANENTLY_REJECTED (550), submitted=INVALID</code></pr
   <section>
     <div class="wide">
       <h3>Defaults, clearing and provider compatibility</h3>
-      <p>The setting on the Email starts unset. Calling <code>withSendingToAcceptedRecipients(...)</code> replaces the value on its builder;
+      <p>The setting on the Email starts unset. Calling <code>SmtpDeliveryOptions.Builder.withSendingToAcceptedRecipients(...)</code> replaces the choice in that value;
         <code>clearSendingToAcceptedRecipients()</code> removes that value rather than choosing false.
         The existing <a href="configuration.html#section-config-mailer">Email defaults and overrides</a> can then supply
         a choice. Property-specific template suppression uses <code>EmailProperty.SENDING_TO_ACCEPTED_RECIPIENTS</code>.</p>
@@ -376,10 +391,10 @@ simplejavamail.locked.defaults.sendtoacceptedrecipients=false</code></pre>
           <thead><tr><th><code>MailRecipientResult</code> method</th><th>What it tells you</th></tr></thead>
           <tbody>
             <tr><td><code>getOriginalAddress()</code></td><td>The original transport address, including a display name when supplied.</td></tr>
-            <tr><td><code>getEnvelopeAddress()</code></td><td>The optional mailbox form used by the transport.</td></tr>
+            <tr><td><code>getEnvelopeAddress()</code></td><td>The mailbox form used by the transport, or <code>null</code> when unavailable.</td></tr>
             <tr><td><code>getDisposition()</code></td><td>Final submission knowledge: <code>ACCEPTED</code>, <code>VALID_UNSENT</code>, <code>INVALID</code> or <code>UNKNOWN</code>.</td></tr>
             <tr><td><code>getRcptStatus()</code></td><td>What happened at RCPT TO: <code>ACCEPTED</code>, <code>TEMPORARILY_REJECTED</code>, <code>PERMANENTLY_REJECTED</code>, <code>NOT_ATTEMPTED</code> or <code>UNKNOWN</code>.</td></tr>
-            <tr><td><code>getRcptAttempted()</code></td><td><code>Optional&lt;Boolean&gt;</code>: true or false when known. Empty is unknown, not false.</td></tr>
+            <tr><td><code>getRcptAttempted()</code></td><td>Boxed <code>Boolean</code>: true or false when known. <code>null</code> is unknown, not false.</td></tr>
             <tr><td><code>getRcptResponse()</code></td><td>The optional reply to this recipient's RCPT command, not a copy of the final DATA response.</td></tr>
           </tbody>
         </table>
@@ -460,8 +475,8 @@ Transaction: 250, enhanced=2.0.0</code></pre>
     </div>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-retry-candidates">List&lt;String&gt; retryAddresses = receipt.getRetryableRecipients().stream()
-    .map(recipient -&gt; recipient.getEnvelopeAddress()
-        .orElse(recipient.getOriginalAddress()))
+    .map(recipient -&gt; Objects.requireNonNullElse(
+        recipient.getEnvelopeAddress(), recipient.getOriginalAddress()))
     .collect(Collectors.toList());
 
 System.out.println("Retry candidates: " + retryAddresses);</code></pre>
@@ -578,8 +593,8 @@ Retry: DUPLICATE_RISK</code></pre>
         while (cause instanceof CompletionException &amp;&amp; cause.getCause() != null) {
             cause = cause.getCause();
         }
-        if (cause instanceof MailSendException) {
-            ((MailSendException) cause).getSubmissionReceipt().ifPresent(MyDiagnostics::printReceipt);
+        if (cause instanceof MailException) {
+            ((MailException) cause).getSubmissionReceipt().ifPresent(MyDiagnostics::printReceipt);
         } else {
             System.out.println("Failed without a submission receipt: "
                 + cause.getClass().getSimpleName());
@@ -774,12 +789,18 @@ Result 8ef1…: successful=true</code></pre>
     outcome.getDiagnostics().ifPresent(report -&gt; {
         log.info("{}", report);
 
-        report.getRateLimitWait().getElapsed()
-            .ifPresent(metrics::recordSendingLimitWait);
-        report.getConnectionAcquisition().getElapsed()
-            .ifPresent(metrics::recordConnectionAcquisition);
-        report.getSubmission().getElapsed()
-            .ifPresent(metrics::recordSubmission);
+        Duration rateWait = report.getRateLimitWait().getElapsed();
+        if (rateWait != null) {
+            metrics.recordSendingLimitWait(rateWait);
+        }
+        Duration acquisition = report.getConnectionAcquisition().getElapsed();
+        if (acquisition != null) {
+            metrics.recordConnectionAcquisition(acquisition);
+        }
+        Duration submission = report.getSubmission().getElapsed();
+        if (submission != null) {
+            metrics.recordSubmission(submission);
+        }
     });
 
     // SMTP acceptance remains a separate fact from whole-attempt success.
@@ -822,7 +843,8 @@ Connection acquisition: PT0.002S
 Submission: PT0.11S</code></pre>
       <p>The limiter, not SMTP, caused most of that delay. No ordinary pooled connection is borrowed during the rate wait.
         A configured limit can also produce a measured zero; disabled limits are reported as not measured.</p>
-      <p>Each getter returns a <code>MailSendMeasurement</code>. Its <code>getElapsed()</code> is present even when the measured duration is zero.
+      <p>Each getter returns a non-null <code>MailSendMeasurement</code>. Its <code>getElapsed()</code> returns a <code>Duration</code>, including a measured zero,
+        or <code>null</code> when unavailable.
         Otherwise, <code>getUnavailableReason()</code> explains why it was not measured. For example, a synchronous send has no async scheduling step,
         and logging-only mode has no SMTP submission. Read the explanation as text, not as a status code to parse.</p>
       <p>The total uses a monotonic clock and stops before observer dispatch. It includes small gaps between the measured work, so the rows need not
@@ -923,7 +945,7 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
         ORCPT can appear as <code>Original-Recipient</code> in that later report; it is not the immediate receipt's <code>getOriginalAddress()</code> field.
         To match a later DSN to your application record, retain <code>receipt.getEnvelopeId()</code>, the effective
         <a href="/features.html#section-dsn-envelope-id">envelope identifier (ENVID)</a>. The bundled Angus adapter generates one per send when DSN
-        is supported, unless you set <code>fixingEnvelopeId(...)</code>. The value is <code>null</code> when no effective identifier is available.
+        is supported, unless you set <code>SmtpDeliveryOptions.Builder.fixingEnvelopeId(...)</code>. The value is <code>null</code> when no effective identifier is available.
         The observer exposes the same receipt through <code>outcome.getSubmissionReceipt()</code>, including for batches.
         A later report can return the value as <code>Original-Envelope-ID</code>. It is separate from Message-ID and does not prove acceptance or final delivery.
         Neither result waits for that report; your application still needs to receive and process it.

@@ -9,10 +9,10 @@ import java.util.function.Consumer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.simplejavamail.api.email.Email;
+import org.simplejavamail.api.email.EmailPopulatingBuilder;
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.mailer.MailSendDiagnostics;
 import org.simplejavamail.api.mailer.SmtpConnectionReport;
-import org.simplejavamail.api.mailer.config.AsyncQueueOverflowPolicy;
 import org.simplejavamail.api.mailer.MailRecipientResult;
 import org.simplejavamail.api.mailer.MailSubmissionReceipt;
 import org.simplejavamail.api.mailer.Mailer;
@@ -70,28 +70,36 @@ public final class FieldGuideExamples {
 
     static Mailer boundedPool(MailerRegularBuilder smtpBuilder) {
         return smtpBuilder
-            .withThreadPoolSize(4)                 // four active asynchronous jobs
-            .withAsyncQueueCapacity(20)            // twenty more may wait in memory
-            .withAsyncQueueOverflowPolicy(AsyncQueueOverflowPolicy.REJECT)
-            .withConnectionPoolCoreSize(0)         // no permanently warm connections
-            .withConnectionPoolMaxSize(2)          // at most two pooled connections
+            .withAsyncExecutionConfig(smtpBuilder.getAsyncExecutionConfig().toBuilder()
+                .withThreadPoolSize(4) // four active asynchronous jobs
+                .withQueueCapacity(20) // twenty more may wait in memory
+                .rejectWhenFull()
+                .build())
+            .withConnectionPoolConfig(smtpBuilder.getConnectionPoolConfig().toBuilder()
+                .withCoreSize(0) // no permanently warm connections
+                .withMaxSize(2) // at most two pooled connections
+                .build())
             .buildMailer();
     }
 
     static Mailer pacedMailer(MailerRegularBuilder smtpBuilder) {
         return smtpBuilder
-            .withMessageRateLimit(30, Duration.ofMinutes(1))
-            .withRateLimitGroup("transactional-account")
-            .withRateLimitBurstsAllowed(false)
+            .withSendingLimitsConfig(smtpBuilder.getSendingLimitsConfig().toBuilder()
+                .withMessageRateLimit(30, Duration.ofMinutes(1))
+                .withRateLimitGroup("transactional-account")
+                .withRateLimitBurstsAllowed(false)
+                .build())
             .buildMailer();
     }
 
     static Mailer customerMailer(
             MailerRegularBuilder customerSmtpBuilder, UUID customerClusterKey) {
         return customerSmtpBuilder
-            .withClusterKey(customerClusterKey)
-            .withConnectionPoolCoreSize(0)
-            .withConnectionPoolMaxSize(2)
+            .withConnectionPoolConfig(customerSmtpBuilder.getConnectionPoolConfig().toBuilder()
+                .withClusterKey(customerClusterKey)
+                .withCoreSize(0)
+                .withMaxSize(2)
+                .build())
             .buildMailer();
     }
 
@@ -123,8 +131,11 @@ public final class FieldGuideExamples {
     }
 
     static Email allowPartialReply(SimpleJavaMail mail, Email supportReply) {
-        return mail.emailBuilder().copying(supportReply)
-            .withSendingToAcceptedRecipients(true)
+        EmailPopulatingBuilder reply = mail.emailBuilder().copying(supportReply);
+        return reply
+            .withSmtpDeliveryOptions(reply.getSmtpDeliveryOptions().toBuilder()
+                .withSendingToAcceptedRecipients(true)
+                .build())
             .buildEmail();
     }
 

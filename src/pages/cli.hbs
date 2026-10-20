@@ -62,6 +62,12 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
       Maven plugins).
     </p>
     <p class="wide">
+      OAuth2 over implicit TLS uses the existing <code>--mailer:withTransportStrategy SMTPS_OAUTH2</code> option.
+      Supply the access token as the SMTP password through the existing server option or loaded configuration; the default port is 465.
+      Runtime token-provider objects are Java integrations. See <a href="security.html#section-transport-strategy-smtps-oauth2">the security guide</a>
+      for the fixed-token and provider forms.
+    </p>
+    <p class="wide">
       Builder flags are deliberately explicit because they map directly to builder methods.
     </p>
     <pre><code class="language-text small">
