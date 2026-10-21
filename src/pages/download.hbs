@@ -56,18 +56,18 @@ Email email = mail.emailBuilder().startingBlank()
       <p>Keep credentials outside the source, and choose the transport strategy that matches your SMTP service.</p>
       <div class="code-window start-code-window">
         <div class="code-window-bar"><span>FirstSend.java</span><span>Delivery</span></div>
-        <pre><code class="language-java">Mailer mailer = mail.mailerBuilder()
+        <pre><code class="language-java">try (Mailer mailer = mail.mailerBuilder()
     .withSMTPServer(
         System.getenv("SMTP_HOST"),
         587,
         System.getenv("SMTP_USER"),
         System.getenv("SMTP_PASSWORD"))
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
-    .buildMailer();
-
-mailer.sync().sendMail(email);</code></pre>
+    .buildMailer()) {
+    mailer.sync().sendMail(email);
+}</code></pre>
       </div>
-      <p class="start-note">Port and transport strategy must match the server. See the <a href="/security.html#section-authentication-methods">transport strategy guide</a> before adapting this example.</p>
+      <p class="start-note">Build one Mailer for application scope and close it at shutdown; Spring closes its managed Mailer. The standalone example uses try-with-resources. Port and transport strategy must match the server. See the <a href="/security.html#section-authentication-methods">transport strategy guide</a> before adapting this example.</p>
     </section>
 
     <section id="verify" class="start-step start-wide-section">
@@ -76,7 +76,7 @@ mailer.sync().sendMail(email);</code></pre>
       <div class="start-verify-grid">
         <article>
           <h3>Test the connection</h3>
-          <p>Check the server and credentials separately from a message send.</p>
+          <p>Run these checks inside the Mailer scope above, before sending. Check the server and credentials separately from message preparation.</p>
           <pre><code class="language-java">mailer.sync().testConnection();</code></pre>
         </article>
         <article>
