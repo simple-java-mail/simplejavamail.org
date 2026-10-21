@@ -939,6 +939,13 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 			Use Email templates when different Mailers need different message settings, such as a sender or signing configuration.
 		</p>
 		<p class="wide">
+			To/Cc/Bcc address defaults use the same complete-list interpretation as Java composition: quoted names, comma/semicolon separators
+			and RFC group members are supported in source order. A configured name applies to every parsed mailbox;
+			without it, embedded names are retained. From and bounce defaults remain single-mailbox choices. Parsing keeps malformed nonempty text
+			for the configured send-time validator; it does not check delivery or query DNS. See the
+			<a href="features.html#section-recipient-builders">recipient name and list examples</a>.
+		</p>
+		<p class="wide">
 			A supplied defaults template replaces the property-derived message defaults entirely; missing fields are not filled from properties.
 			To retain those values, first use <code>buildEmailCompletedWithDefaultsAndOverrides()</code> to materialize them, then edit a copy.
 			Ordinary <code>buildEmail()</code> leaves defaults unapplied. Templates can be incomplete, including a DKIM signing template without a sender;

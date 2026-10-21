@@ -461,7 +461,9 @@ recipient.withName("Alice").withAddress("alice@example.org")
         <code class="inline">mail.recipientBuilder()</code> always creates exactly one recipient and returns the core
         <code class="inline">IRecipientBuilder</code> contract. Supply its name, address and type, plus any recipient metadata, then call
         <code class="inline">build()</code>. For multiple recipients, use <code class="inline">mail.recipientsBuilder()</code>. Its
-        String inputs may be separate addresses or comma- and semicolon-delimited lists, and every parsed address becomes its own recipient.
+        Every String collection or varargs entry may itself be a complete list, using the same parsing as <code>to(...)</code>.
+        Commas and legacy semicolon separators work around quoted names and comments; punctuation inside them is preserved.
+        String and InternetAddress groups expand to members in order, including duplicate occurrences; an empty RFC group adds nothing.
       </p>
       <p>
         For a named single recipient, use <code>mail.recipientBuilder().to(name, address)</code>, <code>cc(name, address)</code> or
@@ -471,10 +473,14 @@ recipient.withName("Alice").withAddress("alice@example.org")
       <p>
         When an address-import helper cannot find a mailbox, it keeps the supplied text for inspection and later validation. For example,
         <code>withAddressOnlyFrom("(comment only)")</code> keeps that text when parsing finds no mailbox, and preserves the name already configured
-        on the builder. This does not make the text a valid address: normal sending validation still rejects it before submission.
+        on the builder. These individual-recipient helpers also keep a complete list or group as one supplied value rather than selecting its first
+        mailbox. Use the plural builder to expand it. This does not make retained text a valid address: normal sending validation still rejects it before submission.
       </p>
       <p>
         Default names and default certificates only fill missing values. Fixed names and fixed certificates override source data for the whole group.
+        In the example, the support mailbox keeps <code>Support @ Acme, Europe</code>, while the unnamed audit mailbox gets <code>Service desk</code>.
+        Switching to <code>withRecipientsWithFixedName("Service desk", ...)</code> names both mailboxes <code>Service desk</code>.
+        Email's two-String form, such as <code>to("Service desk", addresses)</code>, always supplies a fixed name and a complete address list.
         <code class="inline">clearingSmimeCertificates()</code> removes certificate state from reused recipients when the current email should use its own
         S/MIME fallback instead.
         <code class="inline">resetSmimeCertificatePolicy()</code> does something different: it stops applying the group rule and keeps each original
@@ -494,11 +500,10 @@ recipient.withName("Alice").withAddress("alice@example.org")
 <pre><code class="small">// One named recipient with exactly one address
 Recipient alice = mail.recipientBuilder().to("Alice", "alice@example.com");
 
-// Separate inputs and delimited lists can be combined
+// Each entry may be a complete list; the default fills only missing names
 Collection&lt;Recipient&gt; reviewers = SimpleJavaMail.fromDefaults().recipientsBuilder()
-    .withRecipientsWithDefaultName(null, Message.RecipientType.CC,
-            "Bob &lt;bob@example.com&gt;",
-            "carol@example.com;dave@example.com")
+    .withRecipientsWithDefaultName("Service desk", Message.RecipientType.CC,
+            "\"Support @ Acme, Europe\" &lt;support@example.org&gt;;audit@example.org")
     .buildRecipients();
 
 Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
