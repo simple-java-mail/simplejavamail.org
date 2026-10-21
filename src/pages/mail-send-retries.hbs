@@ -134,6 +134,9 @@ initiatingMailerBuilder.withMailSendRetryPolicy(resources);
 </div><div class="wide">
   <p><code>mailer.getOperationalConfig().getMailSendRetryPolicy()</code> always returns the resolved policy. Use
     <code>isRetryEnabled()</code> to check whether it includes a schedule; resource limits remain available either way.</p>
+  <p>The Mailer builder's <code>getMailSendRetryPolicy()</code> returns only supplied Java choices, including omitted fields and explicit clears.
+    Inspecting an unfinished policy does not resolve defaults or validate the effective schedule. Use the built Mailer's operational configuration
+    when you need to know whether inherited settings enable retries.</p>
 </div></section>
 
 <a href="#section-results" id="section-results" class="section-link h2">&sect;</a>
@@ -224,7 +227,7 @@ simplejavamail.defaults.mailsend.retry.memorylimit=134217728</code></pre>
 </div></section>
 
 <section>
-  <p class="wide">To change a retry schedule while keeping all current Java choices and configured waiting and replay budgets, copy the existing policy:</p>
+  <p class="wide">To change a retry schedule while retaining current Java choices and their property inheritance, copy the builder's supplied policy:</p>
   <pre><code class="language-java">mailerBuilder.withMailSendRetryPolicy(mailerBuilder.getMailSendRetryPolicy().toBuilder()
     .withMaximumAttempts(3)
     .withRetryDelay(Duration.ofSeconds(30))
