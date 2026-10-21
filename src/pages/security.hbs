@@ -925,6 +925,10 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 					<a href="https://en.wikipedia.org/wiki/S/MIME">S/MIME signed messages</a>
 					or attachments and has some useful extras such as providing you with metadata.
 				</p>
+				<p>Inspect the original converted Email for historical S/MIME results and protected bytes. Ordinary copying and supported Java serialization
+					preserve them. Defaults/overrides completion resolves outgoing content and protection settings without copying these results, the
+					decrypted-attachment inspection list or retained signed-content view. Fresh plain/unsigned result metadata on the completed Email does not
+					describe the input's protection or verify outgoing MIME. See <a href="configuration.html#repeated-email-completion">completion and source history</a>.</p>
 			</div>
 			<div class="wide full-width-example">
 <pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
@@ -1247,6 +1251,10 @@ OriginalOpenPgpDetails details =
 				<code class="inline language-java">DECRYPTED</code>, <code class="inline language-java">KEY_MISSING</code>, or
 				<code class="inline language-java">FAILED</code>.
 			</p>
+			<p class="wide">These results describe the converted input. Ordinary copying and supported Java serialization preserve them;
+				defaults/overrides completion carries outgoing OpenPGP settings without copying historical results or original protected bytes.
+				Protection is applied during later MIME preparation, and fresh plain/unsigned metadata on a completed Email does not verify that output.
+				Keep the original converted Email for inspection.</p>
 			<div class="wide full-width-example">
 <pre><code class="language-java">OriginalOpenPgpDetails details = received.getOriginalOpenPgpDetails();
 
