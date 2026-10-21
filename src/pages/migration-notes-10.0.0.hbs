@@ -777,11 +777,14 @@ boolean positiveReply = receipt.getSmtpResponse()
     .buildEmail();</code></pre>
     <p>A nonblank explicit name overrides every parsed mailbox name; null/blank retains each embedded name, including equivalent
       InternetAddress inputs. Quoted punctuation, comma/semicolon separators, order and duplicates remain intact. Use the plural recipient builder
-      for a default-name policy. Prepared Recipient values are not reparsed, and the individual Recipient extraction helpers keep their contracts.</p>
+      for a default-name policy. Prepared Recipient values are not reparsed. The plural recipient builder's String collection/varargs entries
+      may each be complete lists; String and InternetAddress groups now consistently expand to their members.</p>
       <p><code>recipientBuilder().withAddress(String)</code> now also extracts the mailbox and embedded name from a single parseable address.
         A separately supplied name wins in either setter order; <code>withName(null)</code> restores the embedded name.
         Groups, multiple-mailbox strings and unparseable input remain intact for validation. The explicit address-only and
-        default/fixed-name parsing helpers retain their existing contracts.</p>
+        default/fixed-name extraction helpers now retain such source too, rather than silently selecting only its first mailbox.
+        Use <code>recipientsBuilder()</code> when every mailbox should become a recipient. The address-only helpers still preserve the configured
+        name; the name-aware helpers still apply their explicit/default-name rule.</p>
     </div></section>
 
   <h2 id="notification-destination-lists">Read notification destinations as lists</h2>
