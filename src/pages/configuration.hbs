@@ -201,7 +201,7 @@ mail.mailerBuilder(session)
         <tr><td><code>clearX()</code></td><td>Remove that scope's choice. Another fallback can apply; some clears explicitly remove a captured setting too.</td></tr>
         <tr><td><code>resetX()</code></td><td>Select the published built-in fallback, including absence when that is the fallback.</td></tr>
         <tr><td><code>useConfiguredX()</code></td><td>Restore captured configuration for that member or group.</td></tr>
-        <tr><td>Builder group getters</td><td>Inspect supplied choices, including absence and explicit-clear flags, without resolving runtime settings or allocating resources.</td></tr>
+        <tr><td>Builder group getters</td><td>Inspect supplied choices, including absence and explicit-clear flags, without resolving or validating runtime settings or allocating resources. This includes <code>getMailSendRetryPolicy()</code>; use the built Mailer's <code>OperationalConfig</code> for resolved retry settings.</td></tr>
         <tr><td>Built Mailer configuration getters</td><td>Inspect the effective construction settings. They do not track later direct Session mutations.</td></tr>
       </tbody></table>
       <p>Not every setting has every operation. The setter's contract defines its scope, and configuration locks still apply.

@@ -882,13 +882,29 @@ boolean positiveReply = receipt.getSmtpResponse()
       delivery envelope.</p>
   </div></section>
 
-  <h2 id="attachment-reader-ownership">Let attachment convenience readers close their streams</h2>
+  <h2 id="attachment-reader-ownership">Handle attachment reads and stream ownership explicitly</h2>
   <section><div class="wide">
     <p><code>AttachmentResource.readAllBytes()</code> and <code>readAllData(...)</code> now close the input stream they open, even if reading fails.
       Previously those hidden streams stayed open. If your DataSource returns a shared stream, provide a fresh stream for each read instead;
       this also lets the same attachment be read again when sending.</p>
-    <p>If closing fails, the read method can now throw <code>IOException</code>. If both reading and closing fail, the read error is preserved.</p>
-    <p><code>getDataSourceInputStream()</code> still returns a stream for your code to close. The attachment's DataSource itself is not closed.</p>
+    <p>Opening, reading and closing I/O failures from these convenience methods now use <code>MailException</code> with kind
+      <code>PREPARATION</code>. The original <code>IOException</code> remains the cause; if reading and closing both fail, the read error
+      keeps the close error suppressed. The methods no longer declare checked <code>IOException</code>.</p>
+    <pre><code class="language-java">try {
+    byte[] content = attachment.readAllBytes();
+} catch (MailException failure) {
+    System.err.println("Cannot read attachment: " + failure.getCause());
+}</code></pre>
+    <p>Update handlers for these convenience calls. An <code>IOException</code> catch may become unreachable if the try block contains no
+      other checked I/O; retain it when other operations still require it. Review multi-catches, method references and custom subclasses
+      instead of replacing every I/O handler mechanically.</p>
+    <p>Replace <code>getDataSourceInputStream()</code> with <code>openStream() throws IOException</code>. This method returns a stream for
+      your code to consume and close; opening and subsequent stream operations use ordinary checked I/O failures.</p>
+    <pre><code class="language-java">try (InputStream input = attachment.openStream()) {
+    input.transferTo(destination);
+}</code></pre>
+    <p>Handle or declare <code>IOException</code> for this streaming code. The attachment's DataSource itself is not closed, and construction
+      remains lazy. See <a href="features.html#section-reading-attachments">reading attachment content</a> for the two ownership choices.</p>
   </div></section>
 
   <h2 id="pool-setting-validation">Replace negative pool settings</h2>

@@ -1144,6 +1144,25 @@ Black Tie Optional
   </section>
 
 
+  <a href="#section-reading-attachments" id="section-reading-attachments" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Reading attachment content{{/components/feature-heading-h3}}
+  <section><div class="wide full-width-example">
+    <p>Use an <code>AttachmentResource</code> convenience reader when you want the complete content. It opens and closes its own stream;
+      opening, reading and closing I/O failures use <code>MailException</code> with kind <code>PREPARATION</code>. The original
+      <code>IOException</code> remains the cause, including any suppressed closing failure.</p>
+    <pre><code class="language-java">AttachmentResource attachment = email.getAttachments().get(0);
+byte[] bytes = attachment.readAllBytes();
+// For a text attachment, choose its charset explicitly:
+String text = attachment.readAllData(StandardCharsets.UTF_8);</code></pre>
+    <p>For streaming, <code>openStream()</code> returns an ordinary <code>InputStream</code> for your code to consume and close.
+      Opening, reading and closing follow Java's checked <code>IOException</code> contract:</p>
+    <pre><code class="language-java">try (InputStream input = attachment.openStream()) {
+    input.transferTo(destination);
+}</code></pre>
+    <p>Handle or declare <code>IOException</code> around the streaming example. Both forms leave the DataSource itself under its existing
+      ownership. Construction and copying remain lazy; keep borrowed content available and stable while it is read.</p>
+  </div></section>
+
   <a href="#section-embedding" id="section-embedding" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Embedding images{{/components/feature-heading-h2}}
 
