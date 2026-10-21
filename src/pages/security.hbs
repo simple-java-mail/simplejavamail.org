@@ -585,7 +585,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 			</p>
 <pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
 	.withValidationConfig(ValidationConfig.builder()
-	    .disablingAllClientValidation(true)
+	    .withClientValidationWarningsOnly(true)
 	    .build());
 </code></pre>
 		</section>

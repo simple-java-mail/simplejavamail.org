@@ -248,7 +248,7 @@ mailerBuilder.withConnectionPoolConfig(inheritedCreationAge);
       <pre><code class="small">// report missing fields, invalid addresses and CRLF suspicions as warnings,
 // then continue with SMTP handling
 mailerBuilder.withValidationConfig(ValidationConfig.builder()
-    .disablingAllClientValidation(true)
+    .withClientValidationWarningsOnly(true)
     .build());
 </code></pre>
       <pre><code class="small">// apply your own local email-size limit, independently of the SMTP server
@@ -985,7 +985,7 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 			<table><thead><tr><th>Scope or value</th><th>Resolution</th></tr></thead><tbody>
 				<tr><td>Property sources</td><td>Later non-blank values win. Blank or null entries do not erase an earlier value.</td></tr>
 				<tr><td>Single values and complete policy values</td><td>Applicable override, then submitted Email, then applicable default. Compound crypto configurations are selected as a whole.</td></tr>
-				<tr><td>Recipients, Reply-To, attachments and embedded images</td><td>Add contributions in override, submitted Email, then default order.</td></tr>
+				<tr><td>Recipients, Reply-To, delivery-recipient overrides, attachments and embedded images</td><td>Add missing override entries, retain every submitted entry, then add missing default entries. Existing duplicates and their order remain intact.</td></tr>
 				<tr><td>Headers</td><td>Combine names case-insensitively. For one name, an override replaces its entire value list; otherwise submitted values replace the default list.</td></tr>
 				<tr><td>Recipient certificates and NOTIFY preferences</td><td>Group policy constructs the recipient metadata. The resulting explicit recipient value wins over the governance-resolved Email fallback, including an Email override.</td></tr>
 				<tr><td>Configuration locks</td><td>Separate mandatory restrictions remain binding through ordinary clears, template replacement and suppression.</td></tr>
@@ -994,6 +994,22 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 				message-governance layer; its final bytes are not rewritten by templates or security transformations. Compatible envelope locks still apply;
 				locks that would require changing the preserved content are rejected.
 				See the <a href="security.html#section-sending-smime">recipient certificate rules</a> for the separate group-policy choices.</p>
+		</div>
+		<div class="wide">
+			<h4 id="repeated-email-completion">Completing an Email more than once</h4>
+			<p>A completed Email can be completed or sent again, including through another Mailer. Each pass can fill missing scalar values and apply
+				the selected Mailer's overrides. Completion keeps your suppression choices and always enforces applicable locks. It does not freeze the message.</p>
+			<p>Additive templates contribute only values not already present. For example, supplied recipients <code>[A, A, B]</code>, overrides
+				<code>[A, C, C]</code> and defaults <code>[B, D, D]</code> produce <code>[C, A, A, B, D]</code>. Reapplying those templates keeps that
+				order. Recipient matching includes the name, address, To/Cc/Bcc role, certificate and notification preferences, accounting for missing
+				names supplied by mandatory locks. Explicit conflicting names still fail validation.</p>
+			<p>Attachments and images match only when their metadata and recognized source agree. Reusing the same resource or DataSource is recognized;
+				library-owned paths and byte arrays can also be compared without opening a stream. Different filenames, descriptions, Content-IDs or
+				encoding choices remain distinct. Duplicate detection does not read files or remote content. Different opaque sources remain separate,
+				even if their names and MIME types match; serialization or reconstruction can lose recognizable source identity.</p>
+			<p>For ordinary sends, use <code>buildEmail()</code> and let the selected destination apply its settings. If you send a completed result,
+				its materialized values are now supplied values: another Mailer's default sender cannot replace an existing sender, but an override can.
+				Headers and complete policies retain the rules above. Exact EML and frozen retry content keep their separate preservation contracts.</p>
 		</div>
 		<p class="wide">
 			A template can also supply the message being forwarded. A default fills a missing forwarded message; an override replaces the one supplied
