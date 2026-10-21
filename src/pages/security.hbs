@@ -752,8 +752,11 @@ currentMailerBuilder
 					explains these separate sources; ordinary suppression cannot remove configuration locks.</p>
 				<p>
 					For encryption, Simple Java Mail can use one email-level encryption certificate, or different certificates per recipient. When any
-					TO/CC/BCC recipient carries a certificate, that recipient certificate is used first. Recipients without a certificate fall back to the
+					To/Cc/Bcc recipient carries a certificate, it requests S/MIME encryption even without an email-level encryption configuration.
+					That recipient certificate is used first. Recipients without a certificate fall back to the
 					email-level or mailer-level <code class="inline language-java">SmimeEncryptionConfig</code>, if one is configured.
+					An email using these recipient certificates cannot also request <a href="#section-sending-openpgp">OpenPGP signing or encryption</a>;
+					<code>buildEmail()</code> rejects that conflict.
 				</p>
 				<p>
 					For a mailing list, department, or any group that should share certificate rules, use <code class="inline language-java">mail.recipientsBuilder()</code> before adding the
@@ -1130,6 +1133,18 @@ mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENC
 					S/MIME and OpenPGP/MIME are alternative content-protection formats, so one email cannot configure both. DKIM can be combined with
 					either format and is applied after content protection to the final outgoing message.
 				</p>
+				<p>
+					A certificate on a To/Cc/Bcc recipient is an S/MIME encryption request, including certificates supplied by recipient-group defaults or
+					fixed policies. Combining it with OpenPGP signing or encryption throws <code>IllegalArgumentException</code> during
+					<code>buildEmail()</code>. The error identifies the conflicting recipient or email-level choices. This check uses metadata;
+					it does not load protection modules, inspect key material or read message content.
+				</p>
+				<p>
+					Completion checks again after applying defaults, overrides and mandatory locks. A conflict supplied by the selected Mailer's policy
+					therefore fails before MIME protection or submission. Remove the unwanted choice explicitly. <code>clearSmime()</code> removes only
+					email-level choices; to reuse certified recipients for OpenPGP, strip certificates from copies and replace the copied email's recipients.
+					The original email and recipients keep their settings. Template suppression can exclude ordinary template choices; locks still apply.
+				</p>
 			</div>
 			<div class="side">
 				Add the module:
@@ -1156,6 +1171,19 @@ Email protectedEmail = currentEmailBuilder
     .buildEmail();
 
 mailer.sync().sendMail(protectedEmail);</code></pre>
+
+				Reuse certified recipients for OpenPGP:
+<pre><code class="language-java">Collection&lt;Recipient&gt; pgpRecipients = mail.recipientsBuilder()
+    .withRecipients(smimeEmail.getRecipients())
+    .clearingSmimeCertificates()
+    .buildRecipients();
+
+Email pgpEmail = mail.emailBuilder().copying(smimeEmail)
+    .clearSmime()
+    .clearRecipients()
+    .withRecipients(pgpRecipients)
+    .signWithOpenPgp(signing)
+    .buildEmail();</code></pre>
 			</div>
 		</section>
 

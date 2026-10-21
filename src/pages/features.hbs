@@ -482,6 +482,11 @@ recipient.withName("Alice").withAddress("alice@example.org")
       </p>
       <p>
         Recipient-level S/MIME certificates are described in the <a href="security.html#section-sending-smime">S/MIME security section</a>.
+        A certificate on a To/Cc/Bcc recipient actively requests S/MIME encryption, including one assigned by a group policy. Combining these
+        recipients with OpenPGP signing or encryption is rejected by <code>buildEmail()</code>; completion checks again after applying templates
+        and locks. <code>clearSmime()</code> leaves recipient certificates intact. To reuse the recipients for OpenPGP, deliberately strip
+        certificates from copies with <code>clearingSmimeCertificates()</code>, then replace the email's recipients. See the
+        <a href="security.html#section-sending-openpgp">OpenPGP example</a> for the copy-and-replace chain.
       </p>
     </div>
 
