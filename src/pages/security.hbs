@@ -949,8 +949,8 @@ details.getSmimeType(); // signed-data, enveloped-data
 details.getSmimeName(); // smime.p7m or smime.p7s
 details.getSmimeMicalg(); // ie. sha-512
 details.getSmimeSignedBy(); // common name from the first signer certificate
-details.getVerificationStatus(); // NOT_SIGNED, VALID, INVALID, or ERROR
-details.getDecryptionStatus(); // NOT_ENCRYPTED, DECRYPTED, KEY_MISSING, or FAILED
+details.getVerificationStatus(); // NOT_SIGNED, VALID, INVALID, ERROR, or UNKNOWN
+details.getDecryptionStatus(); // NOT_ENCRYPTED, DECRYPTED, KEY_MISSING, FAILED, or UNKNOWN
 details.getFailureReason(); // safe diagnostic text when processing did not succeed
 </code></pre>
 			</div>
@@ -964,13 +964,21 @@ details.getFailureReason(); // safe diagnostic text when processing did not succ
 				Use <code class="inline language-java">getVerificationStatus()</code> for the signature result. <code class="inline language-java">VALID</code>
 				means the content matches every signature represented by these details. <code class="inline language-java">INVALID</code> means at least one
 				signature does not match, while <code class="inline language-java">ERROR</code> means the signature could not be processed. A message without a
-				signature reports <code class="inline language-java">NOT_SIGNED</code>.
+				signature reports <code class="inline language-java">NOT_SIGNED</code>. <code class="inline language-java">UNKNOWN</code>
+				means signature presence or verification could not be established; it does not mean verification failed.
+			</p>
+			<p class="wide">
+				Ordinary EML, MIME and Outlook imports remain available without <code>smime-module</code>. Protected input then has
+				<code>UNKNOWN</code> verification and decryption results. Recognizable MIME declarations can still identify an outer
+				<code>SIGNED</code> or <code>ENCRYPTED</code> mode; ambiguous S/MIME uses <code>SmimeMode.UNKNOWN</code>.
+				Clearly plain messages keep their plain, unsigned and unencrypted results. Explicitly requesting decryption still requires the module.
 			</p>
 			<p class="wide">
 				Decryption is reported separately by <code class="inline language-java">getDecryptionStatus()</code>. When a message contains more than one
 				protected layer, Simple Java Mail keeps the most serious result. Verification uses
-				<code class="inline language-text">ERROR &gt; INVALID &gt; VALID &gt; NOT_SIGNED</code>; decryption uses
-				<code class="inline language-text">FAILED &gt; KEY_MISSING &gt; DECRYPTED &gt; NOT_ENCRYPTED</code>.
+				<code class="inline language-text">ERROR &gt; INVALID &gt; UNKNOWN &gt; VALID &gt; NOT_SIGNED</code>; decryption uses
+				<code class="inline language-text">FAILED &gt; KEY_MISSING &gt; UNKNOWN &gt; DECRYPTED &gt; NOT_ENCRYPTED</code>.
+				An uninspected represented layer prevents an all-valid or all-decrypted result. Unrelated attachments do not change the owning message's facts.
 			</p>
 			<div class="wide full-width-example">
 <pre><code class="small">OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
@@ -988,7 +996,8 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 			</div>
 			<p class="wide">
 				The older <code class="inline language-java">getSmimeSignatureValid()</code> method is still available when existing code needs its nullable
-				Boolean shape. Its value is derived from the status above, so the two APIs cannot disagree.
+				Boolean shape. Its value is derived from the status above, so the two APIs cannot disagree. It returns <code>null</code> for
+				<code>UNKNOWN</code> as well as <code>NOT_SIGNED</code>.
 			</p>
 			<p class="wide">
 				The signer certificate is supplied by the message itself. Simple Java Mail does not validate its certificate path, validity period,
@@ -1007,7 +1016,8 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 				For a protected top-level message, <code class="inline language-java">getOriginalProtectedMessage()</code> returns a defensive copy of the exact
 				outer EML. Those bytes stay in memory with the converted <code class="inline language-java">Email</code> and are included if you Java-serialize it,
 				so a large protected message costs roughly another full-message byte array while you retain the result. Simple Java Mail does not spill this
-				data to a temporary file. Ordinary unprotected conversion does not keep this extra EML snapshot.
+				data to a temporary file. Recognizable protected EML retains these bytes even when the S/MIME module is absent.
+				MSG input has no exact original outer EML, so the accessor does not invent one. Ordinary unprotected conversion does not keep this extra EML snapshot.
 			</p>
 		</section>
 

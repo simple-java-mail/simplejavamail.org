@@ -2214,6 +2214,11 @@ String rawHeaders = outlookData.getRawHeaders();
         when integrity matters; a <code class="inline language-java">true</code> result does not establish certificate trust or sender identity.
         See <a href="security.html#section-reading-smime-verification">What the signature status means</a> for the exact contract.
       </p>
+      <p class="small">
+        Ordinary EML, MIME and Outlook imports also work without <code>smime-module</code>. For protected input, uninspected signature and
+        decryption results report <code>UNKNOWN</code>; recognizable headers can still identify the outer S/MIME mode. Clearly plain messages
+        retain plain, unsigned and unencrypted results. Explicitly requesting S/MIME decryption requires the module.
+      </p>
     </div>
   </section>
 
