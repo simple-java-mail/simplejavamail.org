@@ -997,6 +997,11 @@ boolean positiveReply = receipt.getSmtpResponse()
       classpath. Previously the request could be silently ignored when the module was missing.</p>
     <p>Include the module when you want decryption. If you only want ordinary inspection without decryption, omit the keys or clear the configured
       decryption request. Reading mail without an explicit decryption request still does not require S/MIME support.</p>
+    <p>Ordinary imports of protected input without that module no longer report the default <code>PLAIN</code> S/MIME mode. Recognizable headers
+      retain the outer <code>SIGNED</code> or <code>ENCRYPTED</code> mode; ambiguous S/MIME reports <code>UNKNOWN</code>. Update code that treats every
+      mode other than the known protected modes as confirmed plain content. The inspection result getters expose <code>UNKNOWN</code> when
+      verification or decryption could not be established, and the nullable signature-valid getter stays <code>null</code> in that case.
+      Clearly plain input keeps its existing plain, unsigned and unencrypted results.</p>
   </div></section>
 
   <h2 id="async-preparation">Account for validation running during async execution</h2>
