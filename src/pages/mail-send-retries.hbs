@@ -45,12 +45,14 @@ MailSubmissionReceipt receipt = send.getCompletion().join();</code></pre>
   <p>Three means at most three provider invocations, including the first. This example waits around thirty seconds after the first refusal,
     around sixty after the second, and stops after a third. The maximum caps the delay after jitter too.
     Attempts and initial delay are required to enable retries; there is no implicit retry schedule.</p>
-  <p>Without backoff, delays stay fixed. Without jitter, they do not vary. <code>resetRetryBackoff()</code> and <code>resetRetryJitter()</code>
-    remove those optional choices. Calling <code>withMailSendRetryPolicy(...)</code> again replaces the entire policy, including resource limits;
+  <p>Unset policy fields inherit the factory's captured configuration properties, then the built-in library defaults.
+    Without configured backoff, delays stay fixed; without configured jitter, they do not vary.
+    <code>resetRetryBackoff()</code> and <code>resetRetryJitter()</code> explicitly select fixed delays and no variation.
+    Calling <code>withMailSendRetryPolicy(...)</code> again replaces the previous Java choices; omitted fields inherit the factory properties again.
     <code>clearMailSendRetryPolicy()</code> disables retries and restores built-in resource limits unless locked configuration prevents the change.</p>
-  <p>On the policy builder, <code>clearRetrySchedule()</code> removes attempts, delay, backoff and jitter while keeping your resource budgets.
-    <code>clearMaximumAttempts()</code> and <code>clearRetryDelay()</code> remove only their own choice; supply the missing part again or clear the
-    complete schedule before building. Clearing a schedule is not the same as replacing the entire policy.</p>
+  <p>On the policy builder, <code>clearRetrySchedule()</code> removes attempts, delay, backoff and jitter, including property-configured values,
+    while keeping your resource choices and their inheritance. <code>clearMaximumAttempts()</code> and <code>clearRetryDelay()</code> remove only
+    their own choice; supply the missing part again or clear the complete schedule before building the Mailer.</p>
   <p>Synchronous calls wait on their calling thread. Ordinary asynchronous sends release their worker, lease and proxy before backoff,
     then resume through the same configured executor. Caller-runs executors may execute on the submitting or retry-dispatch thread.</p>
 </div></section>
@@ -188,7 +190,8 @@ simplejavamail.defaults.mailsend.retry.waitingcapacity=100
 simplejavamail.defaults.mailsend.retry.maximummessagesize=33554432
 simplejavamail.defaults.mailsend.retry.memorylimit=134217728</code></pre>
 </div><div class="wide">
-  <p>If you set any scheduling property under <code>simplejavamail.smtp.retry.</code>, supply both <code>attempts</code> and <code>delay</code>.
+  <p>If you configure scheduling under <code>simplejavamail.smtp.retry.</code>, supply both <code>attempts</code> and <code>delay</code>
+    through properties or explicit Java policy choices. The Mailer validates the combined schedule before creating its resources.
     Increasing backoff also requires <code>maximumdelay</code>.</p>
   <p>The resource limits under <code>simplejavamail.defaults.mailsend.retry.</code> can be set on their own; they do not enable retries.
     For example, you can limit the initiating Mailer's waiting capacity and replay memory while a selected Mailer supplies the retry schedule.</p>
@@ -221,12 +224,12 @@ simplejavamail.defaults.mailsend.retry.memorylimit=134217728</code></pre>
 </div></section>
 
 <section>
-  <p class="wide">To change a retry schedule while keeping configured waiting and replay budgets, copy the existing policy:</p>
+  <p class="wide">To change a retry schedule while keeping all current Java choices and configured waiting and replay budgets, copy the existing policy:</p>
   <pre><code class="language-java">mailerBuilder.withMailSendRetryPolicy(mailerBuilder.getMailSendRetryPolicy().toBuilder()
     .withMaximumAttempts(3)
     .withRetryDelay(Duration.ofSeconds(30))
     .build());</code></pre>
-  <p class="wide">A fresh policy replaces every previous setting with its supplied choices and defaults. Both MailSendRetryPolicy and FailoverPolicy
-    provide toBuilder() for independent edits that retain all stored settings, including resolved caps. Use an explicit reset when a cap should
-    be derived again from another changed setting.</p>
+  <p class="wide">A fresh retry policy replaces the previous Java choices and inherits factory properties for omitted fields. For example,
+    supplying only <code>withMemoryLimit(...)</code> preserves a property-configured retry schedule.
+    <code>toBuilder()</code> makes an independent copy that also retains previous Java choices and explicit clears or resets.</p>
 </section>
