@@ -2,6 +2,12 @@
 
 The current Simple Java Mail release is centralized in Eleventy's global data file, `src/_data/site.json`. For an ordinary library release, update that file rather than editing the rendered mentions separately.
 
+## 10.0.0 website and Journal comments launch
+
+Publish the 10.0.0 website, Journal series and comments only after the Simple Java Mail 10.0.0 library artifacts and release tag are available. Complete the checks below on the reviewed website content, then publish through the existing `develop` pipeline.
+
+The Terraform migration and comments backend are already deployed. [#759](https://github.com/bbottema/simple-java-mail/issues/759) on the [10.0.0 Project board](https://github.com/users/bbottema/projects/1) tracks the remaining launch work: deployment health, public Journal/comments checks, Google OAuth Production, authentication, moderation and notifications. Complete that item before closing the 10.0.0 milestone.
+
 ## Every library release
 
 - [ ] Update `version` in `src/_data/site.json`.
