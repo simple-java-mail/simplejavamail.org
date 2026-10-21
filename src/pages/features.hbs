@@ -1672,6 +1672,22 @@ DeliveryStatusNotification withoutReturnPreference = request.toBuilder()
         Other choices stay in place; when no request components remain, the group has no shared DSN request.
         Composed emails can then receive configured defaults again, whereas exact emails continue to bypass ordinary templates.
         Clearing does not remove locks or recipient-specific notification preferences.</p>
+      <p>SMTP group setters collect your choices, and its component getters inspect them without requiring a complete request.
+        Use <code>getDeliveryStatusNotificationNotifyOptions()</code>, <code>getDeliveryStatusNotificationReturnOption()</code> and
+        <code>getEnvelopeId()</code> on the builder; the event set is an editable copy. The group's <code>build()</code> validates the complete
+        request, including event combinations and any fixed identifier. You can correct the same builder after a failed build:</p>
+<pre><code class="language-java small">// Inspect supplied SMTP choices before building them.
+SmtpDeliveryOptions.Builder delivery = SmtpDeliveryOptions.builder()
+    .fixingEnvelopeId("");
+String suppliedId = delivery.getEnvelopeId(); // ""; inspection is safe
+// delivery.build() would reject this empty identifier.
+
+SmtpDeliveryOptions ready = delivery.fixingEnvelopeId("order-42-attempt-1").build();
+DeliveryStatusNotification request = ready.getDeliveryStatusNotification();</code></pre>
+      <p>The completed group exposes its validated request through <code>getDeliveryStatusNotification()</code>.
+        An explicitly empty event array still requests a DSN and needs another component at build time; use the named clear methods when
+        you want the shared request to become absent. Constructing a standalone <code>DeliveryStatusNotification</code> with
+        <code>build()</code> or <code>of(...)</code> also validates that value.</p>
     </div>
     <div class="wide full-width-example">
       <h4>What to expect</h4>
