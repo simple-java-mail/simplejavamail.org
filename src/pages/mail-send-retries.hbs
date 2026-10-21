@@ -219,3 +219,14 @@ simplejavamail.defaults.mailsend.retry.memorylimit=134217728</code></pre>
     after partial or uncertain acceptance. Recipient-subset retries need an application-owned email and authorization, including template-added recipients.
     The <a href="/smtp-connection-failover.html#section-retry">observer/job-queue recipe</a> covers that broader decision.</p>
 </div></section>
+
+<section>
+  <p class="wide">To change a retry schedule while keeping configured waiting and replay budgets, copy the existing policy:</p>
+  <pre><code class="language-java">mailerBuilder.withMailSendRetryPolicy(mailerBuilder.getMailSendRetryPolicy().toBuilder()
+    .withMaximumAttempts(3)
+    .withRetryDelay(Duration.ofSeconds(30))
+    .build());</code></pre>
+  <p class="wide">A fresh policy replaces every previous setting with its supplied choices and defaults. Both MailSendRetryPolicy and FailoverPolicy
+    provide toBuilder() for independent edits that retain all stored settings, including resolved caps. Use an explicit reset when a cap should
+    be derived again from another changed setting.</p>
+</section>

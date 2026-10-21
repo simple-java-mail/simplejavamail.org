@@ -228,18 +228,19 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
 
 Email email = mail.emailBuilder().startingBlank()
     .from("Michel Baker", "m.baker@mbakery.com")
-    .withRecipients(
-        mail.recipientBuilder().withName("mom").withAddress("jean.baker@hotmail.com").withType(Message.RecipientType.TO).build(),
-        mail.recipientBuilder().withName("dad").withAddress("StevenOakly1963@hotmail.com").withType(Message.RecipientType.TO).build())
+    .to("mom", "jean.baker@hotmail.com")
+    .to("dad", "StevenOakly1963@hotmail.com")
     .withSubject("My Bakery is finally open!")
     .withPlainText("Mom, Dad. We did the opening ceremony of our bakery!!!")
 	.withHTMLText("&lt;p&gt;Mom, Dad. We did the opening ceremony of &lt;strong&gt;our bakery&lt;/strong&gt;!!!&lt;/p&gt;")
     .buildEmail();
 
-mail.mailerBuilder()
-  .withSMTPServer("server", 25, "username", "password")
-  .buildMailer()
-  .sync().sendMail(email);
+try (Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("server", 587, "username", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .buildMailer()) {
+    mailer.sync().sendMail(email);
+}
 </code></pre>
 	  </div>
   </section>
@@ -433,13 +434,13 @@ recipient.withName("Alice").withAddress("alice@example.org")
   <section>
     <div class="view">
       <p>
-        Email conveniences such as <code>to("Alice &lt;alice@example.org&gt;")</code> interpret one mailbox, separating its display name and address.
-        The same rule applies to <code>from</code>, <code>cc</code>, <code>bcc</code>, Reply-To, bounce and receipt-request address conveniences.
-        A nonblank explicit name wins: <code>cc("Accounts", "Audit &lt;audit@example.org&gt;")</code> produces Accounts / audit@example.org.
-        A null or blank name uses the embedded name instead. Equivalent <code>InternetAddress</code> overloads follow the same precedence.
-        A quoted name containing a comma remains one mailbox. Successfully parsed lists and RFC address groups throw an
-        <code>IllegalArgumentException</code>; use <code>mail.recipientsBuilder()</code> for several addresses.
-        Nonempty malformed text is retained for your configured send-time validator; parsing does not validate delivery or query DNS.
+        Email conveniences such as <code>to("Alice &lt;alice@example.org&gt;, Bob &lt;bob@example.org&gt;")</code> parse every mailbox.
+        The same list behavior applies to Cc, Bcc, Reply-To and notification destinations. A nonblank explicit name overrides every parsed name;
+        null or blank names retain embedded names. Quoted punctuation, supported comma/semicolon separators, order and duplicate occurrences are preserved.
+        Address groups are expanded into their members. From and bounce remain singular and reject recognized lists/groups.
+        Nonempty malformed text remains available to your configured send-time validator; parsing does not validate delivery or query DNS.
+        Use <code>mail.recipientsBuilder()</code> for default-name rules and recipient-specific metadata.
+
       </p>
       <p>
         <code>to</code>, <code>cc</code>, <code>bcc</code> and <code>withRecipients</code> append to existing recipients, including those retained by
@@ -1491,7 +1492,7 @@ Session session = mailer.getSession();
         Delivery Status Notification, covered in the next section, is the separate SMTP-level mechanism for delivery status.
       </p>
       <p>
-        You can provide the receipt address explicitly. The no-argument methods use the first Reply-To recipient when present, or the From recipient otherwise.
+        You can provide the receipt address explicitly. The no-argument methods use all resolved Reply-To recipients when present, or the From recipient otherwise. Explicit destination lists replace the previous local choice; they do not append. Inspect the immutable lists with <code>getDispositionNotificationToRecipients()</code> and <code>getReturnReceiptToRecipients()</code>.
       </p>
     </div>
 
