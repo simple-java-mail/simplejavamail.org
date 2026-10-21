@@ -34,6 +34,8 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
       <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
       <li><a href="#email-construction">Build Email objects through buildEmail()</a></li>
+      <li><a href="#email-body-method-names">Use consistent body method names</a></li>
+      <li><a href="#attachment-resource-builder">Build advanced attachments with named metadata</a></li>
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
@@ -46,6 +48,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#smtp-empty-credentials">Review empty SMTP credential strings</a></li>
       <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
       <li><a href="#copied-template-suppression">Check copies of emails that skip defaults or overrides</a></li>
+      <li><a href="#repeated-email-completion">Check repeated template collection additions</a></li>
       <li><a href="#forwarded-templates">Check forwarded messages in Email templates</a></li>
       <li><a href="#copied-receipt-requests">Check receipt requests on copied emails</a></li>
       <li><a href="#copied-delivery-overrides">Keep test-inbox routing when copying emails</a></li>
@@ -271,6 +274,80 @@ Email email = builder.buildEmail();</code></pre>
       Emails created through the library's builders retain their implementation identity across serialization; exact-message rules still apply.</p>
   </div></section>
 
+  <h2 id="email-body-method-names">Use consistent body method names</h2>
+  <section>
+    <p class="wide">Rename these <code>EmailPopulatingBuilder</code> calls and method references, then recompile against 10.0.0.
+      The previous names have been removed. Plain text, HTML text and calendar text now use the same names when setting,
+      extending and inspecting their bodies.</p>
+    <table class="styled-table wide">
+      <thead><tr><th>9.x builder method</th><th>10.0.0 builder method</th></tr></thead>
+      <tbody>
+        <tr><td><code>appendText(String)</code>, <code>appendText(File)</code></td><td><code>appendPlainText(String)</code>, <code>appendPlainText(File)</code></td></tr>
+        <tr><td><code>prependText(String)</code>, <code>prependText(File)</code></td><td><code>prependPlainText(String)</code>, <code>prependPlainText(File)</code></td></tr>
+        <tr><td><code>appendTextHTML(String)</code>, <code>appendTextHTML(File)</code></td><td><code>appendHTMLText(String)</code>, <code>appendHTMLText(File)</code></td></tr>
+        <tr><td><code>prependTextHTML(String)</code>, <code>prependTextHTML(File)</code></td><td><code>prependHTMLText(String)</code>, <code>prependHTMLText(File)</code></td></tr>
+        <tr><td><code>getText()</code></td><td><code>getPlainText()</code></td></tr>
+        <tr><td><code>getTextHTML()</code></td><td><code>getHTMLText()</code></td></tr>
+        <tr><td><code>getTextCalendar()</code></td><td><code>getCalendarText()</code></td></tr>
+      </tbody>
+    </table>
+    <p class="wide">This is a naming change. Body content, append/prepend order, absent values and file reading retain their behavior.
+      <code>withPlainText</code>, <code>withHTMLText</code>, <code>withCalendarText</code>, the clear methods and the getters on a built
+      <code>Email</code> keep their names. The <code>Path</code> variants introduced in 10.0.0 use the new names too; there is no released
+      9.x <code>Path</code> overload to migrate.</p>
+    <p class="wide">Existing CLI options keep their spellings, including <code>--email:appendText</code>,
+      <code>--email:prependText</code>, <code>--email:appendTextHTML</code>, <code>--email:prependTextHTML</code> and their
+      <code>FromFile</code> variants.</p>
+  </section>
+
+  <h2 id="attachment-resource-builder">Build advanced attachments with named metadata</h2>
+  <section>
+    <p class="wide">
+      Replace public <code>AttachmentResource</code> constructors and <code>ofPreEncodedData(...)</code> factories with
+      <code>AttachmentResource.builder()</code>. Email-builder attachment and embedded-image overloads that append a description,
+      optional transfer encoding or Content-ID have also been removed. Put these choices on the resource builder and add the resource
+      with <code>withAttachment(resource)</code> or <code>withEmbeddedImage(resource)</code>.
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// Before: optional metadata occupies positional arguments.
+emailBuilder.withAttachment("report.pdf", source, null, null, "report-42");
+
+// 10.0.0:
+AttachmentResource report = AttachmentResource.builder()
+    .withName("report.pdf")
+    .withDataSource(source)
+    .withContentId("report-42")
+    .build();
+emailBuilder.withAttachment(report);
+
+// Advanced metadata works directly with paths or bytes too.
+emailBuilder.withAttachment(AttachmentResource.builder()
+    .withPath(Path.of("monthly-report.pdf"))
+    .withDescription("Monthly report")
+    .build());
+emailBuilder.withEmbeddedImage(AttachmentResource.builder()
+    .withName("brand-logo.png")
+    .withData(logoBytes, "image/png")
+    .withContentId("brand-logo-cid")
+    .build());</code></pre>
+    </div>
+    <p class="wide">
+      Short conveniences stay available: <code>withAttachment(path)</code>, <code>withAttachment(name, path)</code>,
+      <code>withAttachment(name, dataSource)</code>, <code>withAttachment(name, bytes, mimetype)</code>, and the corresponding
+      existing embedded-image and preencoded shortcuts. Lists of resources still work. The CLI retains its existing attachment options,
+      including <code>--email:withDescribedAttachment</code> and <code>--email:withEncodedDescribedAttachment</code>.
+    </p>
+    <p class="wide">
+      <code>withContentTransferEncoding(encoding)</code> asks Simple Java Mail to encode ordinary input.
+      <code>withPreEncodedContentTransferEncoding(encoding)</code> declares that input is already encoded and preserves those bytes;
+      supplying both is rejected. Content must be supplied before <code>build()</code>. Sources are borrowed by identity, byte arrays
+      are copied, and paths remain lazy. <code>resource.toBuilder()</code> retains the source without reading it and lets you change metadata.
+      Optional metadata has named getters, clears and resets; clearing or resetting one choice leaves the other choices unchanged.
+      Existing Email/attachment serialization remains supported. Recompile consumers and migrate constructor references or subclasses
+      explicitly; the removed constructors are not retained as deprecated aliases.
+    </p>
+  </section>
+
   <h2 id="grouped-configuration">Move advanced builder settings into configuration groups</h2>
   <section><div class="wide">
     <p>The advanced scalar methods on Java Mailer and Email builders have moved into immutable configuration values.
@@ -292,7 +369,8 @@ Email email = builder.buildEmail();</code></pre>
       <tr><td><code>trustingSSLHosts</code>, <code>trustingAllHosts</code>, <code>verifyingServerIdentity</code>, custom SSL factories</td>
         <td><code>withTlsConfig(TlsConfig)</code>, retaining those setting names.</td></tr>
       <tr><td><code>withEmailValidator</code>, <code>disablingAllClientValidation</code>, <code>withMaximumEmailSize</code></td>
-        <td><code>withValidationConfig(ValidationConfig)</code>, retaining those setting names.</td></tr>
+        <td><code>withValidationConfig(ValidationConfig)</code>; the warning choice becomes
+          <code>withClientValidationWarningsOnly(boolean)</code> on its builder. Validator and size setting names remain.</td></tr>
       <tr><td>Automatic embedded-image resolution, bases and containment settings</td>
         <td><code>withImageResolutionConfig(ImageResolutionConfig)</code> on the Email builder.</td></tr>
       <tr><td>Shared and body-specific content-transfer encoding</td>
@@ -326,6 +404,22 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       restores inheritance for that group; the other Mailer groups follow the same pattern. Read effective settings from the built Mailer.
       Property keys, Spring configuration and the CLI's scalar option syntax retain their contracts.
       See the <a href="/configuration.html#section-programmatic-api-other">current group reference</a> for the complete Mailer groups.</p>
+
+    <p>The former root <code>disablingAllClientValidation(Boolean)</code> call becomes:
+      <code>mailerBuilder.withValidationConfig(ValidationConfig.builder().withClientValidationWarningsOnly(true).build())</code>.
+      The meaning of <code>true</code> is unchanged: completeness, address and CRLF checks still run and report findings as warnings.
+      <code>false</code> keeps them blocking. Size enforcement and other preparation failures retain their separate behavior.</p>
+    <p>Rename <code>OperationalConfig.isDisableAllClientValidation()</code> directly to <code>OperationalConfig.isClientValidationWarningsOnly()</code>.
+      The former <code>MailerGenericBuilder.isDisableAllClientValidation()</code> returned the resolved <code>boolean</code> value.
+      The new <code>mailerBuilder.getValidationConfig().getClientValidationWarningsOnly()</code> reports the supplied choice:
+      <code>null</code> means inherit configuration, so this getter chain is not an equivalent replacement.
+      When you need the resolved result, read <code>mailer.getOperationalConfig().isClientValidationWarningsOnly()</code> from an existing built Mailer;
+      constructing a Mailer merely to inspect configuration is unnecessary.</p>
+    <p>Replace the former root <code>resetDisableAllClientValidations()</code> with
+      <code>ValidationConfig.Builder.resetClientValidationWarningsOnly()</code>, applied through <code>withValidationConfig</code>.
+      It selects the built-in <code>false</code> fallback; <code>useConfiguredClientValidationWarningsOnly()</code> restores property inheritance.
+      The property <code>simplejavamail.disable.all.clientvalidation</code> and CLI options
+      <code>--mailer:disablingAllClientValidation</code> and <code>--mailer:resetDisableAllClientValidations</code> keep their spellings and Boolean polarity.</p>
 
     <h3>Pass typed signing and encryption configurations</h3>
     <p>The released positional <code>signWithDomainKey(byte[], String, String, Set&lt;String&gt;)</code>,
@@ -738,6 +832,20 @@ boolean positiveReply = receipt.getSmtpResponse()
     <p><code>EmailProperty.ALL_RECIPIENTS</code> now excludes To, Cc and Bcc template additions together; earlier releases ignored that selector.
       If you used it but still relied on a template supplying recipients, remove the exclusion or select only the recipient types you want to skip.
       Your explicitly supplied recipients and the separately controlled delivery-recipient override are unchanged.</p>
+  </div></section>
+
+  <h2 id="repeated-email-completion">Check repeated template collection additions</h2>
+  <section><div class="wide">
+    <p>Defaults and overrides now add only missing recipients, Reply-To destinations, delivery-recipient overrides, attachments and embedded
+      images. Earlier releases appended every template entry, including values already present after
+      <code>buildEmailCompletedWithDefaultsAndOverrides(...)</code>. Repeated completion or sending that result could therefore duplicate entries.</p>
+    <p>If you intentionally relied on a template to repeat an existing recipient or resource, supply those occurrences directly on the Email.
+      Submitted duplicates remain intact. Recipients match by their complete value, including role and metadata. Resources require matching
+      metadata and recognized source identity; separate opaque sources are retained, and duplicate detection does not read their content.</p>
+    <p>A completed Email still receives the selected Mailer's governance when sent: defaults fill missing scalar values, overrides retain
+      precedence, and locks remain binding. Completion now also retains global and per-field suppression for later passes. Re-enable those
+      choices explicitly if you previously relied on completion forgetting them. See the
+      <a href="configuration.html#repeated-email-completion">complete repeated-completion contract</a>.</p>
   </div></section>
 
   <h2 id="forwarded-templates">Check forwarded messages in Email templates</h2>

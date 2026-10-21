@@ -751,11 +751,12 @@ V2Ugc2hvdWxkIG1lZXQgdXAh
 	  </div>
 
 	  <div class="side">
-		  <pre><code class="language-java">.withAttachment("invitation.pdf", yourDataSource,
-                "Invitation flyer", ContentTransferEncoding.BASE_64)
-
-// or fix encoding by creating attachment objects directly
-new AttachmentResource(..., ContentTransferEncoding.BINARY)
+		  <pre><code class="language-java">.withAttachment(AttachmentResource.builder()
+    .withName("invitation.pdf")
+    .withDataSource(yourDataSource)
+    .withDescription("Invitation flyer")
+    .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+    .build())
 </code></pre>
 	  </div>
   </section>
@@ -1075,10 +1076,11 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 	  </div>
 
 	  <div class="wide full-width-example">
-<pre><code class="language-java small">currentEmailBuilder.withAttachment(
-	        "dresscode.txt",
-	        new ByteArrayDataSource("Black Tie Optional", "text/plain"),
-	        "The dresscode for the party")
+<pre><code class="language-java small">currentEmailBuilder.withAttachment(AttachmentResource.builder()
+    .withName("dresscode.txt")
+    .withData("Black Tie Optional".getBytes(StandardCharsets.UTF_8), "text/plain")
+    .withDescription("The dresscode for the party")
+    .build())
 </code></pre>
 		  Which results in something like this; the UUID is only an example:
 		  <pre><code class="language-text">Content-Type: text/plain; name="dresscode.txt"
@@ -1090,7 +1092,7 @@ Black Tie Optional
 </code></pre>
 		  <p>
 			  Because no <code class="inline language-text">Content-ID</code> was supplied, Simple Java Mail generates a fresh opaque value when it produces the
-			  <code class="inline language-java">MimeMessage</code>. Use the explicit Content-ID overload shown below when another system needs a stable value.
+			  <code class="inline language-java">MimeMessage</code>. Use the named Content-ID choice shown below when another system needs a stable value.
 		  </p>
 	  </div>
   </section>
@@ -1110,7 +1112,12 @@ Black Tie Optional
 			  the provided <code class="inline language-java">ContentTransferEncoding</code> value instead of encoding the data again.
 		  </p>
 		  <p>
-			  Attachment resource names and MIME <code class="inline language-text">Content-ID</code> values can also be set separately.
+			  Attachment resource names and MIME <code class="inline language-text">Content-ID</code> values can also be set separately through
+              <code class="inline language-java">AttachmentResource.builder()</code>. Choose content with <code>withDataSource(source)</code>,
+              <code>withData(bytes, mimetype)</code> or <code>withPath(path)</code>; sources and paths remain borrowed and lazy, while bytes are copied.
+              For advanced already encoded content, use <code>withPreEncodedContentTransferEncoding(encoding)</code> instead of
+              <code>withContentTransferEncoding(encoding)</code>. Supplying both is rejected. Use <code>resource.toBuilder()</code> to change
+              metadata while retaining the content source.
 		  </p>
 	  </div>
 
@@ -1121,12 +1128,13 @@ Black Tie Optional
         alreadyBase64EncodedData,
         "application/pdf",
         ContentTransferEncoding.BASE_64)
-    .withAttachment(
-        "report-display-name.pdf",
-        reportDataSource,
-        "Monthly report",
-        ContentTransferEncoding.BASE_64,
-        "stable-report-content-id")
+    .withAttachment(AttachmentResource.builder()
+        .withName("report-display-name.pdf")
+        .withDataSource(reportDataSource)
+        .withDescription("Monthly report")
+        .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+        .withContentId("stable-report-content-id")
+        .build())
 </code></pre>
 	  </div>
   </section>
@@ -1152,7 +1160,11 @@ Black Tie Optional
 			</p>
 			<pre><code class="small">currentEmailBuilder.withEmbeddedImage("smiley", new FileDataSource("smiley.jpg"));
 currentEmailBuilder.withEmbeddedImage("thumbsup", parseBase64Binary(base64String), "image/png");
-currentEmailBuilder.withEmbeddedImage("brand-logo.png", logoDataSource, "brand-logo-cid");
+currentEmailBuilder.withEmbeddedImage(AttachmentResource.builder()
+    .withName("brand-logo.png")
+    .withDataSource(logoDataSource)
+    .withContentId("brand-logo-cid")
+    .build());
 // above example is included in the demo package in MailTestApp.java
 
 // the corresponding HTML should contain the placeholders
@@ -1853,18 +1865,18 @@ JMail.strictValidator()
 			  recipient checks, encoded-word protection and CRLF injection scanning remain active.
 		  </p>
 		  <p>
-			  <code class="inline language-java">ValidationConfig.Builder.disablingAllClientValidation(true)</code> changes client-side validation findings into warnings so
+			  <code class="inline language-java">ValidationConfig.Builder.withClientValidationWarningsOnly(true)</code> changes client-side validation findings into warnings so
 			  SMTP handling can continue. Use this mode when the application deliberately assigns the acceptance decision to the SMTP server.
 		  </p>
 	  </div>
 
 	  <div class="wide full-width-example">
 <pre><code>ValidationConfig.Builder validation = currentMailerBuilder.getValidationConfig().toBuilder()
-    .disablingAllClientValidation(true); // report findings as warnings
+    .withClientValidationWarningsOnly(true); // report findings as warnings
 currentMailerBuilder.withValidationConfig(validation.build());
 
 // Or restore blocking validation:
-currentMailerBuilder.withValidationConfig(validation.resetDisableAllClientValidations().build());
+currentMailerBuilder.withValidationConfig(validation.resetClientValidationWarningsOnly().build());
 </code></pre>
 	  </div>
   </section>
@@ -2261,7 +2273,7 @@ String rawHeaders = outlookData.getRawHeaders();
         original HTML. The plain-text alternative keeps its usual <code class="inline language-text">&gt; </code> quoting.
       </p>
       <p>
-        Use <code class="inline language-java">prependText(...)</code> and <code class="inline language-java">prependTextHTML(...)</code> to keep the
+        Use <code class="inline language-java">prependPlainText(...)</code> and <code class="inline language-java">prependHTMLText(...)</code> to keep the
         quoted content. Calling <code class="inline language-java">withPlainText(...)</code> or <code class="inline language-java">withHTMLText(...)</code>
         here would replace it.
       </p>
@@ -2278,8 +2290,8 @@ String rawHeaders = outlookData.getRawHeaders();
 Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
     .replyingToAll(receivedEmail, quoteMarkup)
     .from("sender@example.com")
-    .prependText("Thanks, I'll take care of it.\n\n")
-    .prependTextHTML("&lt;p&gt;Thanks, I'll take care of it.&lt;/p&gt;")
+    .prependPlainText("Thanks, I'll take care of it.\n\n")
+    .prependHTMLText("&lt;p&gt;Thanks, I'll take care of it.&lt;/p&gt;")
     .buildEmail();</code></pre>
     </div>
   </section>
@@ -2310,12 +2322,12 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
           </tr>
           <tr>
             <td>Prepend</td>
-            <td><code>prependText(String | File | Path)</code><br><code>prependTextHTML(String | File | Path)</code></td>
+            <td><code>prependPlainText(String | File | Path)</code><br><code>prependHTMLText(String | File | Path)</code></td>
             <td>Adds content before the current alternative</td>
           </tr>
           <tr>
             <td>Append</td>
-            <td><code>appendText(String | File | Path)</code><br><code>appendTextHTML(String | File | Path)</code></td>
+            <td><code>appendPlainText(String | File | Path)</code><br><code>appendHTMLText(String | File | Path)</code></td>
             <td>Adds content after the current alternative</td>
           </tr>
           <tr>
@@ -2330,10 +2342,10 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
       <pre><code class="language-java">Email revised = SimpleJavaMail.fromDefaults().emailBuilder().copying(draft)
     .withPlainText(Path.of("mail", "body.txt"))
     .withHTMLText(Path.of("mail", "body.html"))
-    .prependText("Reference: 42\n\n")
-    .prependTextHTML("&lt;p&gt;Reference: 42&lt;/p&gt;")
-    .appendText("\n\nContact support@example.com")
-    .appendTextHTML("&lt;p&gt;Contact support@example.com&lt;/p&gt;")
+    .prependPlainText("Reference: 42\n\n")
+    .prependHTMLText("&lt;p&gt;Reference: 42&lt;/p&gt;")
+    .appendPlainText("\n\nContact support@example.com")
+    .appendHTMLText("&lt;p&gt;Contact support@example.com&lt;/p&gt;")
     .buildEmail();</code></pre>
 
       <p class="wide">Copying keeps the draft's delivery-recipient overrides as well as its visible To/Cc/Bcc fields. If a draft routes to a test inbox,
