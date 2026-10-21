@@ -198,7 +198,6 @@ public class MailConfiguration {
                 .withAsyncExecutionConfig(AsyncExecutionConfig.builder()
                     .resetThreadPoolSize()
                     .withKeepAliveTime(Duration.ofSeconds(5))
-                    .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
                     .build())
                 .withProxyConfig(SocksProxyConfig.builder()
                     .withBridgePort(7777)
