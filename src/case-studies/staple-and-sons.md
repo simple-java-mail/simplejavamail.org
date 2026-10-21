@@ -541,18 +541,25 @@ flowchart TB
 
 First they inventory the legitimate senders, including an accounting service everybody had forgotten about. That still needs to send invoices after the cleanup. For the portal's mail they choose [DKIM signing](/security.html#section-sending-dkim) in Simple Java Mail, using the same signing configuration across the sending deployments. They could also arrange signing on the Postfix relays. Here they keep it with the application that produces the messages.
 
-With the `dkim-module` on the classpath, they add this to the existing Mailer builder, before `buildMailer()`:
+With the `dkim-module` on the classpath, they add this to the existing Mailer builder, before `buildMailer()`. They use the same `mail` factory as the builder and retain its other message defaults:
 
 ```java
+import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.config.DkimConfig;
 
-mailerBuilder.withDefaultDkimSigning(
-    DkimConfig.builder()
+Email defaults = mailerBuilder.getEmailDefaults();
+if (defaults == null) {
+    defaults = mail.emailBuilder().startingBlank()
+        .buildEmailCompletedWithDefaultsAndOverrides();
+}
+
+mailerBuilder.withEmailDefaults(mail.emailBuilder().copying(defaults)
+    .signWithDomainKey(DkimConfig.builder()
         .dkimPrivateKeyPath("/run/secrets/portal-dkim-private-key.pem")
         .dkimSigningDomain("staple-and-sons.com")
         .dkimSelector("portal2026")
-        .build()
-);
+        .build())
+    .buildEmail());
 ```
 
 The PKCS#8 RSA private key is mounted as a deployment secret, not kept in source control. Its matching public key goes into a [DNS TXT record](https://www.rfc-editor.org/rfc/rfc6376.html#section-3.6.2.1):

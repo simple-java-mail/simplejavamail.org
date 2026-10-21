@@ -277,7 +277,7 @@ ComposedMail composeOrderConfirmation(
     Email email = mail.emailBuilder().startingBlank()
         .from("Polar Meridian Orders", "orders@polarmeridian.com")
         .withBounceTo("bounces@polarmeridian.com")
-        .withRecipients(RecipientBuilder.to(
+        .withRecipients(mail.recipientBuilder().to(
             confirmation.getCustomerName(), confirmation.getCustomerEmail()))
         .withSubject("Confirmation for order " + confirmation.getOrderNumber())
         .withPlainText(
@@ -352,7 +352,7 @@ Recipient protectedRecipient(String partnerId) throws CertificateException {
     }
     certificate.checkValidity();
 
-    return new RecipientBuilder()
+    return mail.recipientBuilder()
         .withAddress(partner.getEmailAddress())
         .withType(Message.RecipientType.TO)
         .withSmimeCertificate(certificate)
