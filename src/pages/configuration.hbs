@@ -945,9 +945,14 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 			the Mailer validates the prepared message before sending.
 		</p>
 		<p class="wide">
-			<a href="features.html#section-exact-eml">Exact EML</a> is deliberately outside this message-governance layer. Its supplied bytes are already final,
+			Sending, rehearsing or exporting the original <a href="features.html#section-exact-eml">exact Email</a> bypasses ordinary message templates. Its supplied bytes are already final,
 			so Mailer defaults, overrides, configured content validation, and security transformations cannot change them. Put any required visible headers in the
 			EML before building the exact Email, and configure only its SMTP envelope on the exact builder.
+		</p>
+		<p class="wide">
+			Explicitly calling <code>mailer.getEmailGovernance().produceEmailApplyingDefaultsAndOverrides(exactEmail)</code> applies ordinary defaults and
+			overrides to the parsed view and returns a new composed Email. The supplied exact Email remains unchanged. The composed result does not guarantee
+			the original EML bytes or the validity of signatures already on the source; reuse the original exact Email when those bytes must be preserved.
 		</p>
 		<div class="wide">
 <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
@@ -990,8 +995,8 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 				<tr><td>Recipient certificates and NOTIFY preferences</td><td>Group policy constructs the recipient metadata. The resulting explicit recipient value wins over the governance-resolved Email fallback, including an Email override.</td></tr>
 				<tr><td>Configuration locks</td><td>Separate mandatory restrictions remain binding through ordinary clears, template replacement and suppression.</td></tr>
 			</tbody></table>
-			<p>The per-email exclusions below determine which ordinary template contributions apply. Exact EML remains outside this
-				message-governance layer; its final bytes are not rewritten by templates or security transformations. Compatible envelope locks still apply;
+			<p>The per-email exclusions below determine which ordinary template contributions apply. Sending, rehearsing and exporting the original exact Email
+				preserve its final bytes without ordinary templates or security transformations. Compatible envelope locks still apply;
 				locks that would require changing the preserved content are rejected.
 				See the <a href="security.html#section-sending-smime">recipient certificate rules</a> for the separate group-policy choices.</p>
 		</div>
@@ -999,6 +1004,11 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 			<h4 id="repeated-email-completion">Completing an Email more than once</h4>
 			<p>A completed Email can be completed or sent again, including through another Mailer. Each pass can fill missing scalar values and apply
 				the selected Mailer's overrides. Completion keeps your suppression choices and always enforces applicable locks. It does not freeze the message.</p>
+			<p>Completion carries outgoing content and settings, including S/MIME, OpenPGP and DKIM configuration; protection is applied later when MIME
+				is prepared. Historical cryptographic results and original protected bytes, <a href="delivery-reports.html#trust-and-preservation">received delivery reports</a>
+				and their nested facts, decrypted-attachment inspection lists and retained S/MIME
+				signed-content views are not copied into the completed Email. Inspect the original converted Email for those results. Ordinary copying and
+				supported Java serialization preserve input history. Content already present in ordinary bodies, headers and resources remains outgoing content.</p>
 			<p>Additive templates contribute only values not already present. For example, supplied recipients <code>[A, A, B]</code>, overrides
 				<code>[A, C, C]</code> and defaults <code>[B, D, D]</code> produce <code>[C, A, A, B, D]</code>. Reapplying those templates keeps that
 				order. Recipient matching includes the name, address, To/Cc/Bcc role, certificate and notification preferences, accounting for missing
@@ -1009,13 +1019,13 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 				even if their names and MIME types match; serialization or reconstruction can lose recognizable source identity.</p>
 			<p>For ordinary sends, use <code>buildEmail()</code> and let the selected destination apply its settings. If you send a completed result,
 				its materialized values are now supplied values: another Mailer's default sender cannot replace an existing sender, but an override can.
-				Headers and complete policies retain the rules above. Exact EML and frozen retry content keep their separate preservation contracts.</p>
+				Headers and complete policies retain the rules above. The original exact Email and frozen retry content keep their separate preservation contracts.</p>
 		</div>
 		<p class="wide">
 			A template can also supply the message being forwarded. A default fills a missing forwarded message; an override replaces the one supplied
 			on the Email. Use <code>EmailProperty.MAIL_TO_FORWARD</code> with the per-field opt-outs below to skip that template contribution.
 			The subject still follows its own precedence. The selected <code>MimeMessage</code> remains borrowed, so keep it available and unchanged
-			while the Email is being used; applying templates does not read or copy its body. Exact EML still bypasses ordinary templates.
+			while the Email is being used; applying templates does not read or copy its body. Sending, rehearsing and exporting an exact Email still bypass ordinary templates.
 		</p>
 		<p class="wide">
 			Repeated <code>withEmailDefaults(...)</code> calls replace the template. <code>useConfiguredEmailDefaults()</code> restores the snapshot-derived

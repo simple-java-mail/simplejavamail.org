@@ -281,6 +281,10 @@ try (Mailer mailer = mail.mailerBuilder()
 		<code class="inline language-java">buildEmailCompletedWithDefaultsAndOverrides()</code>, or its overload that accepts an
 		<code class="inline language-java">EmailGovernance</code> instance.
 	</p>
+	<p class="wide">
+		Completion resolves outgoing content and configuration. Keep the original converted Email when inspecting historical protection results,
+		received delivery reports or original protected bytes; completion does not copy that history. See <a href="configuration.html#repeated-email-completion">completion and source history</a>.
+	</p>
     <p class="wide">
       Need the company relay or an archive BCC to stay fixed while jobs customize their messages?
       <a href="configuration.html#section-locked-configuration">Locked configuration</a> keeps selected values fixed across Mailers from the same factory.
@@ -1912,6 +1916,9 @@ currentMailerBuilder.withValidationConfig(validation.resetClientValidationWarnin
 		  <p><code>copying(exactEmail)</code> starts editable composition. It no longer guarantees the original MIME bytes or the validity of
 			  signatures already applied to those bytes, and it does not automatically remove or re-sign old signatures. For unchanged resubmission,
 			  reuse the original exact Email. When constructing a new envelope, start from the authoritative finalized input again.</p>
+		  <p>Explicitly calling <code>mailer.getEmailGovernance().produceEmailApplyingDefaultsAndOverrides(exactEmail)</code> also returns a new
+			  composed Email, applying ordinary <a href="configuration.html#section-config-mailer">defaults and overrides</a> to the parsed view.
+			  The supplied exact Email remains unchanged. The composed result does not guarantee the original EML bytes or the validity of existing signatures.</p>
 	  </div>
 
 	  <div class="side">

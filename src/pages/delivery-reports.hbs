@@ -108,9 +108,13 @@ DELAYED 4.4.1</code></pre>
   <p>Ordinary messages return <code>null</code>. A report attached to an ordinary message is not promoted into its parent's report.
     Existing protection processing runs first: readable signed/decrypted notifications can expose reports, while inaccessible ciphertext cannot.
     Inspect the protection results too; a null report does not establish that encrypted content contains none.</p>
-  <p>Copies keep this source snapshot even if you edit their content. New replies and forwards do not inherit it as their own report.
+  <p>Ordinary copies and supported Java serialization keep this source snapshot even if you edit the content. Defaults/overrides completion
+    resolves outgoing content and settings without copying the received report or its nested facts. Inspect the original converted Email for this
+    history. New replies and forwards do not inherit it as their own report.
     Exact EML inspection does not rewrite its bytes or add decryption. Outgoing templates cannot manufacture source metadata, and converting a copied
     Email back to MIME does not generate a delivery notification from the snapshot.</p>
+  <p>A received <code>DeliveryStatusReport</code> is separate from <code>DeliveryStatusNotification</code>, which configures a request for future
+    feedback on an outgoing submission. Defaults and overrides can resolve that outgoing request; the received report is historical input data.</p>
   <p>Automatic report rendering includes counts, not addresses, identifiers or diagnostic prose. If you log or export those getters, treat the values
     as untrusted and potentially personal data. JSON/YAML output belongs to your application's normal serializer and DTOs; Simple Java Mail adds no serialization dependency.</p>
 </section>
