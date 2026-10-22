@@ -2303,6 +2303,21 @@ String rawHeaders = outlookData.getRawHeaders();
         when integrity matters; a <code class="inline language-java">true</code> result does not establish certificate trust or sender identity.
         See <a href="security.html#section-reading-smime-verification">What the signature status means</a> for the exact contract.
       </p>
+      <h3 id="section-protect-existing-mime">Protect a MimeMessage you already have</h3>
+      <p>For an existing <code>MimeMessage</code>, use the low-level S/MIME helper when your application needs to retain its own content or header
+        changes. The Email supplies the S/MIME settings; the helper protects the supplied MIME message without rebuilding it from the Email or
+        applying Mailer defaults and overrides.</p>
+<pre><code class="language-java">Email protection = mail.emailBuilder().startingBlank()
+    .encryptWithSmime(SmimeEncryptionConfig.builder()
+        .x509Certificate(readerCertificate).build())
+    .buildEmail();
+
+MimeMessage encrypted = MailerHelper.signAndOrEncryptMessageWithSmime(
+    session, existingMimeMessage, protection);</code></pre>
+      <p>Signing and encryption are independently optional. Both together sign before encrypting. Recipient certificates use the same precedence
+        and Email certificate fallback as <a href="security.html#section-sending-smime">ordinary S/MIME conversion</a>, including the configured
+        encryption algorithms. With no S/MIME request, the helper returns the same supplied message without requiring <code>smime-module</code>.
+        Requested protection requires that module. Each protected result is finalized for stable repeated writes; the helper applies only S/MIME.</p>
       <p class="small">
         Ordinary EML, MIME and Outlook imports also work without <code>smime-module</code>. For protected input, uninspected signature and
         decryption results report <code>UNKNOWN</code>; recognizable headers can still identify the outer S/MIME mode. Clearly plain messages
