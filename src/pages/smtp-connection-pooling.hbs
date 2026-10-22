@@ -421,6 +421,22 @@ try (BatchTransportExecutor&lt;String&gt; batch =
         The callback must not connect or close the Transport. A normal return releases it. Any escaping checked exception, runtime exception, or error
         invalidates it before the same failure is propagated or placed on the future.
       </p>
+      <p>
+        Close the batch executor from its owning application thread, as in the try-with-resources example. Graceful shutdown waits for accepted
+        callbacks and closes its pools and owned executor. An executor you supplied remains yours to drain and close.
+      </p>
+      <p>
+        <code>shutdown()</code> and <code>shutdownNow()</code> each return an independent completion
+        view of the same cleanup operation. Cancelling, completing or timing out a view changes only that view; another shutdown call and
+        <code>close()</code> still observe actual cleanup. <code>shutdownNow()</code> can escalate graceful shutdown, but cannot forcibly stop
+        application code that ignores interruption.
+      </p>
+      <p>
+        Calling blocking <code>close()</code> from a batch callback or its inline completion handler throws <code>IllegalStateException</code>
+        before starting shutdown. A callback may initiate <code>shutdown()</code> or <code>shutdownNow()</code>, then return without waiting;
+        the application owner waits outside that work. A continuation such as <code>thenRun(batch::close)</code> can run on the completing worker,
+        so use nonblocking shutdown initiation there. See the <a href="migration-notes-10.0.0.html#async-shutdown">migration notes</a>.
+      </p>
     </div>
   </section>
 

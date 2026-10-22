@@ -1728,6 +1728,21 @@ Transport.send(message);</code></pre>
       If you implement Mailer yourself, narrow an override that declares broader checked exceptions. Review catches for other checked exception types
       when closing the Mailer was their only throwing call; those catches may no longer compile. The JVM method descriptor and cleanup behavior are
       unchanged by this declaration refinement. Interrupted waiting still does not cancel cleanup.</p>
+    <p class="wide">
+      <strong>Standalone batch-module:</strong> <code>BatchTransportExecutor.shutdown()</code> and <code>shutdownNow()</code> keep their names and
+      return types, but now return a fresh completion view on each call. Released 9.3.6 returned the same mutable future. Remove assumptions about
+      future identity: cancellation, manual completion, <code>orTimeout(...)</code> and <code>completeOnTimeout(...)</code> now affect only the
+      view you changed. They cannot cancel or falsely finish cleanup, and a later <code>close()</code> still waits for actual cleanup.
+      Use <code>shutdownNow()</code> when you intend to request forced shutdown.
+    </p>
+    <p class="wide">
+      The standalone executor also rejects blocking <code>close()</code> from its own callbacks and inline completion handlers with
+      <code>IllegalStateException</code>, before starting shutdown. This replaces a possible indefinite wait. Move the blocking wait to the owning
+      application thread; callbacks can initiate <code>shutdown()</code> or <code>shutdownNow()</code> and return. Review
+      <code>thenRun(batch::close)</code> and similar continuations because they may run on the completing worker. Waiting on the shutdown future
+      within that callback is still unsupported, and supplied executors remain application-owned. See
+      <a href="smtp-connection-pooling.html#option-batch-facade">standalone pooling usage</a>.
+    </p>
   </section>
 
   <a href="#mail-send-execution-control" id="mail-send-execution-control" class="section-link h2">&sect;</a>
