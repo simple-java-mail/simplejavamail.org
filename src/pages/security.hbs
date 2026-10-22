@@ -1254,6 +1254,40 @@ OpenPgpEncryptionConfig encryption = OpenPgpEncryptionConfig.builder()
 		</section>
 
 
+		<a href="#section-openpgp-key-replacement" id="section-openpgp-key-replacement" class="section-link h3">&sect;</a>
+		{{#> components/feature-heading-h3 openpgp=true}}Replacing recipient keys{{/components/feature-heading-h3}}
+
+		<section>
+			<div class="view">
+				<p>
+					Use <code>addRecipientPublicKeyRing(...)</code> to append a recipient key, or <code>recipientPublicKeyRings(...)</code> to replace
+					the complete selection. Replacement keeps the selected cipher and copies both the list and its byte arrays. A null list or a null
+					entry is rejected before changing your earlier choices. An empty list deliberately clears the keys, just like
+					<code>clearRecipientPublicKeyRings()</code>.
+				</p>
+				<p>
+					Setters collect your choices; <code>getRecipientPublicKeyRings()</code> returns an editable copy without validating unfinished
+					key material. Both ways of supplying keys accept non-null empty byte arrays while you configure the builder, but <code>build()</code>
+					still requires at least one key ring and rejects every empty ring. Correct the choices and build again when needed. Actual key parsing
+					remains part of applying OpenPGP protection. Editing or clearing the builder leaves previously built configurations unchanged.
+				</p>
+			</div>
+			<div class="side">
+<pre><code class="language-java">var recipientKeys = OpenPgpEncryptionConfig.builder()
+    .addRecipientPublicKeyRing(alicePublicKeyRing)
+    .symmetricAlgorithm(
+        OpenPgpEncryptionConfig.SymmetricAlgorithm.AES_128);
+
+recipientKeys.recipientPublicKeyRings(
+    java.util.Arrays.asList(alicePublicKeyRing, bobPublicKeyRing));
+
+// Inspect detached choices before building.
+java.util.List&lt;byte[]&gt; selectedKeys =
+    recipientKeys.getRecipientPublicKeyRings();
+OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
+			</div>
+		</section>
+
 		<a href="#section-reading-openpgp" id="section-reading-openpgp" class="section-link h2">&sect;</a>
 		{{#> components/feature-heading-h2 openpgp=true}}Reading OpenPGP/MIME messages{{/components/feature-heading-h2}}
 
