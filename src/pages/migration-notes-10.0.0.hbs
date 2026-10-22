@@ -404,6 +404,10 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       restores inheritance for that group; the other Mailer groups follow the same pattern. Read effective settings from the built Mailer.
       Property keys, Spring configuration and the CLI's scalar option syntax retain their contracts.
       See the <a href="/configuration.html#section-programmatic-api-other">current group reference</a> for the complete Mailer groups.</p>
+    <p>Repeated CLI builder flags now keep each occurrence's arguments and run as separate calls in command-line order.
+      For example, <code>--email:to alice@example.org --email:to bob@example.org</code> adds both recipients.
+      Repeated attachment/header additions and replacement or clear/reset operations follow their normal builder behavior.
+      See the <a href="cli.html#section-how-to-use">CLI guide</a> for examples.</p>
 
     <p>The former root <code>disablingAllClientValidation(Boolean)</code> call becomes:
       <code>mailerBuilder.withValidationConfig(ValidationConfig.builder().withClientValidationWarningsOnly(true).build())</code>.
@@ -457,6 +461,12 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       should use <code>clearSmimeSigning()</code> or <code>clearSmimeEncryption()</code>, respectively; <code>clearSmime()</code> removes both.
       A possibly missing configuration needs an explicit application decision rather than silent removal. Optional algorithm nulls still
       select their documented module defaults.</p>
+    <p>The recipient setters <code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code> and
+      <code>withFixedSmimeCertificate(...)</code> likewise reject null before changing the certificate or group policy.
+      Use <code>clearingSmimeCertificate()</code> to remove an individual recipient's certificate. For group calls, choose
+      <code>clearingSmimeCertificates()</code> to strip all certificates, or <code>resetSmimeCertificatePolicy()</code> to stop applying the group rule
+      while preserving the original recipients' certificates. A possibly missing certificate now needs an explicit application decision.
+      See the <a href="features.html#section-recipient-builders">recipient builder guide</a>.</p>
 
     <p>Java Mailer builders now take <code>SessionDebugConfig</code>, <code>MailSendTelemetryConfig</code> and <code>MailSendHandlers</code>.
       The old flat setters and observer registrations have been removed. Configure related choices together, then supply the immutable group:</p>
@@ -1791,6 +1801,18 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
       Normal EML should produce the same Email. Check this only if you feed it raw non-UTF-8 data, malformed EML, or have tests that expect UTF-8
       replacement characters. Keeping the original bytes also prevents signed MIME from changing before a security module checks it. Overloads that
       accept a Java String still treat that String as UTF-8.
+    </p>
+    <p class="wide">
+      MIME, EML and Outlook import now leave the bounce recipient absent when a <code>Return-Path</code> cannot be parsed, including a comment-only
+      value. The original header remains in <code>Email.getHeaders()</code> and readable content is retained. Check
+      <code>getBounceToRecipient()</code> for null instead of expecting malformed source text in its address. Successfully parsed values keep their
+      existing interpretation; caller-built recipient behavior is unchanged.
+    </p>
+    <p class="wide">
+      OpenPGP inspection adds <code>UNKNOWN</code> for facts that could not be established, including ordinary import without
+      <code>openpgp-module</code>. A signature inside undecrypted ciphertext is unknown even when decryption reports a missing key or failure.
+      Keep those cases separate from confirmed absence and actual cryptographic failure. These OpenPGP result types are new in the 10.0.0 API;
+      see the <a href="security.html#section-reading-openpgp-status">OpenPGP status guide</a> for the current meanings.
     </p>
   </section>
 
