@@ -66,6 +66,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#eml-export-failures">Handle content failures during email conversion</a></li>
       <li><a href="#address-only-name">Check names when importing only a recipient address</a></li>
       <li><a href="#requested-smime-module">Include S/MIME support when requesting decryption</a></li>
+      <li><a href="#existing-mime-smime-protection">Review S/MIME protection of an existing MimeMessage</a></li>
       <li><a href="#async-preparation">Account for validation running during async execution</a></li>
       <li><a href="#api-construction">Use public contracts instead of constructing library results</a></li>
       <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
@@ -1106,6 +1107,19 @@ boolean positiveReply = receipt.getSmtpResponse()
       mode other than the known protected modes as confirmed plain content. The inspection result getters expose <code>UNKNOWN</code> when
       verification or decryption could not be established, and the nullable signature-valid getter stays <code>null</code> in that case.
       Clearly plain input keeps its existing plain, unsigned and unencrypted results.</p>
+  </div></section>
+
+  <h2 id="existing-mime-smime-protection">Review S/MIME protection of an existing MimeMessage</h2>
+  <section><div class="wide">
+    <p><code>MailerHelper.signAndOrEncryptMessageWithSmime(session, message, email)</code> keeps its signature and now honors independently
+      selected signing and encryption, including recipient certificates with the Email-level fallback and algorithm choices. Earlier versions
+      unconditionally required both configurations: encryption-only failed before encryption, while signing-only signed and then failed.</p>
+    <p>Pass the MIME message you want protected and an Email containing your already selected S/MIME settings. Caller changes to the MIME content
+      and headers remain the input; the helper does not rebuild the message, apply Mailer templates, or apply DKIM/OpenPGP. When both operations
+      are selected, signing precedes encryption and each transformed stage is finalized. With neither selected, the same message is returned
+      without reading its content or loading <code>smime-module</code>; requested protection still requires the module.</p>
+    <p>No source change is required. Remove workarounds that supplied an unwanted second operation only if that matches your intended policy.
+      See <a href="features.html#section-protect-existing-mime">protecting existing MIME content</a> for an encryption-only example.</p>
   </div></section>
 
   <h2 id="async-preparation">Account for validation running during async execution</h2>
