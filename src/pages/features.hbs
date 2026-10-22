@@ -451,6 +451,8 @@ recipient.withName("Alice").withAddress("alice@example.org")
         <code>copying(...)</code>. Repeated calls preserve order and duplicates; an empty prepared-recipient collection adds nothing.
         <code>from</code> and <code>withBounceTo</code> replace their scalar address. Already prepared Recipient values keep their supplied fields
         and metadata when added with <code>withRecipients</code>; they are not reparsed by the Email conveniences.
+        An omitted role means To when the value is used as a visible recipient. The supplied Recipient is unchanged;
+        From and Reply-To values can still have no role.
       </p>
       <p>
         If a recipient needs to be assembled outside an email builder call, use the dedicated recipient builders. This keeps address parsing,
@@ -2132,6 +2134,8 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       <p>
         If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
+        Eager extraction closes each attachment stream it opens, including when reading fails; calendar streams acquired during interpretation
+        follow the same rule. This does not close the DataSource itself or a top-level EML stream supplied by your application.
       </p>
       <p>
         A converted delivery notification also exposes an immutable <code>DeliveryStatusReport</code> through the same Email object.
