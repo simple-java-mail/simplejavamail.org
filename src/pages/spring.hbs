@@ -23,6 +23,7 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
       <li><a href="#section-spring-recipient-rejection">Choose how recipient rejections are handled</a></li>
       <li><a href="#section-spring-profiles">Configure profiles and dynamic properties</a></li>
       <li><a href="#section-spring-locked-configuration">Keep selected settings fixed</a></li>
+      <li><a href="#section-spring-telemetry">Enable mail telemetry</a></li>
     </ul>
   </section>
 
@@ -419,11 +420,33 @@ simplejavamail.dkim.signing.signing-domain=your-domain.com
     <code>simplejavamail.defaults.mailsend.retry.*</code> resource limits have ordinary and locked IDE metadata. Named Mailers resolve their own schedules;
     they do not inherit the initiating Mailer's policy. These are Java callback-free settings, so CLI configuration is supported too.</p></section>
 
+  <a href="#section-spring-telemetry" id="section-spring-telemetry" class="section-link h2">&sect;</a>
+  <h2>Enable mail telemetry</h2>
   <section><div class="wide">
-    <p>To activate <a href="/opentelemetry.html#section-integration">OpenTelemetry</a> on Spring's default Mailer, explicitly supply a
-      <code>MailSendTelemetry</code> bean, for example <code>OtelAdapter.wrap(openTelemetry)</code>. An OpenTelemetry bean alone does not activate it.
-      Alternatively, <code>simplejavamail.telemetry.enabled=true</code> enables every Mailer from the configured factory using the application's
-      global OpenTelemetry instance. Endpoint permission uses <code>simplejavamail.telemetry.smtp.endpointattributes</code>.
-      Both settings and their locked counterparts use the same Environment and Boolean IDE metadata.
-      Your application still owns SDK and exporter setup and shutdown; initialize the global instance before constructing enabled Mailers.</p>
+    <p>With the <a href="/opentelemetry.html#section-register">optional OpenTelemetry module</a> available, enable telemetry through configuration:</p>
+    <pre><code class="language-properties">simplejavamail.telemetry.enabled=true</code></pre>
+    <p>Or enable it in Java on a configuration class in an application already using the Spring integration:</p>
+    <pre><code class="language-java">import org.simplejavamail.springsupport.EnableSjmTelemetry;
+
+@Configuration
+@EnableSjmTelemetry
+class MailTelemetryConfiguration {
+    @Bean
+    MailSendTelemetry mailTelemetry(OpenTelemetry openTelemetry) {
+        return OtelAdapter.wrap(openTelemetry);
+    }
+}</code></pre>
+    <p>The annotation enables telemetry without requiring an enabled property. The bean independently selects the integration for Spring's
+      default Mailer; a bean alone does not enable telemetry. An arbitrary OpenTelemetry bean is not discovered by SJM.
+      If several <code>MailSendTelemetry</code> beans exist, select a primary one.</p>
+    <p>Both activation routes apply to every Mailer from the configured factory. Enabled Mailers without a supplied integration use the
+      application's global OpenTelemetry instance. Fresh builders do not inherit the default Mailer's integration bean; supply the integration
+      through <code>withTelemetryConfig(...)</code> when those builders should use it too.</p>
+    <p>Explicit <code>simplejavamail.telemetry.enabled</code> properties override the annotation, so a deployment can set it to
+      <code>false</code>. Locked values remain authoritative. Endpoint permission uses <code>simplejavamail.telemetry.smtp.endpointattributes</code>;
+      activation does not grant it. These settings and their locked counterparts retain the same Environment resolution and Boolean IDE metadata.</p>
+    <p>The annotation uses the existing integration: plain Spring still imports <code>SimpleJavaMailSpringSupport</code>, while Boot uses its
+      existing auto-configuration. Application-provided configuration snapshots, factories and Mailers keep their own choices; the annotation
+      does not rewrite replacement beans. Your application owns SDK/exporter setup and shutdown, including global initialization before
+      constructing enabled Mailers. See the <a href="/opentelemetry.html#section-integration">OpenTelemetry integration guide</a> for the full wiring.</p>
   </div></section>
