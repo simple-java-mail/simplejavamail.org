@@ -32,7 +32,7 @@
     "@11ty/eleventy": "^3.1.6",
     "@11ty/eleventy-plugin-handlebars": "^1.0.0",
     "autoprefixer": "^10.5.4",
-    "concurrently": "^9.2.4",
+    "concurrently": "^9.2.5",
     "handlebars": "^4.7.10",
     "less": "^4.9.0",
     "pagefind": "^1.5.2",
