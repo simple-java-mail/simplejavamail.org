@@ -1501,6 +1501,9 @@ simplejavamail.smtp.localport=25252
         Produce a Calendar event String (manually or by using a library such as <a href="https://github.com/ical4j/ical4j">ical4j</a>) and pass it to
 		  an <code class="inline language-java">EmailPopulatingBuilder</code> obtained from <code class="inline language-java">mail.emailBuilder()</code>.
       </p>
+      <p>When used in Email defaults or overrides, the calendar's method and text are selected together: override, your Email, then default.
+        Excluding either <code>CALENDAR_METHOD</code> or <code>CALENDAR_TEXT</code> skips that template's whole calendar while retaining your
+        Email's own calendar. Transfer encoding stays separate. See <a href="configuration.html#section-config-mailer">template exclusions</a>.</p>
       <p>
         See the <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/simple-java-mail/src/test/java/demo/FullEmailDemoApp.java#L69">test demo app</a> included in the
         Simple Java Mail source for a working example.
