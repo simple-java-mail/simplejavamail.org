@@ -187,11 +187,14 @@ mail.mailerBuilder(session)
       <p>An explicit empty Java string remains a supplied choice and follows that setting's validation or clearing rules.
         It does not restore a captured value. This differs from blank entries in property sources, which are treated as absent.
         Use the named clear or <code>useConfigured...</code> operation to express either intent explicitly.</p>
-      <p><code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> sets connection, read and write timeouts together. On a caller-supplied Session,
-        leaving that setter unused preserves all three original values. Inspect the common configured value through
-        <code>mailer.getOperationalConfig().getSessionTimeout()</code>. It returns a <code>Duration</code>, or <code>null</code> when the values
-        differ, are missing or cannot be interpreted. Null does not mean unlimited, and the getter does not guess provider defaults.
-        These inspection values describe construction; they do not track direct Session mutations after the Mailer is built.</p>
+      <p><code>ConnectionConfig.Builder.withSessionTimeout(...)</code> sets connect, read and write timeouts together.
+        Use <code>withConnectTimeout(...)</code>, <code>withReadTimeout(...)</code> or <code>withWriteTimeout(...)</code> to adjust one operation.
+        The last setter affecting an operation wins; see the <a href="#socket-timeouts">timeout examples and precedence</a>.</p>
+      <p>The group's getters inspect supplied choices, including unset values. On the built Mailer,
+        <code>mailer.getOperationalConfig().getConnectTimeout()</code>, <code>getReadTimeout()</code> and <code>getWriteTimeout()</code>
+        report effective construction settings. <code>getSessionTimeout()</code> returns their common <code>Duration</code> only when all three
+        are known and equal, otherwise <code>null</code>. Null does not mean unlimited, and inspection does not guess provider defaults or track
+        direct Session mutations after construction. The group's common getter follows the same equality rule for its supplied choices.</p>
     </div>
 
     <div class="wide">
@@ -371,14 +374,33 @@ mailerBuilder.withAsyncExecutionConfig(AsyncExecutionConfig.builder()
     .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
     .build());
 </code></pre>
-		  <pre><code class="small">// change the SMTP session timeout (affects socket connect-, read- and write timeouts)
-mailerBuilder.withConnectionConfig(ConnectionConfig.builder()
-    .withSessionTimeout(Duration.ofSeconds(10))
-    .build()); // 10 seconds for quick disconnect
-</code></pre>
       <p>Unspecified worker settings retain the one-worker default without batch and ten-worker default with batch.
         Java session, executor and pool time settings use <code>Duration</code>; the corresponding properties and CLI arguments still use
         numeric milliseconds. These migrated settings reject fractional milliseconds and overflow. Application-owned executors keep their own tuning.</p>
+      <h4 id="socket-timeouts">Socket timeouts</h4>
+      <pre><code class="small">ConnectionConfig.Builder connection = ConnectionConfig.builder()
+    .withSessionTimeout(Duration.ofSeconds(30))
+    .withConnectTimeout(Duration.ofSeconds(10))
+    .withReadTimeout(Duration.ofSeconds(45));
+mailerBuilder.withConnectionConfig(connection.build());
+// connect: 10 seconds, read: 45 seconds, write: 30 seconds</code></pre>
+      <p>The common setter writes the same three choices as the individual setters. Calling
+        <code>connection.withSessionTimeout(Duration.ofSeconds(20))</code> afterward selects 20 seconds for all three.
+        <code>resetConnectTimeout()</code>, <code>resetReadTimeout()</code> and <code>resetWriteTimeout()</code> select the built-in
+        60-second value for just that operation. Their <code>useConfigured...</code> companions restore captured inheritance.
+        <code>resetSessionTimeout()</code> and <code>useConfiguredSessionTimeout()</code> apply those operations to all three.</p>
+      <p>The CLI uses numeric milliseconds and applies the same setter order:</p>
+      <pre><code class="language-text small">--mailer:withSessionTimeout 30000 --mailer:withConnectTimeout 10000 --mailer:withReadTimeout 45000</code></pre>
+      <p><code>--mailer:withWriteTimeout</code> adjusts writes independently. The corresponding CLI reset options are
+        <code>--mailer:resetConnectTimeout</code>, <code>--mailer:resetReadTimeout</code> and <code>--mailer:resetWriteTimeout</code>.</p>
+      <p>For a Session created by Simple Java Mail, each timeout uses this order: an explicit typed choice in <code>ConnectionConfig</code>,
+        an additional Jakarta Mail timeout property, an operation-specific SJM property, the shared session-timeout property, then the
+        built-in 60-second fallback. For example, raw <code>mail.smtp.connectiontimeout=10000</code> and <code>mail.smtp.timeout=30000</code>
+        give connect/read/write values of 10/30/60 seconds with otherwise default configuration. An explicit typed read timeout of 45 seconds
+        changes only the read value.</p>
+      <p>A Session you supply keeps each original value until you select that operation through a typed choice, raw overlay or applicable lock.
+        Ordinary SJM timeout defaults do not replace its settings. Mandatory locks apply above ordinary precedence: an individual lock
+        constrains its operation, while a shared session-timeout lock constrains all three. Conflicting choices or lock requirements are rejected.</p>
       <p>When write timeouts are enabled, Simple Java Mail shares one background timeout-monitoring thread across the connections from each Angus Session
         it creates, rather than using a thread for every connection. This thread watches for writes that take too long; it does not send emails.
         It stops when the last connection is closed. Returning a connection to the pool keeps it open, so the monitoring thread stays available too.
@@ -670,6 +692,9 @@ boolean configured = config.hasProperty(ConfigKeys.SMTP_PORT);
       integer representation and retain signed Integer bounds and whole-millisecond precision; ISO-duration inputs keep
       their existing precision and validation. A Java read of 1500 above returns <code>Duration.ofMillis(1500)</code>.
       Dynamic map inputs do not change units or gain a different parser because the key's Java view is Duration.
+      Socket timeouts expose <code>ConfigKeys.SESSION_TIMEOUT</code>, <code>CONNECT_TIMEOUT</code>, <code>READ_TIMEOUT</code> and
+      <code>WRITE_TIMEOUT</code>. Reading a missing per-operation key returns null even when the shared key is present;
+      the owning Mailer resolves that fallback when it creates a Session.
     </p>
     <p class="wide">
       Missing scalars and aggregate configuration maps return null: an absent key does not fabricate an empty configured
@@ -689,7 +714,7 @@ Duration sameTimeout = copied.get(ConfigKeys.SESSION_TIMEOUT);</code></pre>
     </p>
     <p class="wide">
       <code>ConfigLoader.Property</code> and <code>config.asMap()</code> remain available for dynamic integration. That
-      heterogeneous map retains parser values, including Integer milliseconds for the legacy timeout keys; ordinary Java
+      heterogeneous map retains parser values, including Integer milliseconds for the numeric timeout keys; ordinary Java
       reads use <code>get(ConfigKey&lt;T&gt;)</code>. Typed reads and raw maps can expose credentials: use
       <code>getDiagnostics()</code> for safe logging and source provenance.
     </p>
@@ -798,7 +823,12 @@ simplejavamail.proxy.username=username proxy
 simplejavamail.proxy.password=password proxy
 # 0 lets the operating system select an available loopback bridge port
 simplejavamail.proxy.socks5bridge.port=0
+# Shared socket timeout fallback, in milliseconds
 simplejavamail.defaults.sessiontimeoutmillis=60000
+# Optional per-operation overrides, also in milliseconds
+simplejavamail.defaults.connecttimeoutmillis=10000
+simplejavamail.defaults.readtimeoutmillis=30000
+simplejavamail.defaults.writetimeoutmillis=45000
 # Optional total send budget (ISO-8601); omitted means disabled
 simplejavamail.defaults.mailsend.timeout=PT30S
 simplejavamail.defaults.trustallhosts=false

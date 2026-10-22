@@ -704,8 +704,9 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
       <p>Your Session is the starting point for connection settings. Its timeouts, local address, EHLO hostname and certificate-trust choices stay
         unchanged unless you explicitly replace them on the Mailer builder or a configured lock requires a value. Ordinary Simple Java Mail
         connection defaults do not overwrite them, including when you reuse a Session after its previous Mailer has shut down.</p>
-      <p>For example, <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> deliberately sets connection, read and write timeouts to one second. Additional Jakarta
-        Mail properties and configured proxy routing still apply. Standard <code>smtp</code> and <code>smtps</code> Sessions need no special marker;
+      <p>For example, <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> deliberately sets connect, read and write timeouts to one second.
+        Selecting only <code>withReadTimeout(Duration.ofSeconds(5))</code> changes the read timeout, keeping the Session's original connect and write values.
+        Additional Jakarta Mail properties and configured proxy routing still apply. Standard <code>smtp</code> and <code>smtps</code> Sessions need no special marker;
         for a custom protocol, configure its provider-specific properties instead. See <a href="configuration.html#section-programmatic-api-other">timeout inspection</a>.</p>
     </div>
 
@@ -1357,6 +1358,12 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 				In case you need to modify the internal Session object itself, because you need a tailored configuration that is supported by the underlying
 				<code class="inline language-text">Jakarta Mail</code>, that too is very easy.
 			</p>
+      <p>With otherwise default configuration, the example selects a 10-second connect timeout and a 30-second read timeout;
+        the write timeout stays at 60 seconds. Raw timeout properties override inherited SJM defaults.
+        For typed fine-tuning, use <code>ConnectionConfig.Builder.withConnectTimeout(...)</code>, <code>withReadTimeout(...)</code>
+        and <code>withWriteTimeout(...)</code>. An explicit typed choice takes precedence over the corresponding raw property;
+        <code>withSessionTimeout(...)</code> explicitly selects all three. Applicable locks remain enforced.
+        See <a href="configuration.html#socket-timeouts">socket timeout examples and inspection</a>.</p>
 		</div>
 
 		<div class="side">

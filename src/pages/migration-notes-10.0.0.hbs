@@ -541,6 +541,21 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       truncated or wrapped. Property files and existing CLI options still use numeric milliseconds; do not change those to ISO duration strings.</p>
     <p>Explicit worker count and keep-alive settings now apply even without the batch module. Previously that configuration could be ignored.
       Unspecified worker defaults remain one without batch and ten with batch, and caller-supplied executors remain application-owned.</p>
+    <h3 id="socket-timeout-precedence">Review raw socket timeout properties</h3>
+    <p>Earlier releases could replace additional Jakarta Mail timeout properties with the common SJM timeout when creating a Session.
+      Explicit raw <code>mail.smtp.connectiontimeout</code>, <code>mail.smtp.timeout</code> and <code>mail.smtp.writetimeout</code>
+      values now override inherited SJM defaults for their respective operations. The corresponding <code>mail.smtps.*</code> properties
+      follow the same rule.</p>
+    <pre><code class="language-java">mail.mailerBuilder()
+    .withProperty("mail.smtp.connectiontimeout", 10_000)
+    .withProperty("mail.smtp.timeout", 30_000);
+// With otherwise default configuration: connect 10s, read 30s, write 60s.</code></pre>
+    <p>Review applications that relied on the previous overwrite. An explicit
+      <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(20))</code> still deliberately selects all three timeouts
+      and takes precedence over raw properties. For independent typed choices, use <code>withConnectTimeout(...)</code>,
+      <code>withReadTimeout(...)</code> and <code>withWriteTimeout(...)</code> inside the same group. Each typed choice affects only its
+      operation; within the group, the last setter affecting an operation wins. Mandatory locks remain enforced. See the
+      <a href="/configuration.html#socket-timeouts">current timeout guide</a> for inheritance, reset and inspection examples.</p>
   </div></section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>
@@ -1457,6 +1472,7 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
     <p class="wide">
       If you relied on those automatic replacements, call the relevant builder setters explicitly or put the intended values on your Session.
       For example, <code class="inline language-java">ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> replaces all three socket timeouts with one second.
+      Selecting only <code>withReadTimeout(Duration.ofSeconds(5))</code> changes the read value and retains the Session's original connect and write values.
       Standard SMTP/SMTPS Sessions support these choices directly. A custom protocol now rejects a convenience setting it cannot map rather
       than silently ignoring it; use its provider-specific names through <code>withProperty(...)</code> instead.
       Clearing a setting inherited through <code>Properties</code> defaults is also rejected when removal would simply reactivate that default.
@@ -1467,7 +1483,9 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
       <code class="inline language-java">OperationalConfig.getSessionTimeout()</code> now returns nullable <code>Duration</code> instead of
       an integer millisecond count. Recompile integrations and check for null. Null means the connection, read and write settings do not
       have one known common value, not that the connection has no timeout. Previously this getter could report the builder's default even
-      when the supplied Session used different values. The Mailer builder's own getter still reports its configured choice.
+      when the supplied Session used different values. Inspect each effective value with <code>getConnectTimeout()</code>,
+      <code>getReadTimeout()</code> and <code>getWriteTimeout()</code>. The supplied <code>ConnectionConfig</code> and its builder expose
+      stored choices instead; their common getter is null unless all three supplied choices are present and equal.
       Local-binding, client-hostname and certificate-trust inspection also reflects the effective construction settings rather than unrelated
       factory defaults or inactive trust choices. Later direct Session mutations are not tracked by this snapshot.
     </p>
@@ -1475,7 +1493,10 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
 if (commonTimeout != null) {
     log.info("Common socket timeout: {}", commonTimeout);
 } else {
-    log.info("Inspect the Session's separate connection, read and write settings");
+    log.info("Connect/read/write: {}/{}/{}",
+        mailer.getOperationalConfig().getConnectTimeout(),
+        mailer.getOperationalConfig().getReadTimeout(),
+        mailer.getOperationalConfig().getWriteTimeout());
 }</code></pre>
     <h3>If you call the internal Session factory directly</h3>
     <p class="wide" style="font-size:smaller">
