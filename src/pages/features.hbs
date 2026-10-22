@@ -1334,16 +1334,21 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
       <p>Header names ignore capitalization. To replace all earlier values for a header, pass <code>true</code> as the third argument:
         <code>withHeader("x-route", "new route", true)</code> also replaces a previously configured <code>X-Route</code>.
         Without that flag, calls add values. Email templates use the same header identity when applying defaults and overrides.</p>
+      <p>Pass an empty String or <code>null</code> to emit a present empty header, such as <code>X-MS-TNEF-Correlator:</code>.
+        Null does not omit the header or write the text <code>null</code>. Stored null values remain visible in <code>Email.getHeaders()</code>
+        and survive copying and serialization. Stored whitespace is retained; non-null values keep the usual MIME encoding and folding.</p>
     </div>
 
     <div class="side">
 <pre><code>currentEmailBuilder
-    .withHeader("X-Priority", 2);
-    .withHeader("X-MC-GoogleAnalyticsCampaign", "halloween_sale");
-    .withHeader("X-MEETUP-RECIP-ID", "71415272");
-    .withHeader("X-my-custom-header", "foo");
-    // or
-    .withHeaders(yourHeadersMap);
+    .withHeader("X-Priority", 2)
+    .withHeader("X-MC-GoogleAnalyticsCampaign", "halloween_sale")
+    .withHeader("X-MEETUP-RECIP-ID", "71415272")
+    .withHeader("X-my-custom-header", "foo")
+    .withHeader("X-MS-TNEF-Correlator", "")
+    .withHeader("X-Empty", null); // also emits a present empty field
+// or
+currentEmailBuilder.withHeaders(yourHeadersMap);
 </code></pre>
     </div>
   </section>
