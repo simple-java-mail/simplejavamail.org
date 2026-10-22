@@ -52,6 +52,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#smtp-empty-credentials">Review empty SMTP credential strings</a></li>
       <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
       <li><a href="#copied-template-suppression">Check copies of emails that skip defaults or overrides</a></li>
+      <li><a href="#calendar-template-values">Keep a template's calendar method and text together</a></li>
       <li><a href="#repeated-email-completion">Check repeated template collection additions</a></li>
       <li><a href="#forwarded-templates">Check forwarded messages in Email templates</a></li>
       <li><a href="#copied-receipt-requests">Check receipt requests on copied emails</a></li>
@@ -932,6 +933,20 @@ boolean positiveReply = receipt.getSmtpResponse()
     <p><code>EmailProperty.ALL_RECIPIENTS</code> now excludes To, Cc and Bcc template additions together; earlier releases ignored that selector.
       If you used it but still relied on a template supplying recipients, remove the exclusion or select only the recipient types you want to skip.
       Your explicitly supplied recipients and the separately controlled delivery-recipient override are unchanged.</p>
+  </div></section>
+
+  <h2 id="calendar-template-values">Keep a template's calendar method and text together</h2>
+  <section><div class="wide">
+    <p>Calendar method and text now resolve together from one source: override, your Email, then default. Earlier releases resolved the two
+      fields independently. Excluding <code>CALENDAR_METHOD</code> could leave inherited text without its required method and fail during
+      completion; excluding either field from an override could combine its remaining component with your Email's or defaults' calendar.</p>
+    <p>Either <code>CALENDAR_METHOD</code> or <code>CALENDAR_TEXT</code> now excludes that source's whole calendar contribution. Your Email's own
+      calendar remains. Default exclusions still leave overrides eligible, and override exclusions leave your own or default calendar eligible.
+      If you depended on mixed components, supply the intended complete calendar through <code>withCalendarText(method, text)</code>.</p>
+    <p>Stored exclusions remain exactly as supplied. Allowing one selector leaves the calendar excluded when the other is still excluded;
+      remove both exclusions to re-enable that source. Calendar transfer encoding remains independent, and locks retain their existing meaning.
+      Exact EML sending, rehearsal and export keep their byte-preservation boundary; explicitly completing an exact Email still creates composed
+      output. See <a href="configuration.html#section-config-mailer">defaults and overrides</a>.</p>
   </div></section>
 
   <h2 id="repeated-email-completion">Check repeated template collection additions</h2>

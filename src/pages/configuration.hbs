@@ -1121,6 +1121,10 @@ draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
 				or <code>allowOverrideValueFor(...)</code> to remove selected exclusions, and <code>clearDefaultValueSuppressions()</code>
 				or <code>clearOverrideValueSuppressions()</code> to remove all exclusions in that family. These edits leave global
 				<code>ignoringDefaults()</code>/<code>ignoringOverrides()</code> choices and configuration locks unchanged.</p>
+			<p>A calendar's method and text belong together. Excluding either <code>CALENDAR_METHOD</code> or <code>CALENDAR_TEXT</code>
+				skips that source's whole calendar. An override exclusion lets the Email's own calendar, or otherwise its default calendar, apply;
+				a default exclusion leaves overrides eligible. Your Email's own calendar remains. If you excluded both selectors, allowing only one
+				leaves the other exclusion active. Calendar transfer encoding is a separate choice.</p>
 		</div>
 
 		<div class="side">
