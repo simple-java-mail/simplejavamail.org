@@ -38,6 +38,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#email-body-method-names">Use consistent body method names</a></li>
       <li><a href="#attachment-resource-builder">Build advanced attachments with named metadata</a></li>
       <li><a href="#attachment-content-types">Keep attachment Content-Type parameters</a></li>
+      <li><a href="#multipart-attachment-import">Keep explicitly attached multipart containers</a></li>
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
@@ -377,6 +378,21 @@ boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
     <p>Eager and lazy import retain equivalent type metadata. SJM's selected attachment filename still controls outgoing naming parameters,
       and malformed or injected header content keeps its existing safe fallback. Exact/protected source bytes retain their existing contract.
       See <a href="features.html#section-attachments">adding attachments</a> for a character-encoding example.</p>
+  </div></section>
+
+  <h2 id="multipart-attachment-import">Keep explicitly attached multipart containers</h2>
+  <section><div class="wide">
+    <p>Earlier versions recursively opened child <code>multipart/*</code> entities even when marked
+      <code>Content-Disposition: attachment</code>. Their text joined the parent body, their nested resources became parent resources,
+      and the container attachment disappeared. Import now keeps that explicit attachment as one resource, retaining its filename,
+      valid Content-Type parameters, content and existing metadata.</p>
+    <p>The conversion calls stay the same. For a message containing a visible body and an attached <code>bundle.mime</code>, inspect the
+      body with <code>email.getPlainText()</code> and the complete bundle with <code>email.getAttachments()</code>. If your code depended
+      on the bundle's children appearing in parent fields, read the attachment separately with an appropriate MIME parser.</p>
+    <p>Ordinary nested body containers and repeated plain/HTML content keep their established interpretation. Inline and filename-only
+      multipart containers, effective-root selection, protection processing, attached messages and delivery-report ownership retain their
+      existing boundaries. Eager and lazy extraction agree on classification and keep their existing stream ownership; exact/protected
+      source bytes remain authoritative under their own contracts.</p>
   </div></section>
 
   <h2 id="grouped-configuration">Move advanced builder settings into configuration groups</h2>

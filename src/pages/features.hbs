@@ -2172,6 +2172,12 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         Use a MIME parser when you need only the base type, rather than comparing the complete type string to <code>text/plain</code>.
       </p>
       <p>
+        A child multipart explicitly marked <code>Content-Disposition: attachment</code> remains one attachment with its filename,
+        content-type parameters and content. Text and resources inside that attachment do not join the parent email's body or resource lists.
+        Ordinary nested body containers still contribute their content, including repeated plain-text and HTML parts. Inline and filename-only
+        multipart containers, and the effective root after protection processing, keep that interpretation. Email does not retain arbitrary MIME nesting.
+      </p>
+      <p>
         If an attachment has neither a filename nor a <code>Content-Type</code> header, conversion uses <code>UnknownAttachment</code> as the fallback
         filename. Choosing that fallback does not read attachment content, including when attachment fetching is disabled.
       </p>
