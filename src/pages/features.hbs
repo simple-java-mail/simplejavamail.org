@@ -1086,6 +1086,13 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 			File content remains lazy and repeatable: building or copying the Email does not read it. Keep the file and its filesystem available and
 			unchanged while sending or rendering. Each read opens a new read-only stream, and a missing file fails when consumed.
 			The source filename determines the MIME type. Non-default filesystems are supported without converting the path to a File.</p>
+		<p>When supplying bytes, include the parameters needed to interpret them. Simple Java Mail preserves valid Content-Type parameters,
+			including character encodings and format-specific extensions. The attachment name you select still controls its outgoing filename.</p>
+<pre><code class="language-java small">currentEmailBuilder.withAttachment("notes.txt",
+    "café".getBytes(StandardCharsets.ISO_8859_1),
+    "text/plain; charset=ISO-8859-1");</code></pre>
+		<p>The outgoing attachment retains <code>charset=ISO-8859-1</code> alongside <code>name=notes.txt</code>. The bytes are not converted
+			to another character encoding.</p>
 	  </div>
   </section>
 
@@ -2142,6 +2149,8 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
         Eager extraction closes each attachment stream it opens, including when reading fails; calendar streams acquired during interpretation
         follow the same rule. This does not close the DataSource itself or a top-level EML stream supplied by your application.
+        Both eager and lazy extraction retain equivalent content-type metadata, including valid parameters such as <code>charset</code>.
+        Use a MIME parser when you need only the base type, rather than comparing the complete type string to <code>text/plain</code>.
       </p>
       <p>
         If an attachment has neither a filename nor a <code>Content-Type</code> header, conversion uses <code>UnknownAttachment</code> as the fallback
