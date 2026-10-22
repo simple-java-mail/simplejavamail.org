@@ -285,6 +285,10 @@ Elapsed: 142ms</code></pre>
       </tr>
       </tbody>
     </table>
+    <p class="wide">Help is requested by an actual help option. Ordinary values such as
+      <code>--email:withSubject "How to use --help"</code> keep their literal text, and all following options are processed.
+      A genuine help option, such as <code>--email:withSubject--help</code>, displays documentation without sending;
+      later arguments are ignored. Values keep the selected one-shot or daemon mode.</p>
     <img data-src="../../assets/cli_example.png" alt="Example of Simple Java Mail CLI usage" style="width: 100%; margin-top: 1em;">
   </section>
 

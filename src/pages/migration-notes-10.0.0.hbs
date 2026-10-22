@@ -33,6 +33,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#java-11">Run on Java 11 or newer</a></li>
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
       <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
+      <li><a href="#cli-help-values">Keep CLI values ending in --help</a></li>
       <li><a href="#email-construction">Build Email objects through buildEmail()</a></li>
       <li><a href="#email-body-method-names">Use consistent body method names</a></li>
       <li><a href="#attachment-resource-builder">Build advanced attachments with named metadata</a></li>
@@ -251,6 +252,19 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       Remove <code>--mailer:async</code> and <code>--mailer:async--help</code>; both are rejected with an argument error.
       The CLI does not print send receipts, and daemon request concurrency is unchanged.</p>
     <p class="wide">See <a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> for the current operation contracts.</p>
+  </section>
+
+  <h2 id="cli-help-values">Keep CLI values ending in --help</h2>
+  <section>
+    <p class="wide">Earlier CLI versions silently discarded arguments after any value ending in <code>--help</code>.
+      For example, <code>--email:withSubject "How to use --help" --email:withPlainText "Here are the instructions."</code>
+      could retain the subject but lose the body and later SMTP or security settings. These values now remain literal,
+      and the complete command is processed in order. No new quoting or escaping syntax is required.</p>
+    <p class="wide">Review scripts that supplied help-like text: their following options now take effect.
+      Actual <code>--help</code>, <code>-h</code> and generated option help such as <code>--email:withSubject--help</code>
+      still display documentation without sending and ignore later arguments. A separate argument identical to a registered
+      help option keeps that option meaning. Literal values also honor the selected daemon mode, including
+      <code>--daemon=require</code>. See <a href="cli.html#section-usage-help">CLI usage help</a>.</p>
   </section>
 
   <h2 id="email-construction">Build Email objects through buildEmail()</h2>
