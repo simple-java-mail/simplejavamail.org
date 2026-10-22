@@ -754,6 +754,9 @@ currentMailerBuilder
 					Use the per-field suppression controls when a template should not supply the cleared choice again. Recipient certificates can
 					still request encryption after the Email choices are cleared. The <a href="configuration.html#configuration-precedence">scope and precedence table</a>
 					explains these separate sources; ordinary suppression cannot remove configuration locks.</p>
+				<p><code>signWithSmime(config)</code> and <code>encryptWithSmime(config)</code> require a non-null configuration.
+                    A missing value throws <code>IllegalArgumentException</code> before changing an earlier choice; use the named clear methods
+                    when removal is intentional. Optional algorithm fields may still use null to select their documented module defaults.</p>
 				<p>
 					For encryption, Simple Java Mail can use one email-level encryption certificate, or different certificates per recipient. When any
 					To/Cc/Bcc recipient carries a certificate, it requests S/MIME encryption even without an email-level encryption configuration.
