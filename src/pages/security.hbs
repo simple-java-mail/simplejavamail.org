@@ -774,6 +774,9 @@ currentMailerBuilder
 					To keep each original recipient's certificate instead, use <code class="inline language-java">resetSmimeCertificatePolicy()</code>.
 					It removes the group rule, not the recipients' certificates, and leaves any group notification policy unchanged.
 				</p>
+				<p><code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code> and <code>withFixedSmimeCertificate(...)</code>
+                    require a non-null certificate. Passing null throws <code>IllegalArgumentException</code> before changing the existing certificate or group policy.
+                    Use <code>clearingSmimeCertificate()</code> for an individual recipient, or the group clear/reset operations above when removal or restoration is intended.</p>
 				<table><thead><tr><th>Recipient-group operation</th><th>Certificates on produced recipients</th></tr></thead><tbody>
 					<tr><td><code>withDefaultSmimeCertificate(c)</code></td><td>Fill missing certificates only.</td></tr>
 					<tr><td><code>withFixedSmimeCertificate(c)</code></td><td>Replace every recipient certificate with <code>c</code>.</td></tr>
@@ -1292,9 +1295,16 @@ OriginalOpenPgpDetails details =
 				fingerprint, algorithms, and a safe failure reason when processing did not succeed. Signature states are
 				<code class="inline language-java">NOT_PRESENT</code>, <code class="inline language-java">VALID</code>,
 				<code class="inline language-java">INVALID</code>, <code class="inline language-java">KEY_MISSING</code>, and
-				<code class="inline language-java">ERROR</code>. Decryption separately reports <code class="inline language-java">NOT_ENCRYPTED</code>,
-				<code class="inline language-java">DECRYPTED</code>, <code class="inline language-java">KEY_MISSING</code>, or
-				<code class="inline language-java">FAILED</code>.
+				<code class="inline language-java">ERROR</code>, plus <code class="inline language-java">UNKNOWN</code> when inspection could not happen.
+				Decryption separately reports <code class="inline language-java">NOT_ENCRYPTED</code>,
+				<code class="inline language-java">DECRYPTED</code>, <code class="inline language-java">KEY_MISSING</code>,
+				<code class="inline language-java">FAILED</code>, or <code class="inline language-java">UNKNOWN</code>.
+			</p>
+			<p class="wide">
+				Without <code>openpgp-module</code>, ordinary import preserves recognizable protected mail and reports <code>UNKNOWN</code> for results it
+				could not inspect. A visible signed envelope retains <code>SIGNED</code> mode and <code>NOT_ENCRYPTED</code> for that outer layer; an encrypted
+				envelope retains <code>ENCRYPTED</code> mode with unknown signature and decryption results. If the envelope itself cannot be classified, its
+				mode is also <code>UNKNOWN</code>. Explicit receive configuration still requires the module.
 			</p>
 			<p class="wide">These results describe the converted input. Ordinary copying and supported Java serialization preserve them;
 				defaults/overrides completion carries outgoing OpenPGP settings without copying historical results or original protected bytes.
@@ -1320,6 +1330,8 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 				When a verification key is missing, the clear signed content remains readable and the result says
 				<code class="inline language-java">KEY_MISSING</code>. When no decryption key matches, the encrypted message stays intact and its exact protected
 				EML bytes remain available through <code class="inline language-java">getOriginalProtectedMessage()</code>.
+				Its signature status stays <code>UNKNOWN</code> while the ciphertext cannot be read, including after a decryption failure. Missing keys and
+				actual cryptographic failures keep their separate results; unknown inspection does not establish success or absence.
 			</p>
 			<p class="wide">
 				Simple Java Mail processes at most two nested OpenPGP/MIME protection wrappers. That covers the normal sign-then-encrypt message. If input

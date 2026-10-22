@@ -70,6 +70,13 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
     <p class="wide">
       Builder flags are deliberately explicit because they map directly to builder methods.
     </p>
+    <p class="wide">
+      Each repeated builder flag is a separate call, applied in command-line order with its own arguments. For example,
+      <code>--email:to alice@example.org --email:to bob@example.org</code> adds both recipients. An optional display name belongs only to its own occurrence:
+      <code>--email:to "Alice" alice@example.org --email:to bob@example.org</code> names Alice and leaves Bob unnamed.
+      Repeated attachment and header additions retain each addition; replacement and clear/reset flags take effect where they occur.
+      For example, <code>--email:withSubject "Draft" --email:withSubject "Final"</code> leaves the subject as <code>Final</code>.
+    </p>
     <pre><code class="language-text small">
       sjm
       sjm --help

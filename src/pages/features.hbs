@@ -496,6 +496,11 @@ recipient.withName("Alice").withAddress("alice@example.org")
         certificates from copies with <code>clearingSmimeCertificates()</code>, then replace the email's recipients. See the
         <a href="security.html#section-sending-openpgp">OpenPGP example</a> for the copy-and-replace chain.
       </p>
+      <p>
+        <code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code> and <code>withFixedSmimeCertificate(...)</code>
+        require a non-null certificate. Passing null throws <code>IllegalArgumentException</code> before changing the existing certificate or group policy.
+        Use <code>clearingSmimeCertificate()</code> to remove an individual certificate, or the group clear/reset operations above for their respective behavior.
+      </p>
     </div>
 
     <div class="side">
@@ -1864,7 +1869,8 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
 		  </p>
 		  <p>
 			  Choose by the result you need, not by thoroughness: both full calls perform the same preparation. <code>validate</code> delegates to
-			  <code>rehearse</code> and discards the snapshot; it returns <code>true</code> after success and never returns <code>false</code> for invalid input.
+			  <code>rehearse</code> and discards the snapshot. It returns <code>void</code>: the call returns normally after successful preparation and throws
+			  when preparation fails.
 			  A successful rehearsal has already validated the Email, so do not call <code>validate</code> first.
 		  </p>
 		  <p>
@@ -2136,6 +2142,16 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
         Eager extraction closes each attachment stream it opens, including when reading fails; calendar streams acquired during interpretation
         follow the same rule. This does not close the DataSource itself or a top-level EML stream supplied by your application.
+      </p>
+      <p>
+        If an attachment has neither a filename nor a <code>Content-Type</code> header, conversion uses <code>UnknownAttachment</code> as the fallback
+        filename. Choosing that fallback does not read attachment content, including when attachment fetching is disabled.
+      </p>
+      <p>
+        An unusable <code>Return-Path</code> does not prevent MIME, EML or Outlook import. If no bounce address can be parsed, conversion keeps the
+        original header in <code>Email.getHeaders()</code> and <code>getBounceToRecipient()</code> returns null. For example,
+        <code>Return-Path: (comment only)</code> remains available for inspection while the message body is still readable.
+        This preserves received source data without treating it as a parsed address; it does not change the lenient caller-built recipient contract.
       </p>
       <p>
         A converted delivery notification also exposes an immutable <code>DeliveryStatusReport</code> through the same Email object.
