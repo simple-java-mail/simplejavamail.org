@@ -983,6 +983,9 @@ boolean positiveReply = receipt.getSmtpResponse()
       during conversion, rehearsal or sending. Configuration objects only retain the supplied choices.</p>
     <p>Remove <code>From</code> from the exclusion list. If your code catches configuration errors only around the builder, also handle
       signing failures at the operation that uses it. An asynchronous send reports the failure through its completion handle.</p>
+    <p>DKIM also accepts equivalent capitalization between the sender domain and signing domain, including allowed subdomains.
+      For example, <code>Sender@EXAMPLE.COM</code> can sign with <code>example.com</code>. Keep your existing address and domain
+      configuration; their spelling is preserved, and unrelated domains and the usual DNS key requirements remain unchanged.</p>
   </div></section>
 
   <h2 id="message-snapshots">Stop changing emails through retained lists or arrays</h2>

@@ -600,6 +600,10 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 					Simple Java Mail supports signing with <a href="https://www.endpointdev.com/blog/2014/04/spf-dkim-and-dmarc-brief-explanation/">DKIM</a>
 					domain keys on individual emails or reusable Email defaults/overrides templates.
 				</p>
+                <p>The sender domain must match the signing domain or be one of its subdomains. This comparison ignores capitalization:
+                    <code>Sender@EXAMPLE.COM</code> can use <code>example.com</code>, as can <code>Sender@sales.Example.Com</code>.
+                    The address, its local part and your configured signing domain retain their supplied spelling. The usual DNS key
+                    and signing requirements still apply.</p>
 				<p>
 					Use <code class="inline language-java">dkimPrivateKeyPath(Path)</code>,
 					<code class="inline language-java">dkimPrivateKeyPath(String)</code>, or
