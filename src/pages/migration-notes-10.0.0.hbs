@@ -524,6 +524,11 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       should use <code>clearSmimeSigning()</code> or <code>clearSmimeEncryption()</code>, respectively; <code>clearSmime()</code> removes both.
       A possibly missing configuration needs an explicit application decision rather than silent removal. Optional algorithm nulls still
       select their documented module defaults.</p>
+    <p>The nested configuration setters <code>SmimeSigningConfigBuilder.pkcs12Config(Pkcs12Config)</code> and
+      <code>SmimeEncryptionConfigBuilder.x509Certificate(X509Certificate)</code> also reject null immediately with
+      <code>IllegalArgumentException</code>, keeping earlier material and algorithm preferences. Previously they stored null and
+      <code>build()</code> rejected the missing material later. Handle missing key or certificate lookups before calling these setters;
+      there is no required-material clear operation. Optional algorithm nulls retain their module-default meaning.</p>
     <p>The recipient setters <code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code> and
       <code>withFixedSmimeCertificate(...)</code> likewise reject null before changing the certificate or group policy.
       Use <code>clearingSmimeCertificate()</code> to remove an individual recipient's certificate. For group calls, choose
