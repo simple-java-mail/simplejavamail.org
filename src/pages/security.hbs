@@ -610,6 +610,10 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 					UTF-8 bytes without Base64-decoding it. The <code class="inline language-java">InputStream</code> overload consumes
 					the stream immediately but leaves closing it to the caller.
 				</p>
+				<p>Complete key-material reads for DKIM, S/MIME and PKCS12 report known opening, reading and closing I/O failures as
+                    <code>MailException</code> with kind <code>PREPARATION</code>. The original I/O cause and suppressed closing errors remain available.
+                    Filesystem readers close their own streams; supplied streams remain open for your code to close. This does not perform
+                    cryptographic validation before the feature is used.</p>
 			</div>
 			<div class="side">
 <pre><code class="small">currentEmailBuilder.signWithDomainKey(
