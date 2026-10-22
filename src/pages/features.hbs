@@ -2154,6 +2154,12 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         This preserves received source data without treating it as a parsed address; it does not change the lenient caller-built recipient contract.
       </p>
       <p>
+        Message-level headers, bounce addresses and receipt destinations come from the effective root message after protection processing.
+        An attachment's <code>Return-Path</code> cannot replace the email's bounce address, and its receipt or custom headers do not become
+        parent-message metadata. Conversion still retains the attachment and its established filename, content type, description, ID and encoding.
+        Import an attached message separately when you want to inspect that message's own headers.
+      </p>
+      <p>
         A converted delivery notification also exposes an immutable <code>DeliveryStatusReport</code> through the same Email object.
         Ordinary mail returns <code>null</code>; reports attached to another message are not promoted into its parent's facts.
         <a href="/delivery-reports.html">Read structured delivery feedback</a> without walking MIME parts or interpreting human bounce prose yourself.
