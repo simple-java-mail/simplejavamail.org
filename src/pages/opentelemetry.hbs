@@ -206,15 +206,27 @@ simplejavamail.locked.telemetry.smtp.endpointattributes=false</code></pre>
   <a href="#section-integration" id="section-integration" class="section-link h2">&sect;</a>
   <h2>Spring, CLI and Java agents</h2>
   <section><div class="wide">
-    <p>In Spring, explicitly supply the integration as a bean. The default Mailer uses that bean through the shared configuration path;
-      an OpenTelemetry bean by itself does not activate it. If several integration beans exist, choose a primary one.</p>
-    <pre><code class="language-java">@Bean
-MailSendTelemetry mailTelemetry(OpenTelemetry openTelemetry) {
-    return OtelAdapter.wrap(openTelemetry);
+    <p>In an application already using SJM's Spring integration, enable telemetry with <code>simplejavamail.telemetry.enabled=true</code>
+      or <code>@EnableSjmTelemetry</code>. Independently supply a bean to select the default Mailer's integration:</p>
+    <pre><code class="language-java">import org.simplejavamail.springsupport.EnableSjmTelemetry;
+
+@Configuration
+@EnableSjmTelemetry
+class MailTelemetryConfiguration {
+    @Bean
+    MailSendTelemetry mailTelemetry(OpenTelemetry openTelemetry) {
+        return OtelAdapter.wrap(openTelemetry);
+    }
 }</code></pre>
-    <p>Alternatively, set <code>simplejavamail.telemetry.enabled=true</code> through Spring's Environment to enable all Mailers from that configured
-      factory using the application-global instance. Activation and endpoint permission both have ordinary and locked metadata.
-      Environment precedence, placeholders and configuration diagnostics work as usual.</p>
+    <p>A <code>MailSendTelemetry</code> bean alone does not enable telemetry. An arbitrary OpenTelemetry bean is not discovered by SJM.
+      If several integration beans exist, choose a primary one. Both activation routes apply to all Mailers from the configured factory;
+      enabled Mailers without a supplied integration use the application-global instance. The integration bean belongs to the default Mailer;
+      select it explicitly on fresh builders when needed.</p>
+    <p>Explicit activation properties, including <code>false</code>, override the annotation. Locked values remain authoritative. Activation
+      does not grant endpoint permission or initialize an SDK. Plain Spring still imports <code>SimpleJavaMailSpringSupport</code>; Boot retains
+      its existing auto-configuration and bean backoff. The annotation contributes a fallback only when SJM loads the context's snapshot,
+      preserving application-provided snapshots, factories and Mailers. See <a href="/spring.html#section-spring-telemetry">Spring telemetry activation</a>.
+      Environment precedence, placeholders, configuration diagnostics and ordinary/locked metadata work as usual.</p>
     <p>The generated CLI option <code>--mailer:withMailSendTelemetrySmtpEndpointAttributes true</code> configures permission only.
       It cannot supply a live SDK or turn telemetry on. Use <code>--mailer:withMailSendTelemetryEnabled true</code> or the enabled property
       for activation. The standalone CLI includes the optional module, but no SDK or exporter setup.</p>
