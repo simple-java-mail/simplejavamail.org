@@ -2178,6 +2178,12 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         multipart containers, and the effective root after protection processing, keep that interpretation. Email does not retain arbitrary MIME nesting.
       </p>
       <p>
+        Calendar import recognizes <code>method</code> parameter names and recognized values without regard to capitalization, including quoted
+        MIME parameters. The header's method takes priority over the calendar body's <code>METHOD</code>. A value such as <code>request</code>
+        exposes <code>CalendarMethod.REQUEST</code>, while <code>getCalendarText()</code> retains the received text and its spelling.
+        Missing and unsupported methods keep their existing failure behavior.
+      </p>
+      <p>
         If an attachment has neither a filename nor a <code>Content-Type</code> header, conversion uses <code>UnknownAttachment</code> as the fallback
         filename. Choosing that fallback does not read attachment content, including when attachment fetching is disabled.
       </p>

@@ -39,6 +39,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#attachment-resource-builder">Build advanced attachments with named metadata</a></li>
       <li><a href="#attachment-content-types">Keep attachment Content-Type parameters</a></li>
       <li><a href="#multipart-attachment-import">Keep explicitly attached multipart containers</a></li>
+      <li><a href="#calendar-method-import">Review calendar method import</a></li>
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
@@ -394,6 +395,19 @@ boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
       multipart containers, effective-root selection, protection processing, attached messages and delivery-report ownership retain their
       existing boundaries. Eager and lazy extraction agree on classification and keep their existing stream ownership; exact/protected
       source bytes remain authoritative under their own contracts.</p>
+  </div></section>
+
+  <h2 id="calendar-method-import">Review calendar method import</h2>
+  <section><div class="wide">
+    <p>Earlier versions could reject an otherwise readable calendar when its method value used lowercase or mixed case. Import now recognizes
+      existing method names and values without regard to capitalization: <code>method=request</code> and <code>METHOD="rEqUeSt"</code> expose
+      <code>CalendarMethod.REQUEST</code>. Content-Type parameters follow the MIME grammar, including quoting and whitespace.</p>
+    <p>The conversion calls stay the same. A genuine MIME-header method still takes priority over the calendar body's <code>METHOD</code>,
+      and <code>getCalendarText()</code> retains the original body text. Other parameter names such as <code>x-method</code>, or text such as
+      <code>name="method=REQUEST"</code>, no longer masquerade as the method parameter; without a real method parameter, the body supplies it.</p>
+    <p>Review workarounds that uppercased calendar text before importing it or specifically handled the old case-related failure. Missing and
+      unsupported methods retain their existing failure behavior. Existing blank/malformed-header fallback and leading-method-token recovery
+      remain, while exact/protected source bytes retain their preservation contract.</p>
   </div></section>
 
   <h2 id="grouped-configuration">Move advanced builder settings into configuration groups</h2>
