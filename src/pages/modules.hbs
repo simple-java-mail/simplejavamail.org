@@ -169,8 +169,10 @@ description: "Understand the default Angus provider adapter and choose optional 
     <p>
       Return a non-null <code class="inline language-java">MailTransportResult</code>: use <code>accepted(...)</code> when every submitted recipient was
       accepted, or <code>unknown(...)</code> for an opaque operation that returned normally but cannot report server acceptance. Use
-      <code>failed(...)</code> for a Jakarta Mail submission failure; it copies available recipient groups from <code>SendFailedException</code> and
-      preserves the original exception. If the final acceptance reply was lost after sending the message data, use
+      <code>failed(...)</code> for a Jakarta Mail submission failure; it copies available recipient groups from the first <code>SendFailedException</code>
+      in the standard next-exception chain, with cycle protection, and
+      preserves the original exception. Only actual 4xx/5xx replies establish rejection when recipient facts are unavailable; intermediate or unusable
+      codes leave acceptance unknown, while the raw response remains available for inspection. If the final acceptance reply was lost after sending the message data, use
       <code>failedWithUnknownAcceptance(...)</code>, retaining only recipient facts that remain certain. A lost reply must not become a known rejection
       or trigger an automatic resend. See <a href="analyzing-send-results.html">submission results and failure handling</a>.
     </p>
