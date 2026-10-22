@@ -60,6 +60,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#message-snapshots">Stop changing emails through retained lists or arrays</a></li>
       <li><a href="#operational-snapshots">Configure Mailers through their builders</a></li>
       <li><a href="#header-replacement">Check custom headers that differ only in capitalization</a></li>
+      <li><a href="#empty-custom-headers">Null custom headers produce empty fields</a></li>
       <li><a href="#recipient-equality">Review Email comparisons</a></li>
       <li><a href="#eml-export-failures">Handle content failures during email conversion</a></li>
       <li><a href="#address-only-name">Check names when importing only a recipient address</a></li>
@@ -1034,6 +1035,16 @@ boolean positiveReply = receipt.getSmtpResponse()
       Previously, different capitalization could leave both values in the message.</p>
     <p>If you intended multiple values, add them without the replacement flag. Review templates that depended on capitalization to keep a conflicting
       value. Exact EML submission retains its original bytes.</p>
+  </div></section>
+
+  <h2 id="empty-custom-headers">Null custom headers produce empty fields</h2>
+  <section><div class="wide">
+    <p><code>withHeader("X-Example", null)</code> now produces a present empty header during ordinary conversion, rehearsal and sending,
+      just as <code>withHeader("X-Example", "")</code> does. Previously, null was accepted by the builder but could cause a
+      <code>NullPointerException</code> during validation or rendering.</p>
+    <p>No source change is required. Null does not mean omission: applications that want an absent field should leave it out of their header
+      additions. Stored null metadata, copying and serialization remain unchanged. Existing empty imported headers remain supported,
+      and exact/protected source bytes retain their preservation contract.</p>
   </div></section>
 
   <h2 id="recipient-equality">Review Email comparisons</h2>
