@@ -1848,6 +1848,13 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
       on child headers appearing at the message level, read the correct owning message instead; no method names or arguments change.
     </p>
     <p class="wide">
+      MIME/EML import now recognizes <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> regardless of capitalization.
+      If you read lowercase or mixed-case versions from <code>Email.getHeaders()</code>, use
+      <code>getDispositionNotificationToRecipients()</code> or <code>getReturnReceiptToRecipients()</code> and the corresponding request flag
+      instead. Recognized usable receipt fields follow those typed destinations, preserving mailbox spelling, order and duplicates.
+      Importing sends no receipt; value parsing and exact/protected source bytes retain their existing contracts.
+    </p>
+    <p class="wide">
       OpenPGP inspection adds <code>UNKNOWN</code> for facts that could not be established, including ordinary import without
       <code>openpgp-module</code>. A signature inside undecrypted ciphertext is unknown even when decryption reports a missing key or failure.
       Keep those cases separate from confirmed absence and actual cryptographic failure. These OpenPGP result types are new in the 10.0.0 API;

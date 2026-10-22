@@ -1547,6 +1547,13 @@ Session session = mailer.getSession();
         <code>Return-Receipt-To</code> asks supporting servers or clients for a delivery or read notification, depending on their implementation.
       </p>
       <p>
+        On MIME/EML import, receipt-header names are recognized regardless of capitalization. For example,
+        <code>disposition-notification-to: receipts@example.org</code> populates
+        <code>getDispositionNotificationToRecipients()</code> and its request flag just like <code>Disposition-Notification-To</code>.
+        Only the owning message supplies these destinations; an attachment cannot request a receipt for its parent.
+        Importing mail sends no receipt.
+      </p>
+      <p>
         Simple Java Mail writes the requested headers; the receiving server, mail client or user controls whether a receipt is returned.
         Delivery Status Notification, covered in the next section, is the separate SMTP-level mechanism for delivery status.
       </p>
@@ -2167,6 +2174,9 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         An attachment's <code>Return-Path</code> cannot replace the email's bounce address, and its receipt or custom headers do not become
         parent-message metadata. Conversion still retains the attachment and its established filename, content type, description, ID and encoding.
         Import an attached message separately when you want to inspect that message's own headers.
+        <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> are recognized without regard to their names'
+        capitalization and expose the same ordered destination lists and request flags. Their usable values follow the typed fields
+        rather than also appearing in <code>Email.getHeaders()</code>. Existing blank and unusual value interpretation is unchanged.
       </p>
       <p>
         A converted delivery notification also exposes an immutable <code>DeliveryStatusReport</code> through the same Email object.
