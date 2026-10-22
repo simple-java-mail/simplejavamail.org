@@ -37,6 +37,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#email-construction">Build Email objects through buildEmail()</a></li>
       <li><a href="#email-body-method-names">Use consistent body method names</a></li>
       <li><a href="#attachment-resource-builder">Build advanced attachments with named metadata</a></li>
+      <li><a href="#attachment-content-types">Keep attachment Content-Type parameters</a></li>
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
@@ -361,6 +362,21 @@ emailBuilder.withEmbeddedImage(AttachmentResource.builder()
       explicitly; the removed constructors are not retained as deprecated aliases.
     </p>
   </section>
+
+  <h2 id="attachment-content-types">Keep attachment Content-Type parameters</h2>
+  <section><div class="wide">
+    <p>Attachment conversion now retains valid Content-Type parameters, including <code>charset</code> and format-specific extensions.
+      Earlier versions removed them when rendering an attachment or reading it eagerly or lazily. An attachment supplied as
+      <code>text/plain; charset=ISO-8859-1</code> keeps that encoding instruction with its unchanged bytes.</p>
+    <p>Existing attachment calls stay the same. If your code compares the complete content-type string with a bare type such as
+      <code>text/plain</code>, parse the base type when that is what you mean:</p>
+<pre><code class="language-java">String baseType = new jakarta.mail.internet.ContentType(
+    attachment.getDataSource().getContentType()).getBaseType();
+boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
+    <p>Eager and lazy import retain equivalent type metadata. SJM's selected attachment filename still controls outgoing naming parameters,
+      and malformed or injected header content keeps its existing safe fallback. Exact/protected source bytes retain their existing contract.
+      See <a href="features.html#section-attachments">adding attachments</a> for a character-encoding example.</p>
+  </div></section>
 
   <h2 id="grouped-configuration">Move advanced builder settings into configuration groups</h2>
   <section><div class="wide">
