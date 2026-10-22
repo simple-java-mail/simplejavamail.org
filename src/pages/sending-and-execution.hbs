@@ -583,7 +583,9 @@ try {
 	  </p>
 
 		<div class="wide">
-			<p><strong>Property-defined cluster configs:</strong></p>
+			<p><strong>Property-defined cluster configs:</strong> Use one alias per cluster UUID. A named alias and a direct UUID alias may
+              describe different clusters, but two aliases resolving to the same UUID are rejected during configuration loading.
+              Keep all settings for that cluster under the chosen alias, including locked settings.</p>
 			<pre><code class="language-properties small"># Alias-based config. The alias is only a property-file name; clusterkey.uuid is the actual cluster key.
 simplejavamail.defaults.connectionpool.clusters.orders.clusterkey.uuid=00000000-0000-0000-0000-000000000301
 simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
