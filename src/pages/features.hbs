@@ -1276,6 +1276,12 @@ byte[] content = logo.readAllBytes();</code></pre>
 				option deliberately removes that boundary. Use <code class="inline language-java">embeddedImageAutoResolutionMustBeSuccesful(true)</code>
 				when a missing or blocked image should fail the build instead of remaining in the HTML.
 			</p>
+			<p id="automatic-image-resolution-failure">
+				In the unreleased 10.0.0 line, a failed required-resolution pass leaves the builder's HTML and embedded images as they were
+				before that pass. Correct the HTML or supply the missing source and call <code>buildEmail()</code> again; images resolved before
+				the failure do not accumulate on the draft. Explicitly supplied images, including deliberate duplicates, remain intact.
+				This applies to the image-resolution pass; it does not undo external reads or later failures while constructing the Email.
+			</p>
 		</div>
 
 		<div class="side">
