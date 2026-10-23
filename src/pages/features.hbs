@@ -2180,6 +2180,12 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         Use a MIME parser when you need only the base type, rather than comparing the complete type string to <code>text/plain</code>.
       </p>
       <p>
+        MIME/EML import ignores valid parenthesized comments in body and resource transfer-encoding headers. For example,
+        <code>Content-Transfer-Encoding: base64 (encoded for transport)</code> exposes decoded content and
+        <code>ContentTransferEncoding.BASE_64</code>, just like <code>base64</code>. Conflicting declarations, unsupported encodings and required
+        content-read failures retain their existing failure behavior. Comments do not change attachment-read timing or exact/protected source bytes.
+      </p>
+      <p>
         A child multipart explicitly marked <code>Content-Disposition: attachment</code> remains one attachment with its filename,
         content-type parameters and content. Text and resources inside that attachment do not join the parent email's body or resource lists.
         Ordinary nested body containers still contribute their content, including repeated plain-text and HTML parts. Inline and filename-only
