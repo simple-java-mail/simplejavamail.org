@@ -1,6 +1,6 @@
 ---
 title: "Build a shared enterprise mail service"
-description: "Keep urgent mail ahead of bulk work while coordinating application instances, protection, archive evidence and approved relays."
+description: "Give urgent mail room to send while several application instances share limits, protect messages and keep an archive."
 stack: "Java · PostgreSQL · S/MIME · OpenTelemetry"
 demoSlug: "polar-meridian"
 tacticalScenarios:
@@ -22,7 +22,7 @@ mermaid: true
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-Use Docker Engine/Desktop with Linux containers and Compose 2.24.4 or newer. Allow several GB of disk space and at least 4 GB of Docker memory; brokers and workflow engines may need more. No host JDK, Maven or real mail account is needed.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
 
 Run these commands from that directory:
 
@@ -31,26 +31,26 @@ docker compose -f tools/integration-patterns/polar-meridian/compose.yaml up --bu
 docker compose -f tools/integration-patterns/polar-meridian/compose.yaml run --rm scenario
 ```
 
-Inspect `http://localhost:8787/jobs`, `/attempts`, `/limits` and `/events`. These synthetic loopback-only endpoints are not a public management API. The SMTP fixtures never forward mail; injected notifications are not Internet-delivery evidence.
+Open [the jobs](http://localhost:8787/jobs), [attempts](http://localhost:8787/attempts), [limits](http://localhost:8787/limits) and [events](http://localhost:8787/events) to see what the application recorded. These endpoints are only for inspecting the local demo. Its test SMTP servers keep all mail locally, and the scenario supplies synthetic delivery notifications.
 
-Expect urgent work to complete while bulk work waits, approved A→B→A recovery, matching protected archive bytes and an attention event for the injected result-write failure.
+Expect urgent work to finish while bulk work waits. You should also see the approved relay switch from A to B and back to A, matching bytes in the protected archive, and an event asking for attention when the scenario makes a result write fail.
 
 ## Follow one job
 
-Start at [`PolarMeridianApplication`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/polar-meridian/src/main/java/PolarMeridianApplication.java), where the constructor connects the original Dispatcher to application adapters. Follow [`PolarStorage`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/polar-meridian/src/main/java/PolarStorage.java) into the [original Dispatcher](/assets/journal/articles/polar-meridian/examples/PolarMeridianDispatcher.java), then return to `preparation` and `recordOutcome`. The [JDBC limiter](/assets/journal/articles/polar-meridian/examples/JdbcDispatchLimits.java) owns the shared application allowance; SJM's local sending limit has a different scope.
+Start at [`PolarMeridianApplication`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/polar-meridian/src/main/java/PolarMeridianApplication.java), where the constructor connects the article's Dispatcher to the demo's storage and sending code. Follow [`PolarStorage`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/polar-meridian/src/main/java/PolarStorage.java) into the [original Dispatcher](/assets/journal/articles/polar-meridian/examples/PolarMeridianDispatcher.java), then return to `preparation` and `recordOutcome` to see how a message is prepared and its result saved. The [JDBC limiter](/assets/journal/articles/polar-meridian/examples/JdbcDispatchLimits.java) checks the allowance shared by both instances, while SJM's local limit applies within each factory.
 
-Compare `/jobs`, `/attempts` and `/events` after the scenario. The protected job should have matching archive evidence, while an injected result-write failure produces an attention event. Optional Collector output is a separate exploration below.
+Compare `/jobs`, `/attempts` and `/events` after the scenario. Check that the protected job's archived bytes match the captured message, and look for the event raised when saving a result fails. If you want to explore telemetry too, try the optional Collector setup below.
 
 ## The problem
 
 Several applications share a company's sending infrastructure. Login codes, confirmations and campaigns cannot all consume the same resources without coordination.
 
-The [Polar Meridian case study](/case-studies/polar-meridian.html) explains the design. This executable slice compiles its [existing Dispatcher helpers](/assets/journal/articles/polar-meridian/examples/README.md) unchanged and supplies database/archive adapters. It does not reproduce the fictional company's throughput or provide a production mail platform.
+The [Polar Meridian case study](/case-studies/polar-meridian.html) explains the design. This example uses its [existing Dispatcher helpers](/assets/journal/articles/polar-meridian/examples/README.md) unchanged, adding a database and archive storage so you can run it yourself. It doesn't reproduce the fictional company's throughput or provide a production mail platform.
 
 ```mermaid
 flowchart LR
     accTitle: Shared enterprise dispatch with separate traffic classes
-    accDescr: Two application dispatchers use one database outbox and allowance ledger. Urgent sending can use an approved failover relay; bulk has a separate Mailer. Protected archive and result evidence remain application owned.
+    accDescr: Two application dispatchers use one database outbox and allowance ledger. Urgent sending can use an approved failover relay; bulk has a separate Mailer. The application stores the protected archive and send results.
     jobs["Application requests"] --> db["PostgreSQL outbox + shared allowance"]
     db --> first["Dispatcher 1"]
     db --> second["Dispatcher 2"]
@@ -64,33 +64,33 @@ flowchart LR
 
 ## Urgent mail under bulk load
 
-Two dispatcher instances share PostgreSQL. Assigned urgent, routine and bulk classes have separate polls and Mailers. The scenario queues a bulk backlog while its application allowance is held, then verifies an urgent job can complete.
+Two dispatchers share PostgreSQL, with separate polling and Mailers for urgent, routine and bulk work. The scenario queues a bulk backlog and blocks its shared sending allowance, then checks that an urgent job can still finish.
 
-SJM controls local execution and SMTP resources. The application decides which work is permitted and how shared allowance is divided.
+SJM manages the local workers and SMTP connections. Your application decides which jobs can run and how to divide the allowance shared by both instances.
 
 ## Shared sending limits
 
-The article's JDBC limiter locks and charges a workload row before admission. Both instances consult that ledger. One class cannot spend another's allocation; failover does not create fresh application allowance.
+Before admitting work, the article's JDBC limiter locks the database row for that workload and charges the send against its allowance. Both instances check the same record, so one class of mail can't use another's allocation. Switching to a backup relay doesn't give a job a fresh allowance either.
 
-This is distinct from SJM's factory-local sending rules. The example uses fictional test allocations, not discovered provider quotas or a throughput recommendation.
+SJM's own sending rules apply within a MailerFactory, so they don't replace this shared check. The demo allocations are made up for testing; you'll need to choose limits that fit your provider and workload.
 
 ## Protected archive
 
-The application prepares confidential correspondence with S/MIME, stores encrypted archive data and submits the finalized EML through the exact-message API. The scenario decrypts/verifies protected urgent and bulk messages, comparing their captured bytes with the retained representations.
+For confidential correspondence, the application uses S/MIME, stores an encrypted archive and submits the finalized EML through the exact-message API. The scenario decrypts urgent and bulk messages, verifies their protection and compares the captured bytes with the copies in the archive.
 
-The approved Mailers use the article's factory-locked TLS configuration. The archive key and generated certificate are public development fixtures, not trusted partner identity, production key management or a legal-retention guarantee.
+The Mailers use TLS settings locked by the article's factory configuration. The archive key and generated certificate are public development fixtures. For real correspondence, you'll need to establish partner trust, manage keys securely and decide what your archive must retain.
 
 ## Failover and recovery
 
-The scenario disconnects urgent relay A and refuses new setup there. Approved B can accept untouched work. After A's reconsideration interval, later work returns to A.
+The scenario disconnects urgent relay A and makes new connections to it fail. Untouched work can then go to the approved backup B. After A's reconsideration interval, later jobs use A again.
 
-Normal queue/rate waiting does not trigger failover. Once provider submission begins, connection failover cannot replay that email. Partial or uncertain results need an application decision.
+Waiting for a worker or a sending allowance doesn't trigger failover. Once submission to the provider begins, SJM won't use connection failover to resend that message. If only some recipients were accepted, or the result is uncertain, your application needs to decide what to do.
 
 ## Observation failures
 
-Inject a failed archive-result write and inspect its attention event. SMTP success does not make a failed evidence write successful; missing evidence is not permission to resend.
+Try making the archive-result write fail and look for the event asking for attention. The mail may have been accepted even though saving the result failed, so a missing record isn't enough reason to send it again.
 
-Claims carry ownership tokens. Unresolved claims remain unavailable for automatic replay, including when their original process disappears. Recovery must reconcile them with submission evidence.
+When a dispatcher claims a job, it stores a token that identifies the claim. If that process disappears before recording a result, the job stays unavailable for automatic retry. Check the submission records before deciding how to recover it.
 
 ## OpenTelemetry
 
@@ -101,7 +101,7 @@ docker compose -f tools/integration-patterns/polar-meridian/compose.yaml -f tool
 docker compose -f tools/integration-patterns/polar-meridian/compose.yaml -f tools/integration-patterns/polar-meridian/observability.yaml run --rm scenario
 ```
 
-Inspect Collector traces with `logs collector` and metrics at `http://localhost:8789/metrics`. The application owns the SDK/exporters and closes them after the Mailers. Per-message IDs and recipients are not metric labels.
+You can read Collector traces with `logs collector` and view metrics at `http://localhost:8789/metrics`. The application creates the SDK and exporters and closes them after the Mailers. It keeps message IDs and recipients out of metric labels.
 
 ## Source and cleanup
 

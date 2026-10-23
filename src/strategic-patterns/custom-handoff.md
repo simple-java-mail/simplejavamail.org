@@ -15,7 +15,7 @@ mermaid: true
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-Use Docker Engine/Desktop with Linux containers and Compose 2.24.4 or newer. Allow several GB of disk space and at least 4 GB of Docker memory; brokers and workflow engines may need more. No host JDK, Maven or real mail account is needed.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
 
 Run these commands from that directory:
 
@@ -30,20 +30,20 @@ Open [the handoff results](http://localhost:8787/jobs). A successful job is `HAN
 
 Start at [`HandoffApplication.submit`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/custom-handoff/src/main/java/org/simplejavamail/examples/handoff/HandoffApplication.java). Its normal Mailer call reaches `HandoffTransport.sendMessage`, which packages the prepared MIME in [`HandoffPackage`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/custom-handoff/src/main/java/org/simplejavamail/examples/handoff/HandoffPackage.java). Follow it into [`HandoffReceiver`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/custom-handoff/src/main/java/org/simplejavamail/examples/handoff/HandoffReceiver.java) for verification and storage. Read the HTTPS or RabbitMQ mechanics last; neither changes the role of SJM's preparation.
 
-Compare the successful package with the stored package whose HTTPS confirmation was lost. The latter stays held. `UNKNOWN` SMTP acceptance on a successful callback is honest here: there is no SMTP server. Then try the broker variation.
+Compare a successful package with one stored by the receiver whose HTTPS confirmation was lost. The second job stays on hold because the sender can't tell whether it arrived. Even a successful callback reports `UNKNOWN` for SMTP acceptance, since there's no SMTP server in this example. Once you've checked that, try the broker version.
 
 ## The problem
 
-Your application needs an email-shaped, protected communication, but its destination accepts a REST request, event or file instead of SMTP. Replacing that final step should not require rebuilding MIME and cryptographic processing.
+You need to prepare a signed or encrypted email, but the receiving system expects an HTTPS request, broker message or file. You'd like to keep SJM's MIME and protection work while changing how the result gets there.
 
 ## Non-SMTP handoff
 
-Keep the ordinary Email/Mailer API. SJM applies applicable governance, validation, MIME preparation and protection, then invokes `CustomMailer` with the prepared message. The callback sends an application-defined package to an HTTPS gateway.
+Use the normal Email and Mailer APIs to prepare the message. SJM runs the applicable policy checks, validation, MIME preparation and protection before calling `CustomMailer`. Your callback then packages that prepared message and sends it to the HTTPS gateway.
 
 ```mermaid
 flowchart LR
     accTitle: Prepared mail handed to a non-SMTP destination
-    accDescr: Normal Email and Mailer calls use SJM preparation and protection. CustomMailer delivers MIME and separate envelope metadata to either HTTPS or a broker. The receiving application owns subsequent processing.
+    accDescr: Normal Email and Mailer calls use SJM preparation and protection. CustomMailer delivers MIME and separate envelope metadata to either HTTPS or a broker. The receiving application then processes or stores the package.
     email["Email + Mailer API"] --> prepared["SJM preparation + protection"]
     prepared --> custom["CustomMailer"]
     custom --> gateway["HTTPS gateway"]
@@ -52,21 +52,21 @@ flowchart LR
     broker --> receiver
 ```
 
-No SMTP server is configured or started. The destination may process or retain the package without ever sending email. Those acceptance and processing contracts belong to the application.
+The example doesn't start or configure an SMTP server. The receiver can store or process the package without ever sending email, so you need to define what its acceptance means and what happens afterwards.
 
 ## Protected packages
 
-Serialize the prepared MIME and carry its separate envelope, including hidden recipients, alongside it. Do not serialize Email, Mailer, configuration or private-key objects. Rebuilding MIME from parsed getters would undermine protection and exact-byte contracts.
+Send the prepared MIME bytes alongside the separate envelope data, including hidden recipients. Keep Email, Mailer, configuration and private-key objects out of the package. If you rebuild MIME from parsed fields, you can change the bytes and break the protection you're trying to preserve.
 
-The receiving application decrypts/verifies the synthetic partner message and stores an encrypted copy. Its development certificate and archive key demonstrate mechanics, not production trust.
+The receiver decrypts the synthetic partner message, verifies its signature and stores an encrypted copy. Its development certificate and archive key let you try those steps locally. You'll need your own way to establish trust and manage keys for real partners.
 
 ## Choose the destination
 
-The primary destination is HTTPS with certificate/hostname verification. The RabbitMQ variation uses confirmed persistent publication and an independent consumer. Storage or SFTP can use the same callback boundary; those additional implementations are not included here.
+Start with the HTTPS version, which checks the server's certificate and hostname. The RabbitMQ version publishes persistent messages with confirmation, then processes them in a separate consumer. You could use the same callback for storage or SFTP, though those implementations aren't included.
 
-Gateway acceptance is not SMTP acceptance. Broker confirmation is not consumer completion. SJM reports `UNKNOWN` SMTP acceptance because it cannot inspect an external service's sending behavior. Ambiguous handoff failures are held; inspect evidence and use the destination's explicit idempotency contract before retrying.
+An HTTPS response tells you the gateway accepted the package, while a broker confirmation tells you it was published. Neither proves that a consumer finished processing it or that an SMTP server accepted any mail. SJM therefore reports `UNKNOWN` for SMTP acceptance. If the handoff fails ambiguously, leave it on hold and check the receiver's records and duplicate-handling rules before retrying.
 
-This gateway rejects requested DSN, onward TLS and recipient-rejection semantics instead of pretending it implements them. A real integration must map each supported requirement or reject it clearly.
+The demo gateway rejects requests for DSNs, onward TLS or recipient-rejection behavior because it doesn't implement them. When building your own integration, decide how each requested feature maps to the destination and reject any you can't support.
 
 The scenario checks protection, hidden-envelope recipients, duplicate requests, rejected packages and stored packages whose confirmation was lost:
 
@@ -84,7 +84,7 @@ docker compose -f tools/integration-patterns/custom-handoff/compose.yaml -f tool
 
 ## Source and cleanup
 
-[Download the examples](/assets/guides/integration-patterns/strategic-patterns.zip). The [source README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/custom-handoff) describes the gateway contract; the [workbench notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) describe resources and verification. This is application integration, not another SJM transport SPI.
+[Download the examples](/assets/guides/integration-patterns/strategic-patterns.zip). The [source README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/custom-handoff) describes the gateway contract; the [workbench notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) describe resources and verification. You implement the handoff in your application with CustomMailer.
 
 ```text
 docker compose -f tools/integration-patterns/custom-handoff/compose.yaml down --volumes --remove-orphans

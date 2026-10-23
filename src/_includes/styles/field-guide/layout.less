@@ -11,9 +11,27 @@
 .field-guide-rail li + li { margin-top: @space-sm; }
 .field-guide-rail li a { display: block; color: @steel; font-size: 0.85rem; text-decoration: none; }
 .field-guide-rail li a:hover { color: @teal-deep; }
+.field-guide-rail li a.is-active { color: @teal-deep; font-weight: 600; }
 .field-guide-directory-return { font-family: @font-mono; font-size: 0.7rem; }
 .field-guide-content { min-width: 0; }
 .field-guide-content > h2 { padding-top: @space-lg; border-top: 2px solid @teal; }
+
+// Inside the docs frame, the topic rail forms a second navigation column.
+// Keep the standalone layout above available to Strategic Patterns.
+.docs-page .field-guide-hero { padding-top: 0; }
+.docs-page .field-guide-hero > .shell,
+.docs-page .field-guide-directory,
+.docs-page .field-guide-grid { width: 100%; max-width: none; margin-inline: 0; }
+.docs-page .field-guide-grid { grid-template-columns: 180px minmax(0, 1fr); gap: @space-lg; }
+.docs-page .field-guide-rail { max-height: calc(100dvh - @header-h - @space-2xl); overflow-y: auto; }
+.docs-page .field-guide-directory-grid { grid-template-columns: minmax(0, 1fr); }
+
+@media (max-width: 1100px) {
+  .docs-page .field-guide-grid { grid-template-columns: minmax(0, 1fr); }
+  .docs-page .field-guide-rail { position: static; max-height: none; overflow: visible; }
+  .docs-page .field-guide-rail ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: @space-sm; }
+  .docs-page .field-guide-rail li + li { margin: 0; }
+}
 
 @media (max-width: 1000px) {
   .field-guide-grid { grid-template-columns: minmax(0, 1fr); max-width: @reading; gap: @space-xl; }
@@ -24,6 +42,7 @@
 @media (max-width: 600px) {
   .field-guide-grid { margin-block: @space-xl; }
   .field-guide-rail ul { grid-template-columns: minmax(0, 1fr); }
+  .docs-page .field-guide-rail ul { grid-template-columns: minmax(0, 1fr); }
   .field-guide-content h2 { font-size: 1.9rem; }
   .field-guide-content h3 { font-size: 1.5rem; }
 }

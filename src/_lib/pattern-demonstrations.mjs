@@ -41,7 +41,7 @@ export const patternDemonstrations = z.array(topic).parse([
   ] },
   { id: "delivery-reports", title: "Reading delivery reports", reference: "/delivery-reports.html", demonstrations: [
     { pattern: "incoming-feedback", section: "delivery-reports-into-application-data", label: "Turn a notification into an HTTP integration", scenario: "incoming-feedback" },
-    { pattern: "mail-workflow", section: "inspect-the-failure-not-just-the-happy-path", label: "Feed later mail facts into a workflow", scenario: "mail-workflow" },
+    { pattern: "mail-workflow", section: "try-a-send-where-the-reply-goes-missing", label: "Feed mail feedback into a workflow", scenario: "mail-workflow" },
   ] },
 ]);
 

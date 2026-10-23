@@ -6,6 +6,16 @@ layout: "layouts/marketing.hbs"
     {{> breadcrumbs}}
     <h1 id="pattern-title">{{title}}</h1>
     <p class="hero-lede">{{description}}</p>
+    <nav class="pattern-start-options" aria-label="Choose where to start">
+      <a class="pattern-start-option" href="#start-here">
+        <strong>Run the example <span aria-hidden="true">↓</span></strong>
+        <span>Get it running locally, then follow a job through the code.</span>
+      </a>
+      <a class="pattern-start-option" href="#the-problem">
+        <strong>Understand the problem <span aria-hidden="true">↓</span></strong>
+        <span>See what this pattern solves before you try it.</span>
+      </a>
+    </nav>
     {{> components/pattern-stack stack=stack stackLinks=true}}
   </div>
 </header>

@@ -12,6 +12,9 @@
       {{> docs-sidebar}}
 
       <main id="main-content" class="docs-content" data-pagefind-body>
+        {{#if customDocsContent}}
+          {{{content}}}
+        {{else}}
         {{> breadcrumbs}}
         <header class="doc-hero">
           {{#if section}}<p class="eyebrow">{{section}}</p>{{/if}}
@@ -31,6 +34,7 @@
         <article class="legacy-doc-content">
           {{{content}}}
         </article>
+        {{/if}}
 
         <nav class="doc-next" aria-label="Documentation next steps">
           <a href="/docs.html">

@@ -35,6 +35,27 @@ test("every directory group and scenario resolves to its own matching heading", 
   assert.doesNotMatch(html, /field-guide-check|Try it:/);
 });
 
+test("Tactical Patterns uses the docs frame with one title and both navigation rails", () => {
+  const layout = readFileSync(new URL("../src/_includes/layouts/field-guide.hbs", import.meta.url), "utf8");
+  assert.match(layout, /layout: "layouts\/base.hbs"/);
+  assert.match(layout, /customDocsContent: true/);
+  const handlebars = Handlebars.create();
+  for (const name of ["head", "site-header", "footer", "breadcrumbs"]) handlebars.registerPartial(name, "");
+  handlebars.registerPartial("docs-sidebar", '<aside class="docs-sidebar">Documentation navigation</aside>');
+  handlebars.registerHelper("fieldGuideSections", fieldGuideSections);
+  const content = handlebars.compile(layout.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, ""))({
+    title: "Tactical Patterns", description: "Patterns", ...directory, content: html,
+  });
+  const base = readFileSync(new URL("../src/_includes/layouts/base.hbs", import.meta.url), "utf8");
+  const result = handlebars.compile(base)({ title: "Tactical Patterns", customDocsContent: true, content });
+  assert.match(result, /class="docs-page"/);
+  assert.match(result, /class="docs-sidebar"/);
+  assert.match(result, /class="journal-entry-toc"/);
+  assert.match(result, /class="journal-prose field-guide-content"/);
+  assert.equal((result.match(/<h1\b/g) || []).length, 1);
+  assert.doesNotMatch(result, /legacy-doc-content/);
+});
+
 test("directory validation rejects ambiguous anchors and missing scenario targets", () => {
   const valid = { title: "Guide", description: "Workload patterns", ...directory };
   assert.doesNotThrow(() => guideData.eleventyDataSchema(valid));
@@ -150,18 +171,20 @@ test("the Docs dropdown offers one combined Patterns link without badge headings
 test("the docs sidebar gives Patterns a home and retains direct access to both collections", () => {
   const handlebars = Handlebars.create();
   handlebars.registerHelper("eq", (left, right) => left === right);
-  handlebars.registerHelper("docsActiveClass", (url, current, parent) => url === current || url === parent ? "is-active" : "");
+  handlebars.registerHelper("docsActiveClass", createTemplateHelpers().docsActiveClass);
   const nav = JSON.parse(readFileSync(new URL("../src/_data/nav.json", import.meta.url), "utf8"));
   const render = handlebars.compile(readFileSync(new URL("../src/_includes/docs-sidebar.hbs", import.meta.url), "utf8"));
   for (const [url, parent, activeLabel] of [
     ["/email-workload-field-guide.html", "/patterns.html", "Tactical Patterns"],
     ["/strategic-patterns.html", "/patterns.html", "Strategic Patterns"],
-    ["/patterns/transaction-outbox.html", "/strategic-patterns.html", "Strategic Patterns"],
+    ["/patterns/transaction-outbox.html", "/strategic-patterns.html", null],
+    ["/sending-and-execution.html", "/configuration.html", "Sending and execution"],
   ]) {
     const menu = render({ nav, page: { url }, breadcrumbParent: parent });
     assert.equal((menu.match(/>Tactical Patterns<\/a>/g) || []).length, 1);
     assert.equal((menu.match(/>Strategic Patterns<\/a>/g) || []).length, 1);
-    assert.match(menu, new RegExp(`class="is-active">${activeLabel}</a>`));
+    const activeLabels = [...menu.matchAll(/class="is-active">([^<]+)<\/a>/g)].map((match) => match[1]);
+    assert.deepEqual(activeLabels, activeLabel ? [activeLabel] : []);
     assert.match(menu, /<a href="\/patterns.html"[^>]*>Patterns<\/a>\s*<ul class="docs-nav-children">\s*<li><a href="\/email-workload-field-guide\.html"[^>]*>Tactical Patterns<\/a><\/li>\s*<li><a href="\/strategic-patterns\.html"[^>]*>Strategic Patterns<\/a><\/li>\s*<\/ul>/);
     assert.doesNotMatch(menu, /pattern-badge|pattern-navigation/);
     assert.ok(menu.indexOf('href="/use-cases.html"') < menu.indexOf('href="/email-workload-field-guide.html"'));

@@ -6,6 +6,13 @@
 .strategic-pattern-hero h1 { max-width: 24ch; font-size: clamp(2.3rem, 4.5vw, 3.5rem); }
 .strategic-pattern-hero .hero-lede { max-width: 62ch; font-size: 1.1rem; }
 
+.pattern-start-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: @space-md; max-width: @reading; margin-top: @space-lg; }
+.pattern-start-option { display: flex; flex-direction: column; gap: @space-xs; padding: @space-md; border: 1px solid @line; background: @surface; color: @ink; text-decoration: none; }
+.pattern-start-option strong { display: flex; justify-content: space-between; gap: @space-sm; font-size: 1.1rem; }
+.pattern-start-option > span { color: @steel; font-size: 0.95rem; line-height: 1.5; }
+.pattern-start-option:hover { border-color: @teal; background: @teal-tint; }
+.pattern-start-option:focus-visible { .focus-ring(); }
+
 .pattern-index-jumps { display: flex; flex-wrap: wrap; gap: @space-sm @space-lg; margin-block: @space-lg; }
 .pattern-cards { display: grid; gap: @space-md; list-style: none; margin-top: @space-lg; }
 .legacy-doc-content .pattern-cards { max-width: none; padding: 0; }
@@ -58,6 +65,7 @@ a.pattern-technology:hover { color: @ink; text-decoration: underline; }
   .strategic-pattern-rail ul { overflow: visible; }
 }
 @media (max-width: 760px) {
+  .pattern-start-options { grid-template-columns: 1fr; }
   .strategic-pattern-cards, .pattern-collection-cards { grid-template-columns: 1fr; }
   .pattern-technology-index dl > div { grid-template-columns: 1fr; gap: 0; }
 }

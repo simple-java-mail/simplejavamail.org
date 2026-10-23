@@ -20,7 +20,7 @@ mermaid: true
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-Use Docker Engine/Desktop with Linux containers and Compose 2.24.4 or newer. Allow several GB of disk space and at least 4 GB of Docker memory; brokers and workflow engines may need more. No host JDK, Maven or real mail account is needed.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
 
 Run these commands from that directory:
 
@@ -41,20 +41,20 @@ Expect ordinary jobs to reach `SUBMITTED`, with partial or uncertain attempts he
 
 ## Follow one job
 
-Begin at [`RelayDeskApplication.enqueue`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/relaydesk/src/main/java/RelayDeskApplication.java), then follow `dispatchNext`, `submit` and `recordOutcome` in that file. Read `TenantRoute.replace` next: it pauses one customer while replacing that customer's Mailer. The [original article helpers](/assets/journal/articles/relaydesk/examples/RelayDeskMailExamples.java) remain unchanged; this application gives those helpers a concrete database and tenant boundary.
+Begin at [`RelayDeskApplication.enqueue`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/relaydesk/src/main/java/RelayDeskApplication.java), then follow `dispatchNext`, `submit` and `recordOutcome` in the same file. Next, read `TenantRoute.replace` to see how it pauses one customer while replacing their Mailer. The application uses the [original article helpers](/assets/journal/articles/relaydesk/examples/RelayDeskMailExamples.java) unchanged, adding a database and separate routes for each customer.
 
 Inspect A's job evidence after the scenario. A bad password replacement should leave only A paused while B still completes; a later valid replacement resumes A. The command uses development tokens, not production authentication.
 
 ## The problem
 
-A support platform sends on behalf of several customers. Their servers, credentials and limits differ. A stalled customer must not block another, and replacing a password must not strand admitted work.
+Your support platform sends mail through each customer's own server. When one server stalls, the other customers still need to send. You also need to replace credentials without losing work that's already been accepted for sending.
 
-The [RelayDesk case study](/case-studies/relaydesk.html) tells the story. Its [original helpers](/assets/journal/articles/relaydesk/examples/README.md) remain useful independently. This Docker application is an additional exploration path, not a replacement for the article or a production multi-tenant service.
+The [RelayDesk case study](/case-studies/relaydesk.html) explains that setup, and you can use its [original helpers](/assets/journal/articles/relaydesk/examples/README.md) on their own. This Docker application gives you a way to try the ideas with a database and test servers, though it isn't a production service for multiple customers.
 
 ```mermaid
 flowchart LR
     accTitle: Separate customer sending routes
-    accDescr: Application-owned authorization and durable dispatch select the approved Mailer for each tenant. Independent Mailers connect to separate synthetic SMTP servers; result evidence returns to the tenant's database records.
+    accDescr: The application checks each customer's access and selects their approved Mailer. Separate Mailers connect to separate test SMTP servers, and the application saves each result with that customer's jobs.
     requests["Customer requests"] --> app["Authorization + durable dispatch"]
     app --> a["Tenant A Mailer"] --> smtpA["Tenant A SMTP"]
     app --> b["Tenant B Mailer"] --> smtpB["Tenant B SMTP"]
@@ -64,35 +64,33 @@ flowchart LR
 
 ## Tenant isolation
 
-The registry supplies approved hosts, credentials and sender defaults. Requests cannot choose arbitrary SMTP settings. A synthetic tenant token cannot select another tenant's route or inspect its jobs.
+Each customer's approved host, credentials and sender defaults come from a registry, so a request can't choose arbitrary SMTP settings. The demo uses a separate token per customer to keep requests on their own route and prevent access to another customer's jobs.
 
-PostgreSQL records the attempt before the unchanged article helper submits it. The result observer updates its evidence. The scenario holds tenant A at a server barrier and proves tenant B can complete independently.
+Before the article helper sends a message, the application records the attempt in PostgreSQL. A result observer then saves the outcome. To check that customers can make progress independently, the scenario stalls customer A at its server while customer B completes a send.
 
-The public development tokens make this test inspectable. Production authentication, destination approval, DNS/egress restrictions and authorization remain application responsibilities.
+You can use the public development tokens to inspect the demo. For a real service, you'll need authentication and authorization, a way to approve destinations, and restrictions on DNS resolution and outgoing connections.
 
 ## Fair turns and route replacement
 
-Separate bounded execution and local sending limits prevent one tenant from consuming another's workers. These are not distributed provider quotas.
+Each customer gets separate workers and local sending limits, so one can't use up another's workers. If you also need to enforce a provider quota across several application instances, you'll need a shared limit.
 
-Password replacement pauses the affected tenant, drains admitted sends, closes the old Mailer, constructs and probes its replacement, then resumes. An unsuccessful check leaves the route paused. Other tenants continue.
+When you replace a password, the application pauses that customer's route and lets admitted sends finish. It closes the old Mailer, builds and checks the replacement, then resumes sending if the check succeeds. If it fails, that customer stays paused while the others continue.
 
-The finite registry and replacement scenario do not establish that unlimited customer churn is safe. A real platform needs its own registry capacity and retirement policy.
+This demo replaces credentials for a fixed set of customers. If your service continually adds and removes customers, you'll also need to limit registry size and retire routes that are no longer used.
 
 ## Inspect the evidence
 
-The scenario checks tenant boundaries, independent progress, duplicate input, credential replacement and partial/uncertain results. An unsuccessful
-credential check pauses only that tenant; a valid replacement resumes its work. Injected delivery-report correlation cannot cross tenant boundaries.
-Abbreviated output:
+The scenario checks that customers can't access each other's jobs or delivery reports, and that each can keep sending while the other is stalled. It also tries duplicate input, credential replacement, and partial or uncertain SMTP results. A bad password leaves only that customer's route paused until a valid replacement is supplied. Here's part of the output:
 
 ```json
 {"pattern":"relaydesk","tenantIsolation":true,"fairTurns":true,"credentialRevision":3,"oldRouteRetired":true,"partialAndUnknownHeld":true}
 ```
 
-This is application evidence. SMTP acceptance is not final delivery. Partial or uncertain attempts are held; missing result evidence also needs reconciliation, not blind replay.
+These results show what the application observed, rather than whether mail reached its final destination. It leaves partial or uncertain submissions on hold. If saving a result fails, check what happened before deciding to resend.
 
 ## Source and cleanup
 
-[Download the examples](/assets/guides/integration-patterns/strategic-patterns.zip). The [source README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/relaydesk) records endpoints and ownership. The [workbench notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) cover resource, image, licensing and verification boundaries.
+[Download the examples](/assets/guides/integration-patterns/strategic-patterns.zip). The [source README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/relaydesk) lists the endpoints and explains how customer access is checked. The [workbench notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) cover resource requirements, container images, licensing and what has been tested.
 
 ```text
 docker compose -f tools/integration-patterns/relaydesk/compose.yaml down --volumes --remove-orphans

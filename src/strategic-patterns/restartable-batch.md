@@ -1,6 +1,6 @@
 ---
 title: "Resume an interrupted nightly run"
-description: "Restart the untouched remainder while preserving evidence of emails already accepted or left uncertain."
+description: "Pick up the remaining work after a restart without resending mail that was accepted or still needs checking."
 stack: "Spring Batch · PostgreSQL"
 demoSlug: "restartable-batch"
 tacticalScenarios:
@@ -16,7 +16,7 @@ permalink: "/patterns/restartable-batch.html"
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-Use Docker Engine/Desktop with Linux containers and Compose 2.24.4 or newer. Allow several GB of disk space and at least 4 GB of Docker memory; brokers and workflow engines may need more. No host JDK, Maven or real mail account is needed.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
 
 Run these commands from that directory:
 
@@ -25,7 +25,7 @@ docker compose -f tools/integration-patterns/restartable-batch/compose.yaml up -
 docker compose -f tools/integration-patterns/restartable-batch/compose.yaml run --rm scenario restart
 ```
 
-Open [the application's job evidence](http://localhost:8787/jobs) and [the fixture's capture summary](http://localhost:8788/stats). These links only work while your local demo is running. The first build downloads images and dependencies; later runs reuse the cache. Run one pattern at a time, or choose other loopback ports using `PATTERN_PORT` and `PATTERN_SMTP_PORT`.
+Once the demo is running, open [the job records](http://localhost:8787/jobs) and [the test server's capture summary](http://localhost:8788/stats) to compare what the application recorded with what the server received. The first build downloads images and dependencies, which Docker caches for later runs. If you want to run more than one pattern at once, choose different local ports with `PATTERN_PORT` and `PATTERN_SMTP_PORT`.
 
 Expect two submissions before interruption and five after resumption, not seven. The scenario checks both stored jobs and the SMTP capture count.
 
@@ -41,46 +41,50 @@ A nightly run stops after submitting two emails. Restarting the whole input coul
 
 ## Where Simple Java Mail helps
 
-Spring Batch owns job and step metadata. The application separately commits each submission guard and its resulting receipt facts. A restarted reader selects only untouched ready jobs, rather than assuming SMTP rolled back with the chunk.
+Spring Batch keeps track of jobs and steps, while the application saves each send attempt and its SMTP result in separate commits. After a restart, the reader picks up only jobs that haven't been attempted. It doesn't assume a rolled-back batch chunk also rolled back the email.
 
-The batch framework owns restart and chunk processing. The application's independently committed evidence protects the SMTP boundary. A completed batch means work was processed, not that every recipient received mail.
+That lets Spring Batch handle chunks and restarts without sending the same messages again. A completed batch still only tells you the work was processed; it doesn't tell you that every recipient received their mail.
 
 The [submission-receipt walkthrough](/analyzing-send-results.html) and [Reading delivery reports](/delivery-reports.html) explain the mail APIs used here.
 
-## Inspect the failure, not just the happy path
+<span id="inspect-the-failure-not-just-the-happy-path" aria-hidden="true"></span>
 
-The scenario sends happy, partially accepted and uncertain submissions, repeats business input and injects a delayed notification. It checks database evidence and actual SMTP content submissions rather than simply checking that a Java call returned.
+## Try a send where the reply goes missing
+
+The scenario tries successful sends, sends accepted for only some recipients, and sends where the final reply goes missing. It also repeats the input and supplies a delayed delivery notification. You can compare the database records with the messages captured by the test server to see what actually happened.
 
 ```json
 {"scenario":"unknown","state":"HELD","submission":"UNKNOWN","smtpSubmissions":1,"duplicateSuppressed":true}
 ```
 
-*Abbreviated application evidence after the fixture accepted content but deliberately lost the final SMTP reply.*
+*Part of the result after the test server accepted the message but deliberately dropped its final SMTP reply.*
 
-Run the additional `restart` scenario: it deliberately fails after two committed submissions, restarts the same job and checks that exactly five messages, not seven, were submitted. Ambiguous `SENDING` attempts are held after process restart, not silently resent.
+The `restart` scenario stops after two committed submissions, then restarts the same job. It checks for five submissions in total, rather than seven from sending the first two again. If a process restart leaves a job in `SENDING` with no clear result, the application puts it on hold for review.
 
 ```text
 docker compose -f tools/integration-patterns/restartable-batch/compose.yaml run --rm scenario restart
 ```
 
-*Interrupt after two submissions, resume the remainder and assert zero duplicates.*
+*Stop after two submissions, then check that resuming sends only the remaining messages.*
 
-## Keep the boundary honest
+<span id="keep-the-boundary-honest" aria-hidden="true"></span>
 
-Run this framework example as one application instance. Its startup scan assumes the previous process has stopped before it holds unfinished `SENDING` records. It must not run beside another live copy against the same database. [Polar Meridian](/patterns/polar-meridian.html) demonstrates the separate claim-ownership work needed for two instances.
+## Before you adapt this example
 
-The fixture never sends Internet mail. Notifications are explicitly injected synthetic DSNs, not observed downstream deliveries. A successful submission is not proof of final delivery, and no database, broker or workflow transaction can make SMTP exactly-once. Hold partial or uncertain acceptance for an application decision; do not blindly replay the original email.
+Run just one copy of this application against its database. At startup, it puts unfinished `SENDING` jobs on hold, assuming the previous process has stopped. Running a second copy could put the first copy's active jobs on hold too. If you need two instances, [Polar Meridian](/patterns/polar-meridian.html) shows how to track which instance claimed each job.
 
-Report fields are received claims. Production receivers need trusted ingress, correlation and duplicate/out-of-order handling before changing customer or business state. Workflow/broker payloads should be application DTOs, not serialized Email, Mailer or private-key objects.
+All mail stays in the local test server, and the delivery notifications are synthetic DSNs supplied by the scenario. Even with a real server, SMTP acceptance wouldn't tell you whether the message reached its final destination. A database transaction, broker or workflow can't make SMTP exactly-once, so leave partial or uncertain submissions on hold until you can decide whether a retry is safe.
+
+Before using a delivery report to update customer records, check where it came from and which send it belongs to. You'll also need to handle duplicates and reports that arrive out of order. When passing data to a broker or workflow, use your own small DTOs rather than serializing Email, Mailer or private-key objects.
 
 ## Source, resources and cleanup
 
-[Download the canonical example sources](/assets/guides/integration-patterns/strategic-patterns.zip) and extract them into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/restartable-batch) explain this pattern; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) records resource, image, licensing and architecture boundaries.
+[Download the canonical example sources](/assets/guides/integration-patterns/strategic-patterns.zip) and extract them into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/restartable-batch) explain this pattern; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resource requirements, container images, licensing and supported architectures.
 
-Reserve several GB of disk and at least 4 GB of Docker memory, with more headroom for brokers/workflow engines. Pinned image manifests are not a claim that every CPU architecture was tested. These local development examples need no paid service or cloud account; framework production licensing still applies.
+The memory and disk requirements above are a starting point; brokers and workflow engines may need more. The examples pin their container images, but haven't been tested on every CPU architecture. You don't need a paid service or cloud account to run them locally. Check each framework's licensing before using it in production.
 
 ```text
 docker compose -f tools/integration-patterns/restartable-batch/compose.yaml down --volumes --remove-orphans
 ```
 
-*Delete only this Compose project's demo data. Omit `--volumes` to retain it; never use a global Docker prune.*
+*This removes the demo data for this Compose project. Leave out `--volumes` if you want to keep it, and avoid a global Docker prune that could remove unrelated work.*

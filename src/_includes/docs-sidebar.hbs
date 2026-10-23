@@ -15,14 +15,14 @@
             {{#each items}}
               <li>
                 {{#if this.url}}
-                  <a href="{{this.url}}" class="{{docsActiveClass this.url @root.page.url @root.breadcrumbParent}}">{{title}}</a>
+                  <a href="{{this.url}}" class="{{docsActiveClass this.url @root.page.url}}">{{title}}</a>
                 {{else}}
                   <span class="docs-nav-label">{{title}}</span>
                 {{/if}}
                 {{#if children}}
                   <ul class="docs-nav-children">
                     {{#each children}}
-                      <li><a href="{{this.url}}" class="{{docsActiveClass this.url @root.page.url @root.breadcrumbParent}}">{{title}}</a></li>
+                      <li><a href="{{this.url}}" class="{{docsActiveClass this.url @root.page.url}}">{{title}}</a></li>
                     {{/each}}
                   </ul>
                 {{/if}}
