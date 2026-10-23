@@ -92,6 +92,10 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
         submission receipt and still propagate to the caller. Connection acquisition and exhausted failover routes also fail without a receipt.
         A provider-internal preflight failure can have a receipt without a server response; receipt presence alone does not prove an SMTP command was reached.
       </p>
+      <p id="local-envelope-preparation-failures">In the unreleased 10.0.0 line, local MIME/envelope preparation failures use <code>MailFailureKind.PREPARATION</code> and have
+        no submission receipt, even if a connection has already been acquired. For example, a raw recipient header can make the final envelope
+        disagree with typed per-recipient notification settings. Ordinary and retry-enabled sends report that same local failure consistently,
+        and the terminal observer agrees with the caller. Genuine provider compatibility results retain their separate receipt behavior.</p>
       <p>
         The snippets below reuse a configured <code>mailer</code> and an <code>email</code>, and omit imports. <code>printReceipt</code> is a small
         application method defined in the next example, not another Simple Java Mail API.

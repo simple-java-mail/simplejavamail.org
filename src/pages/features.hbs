@@ -2255,6 +2255,12 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         and <code class="inline language-text">Resent-*</code>, along with obsolete structural metadata, are omitted.
         See the <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/core-module/src/main/java/org/simplejavamail/api/internal/general/HeadersToIgnoreWhenParsingExternalEmails.java">complete filtered-header list</a>.
       </p>
+      <p id="undecodable-optional-headers">
+        In the unreleased 10.0.0 line, an optional generic header whose encoded-word charset is unavailable retains its undecoded source text,
+        with legal folding safely unfolded, so neighboring fields and readable content remain available. This does not guess missing characters
+        or relax required content decoding and outgoing validation. Importing an Email does not by itself promise that it can be sent;
+        use <code>mailer.rehearse(email)</code> to prepare and validate it against the selected Mailer before submission.
+      </p>
 	  <p>
 		  If those original bytes must remain authoritative rather than editable, use <a href="#section-exact-eml">exact EML submission</a> instead of
 		  converting and resending the parsed result.
@@ -2319,6 +2325,9 @@ Email protectedEmail = mail.converter()
       <p>For received OpenPGP mail, <code>getVerificationKeyRings()</code> and <code>getDecryptionKeyRings()</code> return editable copies of the stored
         lists. Remove just one set with <code>clearVerificationKeyRings()</code> or <code>clearDecryptionKeyRings()</code>.
         <code>clearPassphraseProvider()</code> returns to the passphrases supplied with the decryption keys. Inspecting the provider never calls it.</p>
+      <p id="openpgp-receive-draft-validation">In the unreleased 10.0.0 line, both receive-key lists can retain unfinished empty key bytes while building and inspecting choices.
+        Required null arguments fail immediately; <code>build()</code> rejects empty keys in either list. Inspection returns detached data and
+        performs no cryptographic interpretation. Completed configurations and earlier inspection results retain their own snapshots.</p>
       <p>The signing and encryption builders likewise expose their stored key material and algorithm choices.
         <code>clearSigningKeyId()</code> returns to automatic signing-key selection; <code>clearRecipientPublicKeyRings()</code> removes encryption keys
         without changing the cipher. Supply replacement encryption keys before building. Algorithm reset methods restore the documented library defaults.</p>
@@ -2332,6 +2341,10 @@ Email protectedEmail = mail.converter()
         The converted email keeps only meaningful email headers; structural Outlook source headers stay available through
         <code class="inline language-java">OutlookMessageData</code>.
       </p>
+      <p id="outlook-receipt-header-names">In the unreleased 10.0.0 line, Outlook receipt fields use the same case-insensitive name recognition as
+        MIME/EML: <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> supply their typed destination lists regardless of
+        capitalization. Static and fluent imports, builder/data results and nested Outlook conversion share this interpretation; values,
+        destination order, duplicates and unrelated header spelling retain their existing behavior.</p>
     </div>
 
     <div class="side">

@@ -1330,6 +1330,9 @@ OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
 					For a larger key store, use <code class="inline language-java">passphraseProvider(...)</code> to resolve a passphrase by key ID instead of
 					attaching one to every configured secret key ring.
 				</p>
+				<p id="receive-key-draft-validation">In the unreleased 10.0.0 line, verification and decryption setters copy non-null key material and allow unfinished empty bytes
+					while configuring the builder. Getters inspect detached choices without invoking the passphrase provider; <code>build()</code>
+					rejects empty keys in either list. This is configuration-shape validation; the optional module still owns cryptographic interpretation.</p>
 			</div>
 			<div class="side">
 <pre><code class="language-java">OpenPgpReceiveConfig receive = OpenPgpReceiveConfig.builder()
