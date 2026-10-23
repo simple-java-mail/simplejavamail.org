@@ -187,6 +187,10 @@ mail.mailerBuilder(session)
       <p>An explicit empty Java string remains a supplied choice and follows that setting's validation or clearing rules.
         It does not restore a captured value. This differs from blank entries in property sources, which are treated as absent.
         Use the named clear or <code>useConfigured...</code> operation to express either intent explicitly.</p>
+      <p id="explicit-connection-clears">In the unreleased 10.0.0 line, an explicit hostname or local-bind clear removes the corresponding
+        unlocked direct Jakarta Mail property, including a captured raw extra-property overlay. <code>clearLocalBindAddress()</code> removes
+        both address and port; the member-specific port clear removes only the port. Unset choices inherit, <code>useConfigured...</code>
+        restores captured configuration, and resets select library defaults. Mandatory locks and caller-Session inherited-property limits still apply.</p>
       <p><code>ConnectionConfig.Builder.withSessionTimeout(...)</code> sets connect, read and write timeouts together.
         Use <code>withConnectTimeout(...)</code>, <code>withReadTimeout(...)</code> or <code>withWriteTimeout(...)</code> to adjust one operation.
         The last setter affecting an operation wins; see the <a href="#socket-timeouts">timeout examples and precedence</a>.</p>
@@ -1335,6 +1339,10 @@ mail.mailerBuilder().withSMTPServerHost("another-relay.example.org").buildMailer
       <p>The archive recipient is additive. Your other recipients remain, and an explicit delivery-recipient override still includes the archive.
         Repeated preparation does not keep adding another copy. Ignoring defaults or overrides, replacing a template, or completing an Email early
         does not remove locked settings.</p>
+      <p id="interpreted-sender-locks">In the unreleased 10.0.0 line, a locked From or bounce address can use a named mailbox such as
+        <code>Accounts &lt;accounts@company.com&gt;</code>. The parsed address is the locked value; the embedded name remains an ordinary default
+        unless a separate name lock fixes it. An equivalent named or bare address therefore satisfies the same address lock, while a different
+        mailbox is still rejected. Existing address case rules and exact-message preservation remain in force.</p>
       <p>Conflicts name the locked property and its source without printing either value. The factory's
         <code>getConfig().getDiagnostics()</code> shows winning locked entries with their original source and normal secret redaction.
         See <a href="debugging.html#section-config-diagnostics">configuration provenance</a> for examples.</p>
