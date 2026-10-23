@@ -39,7 +39,8 @@ import static org.simplejavamail.api.mailer.MailSubmissionStatus.ACCEPTED;
 /**
  * The assembled dispatcher from the Polar Meridian case study, targeting the
  * Simple Java Mail 10.0.0 API. This is application code, not part of the library.
- * See README.md for adapter contracts, wiring, tests and deployment limitations.
+ * See PolarMeridianMailers for locked configuration, backup wiring and timings;
+ * README.md covers adapter contracts, tests and deployment limitations.
  */
 public final class PolarMeridianDispatcher {
     public enum Workload { URGENT, ROUTINE, BULK }
@@ -344,6 +345,9 @@ public final class PolarMeridianDispatcher {
      * protection, including configured recipients. It rejects logging-only Mailers.
      * Retained mail needs withBounceTo and safe outbound headers; use explicit envelope
      * recipients instead of Bcc headers. Do not mutate Mailer/Session settings mid-flight.
+     * Approve every failover destination for the same effective envelope and protection.
+     * The selected destination's ordinary templates must not change rehearsed recipients
+     * or undo those requirements; archived exact bytes remain authoritative.
      * Metadata-only sends use the same composed inputs/configuration after rehearsal;
      * their later MIME rendering is not claimed to be byte-identical. The sending quota group is assigned
      * by platform configuration, never supplied unchecked by the requesting application.
