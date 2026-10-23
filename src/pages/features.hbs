@@ -2158,6 +2158,11 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         <a href="security.html#section-reading-openpgp">OpenPGP/MIME messages</a> from supplied EML.
       </p>
       <p>
+        Encrypted S/MIME content that could not be opened has an <code>UNKNOWN</code> signature result, alongside <code>KEY_MISSING</code>
+        or <code>FAILED</code> decryption. Successful decryption remains <code>DECRYPTED</code> even when later signature processing reports
+        <code>ERROR</code>. See <a href="security.html#section-reading-smime-verification">S/MIME inspection results</a> for the separate facts.
+      </p>
+      <p>
         For example, if you need a MimeMessage, you can convert <code class="inline language-java">Email</code> objects, EML data and even Outlook .msg files.
       </p>
       <p>

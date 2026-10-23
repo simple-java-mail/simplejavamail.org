@@ -996,6 +996,22 @@ details.getFailureReason(); // safe diagnostic text when processing did not succ
 				Clearly plain messages keep their plain, unsigned and unencrypted results. Explicitly requesting decryption still requires the module.
 			</p>
 			<p class="wide">
+				With <code>smime-module</code> installed, an encrypted message without a supplied key reports <code>KEY_MISSING</code> decryption and
+				<code>UNKNOWN</code> verification. An actual decryption failure reports <code>FAILED</code> with <code>UNKNOWN</code> verification too:
+				the unopened ciphertext may contain a signature. After successful decryption, inspected unsigned content reports <code>NOT_SIGNED</code>.
+				A later signature-processing error reports <code>ERROR</code> verification while retaining <code>DECRYPTED</code> and readable content.
+			</p>
+			<div class="wide full-width-example">
+<pre><code class="small">Email encrypted = mail.converter()
+    .fromEml(Path.of("signed-and-encrypted.eml"))
+    .toEmail(); // smime-module is installed; no decryption key was supplied
+
+OriginalSmimeDetails unopened = encrypted.getOriginalSmimeDetails();
+unopened.getDecryptionStatus();   // KEY_MISSING
+unopened.getVerificationStatus(); // UNKNOWN: the inner signature has not been inspected
+</code></pre>
+			</div>
+			<p class="wide">
 				Decryption is reported separately by <code class="inline language-java">getDecryptionStatus()</code>. When a message contains more than one
 				protected layer, Simple Java Mail keeps the most serious result. Verification uses
 				<code class="inline language-text">ERROR &gt; INVALID &gt; UNKNOWN &gt; VALID &gt; NOT_SIGNED</code>; decryption uses
