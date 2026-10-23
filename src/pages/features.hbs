@@ -1212,6 +1212,8 @@ currentEmailBuilder.withEmbeddedImage(AttachmentResource.builder()
     .withName("brand-logo.png")
     .withDataSource(logoDataSource)
     .withContentId("brand-logo-cid")
+    .withDescription("Company logo")
+    .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
     .build());
 // above example is included in the demo package in MailTestApp.java
 
@@ -1222,6 +1224,21 @@ currentEmailBuilder.withEmbeddedImage(AttachmentResource.builder()
 </code></pre>
 		</div>
 	</section>
+
+	<section><div class="wide full-width-example">
+		<p>When importing a message whose HTML references an inline image, the resource retains its supplied
+			<code>Content-Description</code> and recognized <a href="#section-content-transfer-encoding">transfer encoding</a>,
+			along with its name and Content-ID. Eager and lazy extraction expose the same metadata; missing metadata stays absent.
+			Copying or serializing the Email also retains these values.</p>
+		<pre><code class="language-java">Email imported = mail.converter().fromEml(eml).toEmail();
+AttachmentResource logo = imported.getEmbeddedImages().get(0);
+String description = logo.getDescription();
+ContentTransferEncoding encoding = logo.getContentTransferEncoding();
+byte[] content = logo.readAllBytes();</code></pre>
+		<p>The resource supplies decoded content. Its retained encoding is a preference for a subsequent export; it does not
+			mark the imported bytes as already encoded. Use the ordinary resource when exporting again. The
+			<a href="#section-reading-attachments">attachment readers</a> have the same stream-ownership contract for inline images.</p>
+	</div></section>
 
 	<section>
 		<div class="view">
