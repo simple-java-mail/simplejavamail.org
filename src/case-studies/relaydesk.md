@@ -662,3 +662,5 @@ The next fixer can bring another customer, and another contract for Sam. Or mayb
 ### About the code in this article
 
 To adapt RelayDesk's sending code for your own application, start with the [Java helpers](/assets/journal/articles/relaydesk/examples/RelayDeskMailExamples.java), which collect the Mailer, observer and return-address examples with their imports. The accompanying [integration notes](/assets/journal/articles/relaydesk/examples/README.md) explain where those calls need your application's customer registry, dispatcher and storage to complete the setup.
+
+Want to explore that wiring in a small running application? The [RelayDesk strategic pattern](/patterns/relaydesk.html) adds a Docker stack around these helpers, with separate synthetic customer servers and executable isolation/replacement scenarios.

@@ -3,6 +3,7 @@
 This is the assembled application example for the [Polar Meridian case study](/case-studies/polar-meridian.html), using the Simple Java Mail 10.0.0 API. It is not an SJM feature or a ready-to-deploy mail service.
 
 - [PolarMeridianDispatcher.java](PolarMeridianDispatcher.java): polling, permission checks, message preparation, dispatch decisions, attempt insertion, submission, result handling and stopping the polls.
+- [PolarMeridianMailers.java](PolarMeridianMailers.java): factory-locked TLS policy, building the approved primary/backup/bulk Mailers, and exporting measured send stages.
 - [OrderConfirmationComposer.java](OrderConfirmationComposer.java): the article's concrete conversion of a stored order-confirmation request into an SJM Email, with its Mailer and retention choice.
 - [JdbcDispatchLimits.java](JdbcDispatchLimits.java): the shared PostgreSQL-backed admission check.
 - [dispatch-limits.sql](dispatch-limits.sql): tables and explicitly fictional allocations.
@@ -35,7 +36,27 @@ After fixing a fresh Message-ID, the dispatcher calls `mailer.rehearse(email)`. 
 
 Quota accounting uses the rehearsed SMTP envelope, not just visible To/Cc headers. The `copying(...)` API retains override recipients, so the example preserves their occurrences without adding them again. Do not mutate the selected Mailer/Session/configuration while a job is being prepared or sent. Metadata-only sends use the original composed inputs after rehearsal; their later MIME rendering is not claimed to be byte-identical.
 
-Configure reusable Mailers, their bounded worker queues and the `MailSendResultObserver` as shown in the article. Pass the same bounded `observationWorkers` executor as `completionWorkers` here, with explicit rejection and failure monitoring. It handles both archive observations and request-result updates; asynchronous callback failures leave requests unresolved for investigation, not automatically retryable. Never use a silent-discard policy.
+Configure reusable Mailers, their bounded worker queues and the `MailSendResultObserver` as shown in the article. `PolarMeridianMailers.productionFactory(deploymentSources)` adds locked STARTTLS, certificate-trust and server-identity requirements to the application's `ConfigLoader` before loading its snapshot. Those locks prevent conflicting customization within this factory, not deliberate use of a different factory. Sending permissions, partner approval and retention remain application decisions.
+
+Pass the same bounded `observationWorkers` executor as `completionWorkers` here, with explicit rejection and failure monitoring. It handles both archive observations and request-result updates; asynchronous callback failures leave requests unresolved for investigation, not automatically retryable. Never use a silent-discard policy.
+
+### Build the approved relay relationship
+
+After configuring the three builders as in the article, construct the Mailers before starting dispatch:
+
+```java
+PolarMeridianMailers.Mailers configured = PolarMeridianMailers.build(
+    urgentABuilder, urgentBBuilder, bulkBuilder,
+    FailoverPolicy.builder().build(), observationSink, observationWorkers);
+Mailer orderConfirmationMailer = configured.urgent;
+List<Mailer> mailers = configured.all();
+```
+
+Only `configured.urgent` accepts urgent jobs; it owns ten workers and twenty waiting slots. `configured.backup` provides B's separately pooled connection when permitted, without another executor handoff. Both endpoints must be approved for the same message, envelope recipients, sender and transport requirements. Keep any ordinary templates consistent on these destinations; destination selection uses the selected Mailer's own templates, not A's ordinary defaults carried over to B. Exact archived EML remains authoritative and is not rewritten or signed again.
+
+The default policy stops on authentication and certificate-verification failures. Pool/rate waiting, preparation failures and uncertain submission never authorize routing elsewhere. Connection failure can select the approved backup before provider submission; the same operation retains its deadline, cancellation control, observer, Message-ID and application quota charge. Once submission begins, no automatic replay occurs. A due successful recheck lets later work use A again.
+
+`recordTimings(outcome, metrics::recordDuration)` exports fixed stage labels and present durations, including measured zero. Absent diagnostics or unmeasured stages produce no fabricated sample. Store connection history with the restricted attempt outcome; recipient addresses, attempt IDs and raw exception text do not belong in metric labels.
 
 Then construct and start the dispatcher:
 
@@ -55,7 +76,7 @@ Every instance shares the same PostgreSQL database. A transaction locks one pre-
 
 Workload allocations are separate, so bulk cannot spend the urgent allocation. Their sums must fit the messaging team's allocation to this service, accounting for every other sender using the upstream quota. The examples do not configure AWS, automatically discover provider quotas or promise extra SMTP capacity. A sending quota group is a shared accounting key, not a pool or cluster UUID.
 
-These are **application admission limits**. Async preparation/queues can move or bunch up actual SMTP attempts; relay-side rate enforcement and operational margin remain necessary. A bounded local queue is not a global rate limiter.
+These are **application admission limits**. SJM's recipient/message rules can pace submissions within one factory, but neither they nor bounded local queues coordinate separate processes. The shared database ledger, relay-side enforcement and operational margin remain necessary. Switching to B does not acquire another application charge or reset allowance.
 
 Successful charges remain counted until 24 hours after completion, conservatively covering time spent queued before SMTP. Unfinished, failed or uncertain attempts remain charged pending investigation. Only `QUEUE_FULL`, which proves no SMTP work occurred, is refunded automatically. This sacrifices some capacity rather than guessing whether a missing result consumed provider quota. Reconcile outstanding charges with durable attempt/relay evidence; do not expire them or retry their mail blindly.
 
@@ -79,11 +100,13 @@ The exact builder preserves those finalized bytes and explicitly restores envelo
 
 Implement storage encryption, access auditing and retention in the archive adapter. Retaining encrypted S/MIME without an approved means of decrypting it later is not a readable long-term record: arrange archival key access or a separately protected readable record under the company's records policy. Private signing keys and passwords must not be serialized as archive content.
 
-On shutdown, call `dispatcher.stopAndAwait()`, close the Mailers, then shut down and await `observationWorkers`. A failed wait is an operational failure, not permission to pretend all work finished. In-flight result callbacks may still use the outbox, archive and quota database until the executor drains.
+On shutdown, call `dispatcher.stopAndAwait()`, close the primary, supplied backup and bulk Mailers in `configured.all()` order, then shut down and await `observationWorkers`. Closing A does not close a borrowed B. A failed wait is an operational failure, not permission to pretend all work finished. In-flight result callbacks may still use the outbox, archive and quota database until the executor drains.
 
 ## Verification and further work
 
 The repository includes focused tests under `tests/journal-examples/`. They compile against the current 10.0.0 development APIs and exercise real offline MIME/S/MIME preparation, fake send calls and JDBC accounting on an in-memory H2 database. Checks include selective retention, preserved EML/envelopes/DSN/REQUIRETLS, unsafe headers, rejected preparations and archive/result failures. The S/MIME fixture verifies decryption and signature integrity, not production certificate trust. H2 tests are not PostgreSQL integration tests or a performance benchmark. No test sends external mail.
+
+`PolarMeridianMailersTest` also uses the Java checkout's public `testutil.smtp` fixtures on loopback: A's failed greeting selects B, retained bytes and envelope stay intact, later work returns to A, and loss of the final acceptance reply does not replay through B. It checks locked-policy conflicts and absent-versus-zero timing measurements offline. The wire fixtures use plain SMTP, not production TLS; no external mail is sent.
 
 Before deployment, implement and test the application adapters, PostgreSQL concurrency, outages/recovery, permissions, certificate/PKI validation, encrypted storage, callback rejection and fleet shutdown in your own environment. The example is not a substitute for those integrations.
 

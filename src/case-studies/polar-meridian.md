@@ -970,4 +970,6 @@ With a flexible setup built to grow and a structured onboarding process, Ravi an
 
 *The mail is flowing. The branding department got a little carried away.*
 
+To explore a small executable slice, try the [Polar Meridian strategic pattern](/patterns/polar-meridian.html). Its Docker stack supplies concrete adapters around the existing Dispatcher helpers, with two instances, shared sending allowance, protected archives and approved relay failover.
+
 *Next is RelayDesk, where the customers bring their own mail services and there is no single messaging team to agree all this with.*

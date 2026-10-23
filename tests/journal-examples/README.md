@@ -11,6 +11,7 @@ $exampleClasses = New-Item -ItemType Directory -Path (Join-Path ([IO.Path]::GetT
 # Set $exampleClasspath to the development classes/dependencies, including H2.
 javac -proc:none --release 11 -cp $exampleClasspath -d $exampleClasses.FullName `
   src/assets/journal/articles/polar-meridian/examples/PolarMeridianDispatcher.java `
+  src/assets/journal/articles/polar-meridian/examples/PolarMeridianMailers.java `
   src/assets/journal/articles/polar-meridian/examples/OrderConfirmationComposer.java `
   src/assets/journal/articles/polar-meridian/examples/JdbcDispatchLimits.java `
   tests/journal-examples/PolarMeridianDispatcherTest.java
@@ -21,5 +22,7 @@ java -cp "$($exampleClasses.FullName);$exampleClasspath" PolarMeridianDispatcher
 ```
 
 The tests cover the concrete order-confirmation composer, permission/certificate/final-message failures, quota deferral, full queues, attempt identity, actual-envelope counts, selective retention, archived/submission byte identity, S/MIME decryption/signature integrity, DSN/REQUIRETLS preservation, Bcc/header safety, confirmed/partial/unknown outcomes, failed archive insertion, rejected callbacks, failed request updates, rate and rolling-day accounting, unfinished charges, sending quota group isolation and competing JDBC connections. The schema is loaded only into the in-memory test database.
+
+`PolarMeridianMailersTest.java` exercises the new configuration helper and uses the Java checkout's existing public `testutil.smtp` fixtures. Add `modules/simple-java-mail/target/test-classes` to the classpath, compile it with `PolarMeridianMailers.java`, then run `PolarMeridianMailersTest`. It checks factory locks, absent/zero timing samples, a failed primary greeting, backup submission with identical retained bytes, return to the primary and no replay after a lost final reply. All sockets bind to loopback and use fixture plain SMTP; this does not validate production TLS or send external mail.
 
 `RelayDeskMailExamplesTest.java` additionally exercises tenant-scoped key selection (including configured and hidden recipients), missing-key holds, real offline OpenPGP signing/encryption/decryption, recipient-level retry feedback, optional size facts and the authenticated-probe call. Its source/compile instructions are in the [RelayDesk README](../../src/assets/journal/articles/relaydesk/examples/README.md). Both suites use only public test certificates/keys from the Java checkout; they do not validate production PKI or contact mail servers. Synthetic receipt/probe checks do not prove SMTP wire behavior; the Java library's protocol tests cover that separately.
