@@ -672,7 +672,10 @@ currentMailerBuilder
 			<div class="view">
 				<p><strong>Use the exceptions deliberately</strong></p>
 				<p>
-					The normal configuration leaves the DKIM body-length tag off and signs the default header list. Turn on the
+					RSA-SHA256 is the default signing algorithm. Choose <code>SHA256_WITH_ED25519</code> with a matching Ed25519 key
+					for Ed25519-SHA256; both choices cover the final outgoing representation, including selected S/MIME or OpenPGP protection.
+					SJM defaults to relaxed canonicalization for both headers and body. The normal configuration leaves the DKIM body-length
+					tag off and signs the default header list. Turn on the
 					<code class="inline language-java">l=</code> body-length tag only when a known downstream service appends a footer:
 					content appended after the signed length is not covered by the signature.
 				</p>

@@ -1044,6 +1044,9 @@ boolean positiveReply = receipt.getSmtpResponse()
   </div></section>
 
   <h2 id="dkim-validation-timing">Handle invalid DKIM header exclusions when signing</h2>
+    <p>The 10.0.0 signing path now delegates to the shared upstream DKIM engine, including correct Ed25519-SHA256 signing.
+      This correction preserves <code>signWithDomainKey(DkimConfig)</code>, the existing configuration keys and SJM's relaxed/relaxed defaults;
+      it adds no caller migration step. The maintained 9.x line already uses the corrected upstream signing implementation.</p>
   <section><div class="wide">
     <p>If your DKIM configuration excludes the <code>From</code> header, that remains an error: a valid DKIM signature must cover it.
       Previously, creating the configuration failed immediately. The check now runs in the DKIM module when a message is signed,
