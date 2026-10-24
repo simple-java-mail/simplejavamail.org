@@ -36,6 +36,7 @@ public final class RelayDeskMailExamples {
     }
 
     // All arguments come from approved configuration, never directly from a request.
+    // Shared factory connection declarations must agree with these per-route choices.
     // Reuse the result and close it when its route is safely retired.
     // Rate values are this backend instance's share; the group joins Mailers in one factory.
     public static Mailer createMailer(SimpleJavaMail mail, UUID clusterKey,

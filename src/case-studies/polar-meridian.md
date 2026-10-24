@@ -479,7 +479,7 @@ Unlike [Staple & Sons' single queue](/case-studies/staple-and-sons.html#the-disp
 
 ## Ravi puts the onboarding agreements into code
 
-The sending permissions and message protection are already handled during preparation. Ravi now puts the agreed TLS checks and send timeouts on reusable Mailers for each region, traffic class and permitted sending identity. The `mail` factory supplies Mailer builders, and Ravi fills in hosts and credentials from deployment configuration and secrets. That leaves application teams to submit notification requests without access to SMTP credentials or arbitrary Session properties.
+The sending permissions and message protection are already handled during preparation. Ravi now puts the agreed TLS checks and send timeouts on reusable Mailers for each region, traffic class and permitted sending identity. The `mail` factory supplies Mailer builders, and Ravi fills in hosts and credentials from deployment configuration and secrets. Route-specific values stay out of shared connection defaults; if a value is declared in both places, it must agree. The unreleased 10.0.0 line's default [connection conflict policy](/configuration.html#connection-conflicts) catches contradictions during construction. That leaves application teams to submit notification requests without access to SMTP credentials or arbitrary Session properties.
 
 Each send gets a fifteen-second budget, with at most two seconds spent claiming a connection, but urgent mail's thirty-second target also has to cover its earlier wait in the application queue:
 
@@ -511,7 +511,7 @@ MailerRegularBuilder<?> configuredMailerBuilder(String host, String username, St
 
 *Every Mailer starts with the same transport checks and finite send budget.*
 
-With the issuing CA installed in the worker's trust store, the explicit trust settings restore the normal certificate and hostname checks and clear configured exceptions. Managed Angus aborts stuck socket I/O when the [send budget expires](/sending-and-execution.html#section-send-deadlines); a timeout still requires checking whether SMTP accepted the message.
+With the issuing CA installed in the worker's trust store, Ravi removes obsolete trust exceptions from deployment configuration so the explicit settings agree with the source values and keep the normal certificate and hostname checks. A conflicting imported connection value stops construction rather than being silently replaced. Managed Angus aborts stuck socket I/O when the [send budget expires](/sending-and-execution.html#section-send-deadlines); a timeout still requires checking whether SMTP accepted the message.
 
 Ravi records the [SJM factory configuration and its sources](/configuration.html#section-config-snapshot), with secrets redacted:
 

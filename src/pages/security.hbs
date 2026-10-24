@@ -476,6 +476,10 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 					<code class="inline language-java">trustingSSLHosts(...)</code> creates a narrow exception for named hosts.
 					<code class="inline language-java">trustingAllHosts(true)</code> accepts certificates from every host and should be a last-resort compatibility setting.
 				</p>
+				<p>In the unreleased 10.0.0 line, different explicit Java, raw-property, factory and supplied Session declarations for the same
+          supported TLS setting fail during construction by default. Remove obsolete trust workarounds at their sources, or deliberately select
+          the advanced <a href="configuration.html#connection-conflicts">override policy</a>. Locks and mandatory encryption requirements remain
+          binding in either mode.</p>
 			</div>
 			<div class="side">
 				<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()

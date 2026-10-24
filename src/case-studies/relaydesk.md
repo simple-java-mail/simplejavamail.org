@@ -256,7 +256,7 @@ Kestrel's limits tell Sam what RelayDesk may use, not what it needs to use. He c
 
 *In this illustrative route profile, four connections per relay meet measured demand. Sam selects six for headroom, still below RelayDesk's own ceiling and the share Kestrel allows this deployment.*
 
-Here's how those application settings reach SJM, with the [batch module](/modules.html#batch-module) installed:
+Here's how those application settings reach SJM, with the [batch module](/modules.html#batch-module) installed. The factory carries shared message settings and compatible connection requirements; customer-specific hosts and credentials enter through the arguments below. They must agree with any explicit imported connection declarations. The unreleased 10.0.0 line's default [connection conflict policy](/configuration.html#connection-conflicts) stops construction if an old deployment value names a different route:
 
 ```java code-small
 static Mailer createMailer(SimpleJavaMail mail, UUID clusterKey,

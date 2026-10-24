@@ -419,6 +419,10 @@ Transport security:
         builders. It does not include values supplied later to a builder, generated runtime defaults, settings hidden inside a caller-owned Jakarta Mail
         <code class="inline language-java">Session</code>, or live pool and transport state.
       </p>
+      <p>In the unreleased 10.0.0 line, a connection conflict error identifies the overlapping setting and available declaration sources,
+        including supplied Session and Java choices. This does not expand the factory report into an effective-configuration report.
+        Align the declarations or deliberately choose the <a href="configuration.html#connection-conflicts">override policy</a>;
+        configuration locks remain mandatory.</p>
       <p>
         After building a Mailer, use <code class="inline language-java">mailer.getOperationalConfig()</code> for its effective operational settings. Use
         the factory diagnostics when the question is where a property-backed value came from. The regular
@@ -578,6 +582,7 @@ mailer.getTransportStrategy();
 mailer.getServerConfig();
 mailer.getProxyConfig();
 mailer.getOperationalConfig();
+mailer.getOperationalConfig().getConnectionConflictPolicy();
 // default S/MIME signing, validation criteria etc.
 mailer.getEmailGovernance();
 </code></pre>

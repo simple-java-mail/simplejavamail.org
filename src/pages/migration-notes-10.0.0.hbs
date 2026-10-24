@@ -42,6 +42,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#calendar-method-import">Review calendar method import</a></li>
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
+      <li><a href="#connection-conflicts">Review conflicting connection configuration</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -582,19 +583,57 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
     <h3 id="socket-timeout-precedence">Review raw socket timeout properties</h3>
     <p>Earlier releases could replace additional Jakarta Mail timeout properties with the common SJM timeout when creating a Session.
       Explicit raw <code>mail.smtp.connectiontimeout</code>, <code>mail.smtp.timeout</code> and <code>mail.smtp.writetimeout</code>
-      values now override inherited SJM defaults for their respective operations. The corresponding <code>mail.smtps.*</code> properties
-      follow the same rule.</p>
+      values can now replace built-in SJM defaults for their respective operations. The corresponding <code>mail.smtps.*</code> properties
+      follow the same rule. Different explicit declarations are subject to the <a href="#connection-conflicts">connection conflict policy</a>.</p>
     <pre><code class="language-java">mail.mailerBuilder()
     .withProperty("mail.smtp.connectiontimeout", 10_000)
     .withProperty("mail.smtp.timeout", 30_000);
 // With otherwise default configuration: connect 10s, read 30s, write 60s.</code></pre>
     <p>Review applications that relied on the previous overwrite. An explicit
-      <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(20))</code> still deliberately selects all three timeouts
-      and takes precedence over raw properties. For independent typed choices, use <code>withConnectTimeout(...)</code>,
+      <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(20))</code> deliberately selects all three timeouts.
+      Under the strict default, those values must agree with other explicit declarations; with <code>ALLOW_EXPLICIT_OVERRIDES</code>,
+      the typed choices take precedence over raw properties. For independent typed choices, use <code>withConnectTimeout(...)</code>,
       <code>withReadTimeout(...)</code> and <code>withWriteTimeout(...)</code> inside the same group. Each typed choice affects only its
       operation; within the group, the last setter affecting an operation wins. Mandatory locks remain enforced. See the
       <a href="/configuration.html#socket-timeouts">current timeout guide</a> for inheritance, reset and inspection examples.</p>
   </div></section>
+
+  <a href="#connection-conflicts" id="connection-conflicts" class="section-link h2">&sect;</a>
+  <h2>Review conflicting connection configuration</h2>
+  <section>
+    <div class="wide">
+      <p>The unreleased 10.0.0 line defaults to <code>ConnectionConflictPolicy.REJECT_CONFLICTS</code>. Earlier releases could silently select
+        one of several different connection declarations. For example, raw SOCKS properties could replace a proxy chosen through SJM,
+        leaving proxy inspection and the actual connection using different endpoints.</p>
+      <p>Construction now compares explicit factory configuration, recognized raw Jakarta Mail properties, visible supplied Session values and
+        final Java choices for supported SMTP, proxy, socket-timeout, local-binding, EHLO and TLS settings. Different explicit declarations for
+        the same logical setting fail before a supplied Session is changed or connection resources are allocated. Equivalent parsed values are
+        accepted. Built-in defaults do not conflict, and file/environment precedence still resolves each configuration property normally first.</p>
+      <p>Review failures with the owners of both application code and deployment configuration. Remove obsolete declarations or align their values.
+        If replacement is intentional, explicitly select <code>ALLOW_EXPLICIT_OVERRIDES</code> on the Mailer builder or through
+        <code>simplejavamail.connection.conflictpolicy</code>. Do not add that mode automatically during migration: it chooses which declaration
+        controls the connection.</p>
+<pre><code class="language-java">// After reviewing the intended route:
+Mailer mailer = mail.mailerBuilder()
+    .withConnectionConflictPolicy(
+        ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES)
+    .withProperties(sharedProperties)
+    .withProxyConfig(SocksProxyConfig.builder()
+        .withHost("chosen-proxy.example.org")
+        .build())
+    .buildMailer();</code></pre>
+      <p>In override mode, explicitly supplied typed Java members win over their raw counterparts regardless of call order. Omitted members
+        retain applicable raw values; a Java proxy host alone does not replace a raw proxy port with the default port. Compatible raw endpoints
+        can also combine with SJM proxy credentials before authenticated proxying selects its local bridge.</p>
+      <p>Repeated setters still replace earlier local choices. The policy compares the final choices, rather than rejecting ordinary builder
+        editing. Explicitly removing an imported connection value is a conflict in strict mode; removing a local-only choice remains ordinary
+        editing. Existing value locks and mandatory TLS rules apply in both modes. A deployment can require strict mode with
+        <code>simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code>.</p>
+      <p>Unknown provider extensions and hidden Authenticator state are outside this comparison. See the
+        <a href="configuration.html#connection-conflicts">advanced configuration guide</a> for policy inspection, reset and restore operations,
+        CLI syntax and supplied-Session behavior.</p>
+    </div>
+  </section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>
   <h2>Replace static ConfigLoader calls</h2>
@@ -1397,7 +1436,8 @@ Mailer mailer = mail.mailerBuilder()
       <code class="inline language-java">TransportStrategy.SMTP</code>. It has no effect on mandatory
       <code class="inline language-java">SMTP_TLS</code>, OAuth2 transport, or implicit TLS with
       <code class="inline language-java">SMTPS</code>. The property <code class="inline language-properties">simplejavamail.opportunistic.tls</code>
-      still supplies the starting value. A builder call overrides it for that Mailer. If you want the property or the normal default, do not call
+      still supplies the starting value. A conflicting builder call requires the deliberate override policy; strict mode rejects the disagreement.
+      If you want the property or the normal default, do not call
       <code class="inline language-java">TlsConfig.Builder.withOpportunisticTLS(...)</code> at all.
     </p>
     <p class="wide">
@@ -1548,13 +1588,15 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
     <p class="wide">
       Earlier releases treated supplied Sessions inconsistently. A Session originating from Simple Java Mail could have its timeouts and
       certificate-trust choices replaced by builder defaults, while another Session could silently ignore an explicit timeout setter.
-      Both now use the supplied settings as the starting point. Ordinary factory connection defaults no longer replace them; explicit builder
-      choices, additional Jakarta Mail properties, configured proxy routing and mandatory locks still apply.
+      Both now use the supplied settings as the starting point. Ordinary factory connection defaults no longer replace them or fill omitted
+      values. Deliberate builder customization and applicable locks can add settings; different explicit declarations fail under the default
+      <a href="#connection-conflicts">connection conflict policy</a>.
     </p>
     <p class="wide">
       If you relied on those automatic replacements, call the relevant builder setters explicitly or put the intended values on your Session.
-      For example, <code class="inline language-java">ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> replaces all three socket timeouts with one second.
-      Selecting only <code>withReadTimeout(Duration.ofSeconds(5))</code> changes the read value and retains the Session's original connect and write values.
+      To deliberately replace existing values, select <code>ALLOW_EXPLICIT_OVERRIDES</code>. With that policy,
+      <code class="inline language-java">ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> replaces all three socket timeouts with one second.
+      Selecting only <code>withReadTimeout(Duration.ofSeconds(5))</code> changes the read value and retains the Session's original connect and write values or absence.
       Standard SMTP/SMTPS Sessions support these choices directly. A custom protocol now rejects a convenience setting it cannot map rather
       than silently ignoring it; use its provider-specific names through <code>withProperty(...)</code> instead.
       Clearing a setting inherited through <code>Properties</code> defaults is also rejected when removal would simply reactivate that default.
