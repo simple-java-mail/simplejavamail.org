@@ -18,7 +18,8 @@ import java.util.function.BiConsumer;
 public final class PolarMeridianMailers {
     private PolarMeridianMailers() { }
 
-    // Deployment sources contain ordinary defaults. These three requirements
+    // Route-specific choices must agree with any explicit deployment connection values.
+    // Keep per-route hosts and credentials out of shared defaults. These three requirements
     // stay fixed for Mailers built from this factory, including the approved backup.
     public static SimpleJavaMail productionFactory(ConfigLoader deploymentSources) {
         Properties policy = new Properties();

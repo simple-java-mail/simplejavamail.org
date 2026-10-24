@@ -33,7 +33,8 @@ description: "Configure mailers in Java, property files, or environment variable
     <div class="view">
       <p>
         The Java API and configuration files work together. A configuration snapshot resolves its sources in the order you list them, with later
-        non-blank values winning. Calls on a builder then win over ordinary snapshot values copied into that builder.
+        non-blank values winning. In the unreleased 10.0.0 line, overlapping connection declarations must agree by default.
+        The advanced <a href="#connection-conflicts">connection conflict policy</a> lets an application deliberately permit Java overrides.
         <a href="#section-programmatic-api-common" id="section-programmatic-api-common" class="section-link h2">&sect;</a>
   <h2>Programmatic API - common settings</h2>
 
@@ -129,14 +130,14 @@ mail.mailerBuilder()
 // preconfigured Session?
 mail.mailerBuilder(session);
 
-// preconfigured but you need anonymous proxy?
+// add an anonymous proxy to a Session without SOCKS routing
 mail.mailerBuilder(session)
         .withProxyConfig(SocksProxyConfig.builder()
             .withHost("socksproxy.host.com")
             .withPort(1080)
             .build());
 
-// preconfigured but you need authenticated proxy?
+// add an authenticated proxy to a Session without SOCKS routing
 mail.mailerBuilder(session)
         .withProxyConfig(SocksProxyConfig.builder()
             .withHost("socksproxy.host.com")
@@ -150,9 +151,11 @@ mail.mailerBuilder(session)
         concurrent sending, or create independent Sessions with independent Properties copied from your original SMTP settings.
         Use <code class="inline language-java">Session.getInstance(...)</code> rather than
         <code class="inline language-java">Session.getDefaultInstance(...)</code> when you need separate Sessions.</p>
-      <p>A supplied Session keeps its connection settings unless you explicitly replace them through the builder, additional Jakarta Mail
-        properties or mandatory locks. Ordinary factory connection defaults do not replace its timeouts, local binding, EHLO name or
-        certificate trust. This is independent of whether the Session previously belonged to another Mailer.</p>
+      <p>A supplied Session keeps its connection settings, including settings it leaves absent. Ordinary factory connection defaults do not
+        replace its timeouts, local binding, EHLO name or certificate trust, or fill their gaps. Deliberate customization and applicable locks
+        can add settings. Different explicit declarations of the same setting fail under the default
+        <a href="#connection-conflicts">connection conflict policy</a>; select <code>ALLOW_EXPLICIT_OVERRIDES</code> when replacement is intended.
+        This is independent of whether the Session previously belonged to another Mailer.</p>
       <p>If a setting comes from an inherited <code>Properties</code> default, clearing it cannot remove that default. Such a clear is rejected
         before changing the Session. Supply a replacement value or create a new Session with independent Properties containing only the
         settings you want.</p>
@@ -178,17 +181,21 @@ mail.mailerBuilder(session)
         <tr><td><code>withSendingLimitsConfig(...)</code></td><td><code>SendingLimitsConfig</code></td><td>Message/recipient rates and shared allowance.</td></tr>
         <tr><td><code>withConnectionConfig(...)</code></td><td><code>ConnectionConfig</code></td><td>Socket timeouts, local binding, EHLO hostname and legacy content compatibility.</td></tr>
         <tr><td><code>withTlsConfig(...)</code></td><td><code>TlsConfig</code></td><td>Trust, hostname checks, SSL factories and optional STARTTLS.</td></tr>
+        <tr><td><code>withConnectionConflictPolicy(...)</code></td><td><code>ConnectionConflictPolicy</code></td><td>Advanced handling of conflicting connection declarations.</td></tr>
         <tr><td><code>withValidationConfig(...)</code></td><td><code>ValidationConfig</code></td><td>Address policy, warning behavior and maximum prepared email size.</td></tr>
       </tbody></table>
-      <p>Each setter replaces that group's supplied choices. Omitted fields inherit the factory snapshot rather than keeping the previous group's values.
+      <p>Each configuration-group setter replaces that group's supplied choices. Omitted fields use remaining applicable configuration rather than
+        keeping the previous group's values. The connection conflict policy remains separate from group replacement.
         Use <code>mailerBuilder.getConnectionPoolConfig().toBuilder()</code>, for example, to retain choices while editing a group, or
         <code>useConfiguredConnectionPoolConfig()</code> to restore inheritance for the whole group. Group builders own detailed inspection and
         clear/reset methods; root getters inspect supplied groups. Effective settings remain available on the built Mailer.</p>
       <p>An explicit empty Java string remains a supplied choice and follows that setting's validation or clearing rules.
         It does not restore a captured value. This differs from blank entries in property sources, which are treated as absent.
         Use the named clear or <code>useConfigured...</code> operation to express either intent explicitly.</p>
-      <p id="explicit-connection-clears">In the unreleased 10.0.0 line, an explicit hostname or local-bind clear removes the corresponding
-        unlocked direct Jakarta Mail property, including a captured raw extra-property overlay. <code>clearLocalBindAddress()</code> removes
+      <p id="explicit-connection-clears">In the unreleased 10.0.0 line, an explicit hostname or local-bind clear can remove the corresponding
+        unlocked direct Jakarta Mail property, including a captured raw extra-property overlay. Removing an imported value is a conflicting
+        customization under <code>REJECT_CONFLICTS</code>; deliberate removal requires <code>ALLOW_EXPLICIT_OVERRIDES</code>.
+        <code>clearLocalBindAddress()</code> removes
         both address and port; the member-specific port clear removes only the port. Unset choices inherit, <code>useConfigured...</code>
         restores captured configuration, and resets select library defaults. Mandatory locks and caller-Session inherited-property limits still apply.</p>
       <p><code>ConnectionConfig.Builder.withSessionTimeout(...)</code> sets connect, read and write timeouts together.
@@ -397,13 +404,15 @@ mailerBuilder.withConnectionConfig(connection.build());
       <pre><code class="language-text small">--mailer:withSessionTimeout 30000 --mailer:withConnectTimeout 10000 --mailer:withReadTimeout 45000</code></pre>
       <p><code>--mailer:withWriteTimeout</code> adjusts writes independently. The corresponding CLI reset options are
         <code>--mailer:resetConnectTimeout</code>, <code>--mailer:resetReadTimeout</code> and <code>--mailer:resetWriteTimeout</code>.</p>
-      <p>For a Session created by Simple Java Mail, each timeout uses this order: an explicit typed choice in <code>ConnectionConfig</code>,
+      <p>With <code>ALLOW_EXPLICIT_OVERRIDES</code>, a Session created by Simple Java Mail resolves each timeout in this order: an explicit typed choice in <code>ConnectionConfig</code>,
         an additional Jakarta Mail timeout property, an operation-specific SJM property, the shared session-timeout property, then the
         built-in 60-second fallback. For example, raw <code>mail.smtp.connectiontimeout=10000</code> and <code>mail.smtp.timeout=30000</code>
         give connect/read/write values of 10/30/60 seconds with otherwise default configuration. An explicit typed read timeout of 45 seconds
-        changes only the read value.</p>
-      <p>A Session you supply keeps each original value until you select that operation through a typed choice, raw overlay or applicable lock.
-        Ordinary SJM timeout defaults do not replace its settings. Mandatory locks apply above ordinary precedence: an individual lock
+        changes only the read value. Under the default <code>REJECT_CONFLICTS</code> policy, different explicit declarations for that operation
+        fail instead; raw values remain usable when only built-in defaults would otherwise apply.</p>
+      <p>A Session you supply keeps each original value or absence until you deliberately customize that operation or an applicable lock requires it.
+        Conflicting replacement requires <code>ALLOW_EXPLICIT_OVERRIDES</code>. Ordinary SJM timeout defaults do not replace its settings or fill
+        missing values. Mandatory locks apply in both modes: an individual lock
         constrains its operation, while a shared session-timeout lock constrains all three. Conflicting choices or lock requirements are rejected.</p>
       <p>When write timeouts are enabled, Simple Java Mail shares one background timeout-monitoring thread across the connections from each Angus Session
         it creates, rather than using a thread for every connection. This thread watches for writes that take too long; it does not send emails.
@@ -462,6 +471,53 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
     </div>
   </section>
 
+
+  <a href="#connection-conflicts" id="connection-conflicts" class="section-link h3">&sect;</a>
+  <h3>Advanced: choose how connection conflicts are handled</h3>
+  <section>
+    <div class="view">
+      <p>In the unreleased 10.0.0 line, <code>ConnectionConflictPolicy.REJECT_CONFLICTS</code> is the default. If factory configuration,
+        recognized Jakarta Mail properties, a supplied Session and explicit Java choices declare different values for the same supported
+        connection setting, <code>buildMailer()</code> fails before changing the Session or opening a connection. The error identifies the
+        setting and available source labels. Equivalent parsed values are accepted; built-in defaults are not competing declarations.</p>
+      <p>Property sources resolve first. A later environment value replacing the same property from a file is ordinary loading, including in
+        Spring. The policy checks the resulting declarations against each other, such as an SJM proxy host and a different raw SOCKS host.</p>
+      <p>Select <code>ALLOW_EXPLICIT_OVERRIDES</code> when the application deliberately replaces supplied connection setup. Explicit typed Java
+        members then win over their raw counterparts regardless of call order. Unspecified members retain applicable raw values: the example
+        selects <code>chosen-proxy.example.org:1081</code>, rather than replacing the raw port with a proxy default.</p>
+    </div>
+    <div class="side">
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withConnectionConflictPolicy(
+        ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES)
+    .withProperty("mail.smtp.socks.host", "shared-proxy.example.org")
+    .withProperty("mail.smtp.socks.port", 1081)
+    .withProxyConfig(SocksProxyConfig.builder()
+        .withHost("chosen-proxy.example.org")
+        .build())
+    .buildMailer();</code></pre>
+      <p>Without the policy selection, the different proxy hosts conflict. In either mode, compatible raw host/port values can combine with
+        SJM proxy credentials. The selected remote route is resolved before authenticated proxying uses its local bridge.</p>
+<pre><code class="language-properties small"># Default; Java can select a different mode unless it is locked:
+simplejavamail.connection.conflictpolicy=REJECT_CONFLICTS
+
+# Alternatively, require strict handling within this factory:
+simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code></pre>
+    </div>
+    <div class="wide">
+      <p>This advanced policy covers supported SMTP, proxy, socket-timeout, local-binding, EHLO and TLS connection settings.
+        It does not change Email defaults, execution, pooling or telemetry rules, or interpret arbitrary provider extensions and hidden
+        Authenticator state. <a href="#section-locked-configuration">Locks</a> and mandatory TLS requirements remain binding in both modes.</p>
+      <p>Repeated setters still replace earlier local choices, and replacing a group discards its previous supplied choices. The policy compares
+        the completed choices, not setter history. Clearing an imported connection value is a conflict in strict mode; clearing a local-only
+        choice remains normal builder editing. See <a href="#configuration-operations">clearing, resetting and restoring configuration</a>.</p>
+      <p><code>getConnectionConflictPolicy()</code> on the builder inspects its explicit selection. <code>resetConnectionConflictPolicy()</code>
+        selects <code>REJECT_CONFLICTS</code>; <code>useConfiguredConnectionConflictPolicy()</code> restores the captured policy, or the strict
+        default if none was configured. Inspect the resolved mode with <code>mailer.getOperationalConfig().getConnectionConflictPolicy()</code>,
+        or read the captured setting with <code>ConfigKeys.CONNECTION_CONFLICT_POLICY</code>. The CLI accepts
+        <code>--mailer:withConnectionConflictPolicy ALLOW_EXPLICIT_OVERRIDES</code>, and Spring accepts the same property values.</p>
+    </div>
+  </section>
 
   <a href="#section-proxy-bridge-ports" id="section-proxy-bridge-ports" class="section-link h3">&sect;</a>
   {{#> components/feature-heading-h3 socks=true}}Authenticated proxy bridge ports{{/components/feature-heading-h3}}
@@ -539,7 +595,8 @@ simplejavamail.smtp.username=relay-user
 simplejavamail.smtp.username=</code></pre>
       <p>Null map values and whitespace-only strings are absent too. To deliberately remove a captured SMTP username in Java, use
         <code>clearSMTPServerUsername()</code>; the password remains a separate choice. Clearing both stored credentials requires
-        <code>clearSMTPServerPassword()</code> as well, and configuration locks still apply. See the
+        <code>clearSMTPServerPassword()</code> as well. Removing an imported connection value requires the deliberate override policy;
+        configuration locks still apply. See the
         <a href="#configuration-operations">operation table</a> for the distinction between clearing and restoring configuration.</p>
       <p>
         Only the winning value is parsed. A malformed lower-priority value therefore causes no error when a valid higher-priority source replaces it:
@@ -562,8 +619,9 @@ Loaded SMTP port: 587</code></pre>
 
 SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
       <p>
-        Only add environment and system-property sources when you want them. Explicit loaders do not silently read either one. Calls made directly on a
-        Mailer or email builder override the snapshot values copied into that builder.
+        Only add environment and system-property sources when you want them. Explicit loaders do not silently read either one.
+        Mailer connection customization follows the <a href="#connection-conflicts">connection conflict policy</a>; Email defaults and overrides
+        follow their separate <a href="#section-config-mailer">message rules</a>.
       </p>
     </div>
 
@@ -764,7 +822,8 @@ SIMPLEJAVAMAIL_DEFAULTS_FROM_ADDRESS=sender@example.com
 	  <p>
 		<code class="inline language-properties">simplejavamail.opportunistic.tls</code> only affects the optional STARTTLS upgrade used by plain
 		<code class="inline language-text">SMTP</code>. It does not weaken <code class="inline language-text">SMTP_TLS</code>, OAuth2 transport, or
-		<code class="inline language-text">SMTPS</code>. An explicit <code class="inline language-java">TlsConfig.Builder.withOpportunisticTLS(...)</code> call wins over the property.
+		<code class="inline language-text">SMTPS</code>. An explicit <code class="inline language-java">TlsConfig.Builder.withOpportunisticTLS(...)</code> choice
+		must agree with other explicit declarations in strict mode; it replaces an ordinary conflicting value in override mode.
 	  </p>
 	  <p>
 		For <code class="inline language-properties">simplejavamail.dkim.signing.private_key_file_or_data</code>, prefix a path with
@@ -784,6 +843,7 @@ simplejavamail.javaxmail.debug.out=SLF4J
 simplejavamail.transportstrategy=SMTP_TLS
 simplejavamail.transport.mode.logging.only=false
 simplejavamail.opportunistic.tls=false
+simplejavamail.connection.conflictpolicy=REJECT_CONFLICTS
 
 # Optional OpenTelemetry; the application supplies its global SDK or an explicit Java integration
 simplejavamail.telemetry.enabled=false
@@ -1216,7 +1276,8 @@ SimpleJavaMailConfig config = loader
 
 SimpleJavaMail mail = SimpleJavaMail.withConfig(config);
 Mailer mailer = mail.mailerBuilder()
-    // Direct builder values win over the snapshot.
+    // Deliberately replace the captured SMTP port for this Mailer.
+    .withConnectionConflictPolicy(ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES)
     .withSMTPServerPort(587)
     .withTransportStrategy(TransportStrategy.SMTP_TLS)
     .buildMailer();
@@ -1248,7 +1309,7 @@ Mailer mailer = mail.mailerBuilder()
   </section>
 
 
-  <a href="#section-locked-configuration">Locked settings</a> are the exception: a conflicting customization is rejected.
+  <a href="#section-locked-configuration">Locked settings</a> remain mandatory in either connection conflict mode.
       </p>
     </div>
     <div class="side">
@@ -1268,6 +1329,7 @@ Mailer mailer = mail.mailerBuilder()
     <ul>
       <li><a href="#section-programmatic-api-common">Programmatic API - common settings</a></li>
       <li><a href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
+	  <li><a href="#connection-conflicts" class="indent">Advanced: connection conflicts</a></li>
 	  <li><a href="#section-proxy-bridge-ports" class="indent">Authenticated proxy bridge ports</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
 	  <li><a href="#section-config-snapshot" class="indent">When changes take effect</a></li>
@@ -1303,7 +1365,7 @@ Mailer mailer = mail.mailerBuilder()
         a blank entry does not clear an earlier value. Supplying the same parsed value in Java is allowed; a conflicting customization fails.</p>
     </div>
     <div class="side">
-<pre><code class="language-properties small"># Still customizable by application code:
+<pre><code class="language-properties small"># Replacement is allowed with the deliberate override policy:
 simplejavamail.smtp.port=587
 
 # Fixed for this factory:

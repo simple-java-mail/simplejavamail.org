@@ -702,11 +702,14 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
         If you prefer to use your own preconfigured <code class="inline language-java">Session</code> instance and still benefit from Simple Java Mail, you can!
       </p>
       <p>Your Session is the starting point for connection settings. Its timeouts, local address, EHLO hostname and certificate-trust choices stay
-        unchanged unless you explicitly replace them on the Mailer builder or a configured lock requires a value. Ordinary Simple Java Mail
-        connection defaults do not overwrite them, including when you reuse a Session after its previous Mailer has shut down.</p>
-      <p>For example, <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> deliberately sets connect, read and write timeouts to one second.
-        Selecting only <code>withReadTimeout(Duration.ofSeconds(5))</code> changes the read timeout, keeping the Session's original connect and write values.
-        Additional Jakarta Mail properties and configured proxy routing still apply. Standard <code>smtp</code> and <code>smtps</code> Sessions need no special marker;
+        unchanged, including settings it leaves absent. Ordinary Simple Java Mail connection defaults do not overwrite them or fill those gaps,
+        including when you reuse a Session after its previous Mailer has shut down. Deliberate customization and applicable locks can add settings.</p>
+      <p>In the unreleased 10.0.0 line, different explicit connection declarations fail at construction by default. To deliberately replace a
+        Session's value, select <code>ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES</code>. For example, with that policy,
+        <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> selects all three socket timeouts, while
+        <code>withReadTimeout(Duration.ofSeconds(5))</code> changes only reading and keeps the Session's connect and write values.
+        See <a href="configuration.html#connection-conflicts">the advanced connection conflict policy</a> for raw properties, equivalent choices and locks.
+        Standard <code>smtp</code> and <code>smtps</code> Sessions need no special marker;
         for a custom protocol, configure its provider-specific properties instead. See <a href="configuration.html#section-programmatic-api-other">timeout inspection</a>.</p>
     </div>
 
@@ -1392,10 +1395,11 @@ currentEmailBuilder.withHeaders(yourHeadersMap);
 				<code class="inline language-text">Jakarta Mail</code>, that too is very easy.
 			</p>
       <p>With otherwise default configuration, the example selects a 10-second connect timeout and a 30-second read timeout;
-        the write timeout stays at 60 seconds. Raw timeout properties override inherited SJM defaults.
+        the write timeout stays at 60 seconds. Raw timeout properties can replace built-in SJM defaults.
         For typed fine-tuning, use <code>ConnectionConfig.Builder.withConnectTimeout(...)</code>, <code>withReadTimeout(...)</code>
-        and <code>withWriteTimeout(...)</code>. An explicit typed choice takes precedence over the corresponding raw property;
-        <code>withSessionTimeout(...)</code> explicitly selects all three. Applicable locks remain enforced.
+        and <code>withWriteTimeout(...)</code>. Different explicit declarations fail under the default <code>REJECT_CONFLICTS</code> policy.
+        With <code>ALLOW_EXPLICIT_OVERRIDES</code>, an explicit typed choice wins over its raw counterpart;
+        <code>withSessionTimeout(...)</code> explicitly selects all three. Applicable locks remain enforced in either mode.
         See <a href="configuration.html#socket-timeouts">socket timeout examples and inspection</a>.</p>
 		</div>
 
@@ -1416,8 +1420,8 @@ currentEmailBuilder.withHeaders(yourHeadersMap);
 				You can also set some default properties to automatically be added.
 			</p>
 			<p>
-				Every property prepended with <em>simplejavamail.extraproperties</em> will be loaded
-				directly on the internal Session object.
+				Properties prefixed with <em>simplejavamail.extraproperties.</em> supply additional Session settings. Recognized connection settings
+        participate in the <a href="configuration.html#connection-conflicts">connection conflict policy</a>; unknown provider extensions retain their provider-defined behavior.
 			</p>
 		</div>
 
@@ -2622,15 +2626,21 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
 currentMailerBuilder.withProxyConfig(SocksProxyConfig.builder()
     .withHost("proxy.host.com")
     .withPort(1080)
+    .build());
+
+// authenticated proxy
+currentMailerBuilder.withProxyConfig(SocksProxyConfig.builder()
     .withHost("proxy.host.com")
     .withPort(1080)
     .withUsername("proxy username")
     .withPassword("proxy password")
-    .build())
-
-// authenticated proxy
-currentMailerBuilder;
+    .build());
 </code></pre>
+      <p>In the unreleased 10.0.0 line, compatible raw SOCKS host/port settings can combine with SJM proxy credentials. Conflicting explicit
+        endpoints fail by default. Select <code>ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES</code> to deliberately prefer typed Java members;
+        a Java host alone retains an applicable raw port. See <a href="configuration.html#connection-conflicts">the connection conflict policy</a>.</p>
+      <p>With authentication, <code>mailer.getProxyConfig()</code> describes the remote proxy, while the effective Session connects to the local
+        bridge. Its allocated loopback port is separate from the remote proxy port.</p>
       <p>See <a href="configuration.html#section-proxy-bridge-ports">Authenticated proxy bridge ports</a> for automatic loopback ports,
         optional fixed ports, and applications that use more than one authenticated-proxy Mailer.</p>
     </div>

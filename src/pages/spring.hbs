@@ -85,6 +85,10 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
         Spring's <code class="inline language-java">Environment</code>. Spring remains responsible for profiles, placeholders, environment variables,
         system properties, and their precedence. Simple Java Mail does not read the raw process values again afterwards.
       </p>
+      <p>In the unreleased 10.0.0 line, the advanced <a href="configuration.html#connection-conflicts">connection conflict policy</a> checks the
+        resulting connection declarations, including later Java customization. It does not reject an environment value merely because Spring
+        chose it over a file value for the same property. Different explicit declarations for the same connection setting fail by default;
+        equivalent parsed values are accepted.</p>
       <p>
         Separate Spring application contexts keep separate snapshots and factories. Building or closing a Mailer in one context does not change the
         configuration used by another context in the same JVM.
@@ -207,6 +211,14 @@ public class MailConfiguration {
     }
 }
 </code></pre>
+      <p>Java connection choices must agree with explicit imported settings by default. If this bean deliberately replaces deployment setup,
+        select <code>withConnectionConflictPolicy(ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES)</code>. Unspecified members still retain
+        applicable imported values. The equivalent property is available through Spring's normal sources:</p>
+      <pre><code class="language-yaml small">simplejavamail:
+  connection:
+    conflictpolicy: ALLOW_EXPLICIT_OVERRIDES</code></pre>
+      <p>Use <code>simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code> when the deployment requires strict handling.
+        Existing value locks and mandatory transport rules remain binding in both modes.</p>
       <p>
         Boot backs off independently for <code class="inline language-java">SimpleJavaMailConfig</code>, <code class="inline language-java">SimpleJavaMail</code>,
         and <code class="inline language-java">Mailer</code>. A replacement config feeds the two remaining defaults; a replacement factory feeds the default
@@ -323,8 +335,8 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <section>
     <div class="view">
       <p>A central configuration can supply <a href="configuration.html#section-locked-configuration">locked settings</a> alongside ordinary defaults.
-        All Mailers built from the injected factory inherit them. This example permits Java customization of the port, but not a different relay or
-        a weaker transport strategy. The archive BCC remains in the actual delivery envelope.</p>
+        All Mailers built from the injected factory inherit them. With the deliberate override policy, this example permits Java customization
+        of the ordinary port setting, but not a different relay or a weaker transport strategy. The archive BCC remains in the actual delivery envelope.</p>
       <p>The shared loader reads both namespaces through Spring's <code>Environment</code>, including profiles, aliases and placeholders.
         Diagnostics name the underlying source that declared the property. IDE hints reuse the ordinary property types; there are no wrapped
         <code>value</code>/<code>locked</code> objects and no second runtime binder.</p>
