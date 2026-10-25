@@ -609,6 +609,9 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
         final Java choices for supported SMTP, proxy, socket-timeout, local-binding, EHLO and TLS settings. Different explicit declarations for
         the same logical setting fail before a supplied Session is changed or connection resources are allocated. Equivalent parsed values are
         accepted. Built-in defaults do not conflict, and file/environment precedence still resolves each configuration property normally first.</p>
+      <p>Equivalent raw numeric representations and the same trusted-host membership are compatible; reordering or repeating an exact host name
+        does not introduce a conflict. Empty text remains distinct from absence, and supplied factory objects are compared by identity.
+        Raw SOCKS endpoints retain their embedded-port and separate-port meaning.</p>
       <p>Review failures with the owners of both application code and deployment configuration. Remove obsolete declarations or align their values.
         If replacement is intentional, explicitly select <code>ALLOW_EXPLICIT_OVERRIDES</code> on the Mailer builder or through
         <code>simplejavamail.connection.conflictpolicy</code>. Do not add that mode automatically during migration: it chooses which declaration
