@@ -479,12 +479,17 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
       <p>In the unreleased 10.0.0 line, <code>ConnectionConflictPolicy.REJECT_CONFLICTS</code> is the default. If factory configuration,
         recognized Jakarta Mail properties, a supplied Session and explicit Java choices declare different values for the same supported
         connection setting, <code>buildMailer()</code> fails before changing the Session or opening a connection. The error identifies the
-        setting and available source labels. Equivalent parsed values are accepted; built-in defaults are not competing declarations.</p>
+        setting and available source labels. Equivalent parsed values are accepted; built-in defaults are not competing declarations.
+        Trusted-host lists with the same exact names are compatible even when their order or repeated names differ. Factory objects are
+        compared by identity, and empty text is kept distinct from an omitted setting.</p>
       <p>Property sources resolve first. A later environment value replacing the same property from a file is ordinary loading, including in
         Spring. The policy checks the resulting declarations against each other, such as an SJM proxy host and a different raw SOCKS host.</p>
       <p>Select <code>ALLOW_EXPLICIT_OVERRIDES</code> when the application deliberately replaces supplied connection setup. Explicit typed Java
         members then win over their raw counterparts regardless of call order. Unspecified members retain applicable raw values: the example
         selects <code>chosen-proxy.example.org:1081</code>, rather than replacing the raw port with a proxy default.</p>
+      <p>A raw SOCKS host can include its port, such as <code>proxy.example.org:1081</code>. A separate raw SOCKS port takes precedence over
+        that embedded port. An untouched supplied Session keeps an omitted port; an ordinary factory port does not silently replace the
+        provider's fallback.</p>
     </div>
     <div class="side">
 <pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
