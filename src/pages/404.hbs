@@ -1,0 +1,29 @@
+---
+layout: false
+permalink: "/404.html"
+eleventyExcludeFromCollections: true
+title: "Page not found"
+description: "Find Simple Java Mail documentation, examples, and downloads."
+internal: true
+---
+<!doctype html>
+<html lang="en" data-pagefind-ignore="all">
+  <head>
+    {{> head}}
+    <meta name="robots" content="noindex">
+  </head>
+  <body class="docs-page">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    {{> site-header}}
+    <main id="main-content" class="shell page-hero">
+      <header class="doc-hero">
+        <p class="eyebrow">404</p>
+        <h1>Page not found</h1>
+        <p class="doc-lede">This address does not match a page on Simple Java Mail.</p>
+      </header>
+      <p>Find what you need in the <a href="/docs.html">documentation</a>, or return to the <a href="/">homepage</a>.</p>
+    </main>
+    {{> footer}}
+    <script type="module" src="/scripts/site.js"></script>
+  </body>
+</html>

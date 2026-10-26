@@ -8,7 +8,7 @@
   <title>{{title}} | Simple Java Mail</title>
 {{/if}}
 <meta name="description" content="{{description}}">
-<link rel="canonical" href="{{site.url}}{{page.url}}">
+{{#unless internal}}<link rel="canonical" href="{{site.url}}{{page.url}}">{{/unless}}
 <meta property="og:site_name" content="Simple Java Mail">
 <meta property="og:type" content="{{#if ogType}}{{ogType}}{{else}}website{{/if}}">
 <meta property="og:title" content="{{#if (eq page.url "/")}}Simple Java Mail: Build, secure, and send email from Java{{else}}{{title}} | Simple Java Mail{{/if}}">

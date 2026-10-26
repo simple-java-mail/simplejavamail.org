@@ -18,6 +18,7 @@ The Terraform migration and comments backend are already deployed. [#759](https:
 - [ ] Run `npm run check`.
 - [ ] Run `npm run verifyLinks:internal`.
 - [ ] Run `npm run build` and confirm Pagefind indexes all public pages.
+- [ ] Run `npm run verifyIndexability` against that build. Every sitemap URL must resolve to a page with its own canonical URL and no `noindex`; the 404 page stays out of the sitemap and site search.
 - [ ] Spot-check the release consumers listed below.
 - [ ] Optionally run `npm run verifyLinks:external`; keep this out of the deployment gate because third-party sites can rate-limit or time out.
 
