@@ -297,6 +297,10 @@ Elapsed: 142ms</code></pre>
     <p class="wide">In unreleased 10.0.0, this also applies to removed execution options:
       <code>sjm send --help --mailer:async</code> shows help. Placing the removed option before help, or supplying it alone, keeps its migration error.
       Standard and option-specific help follow the same rule, including commands expanded from argument files.</p>
+    <p class="wide">Retired option spellings remain usable as message values in unreleased 10.0.0:
+      <code>--email:withSubject "--mailer:async=false"</code> uses that text as the subject.
+      An actual unmatched <code>--mailer:async</code> option keeps its migration error. Picocli determines which arguments are values;
+      no extra escaping is needed in either one-shot or daemon mode.</p>
     <img data-src="../../assets/cli_example.png" alt="Example of Simple Java Mail CLI usage" style="width: 100%; margin-top: 1em;">
   </section>
 
@@ -325,7 +329,10 @@ Elapsed: 142ms</code></pre>
       Double or single quotes preserve spaces, <code class="inline language-text">#</code> starts a comment outside quotes, and argument files may include
       other argument files within the documented depth and size limits. Relative names resolve from the directory where the client command was invoked.
       Prefix a literal value that starts with <code class="inline language-text">@</code> with a second at sign, for example
-      <code class="inline language-text">@@example</code>. The existing <code class="inline language-text">picocli.useSimplifiedAtFiles=true</code>
+      <code class="inline language-text">@@example</code> passes the literal value <code class="inline language-text">@example</code>,
+      even when a file named <code class="inline language-text">example</code> exists. In unreleased 10.0.0, expansion happens once before routing;
+      a missing or unreadable argument file stays literal even when a matching file exists in the daemon's directory.
+      The existing <code class="inline language-text">picocli.useSimplifiedAtFiles=true</code>
       mode remains available when every non-comment line should be one argument.
     </p>
   </section>
