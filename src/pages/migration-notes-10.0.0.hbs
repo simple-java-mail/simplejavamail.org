@@ -531,6 +531,11 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       The released <code>Pkcs12ConfigBuilder.pkcs12Store(InputStream)</code> no longer declares checked <code>IOException</code>.
       An I/O-only catch around that call can become unreachable; retain checked handling for application-owned stream opening, reading or closing.
       Supplied streams remain open, and invalid arguments or malformed cryptographic input retain their separate contracts.</p>
+    <p><code>Pkcs12Config.build()</code> now requires store bytes, both passwords and a key alias. Earlier incomplete values could be built,
+      then fail in their getters or during use. Supply every choice before building; <code>""</code> or an empty <code>char[]</code> explicitly
+      selects an empty password. Required null setter arguments now throw <code>IllegalArgumentException</code> without replacing an earlier choice.
+      If you only need to inspect the store bytes, use <code>Pkcs12Config.builder().pkcs12Store(path).getPkcs12StoreData()</code> without building
+      an unfinished configuration. Actual store and key validation remains at S/MIME use; passwords and aliases are never inferred.</p>
     <p>Passing null to <code>signWithSmime(SmimeSigningConfig)</code> or <code>encryptWithSmime(SmimeEncryptionConfig)</code> now throws
       <code>IllegalArgumentException</code> before changing an earlier choice. Released callers that deliberately used null to clear one choice
       should use <code>clearSmimeSigning()</code> or <code>clearSmimeEncryption()</code>, respectively; <code>clearSmime()</code> removes both.

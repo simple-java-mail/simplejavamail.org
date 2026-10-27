@@ -2337,7 +2337,10 @@ Email protectedEmail = mail.converter()
 </code></pre>
       <p>PKCS12 and OpenPGP configuration builders can be inspected before <code>build()</code>, even when the configuration is incomplete.
         For example, <code>getPkcs12StoreData()</code> returns the supplied store bytes, or <code>null</code> before a store is supplied.
-        Key and password getters return copies; changing those arrays does not change the builder or an earlier configuration.</p>
+        Key and password getters return copies; changing those arrays does not change the builder or an earlier configuration.
+        In unreleased 10.0.0, building <code>Pkcs12Config</code> requires the store, both passwords and an alias. Supply an empty password
+        explicitly with <code>""</code> or an empty <code>char[]</code>; missing choices produce <code>IllegalArgumentException</code>.
+        The S/MIME operation checks the actual store, passwords and selected key when it uses the configuration.</p>
       <p>For received OpenPGP mail, <code>getVerificationKeyRings()</code> and <code>getDecryptionKeyRings()</code> return editable copies of the stored
         lists. Remove just one set with <code>clearVerificationKeyRings()</code> or <code>clearDecryptionKeyRings()</code>.
         <code>clearPassphraseProvider()</code> returns to the passphrases supplied with the decryption keys. Inspecting the provider never calls it.</p>
