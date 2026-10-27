@@ -257,7 +257,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
     recordResult(receipt, null);
 }</code></pre>
     <p class="wide">CLI <code>send</code> and <code>connect</code> use the synchronous view and wait for completion.
-      Remove <code>--mailer:async</code> and <code>--mailer:async--help</code>; both are rejected with an argument error.
+      Remove <code>--mailer:async</code> and <code>--mailer:async--help</code>; both are rejected with an argument error unless an earlier genuine help option has already ended the command.
       The CLI does not print send receipts, and daemon request concurrency is unchanged.</p>
     <p class="wide">See <a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> for the current operation contracts.</p>
   </section>
@@ -273,6 +273,8 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       still display documentation without sending and ignore later arguments. A separate argument identical to a registered
       help option keeps that option meaning. Literal values also honor the selected daemon mode, including
       <code>--daemon=require</code>. See <a href="cli.html#section-usage-help">CLI usage help</a>.</p>
+    <p class="wide">The same ordering applies to removed options: <code>sjm send --help --mailer:async</code> now shows help instead of a migration error.
+      A removed option before help, or without help, still reports its removal. No flags or script escaping rules change.</p>
   </section>
 
   <h2 id="email-construction">Build Email objects through buildEmail()</h2>
@@ -1369,7 +1371,7 @@ mailer.validate(email);</code></pre>
 
   <section>
     <p class="wide">
-      If you send to an address such as <code class="inline language-text">josé@example.org</code>, or send a saved EML file with unencoded non-ASCII
+      If you send to an address such as <code class="inline language-text">josÃ©@example.org</code>, or send a saved EML file with unencoded non-ASCII
       headers or body text, your SMTP server must announce support for that content by default. With the bundled Angus provider, Simple Java Mail now checks this
       before sending. Ordinary Unicode subjects, display names and bodies still use their usual email encoding, so most applications need no change.
     </p>
