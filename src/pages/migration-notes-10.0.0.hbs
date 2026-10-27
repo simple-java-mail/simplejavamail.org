@@ -1118,6 +1118,10 @@ boolean positiveReply = receipt.getSmtpResponse()
       or supply the missing source and build again without keeping unused images from the failed pass. Explicit images and intentional duplicates
       remain unchanged. See the <a href="features.html#automatic-image-resolution-failure">automatic-image failure boundary</a>;
       this does not promise rollback for external reads or failures after resolution.</p>
+    <p>Automatic image resolution also retains the opposite quote inside a quoted source: <code>&lt;img src="it's.png"&gt;</code>
+      resolves <code>it's.png</code> rather than the prefix <code>it</code>. Existing templates need no edits. Code that accidentally relied on a
+      truncated location now selects the full requested resource or follows the configured missing-image behavior. See
+      <a href="features.html#automatic-image-source-quotes">quoted image sources</a>.</p>
   </div></section>
 
   <h2 id="operational-snapshots">Configure Mailers through their builders</h2>
