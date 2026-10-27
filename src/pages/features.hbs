@@ -283,7 +283,7 @@ try (Mailer mailer = mail.mailerBuilder()
 	</p>
 	<p class="wide">
 		Completion resolves outgoing content and configuration. Keep the original converted Email when inspecting historical protection results,
-		received delivery reports or original protected bytes; completion does not copy that history. See <a href="configuration.html#repeated-email-completion">completion and source history</a>.
+		received delivery reports or original protected bytes; completion does not copy that history. See <a href="understanding-configuration.html#repeated-email-completion">completion and source history</a>.
 	</p>
     <p class="wide">
       Need the company relay or an archive BCC to stay fixed while jobs customize their messages?
@@ -708,7 +708,7 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
         Session's value, select <code>ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES</code>. For example, with that policy,
         <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> selects all three socket timeouts, while
         <code>withReadTimeout(Duration.ofSeconds(5))</code> changes only reading and keeps the Session's connect and write values.
-        See <a href="configuration.html#connection-conflicts">the advanced connection conflict policy</a> for raw properties, equivalent choices and locks.
+        See <a href="understanding-configuration.html#connection-conflicts">the advanced connection conflict policy</a> for raw properties, equivalent choices and locks.
         Standard <code>smtp</code> and <code>smtps</code> Sessions need no special marker;
         for a custom protocol, configure its provider-specific properties instead. See <a href="configuration.html#section-programmatic-api-other">timeout inspection</a>.</p>
     </div>
@@ -1421,7 +1421,7 @@ currentEmailBuilder.withHeaders(yourHeadersMap);
 			</p>
 			<p>
 				Properties prefixed with <em>simplejavamail.extraproperties.</em> supply additional Session settings. Recognized connection settings
-        participate in the <a href="configuration.html#connection-conflicts">connection conflict policy</a>; unknown provider extensions retain their provider-defined behavior.
+        participate in the <a href="understanding-configuration.html#connection-conflicts">connection conflict policy</a>; unknown provider extensions retain their provider-defined behavior.
 			</p>
 		</div>
 
@@ -2638,7 +2638,7 @@ currentMailerBuilder.withProxyConfig(SocksProxyConfig.builder()
 </code></pre>
       <p>In the unreleased 10.0.0 line, compatible raw SOCKS host/port settings can combine with SJM proxy credentials. Conflicting explicit
         endpoints fail by default. Select <code>ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES</code> to deliberately prefer typed Java members;
-        a Java host alone retains an applicable raw port. See <a href="configuration.html#connection-conflicts">the connection conflict policy</a>.</p>
+        a Java host alone retains an applicable raw port. See <a href="understanding-configuration.html#connection-conflicts">the connection conflict policy</a>.</p>
       <p>With authentication, <code>mailer.getProxyConfig()</code> describes the remote proxy, while the effective Session connects to the local
         bridge. Its allocated loopback port is separate from the remote proxy port.</p>
       <p>See <a href="configuration.html#section-proxy-bridge-ports">Authenticated proxy bridge ports</a> for automatic loopback ports,

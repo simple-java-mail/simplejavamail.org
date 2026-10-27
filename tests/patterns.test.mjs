@@ -29,11 +29,23 @@ test("breadcrumbs follow collection ancestors for hub pages and direct article a
     ["/strategic-patterns.html", "/patterns.html", "Strategic Patterns", ["/", "/docs.html", "/patterns.html"]],
     ["/patterns/example.html", "/strategic-patterns.html", "Example", ["/", "/docs.html", "/patterns.html", "/strategic-patterns.html"]],
     ["/spring.html", "/configuration.html", "Spring integration", ["/", "/docs.html", "/configuration.html"]],
+    ["/understanding-configuration.html", "/configuration.html", "Understanding SJM configuration", ["/", "/docs.html", "/configuration.html"]],
     ["/unknown.html", undefined, "Unknown", ["/", "/docs.html"]],
   ]) {
     const html = render({ nav, page: { url }, title, breadcrumbParent: parent });
     assert.deepEqual([...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]), expected, url);
     assert.ok(html.includes(`<span aria-current="page">${title}</span>`));
+  }
+});
+
+test("configuration reference keeps legacy fragments and one advanced destination", () => {
+  const main = readFileSync(new URL("../src/pages/configuration.hbs", import.meta.url), "utf8");
+  const advanced = readFileSync(new URL("../src/pages/understanding-configuration.hbs", import.meta.url), "utf8");
+  for (const id of ["configuration-operations", "configuration-resolution-timing", "configuration-precedence",
+    "connection-conflicts", "explicit-connection-clears", "repeated-email-completion"]) {
+    assert.equal([...main.matchAll(new RegExp(`id="${id}"`, "g"))].length, 1, `legacy ${id}`);
+    assert.equal([...advanced.matchAll(new RegExp(`id="${id}"`, "g"))].length, 1, `advanced ${id}`);
+    assert.ok(main.includes(`/understanding-configuration.html#${id}`), `advanced destination ${id}`);
   }
 });
 

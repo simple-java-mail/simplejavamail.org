@@ -622,7 +622,7 @@ mailerBuilder
         .build());
 ```
 
-These settings restore the normal [certificate and hostname checks](https://www.rfc-editor.org/rfc/rfc8314.html#section-5.3). The empty `trustingSSLHosts()` call clears host-specific exceptions too. They remove the unsafe declarations from property sources and supplied Session settings as well: the unreleased 10.0.0 line's default [connection conflict policy](/configuration.html#connection-conflicts) rejects contradictory imported values rather than silently overwriting them. They also check custom socket factories and add the relay's private CA to the trust store if needed. On the next test run, untrusted certificates, wrong hostnames and missing TLS all stop the send.
+These settings restore the normal [certificate and hostname checks](https://www.rfc-editor.org/rfc/rfc8314.html#section-5.3). The empty `trustingSSLHosts()` call clears host-specific exceptions too. They remove the unsafe declarations from property sources and supplied Session settings as well: the unreleased 10.0.0 line's default [connection conflict policy](/understanding-configuration.html#connection-conflicts) rejects contradictory imported values rather than silently overwriting them. They also check custom socket factories and add the relay's private CA to the trust store if needed. On the next test run, untrusted certificates, wrong hostnames and missing TLS all stop the send.
 
 Once they've rebuilt the Mailer with those settings, they can repeat connection checks without sending a test email, using the [connection probe](/debugging.html#section-smtp-capabilities):
 

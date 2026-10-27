@@ -605,13 +605,9 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       <p>The unreleased 10.0.0 line defaults to <code>ConnectionConflictPolicy.REJECT_CONFLICTS</code>. Earlier releases could silently select
         one of several different connection declarations. For example, raw SOCKS properties could replace a proxy chosen through SJM,
         leaving proxy inspection and the actual connection using different endpoints.</p>
-      <p>Construction now compares explicit factory configuration, recognized raw Jakarta Mail properties, visible supplied Session values and
-        final Java choices for supported SMTP, proxy, socket-timeout, local-binding, EHLO and TLS settings. Different explicit declarations for
-        the same logical setting fail before a supplied Session is changed or connection resources are allocated. Equivalent parsed values are
-        accepted. Built-in defaults do not conflict, and file/environment precedence still resolves each configuration property normally first.</p>
-      <p>Equivalent raw numeric representations and the same trusted-host membership are compatible; reordering or repeating an exact host name
-        does not introduce a conflict. Empty text remains distinct from absence, and supplied factory objects are compared by identity.
-        Raw SOCKS endpoints retain their embedded-port and separate-port meaning.</p>
+      <p>Different explicit factory, Session, recognized raw-property and Java declarations for the same supported connection setting now fail construction.
+        Review deployment settings alongside application code before upgrading. Normal source precedence, equivalent values and ordinary builder editing remain valid;
+        see <a href="/understanding-configuration.html#connection-conflicts">the complete connection rules</a> for comparison and Session behavior.</p>
       <p>Review failures with the owners of both application code and deployment configuration. Remove obsolete declarations or align their values.
         If replacement is intentional, explicitly select <code>ALLOW_EXPLICIT_OVERRIDES</code> on the Mailer builder or through
         <code>simplejavamail.connection.conflictpolicy</code>. Do not add that mode automatically during migration: it chooses which declaration
@@ -625,15 +621,12 @@ Mailer mailer = mail.mailerBuilder()
         .withHost("chosen-proxy.example.org")
         .build())
     .buildMailer();</code></pre>
-      <p>In override mode, explicitly supplied typed Java members win over their raw counterparts regardless of call order. Omitted members
-        retain applicable raw values; a Java proxy host alone does not replace a raw proxy port with the default port. Compatible raw endpoints
-        can also combine with SJM proxy credentials before authenticated proxying selects its local bridge.</p>
-      <p>Repeated setters still replace earlier local choices. The policy compares the final choices, rather than rejecting ordinary builder
-        editing. Explicitly removing an imported connection value is a conflict in strict mode; removing a local-only choice remains ordinary
-        editing. Existing value locks and mandatory TLS rules apply in both modes. A deployment can require strict mode with
+      <p>The override policy gives explicit typed Java members precedence over raw counterparts. Review any deliberate removal as well as replacement;
+        <a href="/understanding-configuration.html#explicit-connection-clears">clearing an imported setting</a> is a conflict in strict mode.
+        Existing value locks and mandatory TLS rules apply in both modes. A deployment can require strict mode with
         <code>simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code>.</p>
       <p>Unknown provider extensions and hidden Authenticator state are outside this comparison. See the
-        <a href="configuration.html#connection-conflicts">advanced configuration guide</a> for policy inspection, reset and restore operations,
+        <a href="understanding-configuration.html#connection-conflicts">advanced configuration guide</a> for policy inspection, reset and restore operations,
         CLI syntax and supplied-Session behavior.</p>
     </div>
   </section>
@@ -1007,7 +1000,7 @@ boolean positiveReply = receipt.getSmtpResponse()
     <p>A completed Email still receives the selected Mailer's governance when sent: defaults fill missing scalar values, overrides retain
       precedence, and locks remain binding. Completion now also retains global and per-field suppression for later passes. Re-enable those
       choices explicitly if you previously relied on completion forgetting them. See the
-      <a href="configuration.html#repeated-email-completion">complete repeated-completion contract</a>.</p>
+      <a href="understanding-configuration.html#repeated-email-completion">complete repeated-completion contract</a>.</p>
   </div></section>
 
   <h2 id="forwarded-templates">Check forwarded messages in Email templates</h2>
