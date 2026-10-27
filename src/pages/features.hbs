@@ -1290,6 +1290,11 @@ byte[] content = logo.readAllBytes();</code></pre>
 				the failure do not accumulate on the draft. Explicitly supplied images, including deliberate duplicates, remain intact.
 				This applies to the image-resolution pass; it does not undo external reads or later failures while constructing the Email.
 			</p>
+			<p id="automatic-image-source-quotes">
+				In the unreleased 10.0.0 line, a quoted image source ends with the same quote that opened it. For example,
+				<code>&lt;img src="it's.png"&gt;</code> resolves the complete <code>it's.png</code> location; the apostrophe belongs to the filename.
+				Single-quoted sources follow the same rule. Resolution settings, configured bases and required versus optional failures still apply.
+			</p>
 		</div>
 
 		<div class="side">
