@@ -472,6 +472,12 @@ recipient.withName("Alice").withAddress("alice@example.org")
         <code>bcc(name, address)</code>. Each shortcut sets the name, address and type and returns the built Recipient. Certificate and notification
         options already set on that builder are retained. Use the group builder when you need to split an address list.
       </p>
+      <p id="rejected-recipient-updates">
+        In the unreleased 10.0.0 line, a rejected recipient shortcut or address/name helper keeps the builder's earlier identity and metadata.
+        For example, rejecting <code>to("Bob", "")</code> leaves Alice's existing name and address together. This applies to one operation:
+        a successful <code>withName("Bob")</code> remains applied if a separate later <code>withAddress("")</code> is rejected.
+        Accepted name/default rules and lenient address interpretation still apply.
+      </p>
       <p>
         When an address-import helper cannot find a mailbox, it keeps the supplied text for inspection and later validation. For example,
         <code>withAddressOnlyFrom("(comment only)")</code> keeps that text when parsing finds no mailbox, and preserves the name already configured

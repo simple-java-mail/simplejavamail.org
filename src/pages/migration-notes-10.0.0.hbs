@@ -1190,6 +1190,9 @@ boolean positiveReply = receipt.getSmtpResponse()
     <p>The address-import helpers also keep nonempty text when Jakarta Mail parses it into no mailbox, for example <code>"(comment only)"</code>.
       Earlier releases could throw <code>ArrayIndexOutOfBoundsException</code> during construction. Handle invalid addresses through your normal
       validation path; retaining the input does not allow it to pass sending validation.</p>
+    <p>Rejected recipient shortcuts and address/name helpers now retain the earlier complete identity instead of combining a replacement name with
+      the old address or dropping an inferred name. No calls need renaming. Separately accepted setters retain their effects when a later setter
+      fails; see <a href="features.html#rejected-recipient-updates">recipient update failures</a>.</p>
   </div></section>
 
     <h2 id="requested-smime-module">Include S/MIME support when requesting decryption</h2>
