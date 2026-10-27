@@ -138,7 +138,7 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
   <section>
     <p class="wide">The CLI uses the same per-message negotiation as Java. If you have verified that your legacy server and its onward route preserve
       UTF-8 or 8-bit data without advertising support, enable this option:</p>
-<pre><code class="language-text">sjm send --email:startingBlank --email:from sender@example.org --email:to müller@example.org --email:withPlainText Hello --mailer:withSMTPServer legacy-relay.example.org 587 --mailer:withLegacySmtpContentSupport true</code></pre>
+<pre><code class="language-text">sjm send --email:startingBlank --email:from sender@example.org --email:to mÃ¼ller@example.org --email:withPlainText Hello --mailer:withSMTPServer legacy-relay.example.org 587 --mailer:withLegacySmtpContentSupport true</code></pre>
     <p class="wide">The equivalent loaded property is <code>simplejavamail.smtp.legacycontentsupport=true</code>; the default is false.
       The option participates in the daemon's Mailer configuration profile, so requests with different choices do not share a Mailer.
       Use <code>--mailer:withLegacySmtpContentSupport--help</code> for its full contract. TLS and content-safety checks remain enforced;
@@ -294,6 +294,9 @@ Elapsed: 142ms</code></pre>
       <code>--email:withSubject "How to use --help"</code> keep their literal text, and all following options are processed.
       A genuine help option, such as <code>--email:withSubject--help</code>, displays documentation without sending;
       later arguments are ignored. Values keep the selected one-shot or daemon mode.</p>
+    <p class="wide">In unreleased 10.0.0, this also applies to removed execution options:
+      <code>sjm send --help --mailer:async</code> shows help. Placing the removed option before help, or supplying it alone, keeps its migration error.
+      Standard and option-specific help follow the same rule, including commands expanded from argument files.</p>
     <img data-src="../../assets/cli_example.png" alt="Example of Simple Java Mail CLI usage" style="width: 100%; margin-top: 1em;">
   </section>
 
