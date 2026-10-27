@@ -993,7 +993,10 @@ test("documentation navigation supports always-visible child pages", () => {
     items: [{
       title: "Configuration",
       url: "/configuration.html",
-      children: [{ title: "Spring integration", url: "/spring.html" }],
+      children: [
+        { title: "Spring integration", url: "/spring.html" },
+        { title: "Understanding configuration (advanced)", url: "/understanding-configuration.html" },
+      ],
     }],
   }];
   const site = {
@@ -1009,9 +1012,11 @@ test("documentation navigation supports always-visible child pages", () => {
     { url: "/engineering-journal.html", data: { layout: "layouts/marketing.hbs" } },
     { url: "/configuration.html", data: { layout: "layouts/base.hbs" } },
     { url: "/spring.html", data: { layout: "layouts/base.hbs", breadcrumbParent: "/configuration.html" } },
+    { url: "/understanding-configuration.html", data: { layout: "layouts/base.hbs", breadcrumbParent: "/configuration.html", navTitle: "Understanding configuration (advanced)" } },
   ];
 
   assert.equal(navItemForUrl(groups, "/spring.html")?.title, "Spring integration");
+  assert.equal(navItemForUrl(groups, "/understanding-configuration.html")?.title, "Understanding configuration (advanced)");
   assert.doesNotThrow(() => validateSiteData(site, { docsGroups: groups }, pages));
   assert.throws(
     () => validateSiteData(site, { docsGroups: groups }, pages.filter((page) => page.url !== "/spring.html")),

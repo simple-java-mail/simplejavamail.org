@@ -55,7 +55,8 @@
           "url": "/configuration.html",
           "children": [
             { "title": "Spring integration", "url": "/spring.html" },
-            { "title": "Sending and execution", "url": "/sending-and-execution.html" }
+            { "title": "Sending and execution", "url": "/sending-and-execution.html" },
+            { "title": "Understanding configuration (advanced)", "url": "/understanding-configuration.html" }
           ]
         },
         { "title": "Pool orchestration", "url": "/smtp-connection-pooling.html" },

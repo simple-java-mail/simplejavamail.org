@@ -85,10 +85,11 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
         Spring's <code class="inline language-java">Environment</code>. Spring remains responsible for profiles, placeholders, environment variables,
         system properties, and their precedence. Simple Java Mail does not read the raw process values again afterwards.
       </p>
-      <p>In the unreleased 10.0.0 line, the advanced <a href="configuration.html#connection-conflicts">connection conflict policy</a> checks the
+      <p>In the unreleased 10.0.0 line, the advanced <a href="/understanding-configuration.html#connection-conflicts">connection conflict policy</a> checks the
         resulting connection declarations, including later Java customization. It does not reject an environment value merely because Spring
         chose it over a file value for the same property. Different explicit declarations for the same connection setting fail by default;
-        equivalent parsed values are accepted.</p>
+        equivalent parsed values are accepted. See <a href="/understanding-configuration.html#configuration-resolution-timing">when choices take effect</a>
+        for the later combination of captured Spring values, Java choices and Email templates.</p>
       <p>
         Separate Spring application contexts keep separate snapshots and factories. Building or closing a Mailer in one context does not change the
         configuration used by another context in the same JVM.
@@ -326,7 +327,8 @@ OAuth2AccessTokenProvider smtpAccessTokens(
 <pre><code class="language-yaml small">simplejavamail:
   defaults:
     sendtoacceptedrecipients: true</code></pre>
-      <p>Omitted means no configured choice. Runtime resolution stays in the shared loader; Spring metadata only provides IDE hints.</p>
+      <p>Omitted means no configured choice. The shared loader captures the Spring value; later Java and Email choices follow the
+        <a href="/understanding-configuration.html#configuration-precedence">setting's resolution rules</a>. Spring metadata supplies IDE hints.</p>
     </div>
   </section>
 

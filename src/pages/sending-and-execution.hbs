@@ -50,6 +50,10 @@ description: "Choose send execution, sending rates, queue limits, deadlines, can
     <p>Async sends select their destination, apply its Email templates and validate during executor execution. Those failures go onto the returned
       completion; a null email remains an immediate argument error. Direct or caller-runs executors may execute on the caller itself.
       Simple batches retain lazy iteration on their execution thread.</p>
+    <p>Ordinary <code>buildEmail()</code> creates the submitted message. The selected destination combines its applicable defaults and overrides
+      during preparation, using each field's documented precedence or merge rules. Use
+      <code>buildEmailCompletedWithDefaultsAndOverrides(...)</code> when you explicitly need that completion earlier; see
+      <a href="understanding-configuration.html#configuration-resolution-timing">when choices are combined</a>.</p>
     <p>To use another permitted server after a connection failure, configure <a href="/smtp-connection-failover.html">SMTP connection failover</a>.
       It shares this operation's queue, deadline, cancellation and observer. Busy pools and sending-limit waits do not trigger it.</p>
   </div>

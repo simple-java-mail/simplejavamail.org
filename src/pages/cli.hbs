@@ -71,6 +71,11 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
       Builder flags are deliberately explicit because they map directly to builder methods.
     </p>
     <p class="wide">
+      Message-file arguments for options such as <code>--email:copying</code>, <code>--email:forwarding</code> and
+      <code>--email:replyingTo</code> accept EML and Outlook MSG. The file's contents select the parser, so extensionless or renamed files keep
+      their format. <code>--email:startingFromExactEml</code> accepts EML for exact submission.
+    </p>
+    <p class="wide">
       Each repeated builder flag is a separate call, applied in command-line order with its own arguments. For example,
       <code>--email:to alice@example.org --email:to bob@example.org</code> adds both recipients. An optional display name belongs only to its own occurrence:
       <code>--email:to "Alice" alice@example.org --email:to bob@example.org</code> names Alice and leaves Bob unnamed.
@@ -334,6 +339,10 @@ Elapsed: 142ms</code></pre>
       override environment variables. A daemon captures these startup sources once; restart that daemon after changing them. Explicit options on each
       command still participate in selecting its reusable Mailer.
     </p>
+    <p class="wide">In unreleased 10.0.0, an explicit connection option must agree with other explicit loaded declarations by default.
+      After reviewing which setup should apply, use <code>--mailer:withConnectionConflictPolicy ALLOW_EXPLICIT_OVERRIDES</code> for deliberate replacement.
+      Locks and mandatory TLS requirements still apply. See <a href="/understanding-configuration.html#connection-conflicts">connection authority and restrictions</a>.
+      Other Email and Mailer settings keep their own precedence or merge rules.</p>
     <p class="wide">
       <a href="configuration.html#section-locked-configuration">Locked configuration</a> uses the same startup sources, for example
       <code>simplejavamail.locked.smtp.host=relay.company.com</code>. There is no separate lock flag: a conflicting builder option such as

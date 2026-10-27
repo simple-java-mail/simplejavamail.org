@@ -478,7 +478,7 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 				</p>
 				<p>In the unreleased 10.0.0 line, different explicit Java, raw-property, factory and supplied Session declarations for the same
           supported TLS setting fail during construction by default. Remove obsolete trust workarounds at their sources, or deliberately select
-          the advanced <a href="configuration.html#connection-conflicts">override policy</a>. Locks and mandatory encryption requirements remain
+          the advanced <a href="understanding-configuration.html#connection-conflicts">override policy</a>. Locks and mandatory encryption requirements remain
           binding in either mode.</p>
 			</div>
 			<div class="side">
@@ -763,7 +763,7 @@ currentMailerBuilder
 				<p><code>clearSmimeSigning()</code> and <code>clearSmimeEncryption()</code> remove one local choice independently;
 					<code>clearSmime()</code> removes both. These operations retain recipient certificates and permit ordinary template fallback.
 					Use the per-field suppression controls when a template should not supply the cleared choice again. Recipient certificates can
-					still request encryption after the Email choices are cleared. The <a href="configuration.html#configuration-precedence">scope and precedence table</a>
+					still request encryption after the Email choices are cleared. The <a href="understanding-configuration.html#configuration-precedence">scope and precedence table</a>
 					explains these separate sources; ordinary suppression cannot remove configuration locks.</p>
 				<p><code>signWithSmime(config)</code> and <code>encryptWithSmime(config)</code> require a non-null configuration.
                     A missing value throws <code>IllegalArgumentException</code> before changing an earlier choice; use the named clear methods
@@ -957,7 +957,7 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 				<p>Inspect the original converted Email for historical S/MIME results and protected bytes. Ordinary copying and supported Java serialization
 					preserve them. Defaults/overrides completion resolves outgoing content and protection settings without copying these results, the
 					decrypted-attachment inspection list or retained signed-content view. Fresh plain/unsigned result metadata on the completed Email does not
-					describe the input's protection or verify outgoing MIME. See <a href="configuration.html#repeated-email-completion">completion and source history</a>.</p>
+					describe the input's protection or verify outgoing MIME. See <a href="understanding-configuration.html#repeated-email-completion">completion and source history</a>.</p>
 			</div>
 			<div class="wide full-width-example">
 <pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
@@ -1075,23 +1075,25 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 				<p>
 					As an S/MIME signed message is actually nested as an attachment, the default behavior is to merge the S/MIME signed content into the root message.
 					This only happens if there was exactly one S/MIME signed attachment and the decrypted version is of type "message/rfc822".
+					The inner message supplies the body. For each header name, compared without regard to capitalization, its complete value list
+					replaces the outer list; unrelated headers and attachments from both messages remain. This merge does not establish signature validity.
 				</p>
 				<p>
-					This default behavior can be deactivated. For your convenience, the decrypted message is available as a separate Email instance:
+					Disable merging on the conversion builder to keep the views separate. You can inspect the nested message in either case.
+					Ordinary Email defaults and overrides still apply later during completion:
 				</p>
 			</div>
 
 			<div class="wide full-width-example">
-<pre><code class="small">Email nonMergedEmail = SimpleJavaMail.fromDefaults().emailBuilder()
-                .copying(mergedEmail)
-                .clearSMIMESignedAttachmentMergingBehavior()
-                .buildEmail();
-
-// or by configuring the intermediary builder:
-emailBuilder = mail.converter().fromOutlookMsg(msgFile).toEmailBuilder(); // or
-emailBuilder = mail.converter().fromEml(emlFile).toEmailBuilder();
-Email nonMergedEmail = emailBuilder
+<pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+Email nonMergedEmail = mail.converter().fromEml(emlFile).toEmailBuilder()
                 .notMergingSingleSMIMESignedAttachment()
+                .buildEmail();
+// fromOutlookMsg(msgFile).toEmailBuilder() supports the same choice.
+
+// Restore the default merge when copying a previously unmerged Email:
+Email mergedEmail = mail.emailBuilder().copying(nonMergedEmail)
+                .clearSMIMESignedAttachmentMergingBehavior()
                 .buildEmail();</code></pre>
 				You always have access to the nested decrypted message:
 				<pre><code class="small">mergedEmail.getSmimeSignedEmail();

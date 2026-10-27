@@ -30,11 +30,13 @@ description: "Configure mailers in Java, property files, or environment variable
       </p>
     </section>
     <section class="introduction">
-    <div class="view">
+    <div class="wide">
       <p>
-        The Java API and configuration files work together. A configuration snapshot resolves its sources in the order you list them, with later
-        non-blank values winning. In the unreleased 10.0.0 line, overlapping connection declarations must agree by default.
-        The advanced <a href="#connection-conflicts">connection conflict policy</a> lets an application deliberately permit Java overrides.
+        Simple Java Mail combines loaded configuration with choices made in Java. Ordinary Java Mailer choices take precedence over loaded defaults.
+        Connection settings add a safeguard: conflicting explicit declarations are rejected by default. Email defaults and overrides follow their own field rules.
+        Mailer configuration is completed when you build it; Email templates are applied when you complete an Email or prepare it for sending.
+        The <a href="/understanding-configuration.html">advanced configuration guide</a> explains intentional overrides, combined values and unexpected results.
+      </p>
         <a href="#section-programmatic-api-common" id="section-programmatic-api-common" class="section-link h2">&sect;</a>
   <h2>Programmatic API - common settings</h2>
 
@@ -151,14 +153,7 @@ mail.mailerBuilder(session)
         concurrent sending, or create independent Sessions with independent Properties copied from your original SMTP settings.
         Use <code class="inline language-java">Session.getInstance(...)</code> rather than
         <code class="inline language-java">Session.getDefaultInstance(...)</code> when you need separate Sessions.</p>
-      <p>A supplied Session keeps its connection settings, including settings it leaves absent. Ordinary factory connection defaults do not
-        replace its timeouts, local binding, EHLO name or certificate trust, or fill their gaps. Deliberate customization and applicable locks
-        can add settings. Different explicit declarations of the same setting fail under the default
-        <a href="#connection-conflicts">connection conflict policy</a>; select <code>ALLOW_EXPLICIT_OVERRIDES</code> when replacement is intended.
-        This is independent of whether the Session previously belonged to another Mailer.</p>
-      <p>If a setting comes from an inherited <code>Properties</code> default, clearing it cannot remove that default. Such a clear is rejected
-        before changing the Session. Supply a replacement value or create a new Session with independent Properties containing only the
-        settings you want.</p>
+      <p>A supplied Session keeps its existing connection settings and its omitted settings. Ordinary factory connection defaults do not fill its gaps. Use one Mailer per Session and read <a href="/understanding-configuration.html#supplied-sessions">the supplied-Session rules</a> before customizing it.</p>
     </div>
   </section>
 
@@ -167,7 +162,7 @@ mail.mailerBuilder(session)
   <h3>Programmatic API - other settings</h3>
 
   <section>
-    <div class="view">
+    <div class="wide">
       <p>
         The mailer builder also covers validation, diagnostics, timeouts, local binding, shared signing defaults, and
         <a href="features.html#section-extension-points">extension points</a>.
@@ -184,79 +179,22 @@ mail.mailerBuilder(session)
         <tr><td><code>withConnectionConflictPolicy(...)</code></td><td><code>ConnectionConflictPolicy</code></td><td>Advanced handling of conflicting connection declarations.</td></tr>
         <tr><td><code>withValidationConfig(...)</code></td><td><code>ValidationConfig</code></td><td>Address policy, warning behavior and maximum prepared email size.</td></tr>
       </tbody></table>
-      <p>Each configuration-group setter replaces that group's supplied choices. Omitted fields use remaining applicable configuration rather than
-        keeping the previous group's values. The connection conflict policy remains separate from group replacement.
-        Use <code>mailerBuilder.getConnectionPoolConfig().toBuilder()</code>, for example, to retain choices while editing a group, or
-        <code>useConfiguredConnectionPoolConfig()</code> to restore inheritance for the whole group. Group builders own detailed inspection and
-        clear/reset methods; root getters inspect supplied groups. Effective settings remain available on the built Mailer.</p>
-      <p>An explicit empty Java string remains a supplied choice and follows that setting's validation or clearing rules.
-        It does not restore a captured value. This differs from blank entries in property sources, which are treated as absent.
-        Use the named clear or <code>useConfigured...</code> operation to express either intent explicitly.</p>
-      <p id="explicit-connection-clears">In the unreleased 10.0.0 line, an explicit hostname or local-bind clear can remove the corresponding
-        unlocked direct Jakarta Mail property, including a captured raw extra-property overlay. Removing an imported value is a conflicting
-        customization under <code>REJECT_CONFLICTS</code>; deliberate removal requires <code>ALLOW_EXPLICIT_OVERRIDES</code>.
-        <code>clearLocalBindAddress()</code> removes
-        both address and port; the member-specific port clear removes only the port. Unset choices inherit, <code>useConfigured...</code>
-        restores captured configuration, and resets select library defaults. Mandatory locks and caller-Session inherited-property limits still apply.</p>
+      <p>A group setter replaces the choices supplied for that group. Use its <code>toBuilder()</code> when editing a value while retaining its other choices. The built Mailer exposes resolved settings through <code>getOperationalConfig()</code>.</p>
+
+      <p id="explicit-connection-clears">Clearing a connection setting can remove an imported value and is subject to conflict checks. <a href="/understanding-configuration.html#explicit-connection-clears">Check the clearing and restoration rules</a> when working with loaded properties or a supplied Session.</p>
       <p><code>ConnectionConfig.Builder.withSessionTimeout(...)</code> sets connect, read and write timeouts together.
         Use <code>withConnectTimeout(...)</code>, <code>withReadTimeout(...)</code> or <code>withWriteTimeout(...)</code> to adjust one operation.
         The last setter affecting an operation wins; see the <a href="#socket-timeouts">timeout examples and precedence</a>.</p>
-      <p>The group's getters inspect supplied choices, including unset values. On the built Mailer,
-        <code>mailer.getOperationalConfig().getConnectTimeout()</code>, <code>getReadTimeout()</code> and <code>getWriteTimeout()</code>
-        report effective construction settings. <code>getSessionTimeout()</code> returns their common <code>Duration</code> only when all three
-        are known and equal, otherwise <code>null</code>. Null does not mean unlimited, and inspection does not guess provider defaults or track
-        direct Session mutations after construction. The group's common getter follows the same equality rule for its supplied choices.</p>
+      <p>Builder getters inspect supplied choices; the built Mailer reports the resolved settings. See <a href="/understanding-configuration.html#configuration-diagnostics">which inspection to use</a> when tracing a value.</p>
     </div>
 
     <div class="wide">
-      <h4 id="configuration-operations">Setting, clearing and restoring a choice</h4>
-      <table><thead><tr><th>Operation</th><th>Meaning at the documented scope</th></tr></thead><tbody>
-        <tr><td><code>withX(value)</code></td><td>Supply a choice. Group setters replace the supplied group; collection methods can append where their contract says so.</td></tr>
-        <tr><td><code>clearX()</code></td><td>Remove that scope's choice. Another fallback can apply; some clears explicitly remove a captured setting too.</td></tr>
-        <tr><td><code>resetX()</code></td><td>Select the published built-in fallback, including absence when that is the fallback.</td></tr>
-        <tr><td><code>useConfiguredX()</code></td><td>Restore captured configuration for that member or group.</td></tr>
-        <tr><td>Builder group getters</td><td>Inspect supplied choices, including absence and explicit-clear flags, without resolving or validating runtime settings or allocating resources. This includes <code>getMailSendRetryPolicy()</code>; use the built Mailer's <code>OperationalConfig</code> for resolved retry settings.</td></tr>
-        <tr><td>Built Mailer configuration getters</td><td>Inspect the effective construction settings. They do not track later direct Session mutations.</td></tr>
-      </tbody></table>
-      <p>Not every setting has every operation. The setter's contract defines its scope, and configuration locks still apply.
-        For example, <code>resetMaxSize()</code> chooses the library pool maximum, while <code>useConfiguredMaxSize()</code> restores the captured maximum.
-        Neither changes the other supplied members.</p>
-      <p>Suppose the factory captured <code>simplejavamail.defaults.connectionpool.maxsize=7</code>. Replacing the pool group discards its previous
-        supplied maximum and claim timeout:</p>
-      <pre><code class="language-java">ConnectionPoolConfig firstPoolChoices = ConnectionPoolConfig.builder()
-    .withMaxSize(9)
-    .withClaimTimeout(Duration.ofSeconds(2))
-    .build();
-mailerBuilder.withConnectionPoolConfig(firstPoolChoices);
-
-mailerBuilder.withConnectionPoolConfig(ConnectionPoolConfig.builder()
-    .withCoreSize(1)
-    .build());
-// Supplied max size and claim timeout are now null.
-// The built Mailer resolves max size to the captured 7.</code></pre>
-      <p>To make the same core-size change while retaining the original supplied maximum and claim timeout, edit that value instead:</p>
-      <pre><code class="language-java">mailerBuilder.withConnectionPoolConfig(firstPoolChoices.toBuilder()
-    .withCoreSize(1)
-    .build());
-// Supplied max size remains 9 and claim timeout remains two seconds.</code></pre>
-      <p>Use <code>mailerBuilder.getConnectionPoolConfig().toBuilder()</code> when editing the builder's current group.
-        These pool-group edits leave previously built values and Mailers unchanged. For a caller-owned Session, removing an explicit connection choice restores that
-        Session's baseline where applicable; it does not start applying ordinary factory connection defaults.</p>
-      <p>Clearing creation-age expiration explicitly disables even a captured age setting. Restoring inheritance is a separate operation;
-        both retain the group's other choices, including idle expiration:</p>
-      <pre><code class="language-java">ConnectionPoolConfig noCreationAge = mailerBuilder.getConnectionPoolConfig().toBuilder()
-    .clearExpireAfterCreation()
-    .build();
-mailerBuilder.withConnectionPoolConfig(noCreationAge);
-// getExpireAfterCreation() is null; isExpireAfterCreationCleared() is true.
-
-ConnectionPoolConfig inheritedCreationAge = noCreationAge.toBuilder()
-    .useConfiguredExpireAfterCreation()
-    .build();
-mailerBuilder.withConnectionPoolConfig(inheritedCreationAge);
-// getExpireAfterCreation() is still null; isExpireAfterCreationCleared() is false.
-// The built Mailer can use the factory's captured age setting again.</code></pre>
-    </div>
+<h4 id="configuration-operations">Setting, clearing and restoring a choice</h4>
+<p><code>withX(...)</code> supplies a choice; <code>clearX()</code> removes it at the documented scope. <code>resetX()</code> chooses the library fallback, and <code>useConfiguredX()</code> restores captured configuration. For a small group edit, keep the existing value and change only the desired member: <a href="/understanding-configuration.html#configuration-operations">Read the detailed explanation</a>.</p>
+</div>
+<div class="wide"><pre><code class="language-java">mailerBuilder.withConnectionPoolConfig(mailerBuilder.getConnectionPoolConfig().toBuilder()
+    .withMaxSize(12)
+    .build());</code></pre></div>
 
     <div class="wide full-width-example">
       <pre><code class="small">// report missing fields, invalid addresses and CRLF suspicions as warnings,
@@ -473,56 +411,13 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
 
 
   <a href="#connection-conflicts" id="connection-conflicts" class="section-link h3">&sect;</a>
-  <h3>Advanced: choose how connection conflicts are handled</h3>
-  <section>
-    <div class="view">
-      <p>In the unreleased 10.0.0 line, <code>ConnectionConflictPolicy.REJECT_CONFLICTS</code> is the default. If factory configuration,
-        recognized Jakarta Mail properties, a supplied Session and explicit Java choices declare different values for the same supported
-        connection setting, <code>buildMailer()</code> fails before changing the Session or opening a connection. The error identifies the
-        setting and available source labels. Equivalent parsed values are accepted; built-in defaults are not competing declarations.
-        Trusted-host lists with the same exact names are compatible even when their order or repeated names differ. Factory objects are
-        compared by identity, and empty text is kept distinct from an omitted setting.</p>
-      <p>Property sources resolve first. A later environment value replacing the same property from a file is ordinary loading, including in
-        Spring. The policy checks the resulting declarations against each other, such as an SJM proxy host and a different raw SOCKS host.</p>
-      <p>Select <code>ALLOW_EXPLICIT_OVERRIDES</code> when the application deliberately replaces supplied connection setup. Explicit typed Java
-        members then win over their raw counterparts regardless of call order. Unspecified members retain applicable raw values: the example
-        selects <code>chosen-proxy.example.org:1081</code>, rather than replacing the raw port with a proxy default.</p>
-      <p>A raw SOCKS host can include its port, such as <code>proxy.example.org:1081</code>. A separate raw SOCKS port takes precedence over
-        that embedded port. An untouched supplied Session keeps an omitted port; an ordinary factory port does not silently replace the
-        provider's fallback.</p>
-    </div>
-    <div class="side">
-<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
-    .withConnectionConflictPolicy(
-        ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES)
-    .withProperty("mail.smtp.socks.host", "shared-proxy.example.org")
-    .withProperty("mail.smtp.socks.port", 1081)
-    .withProxyConfig(SocksProxyConfig.builder()
-        .withHost("chosen-proxy.example.org")
-        .build())
-    .buildMailer();</code></pre>
-      <p>Without the policy selection, the different proxy hosts conflict. In either mode, compatible raw host/port values can combine with
-        SJM proxy credentials. The selected remote route is resolved before authenticated proxying uses its local bridge.</p>
-<pre><code class="language-properties small"># Default; Java can select a different mode unless it is locked:
-simplejavamail.connection.conflictpolicy=REJECT_CONFLICTS
-
-# Alternatively, require strict handling within this factory:
-simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code></pre>
-    </div>
-    <div class="wide">
-      <p>This advanced policy covers supported SMTP, proxy, socket-timeout, local-binding, EHLO and TLS connection settings.
-        It does not change Email defaults, execution, pooling or telemetry rules, or interpret arbitrary provider extensions and hidden
-        Authenticator state. <a href="#section-locked-configuration">Locks</a> and mandatory TLS requirements remain binding in both modes.</p>
-      <p>Repeated setters still replace earlier local choices, and replacing a group discards its previous supplied choices. The policy compares
-        the completed choices, not setter history. Clearing an imported connection value is a conflict in strict mode; clearing a local-only
-        choice remains normal builder editing. See <a href="#configuration-operations">clearing, resetting and restoring configuration</a>.</p>
-      <p><code>getConnectionConflictPolicy()</code> on the builder inspects its explicit selection. <code>resetConnectionConflictPolicy()</code>
-        selects <code>REJECT_CONFLICTS</code>; <code>useConfiguredConnectionConflictPolicy()</code> restores the captured policy, or the strict
-        default if none was configured. Inspect the resolved mode with <code>mailer.getOperationalConfig().getConnectionConflictPolicy()</code>,
-        or read the captured setting with <code>ConfigKeys.CONNECTION_CONFLICT_POLICY</code>. The CLI accepts
-        <code>--mailer:withConnectionConflictPolicy ALLOW_EXPLICIT_OVERRIDES</code>, and Spring accepts the same property values.</p>
-    </div>
-  </section>
+  <h3>Conflicting connection settings</h3>
+  <section><div class="wide">
+    <p>In unreleased 10.0.0, different explicit declarations of the same supported connection setting cause <code>buildMailer()</code> to fail by default.
+      Ordinary file/environment precedence resolves first. Align the declarations, or deliberately choose the advanced override policy when Java should replace imported setup.</p>
+    <p>Read <a href="/understanding-configuration.html#connection-conflicts">how connection conflicts are handled</a> for the policy, partial customization and supplied Sessions.
+      Locks and mandatory TLS requirements remain binding.</p>
+  </div></section>
 
   <a href="#section-proxy-bridge-ports" id="section-proxy-bridge-ports" class="section-link h3">&sect;</a>
   {{#> components/feature-heading-h3 socks=true}}Authenticated proxy bridge ports{{/components/feature-heading-h3}}
@@ -602,7 +497,7 @@ simplejavamail.smtp.username=</code></pre>
         <code>clearSMTPServerUsername()</code>; the password remains a separate choice. Clearing both stored credentials requires
         <code>clearSMTPServerPassword()</code> as well. Removing an imported connection value requires the deliberate override policy;
         configuration locks still apply. See the
-        <a href="#configuration-operations">operation table</a> for the distinction between clearing and restoring configuration.</p>
+        <a href="/understanding-configuration.html#configuration-operations">operation table</a> for the distinction between clearing and restoring configuration.</p>
       <p>
         Only the winning value is parsed. A malformed lower-priority value therefore causes no error when a valid higher-priority source replaces it:
       </p>
@@ -625,7 +520,7 @@ Loaded SMTP port: 587</code></pre>
 SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
       <p>
         Only add environment and system-property sources when you want them. Explicit loaders do not silently read either one.
-        Mailer connection customization follows the <a href="#connection-conflicts">connection conflict policy</a>; Email defaults and overrides
+        Mailer connection customization follows the <a href="/understanding-configuration.html#connection-conflicts">connection conflict policy</a>; Email defaults and overrides
         follow their separate <a href="#section-config-mailer">message rules</a>.
       </p>
     </div>
@@ -732,6 +627,10 @@ Mailer failoverMailer = failoverMail.mailerBuilder().buildMailer();
 productionMailer.close();
 </code></pre>
     </div>
+    <div class="wide">
+<h4 id="configuration-resolution-timing">When choices are combined</h4>
+<p>Build a new factory and Mailer to use changed loaded settings. Ordinary <code>buildEmail()</code> creates the submitted Email; complete it explicitly or let the selected Mailer apply its templates during send preparation. <a href="/understanding-configuration.html#configuration-resolution-timing">Read the detailed explanation</a>.</p>
+</div>
   </section>
 
   <a href="#section-typed-config-keys" id="section-typed-config-keys" class="section-link h3">&sect;</a>
@@ -1050,16 +949,15 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 			Ordinary <code>buildEmail()</code> leaves defaults unapplied. Templates can be incomplete, including a DKIM signing template without a sender;
 			the Mailer validates the prepared message before sending.
 		</p>
+		<p class="wide">Use <code>withoutEmailDefaults()</code> to omit ordinary message defaults, or <code>useConfiguredEmailDefaults()</code>
+      to return to the factory's captured defaults. Configuration locks remain binding. See
+      <a href="/understanding-configuration.html#configuration-operations">editing template choices</a> for more specific changes.</p>
 		<p class="wide">
 			Sending, rehearsing or exporting the original <a href="features.html#section-exact-eml">exact Email</a> bypasses ordinary message templates. Its supplied bytes are already final,
 			so Mailer defaults, overrides, configured content validation, and security transformations cannot change them. Put any required visible headers in the
 			EML before building the exact Email, and configure only its SMTP envelope on the exact builder.
 		</p>
-		<p class="wide">
-			Explicitly calling <code>mailer.getEmailGovernance().produceEmailApplyingDefaultsAndOverrides(exactEmail)</code> applies ordinary defaults and
-			overrides to the parsed view and returns a new composed Email. The supplied exact Email remains unchanged. The composed result does not guarantee
-			the original EML bytes or the validity of signatures already on the source; reuse the original exact Email when those bytes must be preserved.
-		</p>
+		<p class="wide">Exact Email retains its separate byte-preservation contract. <a href="/understanding-configuration.html#repeated-email-completion">Read the completion and conversion details</a> before applying ordinary templates to its parsed view.</p>
 		<div class="wide">
 <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 
@@ -1092,76 +990,22 @@ Email yourServerLevelOverrides = mail.emailBuilder().startingBlank()
 
 	<section>
 		<div class="wide">
-			<h4 id="configuration-precedence">Which scope supplies the value?</h4>
-			<table><thead><tr><th>Scope or value</th><th>Resolution</th></tr></thead><tbody>
-				<tr><td>Property sources</td><td>Later non-blank values win. Blank or null entries do not erase an earlier value.</td></tr>
-				<tr><td>Single values and complete policy values</td><td>Applicable override, then submitted Email, then applicable default. Compound crypto configurations are selected as a whole.</td></tr>
-				<tr><td>Recipients, Reply-To, delivery-recipient overrides, attachments and embedded images</td><td>Add missing override entries, retain every submitted entry, then add missing default entries. Existing duplicates and their order remain intact.</td></tr>
-				<tr><td>Headers</td><td>Combine names case-insensitively. For one name, an override replaces its entire value list; otherwise submitted values replace the default list.</td></tr>
-				<tr><td>Recipient certificates and NOTIFY preferences</td><td>Group policy constructs the recipient metadata. The resulting explicit recipient value wins over the governance-resolved Email fallback, including an Email override.</td></tr>
-				<tr><td>Configuration locks</td><td>Separate mandatory restrictions remain binding through ordinary clears, template replacement and suppression.</td></tr>
-			</tbody></table>
-			<p>The per-email exclusions below determine which ordinary template contributions apply. Sending, rehearsing and exporting the original exact Email
-				preserve its final bytes without ordinary templates or security transformations. Compatible envelope locks still apply;
-				locks that would require changing the preserved content are rejected.
-				See the <a href="security.html#section-sending-smime">recipient certificate rules</a> for the separate group-policy choices.</p>
-		</div>
+<h4 id="configuration-precedence">Which scope supplies the value?</h4>
+<p>For a single Email value, an applicable override wins over the submitted value, which wins over an applicable default. Recipients and resources can combine; a winning header replaces the value list for that name. <a href="/understanding-configuration.html#configuration-precedence">Read the detailed explanation</a>.</p>
+</div>
 		<div class="wide">
-			<h4 id="repeated-email-completion">Completing an Email more than once</h4>
-			<p>A completed Email can be completed or sent again, including through another Mailer. Each pass can fill missing scalar values and apply
-				the selected Mailer's overrides. Completion keeps your suppression choices and always enforces applicable locks. It does not freeze the message.</p>
-			<p>Completion carries outgoing content and settings, including S/MIME, OpenPGP and DKIM configuration; protection is applied later when MIME
-				is prepared. Historical cryptographic results and original protected bytes, <a href="delivery-reports.html#trust-and-preservation">received delivery reports</a>
-				and their nested facts, decrypted-attachment inspection lists and retained S/MIME
-				signed-content views are not copied into the completed Email. Inspect the original converted Email for those results. Ordinary copying and
-				supported Java serialization preserve input history. Content already present in ordinary bodies, headers and resources remains outgoing content.</p>
-			<p>Additive templates contribute only values not already present. For example, supplied recipients <code>[A, A, B]</code>, overrides
-				<code>[A, C, C]</code> and defaults <code>[B, D, D]</code> produce <code>[C, A, A, B, D]</code>. Reapplying those templates keeps that
-				order. Recipient matching includes the name, address, To/Cc/Bcc role, certificate and notification preferences, accounting for missing
-				names supplied by mandatory locks. Explicit conflicting names still fail validation.</p>
-			<p>Attachments and images match only when their metadata and recognized source agree. Reusing the same resource or DataSource is recognized;
-				library-owned paths and byte arrays can also be compared without opening a stream. Different filenames, descriptions, Content-IDs or
-				encoding choices remain distinct. Duplicate detection does not read files or remote content. Different opaque sources remain separate,
-				even if their names and MIME types match; serialization or reconstruction can lose recognizable source identity.</p>
-			<p>For ordinary sends, use <code>buildEmail()</code> and let the selected destination apply its settings. If you send a completed result,
-				its materialized values are now supplied values: another Mailer's default sender cannot replace an existing sender, but an override can.
-				Headers and complete policies retain the rules above. The original exact Email and frozen retry content keep their separate preservation contracts.</p>
-		</div>
-		<p class="wide">
-			A template can also supply the message being forwarded. A default fills a missing forwarded message; an override replaces the one supplied
-			on the Email. Use <code>EmailProperty.MAIL_TO_FORWARD</code> with the per-field opt-outs below to skip that template contribution.
-			The subject still follows its own precedence. The selected <code>MimeMessage</code> remains borrowed, so keep it available and unchanged
-			while the Email is being used; applying templates does not read or copy its body. Sending, rehearsing and exporting an exact Email still bypass ordinary templates.
-		</p>
-		<p class="wide">
-			Repeated <code>withEmailDefaults(...)</code> calls replace the template. <code>useConfiguredEmailDefaults()</code> restores the snapshot-derived
-			defaults. <code>withoutEmailDefaults()</code> omits ordinary message defaults while retaining configuration locks; per-email opt-outs remain available below.
-		</p>
-		<p class="wide">
-			To remove only default DKIM signing while preserving other property defaults, materialize the defaults, copy that Email, call
-			<code>clearDkim()</code>, and pass the result to <code>withEmailDefaults(...)</code>. Materialization still reads any configured signing key.
-			The <a href="migration-notes-10.0.0.html#dkim-defaults">migration example</a> shows both replacing and removing the default signature.
-		</p>
-		<div class="wide">
-			<p>Clearing a submitted Email's local DKIM choice has a different scope: ordinary templates can supply signing again.
-				Exclude those template contributions separately when that is intended:</p>
-			<pre><code class="language-java">EmailPopulatingBuilder draft = mail.emailBuilder()
-    .copying(original)
-    .clearDkim();
-// The local choice is gone; ordinary signing defaults or overrides can still apply.
+<h4 id="repeated-email-completion">Completing an Email more than once</h4>
+<p>Completing an Email again applies the selected Mailer's templates again; completion does not freeze its settings. Use the submitted Email for ordinary sends and keep the original exact Email when preserving its bytes matters. <a href="/understanding-configuration.html#repeated-email-completion">Read the detailed explanation</a>.</p>
+</div>
 
-draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
-    .dontApplyDefaultValueFor(EmailProperty.DKIM_SIGNING_CONFIG)
-    .dontApplyOverrideValueFor(EmailProperty.DKIM_SIGNING_CONFIG)
-    .build());</code></pre>
-			<p>Editing the existing options retains unrelated exclusions. This suppresses ordinary DKIM template contributions for that Email;
-				it does not remove mandatory configuration locks or change the original Email.</p>
-		</div>
+
+
+
 	</section>
 
 	<section>
 		<div class="view">
-			<p>
+			<p id="email-template-exclusions">
 				To keep defaults or overrides away from one email, configure that after whichever builder starter you used.
 			</p>
 		</div>
@@ -1186,14 +1030,8 @@ draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
 			<p>Use <code>EmailProperty.ALL_RECIPIENTS</code> to exclude ordinary To, Cc and Bcc additions together, or choose one recipient type
 				to exclude only that type. Your Email's own recipients remain. Delivery-recipient overrides use the separate
 				<code>OVERRIDE_RECEIVERS</code> selector, and none of these exclusions removes recipients required by locked properties.</p>
-			<p>On <code>EmailTemplateOptions.Builder</code>, repeated suppression calls accumulate exclusions; an empty call changes nothing. Use <code>allowDefaultValueFor(...)</code>
-				or <code>allowOverrideValueFor(...)</code> to remove selected exclusions, and <code>clearDefaultValueSuppressions()</code>
-				or <code>clearOverrideValueSuppressions()</code> to remove all exclusions in that family. These edits leave global
-				<code>ignoringDefaults()</code>/<code>ignoringOverrides()</code> choices and configuration locks unchanged.</p>
-			<p>A calendar's method and text belong together. Excluding either <code>CALENDAR_METHOD</code> or <code>CALENDAR_TEXT</code>
-				skips that source's whole calendar. An override exclusion lets the Email's own calendar, or otherwise its default calendar, apply;
-				a default exclusion leaves overrides eligible. Your Email's own calendar remains. If you excluded both selectors, allowing only one
-				leaves the other exclusion active. Calendar transfer encoding is a separate choice.</p>
+
+
 		</div>
 
 		<div class="side">
@@ -1334,7 +1172,8 @@ Mailer mailer = mail.mailerBuilder()
     <ul>
       <li><a href="#section-programmatic-api-common">Programmatic API - common settings</a></li>
       <li><a href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
-	  <li><a href="#connection-conflicts" class="indent">Advanced: connection conflicts</a></li>
+	  <li><a href="#connection-conflicts" class="indent">Conflicting connection settings</a></li>
+      <li><a href="/understanding-configuration.html" class="indent">Understanding configuration (advanced)</a></li>
 	  <li><a href="#section-proxy-bridge-ports" class="indent">Authenticated proxy bridge ports</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
 	  <li><a href="#section-config-snapshot" class="indent">When changes take effect</a></li>
@@ -1416,25 +1255,9 @@ mail.mailerBuilder().withSMTPServerHost("another-relay.example.org").buildMailer
     </div>
   </section>
   <section>
-    <h3>What a lock does, and what it does not do</h3>
-    <p class="wide">A lock prevents accidental changes within this factory. It is not a security sandbox: application code can deliberately create
-      an independently configured factory or use another transport. It also cannot guarantee final delivery, an arriving DSN, or downstream compliance.</p>
-    <ul>
-      <li>Exact EML keeps its bytes. Compatible envelope additions, such as an archive BCC, are allowed; a lock that would require changing preserved
-        content is rejected. Matching readable headers can satisfy a lock without rewriting them. Duplicate Subject, From, or Reply-To fields make a
-        lock on that field ambiguous and are rejected; a single Reply-To field can still contain multiple addresses. Existing opaque signatures are
-        not treated as proof that a required signing configuration was used.</li>
-      <li>Clusters check the selected SMTP configuration as well as the invoking Mailer's restrictions. A different destination cannot silently weaken
-        them. Ordinary sends, batches, and open-connection sends all retain the message requirements.</li>
-      <li>A caller-owned Session must agree with the applicable locks. If the SMTP username or password is locked, use this factory's
-        <code>mailerBuilder()</code> without supplying a Session. Even a matching visible username cannot rule out cached credentials or an
-        Authenticator choosing another account. Custom TLS handling is also rejected when it prevents checking the applicable locks.
-        Do not mutate a Mailer's Session while it is in use.</li>
-      <li><code>CustomMailer</code> receives the governed message, but owns its transport and delivery envelope. Locks on those settings, including archive
-        recipients, are rejected with that callback. Content settings that Simple Java Mail prepares still apply.</li>
-      <li>Locked DSN requests require explicit provider support and an SMTP server advertising DSN. A third-party adapter cannot silently fall back to
-        best-effort behavior. Connection TLS and onward REQUIRETLS remain separate requirements.</li>
-    </ul>
+    <h3>What a lock protects</h3>
+    <p class="wide">A lock prevents accidental changes within this factory; it is not a security sandbox. Applications can still create an independent factory.
+      <a href="/understanding-configuration.html#locked-requirements">Read the lock boundaries</a> for exact EML, supplied Sessions, custom transports and destination changes.</p>
   </section>
 
     <section><p class="wide">For more than one approved SMTP destination, see <a href="/smtp-connection-failover.html#section-named">named failover configuration</a>.
