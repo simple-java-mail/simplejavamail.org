@@ -257,7 +257,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
     recordResult(receipt, null);
 }</code></pre>
     <p class="wide">CLI <code>send</code> and <code>connect</code> use the synchronous view and wait for completion.
-      Remove <code>--mailer:async</code> and <code>--mailer:async--help</code>; both are rejected with an argument error unless an earlier genuine help option has already ended the command.
+      Remove <code>--mailer:async</code> and <code>--mailer:async--help</code> when used as execution options; both are rejected with an argument error unless an earlier genuine help option has already ended the command.
       The CLI does not print send receipts, and daemon request concurrency is unchanged.</p>
     <p class="wide">See <a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> for the current operation contracts.</p>
   </section>
@@ -274,7 +274,8 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       help option keeps that option meaning. Literal values also honor the selected daemon mode, including
       <code>--daemon=require</code>. See <a href="cli.html#section-usage-help">CLI usage help</a>.</p>
     <p class="wide">The same ordering applies to removed options: <code>sjm send --help --mailer:async</code> now shows help instead of a migration error.
-      A removed option before help, or without help, still reports its removal. No flags or script escaping rules change.</p>
+      A removed option before help, or without help, still reports its removal. A value consumed by Picocli, such as
+      <code>--email:withSubject "--mailer:async=false"</code>, remains literal. No flags or script escaping rules change.</p>
   </section>
 
   <h2 id="email-construction">Build Email objects through buildEmail()</h2>
