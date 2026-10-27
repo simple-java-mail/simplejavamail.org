@@ -773,6 +773,11 @@ currentMailerBuilder
                     certificate throws <code>IllegalArgumentException</code> immediately, retaining the earlier material and all algorithm
                     preferences. Supply a replacement only when it is available. Selecting these values performs no cryptography and
                     does not load the S/MIME module; certificates retain their supplied identity.</p>
+                <p>In unreleased 10.0.0, <code>Pkcs12Config.build()</code> requires store bytes, a store password, a key alias and a key password.
+                    Missing choices fail with <code>IllegalArgumentException</code> identifying the field. Supply <code>""</code> or an empty
+                    <code>char[]</code> for an explicitly empty password. The builder getters can still inspect incomplete choices;
+                    null setter arguments leave earlier choices intact. Store parsing, password correctness and alias existence are checked
+                    by the S/MIME operation when it uses the configuration.</p>
 				<p>
 					For encryption, Simple Java Mail can use one email-level encryption certificate, or different certificates per recipient. When any
 					To/Cc/Bcc recipient carries a certificate, it requests S/MIME encryption even without an email-level encryption configuration.
