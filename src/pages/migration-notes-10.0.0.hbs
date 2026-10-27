@@ -40,6 +40,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#attachment-content-types">Keep attachment Content-Type parameters</a></li>
       <li><a href="#multipart-attachment-import">Keep explicitly attached multipart containers</a></li>
       <li><a href="#calendar-method-import">Review calendar method import</a></li>
+      <li><a href="#imported-sent-dates">Handle unavailable imported sent dates</a></li>
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#connection-conflicts">Review conflicting connection configuration</a></li>
@@ -410,6 +411,16 @@ boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
     <p>Review workarounds that uppercased calendar text before importing it or specifically handled the old case-related failure. Missing and
       unsupported methods retain their existing failure behavior. Existing blank/malformed-header fallback and leading-method-token recovery
       remain, while exact/protected source bytes retain their preservation contract.</p>
+  </div></section>
+
+  <h2 id="imported-sent-dates">Handle unavailable imported sent dates</h2>
+  <section><div class="wide">
+    <p>Earlier MIME/EML imports could roll impossible calendar dates into another day or silently treat an unknown timezone as UTC.
+      These values now leave <code>getSentDate()</code> and <code>getSentDateAsInstant()</code> null while readable content remains available.
+      Keep a null check when using an imported date; valid dates and unambiguous supported legacy formats retain their meaning.</p>
+    <p>The conversion calls stay the same. Ordinary reconstruction still generates a current date when none was fixed, while exact EML keeps
+      its original bytes. The original <code>Date</code> header is not added to ordinary Email headers. See
+      <a href="features.html#interpreted-sent-dates">sent-date interpretation</a>.</p>
   </div></section>
 
   <h2 id="grouped-configuration">Move advanced builder settings into configuration groups</h2>

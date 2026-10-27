@@ -2259,6 +2259,13 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         and <code class="inline language-text">Resent-*</code>, along with obsolete structural metadata, are omitted.
         See the <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/core-module/src/main/java/org/simplejavamail/api/internal/general/HeadersToIgnoreWhenParsingExternalEmails.java">complete filtered-header list</a>.
       </p>
+      <p id="interpreted-sent-dates">
+        In the unreleased 10.0.0 line, MIME/EML import leaves <code>getSentDate()</code> and <code>getSentDateAsInstant()</code> null when the
+        source date is impossible or its timezone is missing or unrecognized. For example, <code>31 Feb 2026 10:20:30 +0000</code> does not
+        become a date in March. Readable content and unambiguous legacy date formats remain usable. The source <code>Date</code> header does
+        not also appear in <code>Email.getHeaders()</code>. Ordinary reconstruction supplies a current date when none was fixed;
+        <a href="#section-exact-eml">exact EML</a> preserves the original bytes even when their interpreted date is unavailable.
+      </p>
       <p id="undecodable-optional-headers">
         In the unreleased 10.0.0 line, an optional generic header whose encoded-word charset is unavailable retains its undecoded source text,
         with legal folding safely unfolded, so neighboring fields and readable content remain available. This does not guess missing characters
