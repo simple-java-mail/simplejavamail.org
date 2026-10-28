@@ -2218,9 +2218,21 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
         Eager extraction closes each attachment stream it opens, including when reading fails; calendar streams acquired during interpretation
-        follow the same rule. This does not close the DataSource itself or a top-level EML stream supplied by your application.
+        follow the same rule. An unsupported calendar charset still fails conversion without leaking a content stream.
+        This does not close the DataSource itself or a top-level EML stream supplied by your application.
         Both eager and lazy extraction retain equivalent content-type metadata, including valid parameters such as <code>charset</code>.
         Use a MIME parser when you need only the base type, rather than comparing the complete type string to <code>text/plain</code>.
+      </p>
+      <p id="imported-inline-resources">
+        A referenced image inside <code>multipart/related</code> needs no <code>Content-Disposition</code> header. When that header is absent,
+        conversion puts the image once in <code>getEmbeddedImages()</code>, without adding a second copy to <code>getAttachments()</code>.
+        An explicitly attached, referenced image keeps its established downloadable and embedded views; intentional resource occurrences remain intact.
+      </p>
+      <p>
+        CID references can use URL escapes: <code>cid:logo%2F1@example.org</code> refers to <code>Content-ID: &lt;logo/1@example.org&gt;</code>.
+        Conversion recognizes that relationship while retaining the original HTML, Content-ID and image bytes. A literal <code>+</code> stays a plus;
+        the complete Content-ID remains case-sensitive. Unreferenced resources retain the ordinary attachment behavior, with the same result from
+        eager and lazy extraction. See <a href="migration-notes-10.0.0.html#imported-inline-resources">changes to imported image lists</a>.
       </p>
       <p>
         MIME/EML import ignores valid parenthesized comments in body and resource transfer-encoding headers. For example,
