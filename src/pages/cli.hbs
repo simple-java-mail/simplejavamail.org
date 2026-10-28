@@ -296,7 +296,9 @@ Elapsed: 142ms</code></pre>
       later arguments are ignored. Values keep the selected one-shot or daemon mode.</p>
     <p class="wide">In unreleased 10.0.0, this also applies to removed execution options:
       <code>sjm send --help --mailer:async</code> shows help. Placing the removed option before help, or supplying it alone, keeps its migration error.
-      Standard and option-specific help follow the same rule, including commands expanded from argument files.</p>
+      Standard and option-specific help follow the same rule, including commands expanded from argument files.
+      Later malformed daemon selectors follow it too: <code>sjm send --help --daemon=typo</code> shows help locally.
+      Placing an invalid selector before help, or supplying it without help, keeps its diagnostic.</p>
     <p class="wide">Retired option spellings remain usable as message values in unreleased 10.0.0:
       <code>--email:withSubject "--mailer:async=false"</code> uses that text as the subject.
       An actual unmatched <code>--mailer:async</code> option keeps its migration error. Picocli determines which arguments are values;
@@ -326,7 +328,9 @@ Elapsed: 142ms</code></pre>
       sjm send --email:withSubject "My Subject" --mailer:withSMTPServer host=... --other arguments
     </code></pre>
     <p class="wide">
-      Double or single quotes preserve spaces, <code class="inline language-text">#</code> starts a comment outside quotes, and argument files may include
+      Double or single quotes preserve spaces. An unquoted <code class="inline language-text">#</code> finishes any preceding token before starting
+      a comment: <code>"Hello"# note</code> keeps <code>Hello</code> as one argument, and <code>""# note</code> keeps an empty argument.
+      In unreleased 10.0.0, LF, CR and CRLF line endings all keep the next line's option separate. Argument files may include
       other argument files within the documented depth and size limits. Relative names resolve from the directory where the client command was invoked.
       Prefix a literal value that starts with <code class="inline language-text">@</code> with a second at sign, for example
       <code class="inline language-text">@@example</code> passes the literal value <code class="inline language-text">@example</code>,

@@ -1296,6 +1296,11 @@ byte[] content = logo.readAllBytes();</code></pre>
 				the failure do not accumulate on the draft. Explicitly supplied images, including deliberate duplicates, remain intact.
 				This applies to the image-resolution pass; it does not undo external reads or later failures while constructing the Email.
 			</p>
+			<p id="automatic-image-cid-schemes">
+				In the unreleased 10.0.0 line, existing <code>cid:</code> references are skipped before automatic lookup regardless of scheme
+				capitalization. For example, <code>&lt;img src="CID:logo"&gt;</code> keeps its supplied <code>logo</code> image even when external
+				resolution is required to succeed. The Content-ID itself remains case-sensitive, and the HTML spelling is retained.
+			</p>
 			<p id="automatic-image-source-quotes">
 				In the unreleased 10.0.0 line, a quoted image source ends with the same quote that opened it. For example,
 				<code>&lt;img src="it's.png"&gt;</code> resolves the complete <code>it's.png</code> location; the apostrophe belongs to the filename.
@@ -2230,7 +2235,9 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       </p>
       <p>
         CID references can use URL escapes: <code>cid:logo%2F1@example.org</code> refers to <code>Content-ID: &lt;logo/1@example.org&gt;</code>.
-        Conversion recognizes that relationship while retaining the original HTML, Content-ID and image bytes. A literal <code>+</code> stays a plus;
+        In unreleased 10.0.0, HTML attribute character references also participate in that identity: <code>src="cid:logo&amp;#64;example.org"</code>
+        refers to <code>Content-ID: &lt;logo@example.org&gt;</code>. Conversion interprets the attribute before URL escapes, without changing raw CSS text.
+        Conversion recognizes those relationships while retaining the original HTML, Content-ID and image bytes. A literal <code>+</code> stays a plus;
         the complete Content-ID remains case-sensitive. Unreferenced resources retain the ordinary attachment behavior, with the same result from
         eager and lazy extraction. See <a href="migration-notes-10.0.0.html#imported-inline-resources">changes to imported image lists</a>.
       </p>
