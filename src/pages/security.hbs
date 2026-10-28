@@ -1006,6 +1006,8 @@ details.getFailureReason(); // safe diagnostic text when processing did not succ
 				<code>UNKNOWN</code> verification and decryption results. Recognizable MIME declarations can still identify an outer
 				<code>SIGNED</code> or <code>ENCRYPTED</code> mode; ambiguous S/MIME uses <code>SmimeMode.UNKNOWN</code>.
 				Clearly plain messages keep their plain, unsigned and unencrypted results. Explicitly requesting decryption still requires the module.
+				In unreleased 10.0.0, equivalent media-type capitalization is also recognized with the module installed: <code>Multipart/Signed</code>
+				and <code>multipart/signed</code> select the same inspection. Original headers and protected bytes remain intact.
 			</p>
 			<p class="wide">
 				With <code>smime-module</code> installed, an encrypted message without a supplied key reports <code>KEY_MISSING</code> decryption and

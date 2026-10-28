@@ -1064,7 +1064,12 @@ boolean positiveReply = receipt.getSmtpResponse()
       and intentional resource occurrences remain unchanged.</p>
     <p>Percent-escaped CID references now identify their original image, for example <code>cid:logo%2F1@example.org</code> and
       <code>Content-ID: &lt;logo/1@example.org&gt;</code>. Such an image remains embedded rather than being treated as unreferenced.
-      Existing HTML, Content-IDs and bytes need no edits. See <a href="features.html#imported-inline-resources">conversion and inline resources</a>.</p>
+      HTML attribute character references are recognized too: <code>src="cid:logo&amp;#64;example.org"</code> identifies
+      <code>Content-ID: &lt;logo@example.org&gt;</code>. Existing HTML, Content-IDs and bytes need no edits.
+      See <a href="features.html#imported-inline-resources">conversion and inline resources</a>.</p>
+    <p>Automatic image resolution now skips existing <code>cid:</code> schemes regardless of capitalization. An existing
+      <code>CID:logo</code> reference no longer fails required external resolution; the Content-ID and HTML spelling remain unchanged.
+      See <a href="features.html#automatic-image-cid-schemes">existing CID references</a>.</p>
   </div></section>
 
   <h2 id="attachment-reader-ownership">Handle attachment reads and stream ownership explicitly</h2>
@@ -1220,6 +1225,13 @@ boolean positiveReply = receipt.getSmtpResponse()
       mode other than the known protected modes as confirmed plain content. The inspection result getters expose <code>UNKNOWN</code> when
       verification or decryption could not be established, and the nullable signature-valid getter stays <code>null</code> in that case.
       Clearly plain input keeps its existing plain, unsigned and unencrypted results.</p>
+  </div></section>
+
+  <h2 id="smime-media-type-capitalization">Keep equivalent S/MIME declarations intact</h2>
+  <section><div class="wide">
+    <p>With S/MIME support installed, media-type capitalization no longer makes a signed or encrypted message appear plain.
+      <code>Multipart/Signed</code> and <code>multipart/signed</code> select the same inspection. Remove workarounds that rewrite
+      protected mail solely to normalize its type; pass the original source to conversion. The correction preserves original headers and bytes.</p>
   </div></section>
 
   <h2 id="existing-mime-smime-protection">Review S/MIME protection of an existing MimeMessage</h2>
