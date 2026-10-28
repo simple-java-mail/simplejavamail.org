@@ -48,6 +48,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
       <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
+      <li><a href="#cli-daemon-startup-configuration">Keep complete configuration when starting a CLI daemon</a></li>
       <li><a href="#submission-results">Check exception reporting and SMTP acceptance checks</a></li>
       <li><a href="#email-convenience-mailboxes">Check address-list interpretation and display names</a></li>
       <li><a href="#notification-destination-lists">Read notification destinations as lists</a></li>
@@ -261,6 +262,17 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       The CLI does not print send receipts, and daemon request concurrency is unchanged.</p>
     <p class="wide">See <a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> for the current operation contracts.</p>
   </section>
+
+  <h2 id="cli-daemon-startup-configuration">Keep complete configuration when starting a CLI daemon</h2>
+  <section><div class="wide">
+    <p>Detached daemon startup now retains supported JVM configuration for named Mailers and their locks. Earlier 10.0.0 development builds
+      could keep <code>simplejavamail.failover.mailer=standby</code> while dropping <code>simplejavamail.mailers.standby.smtp.host</code>, leaving
+      the selected failover undefined. Existing setting names and values need no changes.</p>
+    <p>Supply configuration when starting an absent daemon through <code>daemon start</code> or <code>--daemon=acquire</code>. Running instances
+      keep their startup defaults; later client JVM properties do not replace them. Supply the complete desired configuration again with
+      <code>daemon restart</code> to capture new defaults. Explicit request Mailer options retain the normal conflict policy and lock checks.
+      See the <a href="cli.html#daemon-startup-configuration">CLI startup guide</a>. This concerns the unreleased 10.0.0 daemon.</p>
+  </div></section>
 
   <h2 id="cli-help-values">Keep CLI values ending in --help</h2>
   <section>

@@ -220,6 +220,17 @@ Elapsed: 142ms</code></pre>
       <code class="inline language-text">--daemon=off</code> for an explicit one-shot command. Named instances are available through
       <code class="inline language-text">--daemon-instance=work</code> when separate startup configuration or lifecycle is needed.
     </p>
+    <p class="wide" id="daemon-startup-configuration">
+      A daemon captures its configuration when it starts. In unreleased 10.0.0, detached startup preserves all supported SJM JVM settings,
+      including <code>simplejavamail.mailers.*</code> definitions and their <code>simplejavamail.locked.mailers.*</code> settings. A primary's named
+      failover therefore keeps its complete definition. Property files, environment variables, source precedence and locks retain their normal rules.
+    </p>
+    <p class="wide">
+      Later client JVM properties do not change a running daemon's defaults, and <code>--daemon=acquire</code> reuses that instance.
+      To change startup defaults, supply the complete desired configuration again when invoking <code>daemon restart</code>; restart uses that
+      invocation's configuration. Explicit CLI Mailer options follow the normal conflict policy and locks. See
+      <a href="migration-notes-10.0.0.html#cli-daemon-startup-configuration">daemon startup configuration</a>.
+    </p>
     <p class="wide">
       One daemon can safely retain several Mailers. The complete effective Mailer configuration selects the reusable entry, so different SMTP hosts,
       credentials, proxy settings, trust material, or pool settings do not share a Mailer. The standalone distribution includes

@@ -255,6 +255,13 @@ try (Mailer mailer = mail.mailerBuilder()
     <p class="wide">Attachment <code>DataSource</code> objects and forwarded <code>MimeMessage</code> objects remain borrowed. Building does not
       read or freeze them, so keep their content stable and available while an operation consumes it. Exact EML owns its supplied bytes;
       retry-enabled sends create their own repeatable content snapshot.</p>
+    <p class="wide" id="email-equality"><code>Email.equals()</code> compares selected represented message values and is useful in assertions
+      about constructed, copied or converted messages. Its visible, Reply-To and delivery-override recipient lists, and attachment/image lists,
+      ignore order while counting occurrences. It normalizes HTML line endings and compares attachment metadata without reading content bytes.
+      Template-suppression choices are outside this comparison;
+      selected message facts and signing choices participate. Equal Emails therefore do not establish complete construction-choice equality,
+      identical MIME bytes or interchangeable sends under a particular Mailer's defaults and overrides. For queue deduplication, compare the
+      application facts that define the intended send rather than using Email equality as a delivery identity.</p>
     <p class="wide">
       Start from a configured
       <a href="https://javadoc.io/page/org.simplejavamail/simple-java-mail/latest/org/simplejavamail/api/SimpleJavaMail.html" target="_blank">
