@@ -2248,7 +2248,9 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       <p>
         CID references can use URL escapes: <code>cid:logo%2F1@example.org</code> refers to <code>Content-ID: &lt;logo/1@example.org&gt;</code>.
         In unreleased 10.0.0, HTML attribute character references also participate in that identity: <code>src="cid:logo&amp;#64;example.org"</code>
-        refers to <code>Content-ID: &lt;logo@example.org&gt;</code>. Conversion interprets the attribute before URL escapes, without changing raw CSS text.
+        refers to <code>Content-ID: &lt;logo@example.org&gt;</code>. Each <code>srcset</code> URL is interpreted separately from its descriptor:
+        <code>srcset="cid:logo&amp;#64;example.org 1x"</code> identifies the same image. Commas inside a URL remain part of its identity.
+        Conversion interprets the attribute before URL escapes, without changing raw CSS text.
         Conversion recognizes those relationships while retaining the original HTML, Content-ID and image bytes. A literal <code>+</code> stays a plus;
         the complete Content-ID remains case-sensitive. Unreferenced resources retain the ordinary attachment behavior, with the same result from
         eager and lazy extraction. See <a href="migration-notes-10.0.0.html#imported-inline-resources">changes to imported image lists</a>.
