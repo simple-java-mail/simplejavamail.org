@@ -1080,7 +1080,8 @@ boolean positiveReply = receipt.getSmtpResponse()
     <p>Percent-escaped CID references now identify their original image, for example <code>cid:logo%2F1@example.org</code> and
       <code>Content-ID: &lt;logo/1@example.org&gt;</code>. Such an image remains embedded rather than being treated as unreferenced.
       HTML attribute character references are recognized too: <code>src="cid:logo&amp;#64;example.org"</code> identifies
-      <code>Content-ID: &lt;logo@example.org&gt;</code>. Existing HTML, Content-IDs and bytes need no edits.
+      <code>Content-ID: &lt;logo@example.org&gt;</code>. In <code>srcset</code>, each URL is interpreted separately from its descriptor, so
+      <code>srcset="cid:logo&amp;#64;example.org 1x"</code> retains that image as embedded. Existing HTML, Content-IDs and bytes need no edits.
       See <a href="features.html#imported-inline-resources">conversion and inline resources</a>.</p>
     <p>Automatic image resolution now skips existing <code>cid:</code> schemes regardless of capitalization. An existing
       <code>CID:logo</code> reference no longer fails required external resolution; the Content-ID and HTML spelling remain unchanged.
