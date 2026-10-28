@@ -2539,8 +2539,14 @@ MimeMessage encrypted = MailerHelper.signAndOrEncryptMessageWithSmime(
         normally displays only one of them.
       </p>
       <p>
+        In unreleased 10.0.0, priming a reply to a single-format original generates the reply's missing alternative. Plain text becomes safely
+        escaped HTML with its line breaks; HTML becomes readable text with paragraph and list breaks, link destinations and image alternative text.
+        Script and style content is omitted from the generated plain text, and conversion does not fetch links or images. If the original supplies
+        both bodies, each keeps its own wording. Generation happens once; later edits and clears remain independent.
+      </p>
+      <p>
         A custom quote template changes the HTML alternative and must contain <code class="inline language-text">%s</code>, which is replaced with the
-        original HTML. The plain-text alternative keeps its usual <code class="inline language-text">&gt; </code> quoting.
+        original or generated HTML once. The plain-text alternative keeps its usual <code class="inline language-text">&gt; </code> quoting.
       </p>
       <p>
         Use <code class="inline language-java">prependPlainText(...)</code> and <code class="inline language-java">prependHTMLText(...)</code> to keep the

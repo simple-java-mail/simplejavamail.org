@@ -337,6 +337,18 @@ Email email = builder.buildEmail();</code></pre>
       <code>FromFile</code> variants.</p>
   </section>
 
+  <h2 id="reply-body-alternatives">Review primed reply alternatives</h2>
+  <section>
+    <p class="wide">In 9.3.6, replying to a single-format original left an empty quote in the missing body alternative. In 10.0.0,
+      <code>replyingTo(...)</code> and <code>replyingToAll(...)</code> generate that alternative once while priming the reply. Plain text is
+      escaped into HTML with line breaks; HTML produces readable plain text with paragraph/list breaks, link destinations and image alt text.
+      Script and style text is omitted, and links/images are not fetched.</p>
+    <p class="wide">Review any workaround that supplies or depends on an empty quote. Originals with both formats keep their independent wording,
+      and the HTML quote template applies once to the original or generated HTML. Continue editing both alternatives when adding your answer:
+      later setters, clears, prepends and Email defaults/overrides keep their existing behavior. No reply method signature changes for this correction.
+      See <a href="features.html#section-reply-forward">reply priming and body editing</a>.</p>
+  </section>
+
   <h2 id="attachment-resource-builder">Build advanced attachments with named metadata</h2>
   <section>
     <p class="wide">
