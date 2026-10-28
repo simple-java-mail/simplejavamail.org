@@ -2234,6 +2234,11 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         An explicitly attached, referenced image keeps its established downloadable and embedded views; intentional resource occurrences remain intact.
       </p>
       <p>
+        In unreleased 10.0.0, unreferenced inline resources with the same Content-ID all remain available through <code>getAttachments()</code>.
+        Their filenames, bytes and source order are retained, including when other attachments appear between them. Repeated Content-IDs no longer
+        discard an earlier unreferenced resource. Eager and lazy imports follow the same classification and retain their existing read timing.
+      </p>
+      <p>
         CID references can use URL escapes: <code>cid:logo%2F1@example.org</code> refers to <code>Content-ID: &lt;logo/1@example.org&gt;</code>.
         In unreleased 10.0.0, HTML attribute character references also participate in that identity: <code>src="cid:logo&amp;#64;example.org"</code>
         refers to <code>Content-ID: &lt;logo@example.org&gt;</code>. Conversion interprets the attribute before URL escapes, without changing raw CSS text.
