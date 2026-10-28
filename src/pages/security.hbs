@@ -1007,7 +1007,9 @@ details.getFailureReason(); // safe diagnostic text when processing did not succ
 				<code>SIGNED</code> or <code>ENCRYPTED</code> mode; ambiguous S/MIME uses <code>SmimeMode.UNKNOWN</code>.
 				Clearly plain messages keep their plain, unsigned and unencrypted results. Explicitly requesting decryption still requires the module.
 				In unreleased 10.0.0, equivalent media-type capitalization is also recognized with the module installed: <code>Multipart/Signed</code>
-				and <code>multipart/signed</code> select the same inspection. Original headers and protected bytes remain intact.
+				and <code>multipart/signed</code> select the same inspection. Known <code>smime-type</code> values also ignore capitalization:
+				<code>SIGNED-DATA</code> selects signature processing and <code>ENVELOPED-DATA</code> identifies encrypted content.
+				Original headers and protected bytes remain intact; missing and unknown parameter values keep their existing interpretation.
 			</p>
 			<p class="wide">
 				With <code>smime-module</code> installed, an encrypted message without a supplied key reports <code>KEY_MISSING</code> decryption and
