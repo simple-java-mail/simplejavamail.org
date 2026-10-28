@@ -34,6 +34,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
       <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
       <li><a href="#cli-help-values">Keep CLI values ending in --help</a></li>
+      <li><a href="#required-mailer-inputs">Use named operations to remove Mailer choices</a></li>
       <li><a href="#email-construction">Build Email objects through buildEmail()</a></li>
       <li><a href="#email-body-method-names">Use consistent body method names</a></li>
       <li><a href="#attachment-resource-builder">Build advanced attachments with named metadata</a></li>
@@ -289,6 +290,17 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       A removed option before help, or without help, still reports its removal. A value consumed by Picocli, such as
       <code>--email:withSubject "--mailer:async=false"</code>, remains literal. No flags or script escaping rules change.</p>
   </section>
+
+  <h2 id="required-mailer-inputs">Use named operations to remove Mailer choices</h2>
+  <section><div class="wide">
+    <p>Required Mailer setters now reject <code>null</code> immediately with <code>NullPointerException</code> and preserve the earlier selection. Previously a missing CustomMailer,
+      OAuth2 token provider or Email template could silently remove it. Check possibly missing inputs before calling the setter rather than
+      relying on implicit removal. A missing supplied Session is likewise rejected before replacing the earlier Session.</p>
+    <p>For deliberate removal, use <code>clearCustomMailer()</code>, <code>clearOAuth2AccessTokenProvider()</code> and
+      <code>clearEmailOverrides()</code>. Use <code>useConfiguredEmailDefaults()</code> to restore property-backed defaults, or
+      <code>withoutEmailDefaults()</code> to supply an empty template. Accepted replacements, borrowed-resource ownership and intentionally
+      nullable SMTP components keep their existing behavior. See <a href="configuration.html#required-mailer-inputs">required Mailer inputs</a>.</p>
+  </div></section>
 
   <h2 id="email-construction">Build Email objects through buildEmail()</h2>
   <section><div class="wide">

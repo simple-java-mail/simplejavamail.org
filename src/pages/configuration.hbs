@@ -388,6 +388,11 @@ mailerBuilder.withEmailDefaults(signingDefaults);
 		  <pre><code class="small">// change the default sending logic to your own approach
 mailerBuilder.withCustomMailer(yourOwnCustomMailerImpl); // send emails, test connections
 </code></pre>
+      <p id="required-mailer-inputs">Required Mailer inputs reject <code>null</code> before changing an earlier choice. This applies to custom sending
+        logic, OAuth2 token providers, Email defaults and overrides, and a supplied Session. Passing a missing value cannot silently remove your callback
+        or message policy. Use <code>clearCustomMailer()</code>, <code>clearOAuth2AccessTokenProvider()</code>,
+        <code>useConfiguredEmailDefaults()</code> or <code>clearEmailOverrides()</code> for intentional removal or restoration.
+        <code>withoutEmailDefaults()</code> instead supplies an empty defaults template. Nullable SMTP components keep their documented meaning.</p>
     </div>
   </section>
 
