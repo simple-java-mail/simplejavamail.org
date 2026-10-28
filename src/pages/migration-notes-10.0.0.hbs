@@ -1056,6 +1056,17 @@ boolean positiveReply = receipt.getSmtpResponse()
       delivery envelope.</p>
   </div></section>
 
+  <h2 id="imported-inline-resources">Check imported image lists</h2>
+  <section><div class="wide">
+    <p>A referenced image without a disposition inside <code>multipart/related</code> now appears once in <code>Email.getEmbeddedImages()</code>.
+      Earlier imports also placed that same resource in <code>getAttachments()</code>, so re-export could emit it twice. Remove any workaround
+      that depends on that duplicate attachment entry. Explicitly attached, referenced images keep their downloadable and embedded views,
+      and intentional resource occurrences remain unchanged.</p>
+    <p>Percent-escaped CID references now identify their original image, for example <code>cid:logo%2F1@example.org</code> and
+      <code>Content-ID: &lt;logo/1@example.org&gt;</code>. Such an image remains embedded rather than being treated as unreferenced.
+      Existing HTML, Content-IDs and bytes need no edits. See <a href="features.html#imported-inline-resources">conversion and inline resources</a>.</p>
+  </div></section>
+
   <h2 id="attachment-reader-ownership">Handle attachment reads and stream ownership explicitly</h2>
   <section><div class="wide">
     <p><code>AttachmentResource.readAllBytes()</code> and <code>readAllData(...)</code> now close the input stream they open, even if reading fails.
