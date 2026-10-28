@@ -294,7 +294,7 @@ send.getCompletion().whenComplete(this::recordCompletion);</code></pre>
 <pre><code class="language-properties"># Optional; omitted means no total send deadline.
 simplejavamail.defaults.mailsend.timeout=PT30S</code></pre>
 <p>The same property works in <a href="/spring.html">Spring</a>. The CLI builder option takes ISO-8601 text too:
-  <code>--mailer:withMailSendTimeout=PT30S</code>. <code>resetMailSendTimeout()</code> removes a configured total deadline.</p>
+  <code>--mailer:withMailSendTimeout PT30S</code>. <code>resetMailSendTimeout()</code> removes a configured total deadline.</p>
   </div>
   <div class="wide">
     <table>

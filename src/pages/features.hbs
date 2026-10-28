@@ -1313,6 +1313,11 @@ byte[] content = logo.readAllBytes();</code></pre>
 				<code>&lt;img src="it's.png"&gt;</code> resolves the complete <code>it's.png</code> location; the apostrophe belongs to the filename.
 				Single-quoted sources follow the same rule. Resolution settings, configured bases and required versus optional failures still apply.
 			</p>
+			<p id="automatic-image-source-attributes">
+				Automatic resolution selects the actual quoted <code>src</code> attribute. In
+				<code>&lt;img alt="example src='decoy.png'" src="real.png"&gt;</code>, it resolves <code>real.png</code> and leaves the alt text intact.
+				In the unreleased 10.0.0 line, quoted preceding attributes can contain source-like text or <code>&gt;</code> without changing that selection.
+			</p>
 		</div>
 
 		<div class="side">

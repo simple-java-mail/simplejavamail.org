@@ -1186,6 +1186,10 @@ boolean positiveReply = receipt.getSmtpResponse()
       resolves <code>it's.png</code> rather than the prefix <code>it</code>. Existing templates need no edits. Code that accidentally relied on a
       truncated location now selects the full requested resource or follows the configured missing-image behavior. See
       <a href="features.html#automatic-image-source-quotes">quoted image sources</a>.</p>
+    <p>Automatic resolution selects the actual quoted <code>src</code> attribute even when an earlier quoted attribute contains
+      source-like text or <code>&gt;</code>. For example, <code>&lt;img alt="example src='decoy.png'" src="real.png"&gt;</code>
+      resolves <code>real.png</code> while preserving the alt text. Existing templates need no edits; a decoy location is no longer
+      looked up or embedded. See <a href="features.html#automatic-image-source-attributes">image source attributes</a>.</p>
   </div></section>
 
   <h2 id="operational-snapshots">Configure Mailers through their builders</h2>
