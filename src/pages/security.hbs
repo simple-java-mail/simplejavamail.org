@@ -1338,6 +1338,12 @@ OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
 					<code class="inline language-java">MimeMessage</code> supplied by your application. Simple Java Mail does not fetch a mailbox over IMAP or POP3.
 				</p>
 				<p>
+					Incoming signature and ciphertext parts can use MIME base64 or quoted-printable transport encoding. Conversion decodes those
+					payloads before OpenPGP verification or decryption while retaining the signed MIME entity and original protected EML bytes.
+					Pass the original message to the converter so verification can use the received signed bytes; the same receive configuration
+					works for EML and <code class="inline language-java">MimeMessage</code> input.
+				</p>
+				<p>
 					For a larger key store, use <code class="inline language-java">passphraseProvider(...)</code> to resolve a passphrase by key ID instead of
 					attaching one to every configured secret key ring.
 				</p>

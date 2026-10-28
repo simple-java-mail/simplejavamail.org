@@ -2229,6 +2229,12 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         content-read failures retain their existing failure behavior. Comments do not change attachment-read timing or exact/protected source bytes.
       </p>
       <p>
+        Incoming OpenPGP/MIME signature and ciphertext parts are decoded from their MIME base64 or quoted-printable transport encoding before
+        cryptographic processing. The signed MIME entity and retained original protected EML stay unchanged. Use the ordinary EML or
+        <code>MimeMessage</code> conversion entry point with your
+        <a href="security.html#section-reading-openpgp">OpenPGP receive configuration</a>.
+      </p>
+      <p>
         A child multipart explicitly marked <code>Content-Disposition: attachment</code> remains one attachment with its filename,
         content-type parameters and content. Text and resources inside that attachment do not join the parent email's body or resource lists.
         Ordinary nested body containers still contribute their content, including repeated plain-text and HTML parts. Inline and filename-only
