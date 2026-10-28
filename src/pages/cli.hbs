@@ -314,6 +314,11 @@ Elapsed: 142ms</code></pre>
       <code>--email:withSubject "--mailer:async=false"</code> uses that text as the subject.
       An actual unmatched <code>--mailer:async</code> option keeps its migration error. Picocli determines which arguments are values;
       no extra escaping is needed in either one-shot or daemon mode.</p>
+    <p class="wide" id="daemon-selector-values">Daemon selector spellings also remain literal when a message option consumes them.
+      For example, <code>--email:withSubject "--daemon=off disables persistence"</code> sets that subject without changing the execution mode.
+      The same applies to body and header values, including <code>--daemon-instance=work</code>. Genuine routing selectors still choose the
+      mode or instance and keep their conflict diagnostics. Put them before builder options if a preceding option could still consume a value;
+      normal option-value ownership takes precedence. No additional escaping is needed.</p>
     <img data-src="../../assets/cli_example.png" alt="Example of Simple Java Mail CLI usage" style="width: 100%; margin-top: 1em;">
   </section>
 
