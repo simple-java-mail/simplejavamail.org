@@ -1344,6 +1344,10 @@ OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
 					works for EML and <code class="inline language-java">MimeMessage</code> input.
 				</p>
 				<p>
+					The same receive keys also apply when OpenPGP packets combine signing and encryption. Each represented signature contributes
+					an individual result, including repeated signatures from one key and signatures found through nested MIME protection layers.
+				</p>
+				<p>
 					For a larger key store, use <code class="inline language-java">passphraseProvider(...)</code> to resolve a passphrase by key ID instead of
 					attaching one to every configured secret key ring.
 				</p>
@@ -1383,6 +1387,19 @@ OriginalOpenPgpDetails details =
 				<code class="inline language-java">FAILED</code>, or <code class="inline language-java">UNKNOWN</code>.
 			</p>
 			<p class="wide">
+				Use <code>getSignatures()</code> for immutable <code>OpenPgpSignatureResult</code> values with each occurrence's status, available
+				key ID and fingerprint, algorithms and failure reason. Repeated occurrences remain separate in a stable metadata order.
+				The whole-message signature status is <code>VALID</code> only when inspection is complete, at least one signature is represented
+				and every result is valid. Known problems take precedence as <code>INVALID</code>, <code>ERROR</code>, <code>KEY_MISSING</code>, then
+				<code>UNKNOWN</code>. <code>NOT_PRESENT</code> requires complete inspection with no signatures; an empty list can also mean that
+				inspection was unavailable or ciphertext remained unopened.
+			</p>
+			<p class="wide">
+				The singular <code>getSignerKeyId()</code>, <code>getSignerFingerprint()</code>, <code>getSignatureAlgorithm()</code> and
+				<code>getHashAlgorithm()</code> shortcuts return a fact only for exactly one represented signature and otherwise return null.
+				The encryption algorithm getter retains its own meaning. Reading any of these results performs no further cryptographic work.
+			</p>
+			<p class="wide">
 				Without <code>openpgp-module</code>, ordinary import preserves recognizable protected mail and reports <code>UNKNOWN</code> for results it
 				could not inspect. A visible signed envelope retains <code>SIGNED</code> mode and <code>NOT_ENCRYPTED</code> for that outer layer; an encrypted
 				envelope retains <code>ENCRYPTED</code> mode with unknown signature and decryption results. If the envelope itself cannot be classified, its
@@ -1399,12 +1416,18 @@ if (details.getSignatureStatus() != SignatureStatus.VALID) {
     // Reject, quarantine, or continue under your application's policy.
 }
 
+for (OpenPgpSignatureResult signature : details.getSignatures()) {
+    SignatureStatus status = signature.getStatus();
+    String signerFingerprint = signature.getSignerFingerprint();
+    // Apply your application's approved-key policy to each result.
+}
+
 if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
     byte[] originalEncryptedEml = details.getOriginalProtectedMessage();
 }</code></pre>
 			</div>
 			<p class="wide">
-				A <code class="inline language-java">VALID</code> signature proves that the supplied key matches the signed MIME entity. It does not prove
+				A <code class="inline language-java">VALID</code> summary means the supplied keys validate every represented signature and inspection is complete. It does not prove
 				that the key belongs to the address in the From header. Key ownership, acceptable fingerprints, revocation handling, and the application's
 				trust rules remain with your code.
 			</p>
@@ -1412,8 +1435,16 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 				When a verification key is missing, the clear signed content remains readable and the result says
 				<code class="inline language-java">KEY_MISSING</code>. When no decryption key matches, the encrypted message stays intact and its exact protected
 				EML bytes remain available through <code class="inline language-java">getOriginalProtectedMessage()</code>.
-				Its signature status stays <code>UNKNOWN</code> while the ciphertext cannot be read, including after a decryption failure. Missing keys and
-				actual cryptographic failures keep their separate results; unknown inspection does not establish success or absence.
+				Uninspected inner signatures remain <code>UNKNOWN</code>. Missing keys and actual cryptographic failures keep their separate results;
+				unknown inspection does not establish success or absence. Established <code>DECRYPTED</code> remains independent when signatures
+				are invalid, lack verification keys or have a processing error. Ciphertext and integrity failures keep their decryption-failure boundary.
+				If a native signature-processing error prevents completion, decryption stays <code>UNKNOWN</code> until an outcome is established.
+			</p>
+			<p class="wide">
+				Older serialized snapshots containing only one selected signature can retain that established per-signature fact, but cannot establish
+				complete inspection of all signatures. Their summary stays conservative, including <code>UNKNOWN</code> for an older selected
+				<code>VALID</code> result. Known invalid or failed results retain their precedence. Ordinary copying and serialization preserve the
+				current result list, its meaning and the original protected bytes.
 			</p>
 			<p class="wide">
 				Simple Java Mail processes at most two nested OpenPGP/MIME protection wrappers. That covers the normal sign-then-encrypt message. If input
