@@ -2256,6 +2256,9 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         conversion puts the image once in <code>getEmbeddedImages()</code>, without adding a second copy to <code>getAttachments()</code>.
         An explicitly attached, referenced image keeps its established downloadable and embedded views; intentional resource occurrences remain intact.
       </p>
+      <p>In unreleased 10.0.0, MIME/EML import ignores valid external comments and folding whitespace around a received Content-ID.
+        For example, <code>Content-ID: &lt;logo@example.org&gt; (company logo)</code> still matches <code>cid:logo@example.org</code> in HTML.
+        The ID itself remains case-sensitive, while filenames, HTML, image content and exact-source bytes stay unchanged.</p>
       <p>
         In unreleased 10.0.0, unreferenced inline resources with the same Content-ID all remain available through <code>getAttachments()</code>.
         Their filenames, bytes and source order are retained, including when other attachments appear between them. Repeated Content-IDs no longer
