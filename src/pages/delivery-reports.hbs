@@ -84,6 +84,9 @@ DELAYED 4.4.1</code></pre>
   <p>Read the action as well as the status: <code>DELAYED 4.4.1</code> means the reporting system has not finished; a later
     <code>FAILED 4.4.1</code> says it stopped. <code>RELAYED</code> and <code>EXPANDED</code> do not establish final mailbox delivery.
     A reported retry-until time belongs to that system; it is not a schedule for your application to resend.</p>
+  <p>A valid action can include comments: <code>Action: failed (recipient removed)</code> yields <code>FAILED</code> without a warning.
+    The action is case-insensitive, and valid comments before or after it do not change its meaning. Unknown actions, extra tokens,
+    quoted values and malformed comments remain <code>UNKNOWN</code>; the original report content is unchanged.</p>
   <p>Missing or unusable scalar fields are <code>null</code>. Recipient and warning lists are immutable and never null.
     A recognized malformed report retains the usable facts and human-readable warnings; contradictory fields are not silently picked.</p>
 </section>
