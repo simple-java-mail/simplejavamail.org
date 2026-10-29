@@ -448,6 +448,11 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
         timeouts govern its waits; idle pooled connections remain governed by their pool lifetime settings.
       </p>
       <p>
+        If the client disconnects, times out or is cancelled while the remote proxy is still connecting or authenticating, its pending remote
+        connection closes too. Concurrent connections remain independent. Stopping the listener closes unfinished setup from that listener,
+        while established pooled or retained tunnels remain usable until their transports close.
+      </p>
+      <p>
         Simple Java Mail writes the selected port to the effective Session before opening the SMTP connection. The value is available as
         <code class="inline language-properties">mail.smtp.socks.port</code> or <code class="inline language-properties">mail.smtps.socks.port</code>
         and can change when a stopped bridge starts again. Use <code class="inline language-java">SocksProxyConfig.Builder.withBridgePort(...)</code>, or the

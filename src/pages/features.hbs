@@ -1393,6 +1393,9 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
       <p>Header names ignore capitalization. To replace all earlier values for a header, pass <code>true</code> as the third argument:
         <code>withHeader("x-route", "new route", true)</code> also replaces a previously configured <code>X-Route</code>.
         Without that flag, calls add values. Email templates use the same header identity when applying defaults and overrides.</p>
+      <p>Raw <code>To</code>, <code>Cc</code> and <code>Bcc</code> headers are an advanced escape from mailbox validation and can change the actual
+        delivery envelope. The configured address validator checks typed recipient fields, including <code>withOverrideReceivers(...)</code>;
+        it does not interpret these raw header values. General injection checks and mandatory configuration locks still apply.</p>
       <p>Pass an empty String or <code>null</code> to emit a present empty header, such as <code>X-MS-TNEF-Correlator:</code>.
         Null does not omit the header or write the text <code>null</code>. Stored null values remain visible in <code>Email.getHeaders()</code>
         and survive copying and serialization. Stored whitespace is retained; non-null values keep the usual MIME encoding and folding.</p>
@@ -1946,6 +1949,10 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
 			  configured S/MIME, OpenPGP or DKIM processing, and checks the final encoded size. It does not connect to SMTP or change the supplied
 			  <code>Email</code>.
 		  </p>
+		  <p>Typed delivery-recipient overrides supplied through <code>withOverrideReceivers(...)</code> receive the same configured address
+			  validation, encoded-word protection and name/address injection checks as other typed recipients, after defaults and overrides are applied.
+			  Raw custom <code>To</code>, <code>Cc</code> and <code>Bcc</code> headers retain their advanced mailbox-validation escape;
+			  general injection checks and mandatory locks still apply. Existing warnings-only configuration keeps its meaning.</p>
 		  <p>
 			  <strong>Use <code>mailer.rehearse(email)</code> when your code needs the prepared result</strong>, for example to preview or export EML, diagnose size,
 			  or inspect the effective Email or transport envelope. Its immutable <code>MailRehearsal</code> exposes the effective Email,
