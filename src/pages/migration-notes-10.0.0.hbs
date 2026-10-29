@@ -1111,7 +1111,7 @@ boolean positiveReply = receipt.getSmtpResponse()
       Earlier imports also placed that same resource in <code>getAttachments()</code>, so re-export could emit it twice. Remove any workaround
       that depends on that duplicate attachment entry. Explicitly attached, referenced images keep their downloadable and embedded views,
       and intentional resource occurrences remain unchanged.</p>
-      <p>Imported attachment and embedded-image filenames now preserve literal angle brackets: <code>&lt;draft&gt;.txt</code> stays <code>&lt;draft&gt;.txt</code>. Earlier versions could silently remove these characters. Applications that matched the altered names should use the decoded source filename. Content-ID parsing and missing-filename fallbacks retain their existing behavior.</p>
+      <p>Imported attachment and embedded-image filenames now preserve literal angle brackets: <code>&lt;draft&gt;.txt</code> stays <code>&lt;draft&gt;.txt</code>. A supplied filename of <code>UnknownAttachment</code> also stays literal instead of being replaced by its Content-ID. Earlier versions could silently alter these names. Applications that matched the altered names should use the decoded source filename. Content-ID parsing and missing-filename fallbacks retain their existing behavior.</p>
     <p>Unreferenced inline parts with a repeated Content-ID now all survive as attachments in source order. Earlier imports retained only the
       last such part. Keep each returned occurrence when processing imported attachments; equal Content-IDs alone do not establish equal content.
       This correction preserves the existing selection when HTML references a duplicated ID.</p>
