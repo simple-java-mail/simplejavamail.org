@@ -1289,6 +1289,16 @@ boolean positiveReply = receipt.getSmtpResponse()
       Clearly plain input keeps its existing plain, unsigned and unencrypted results.</p>
   </div></section>
 
+  <h2 id="retained-smime-signatures">Keep detached signatures in retained decrypted EML</h2>
+    <section><div class="wide">
+      <p>After decrypting an Outlook message containing a detached S/MIME signature, the generated <code>signed-email.eml</code> and
+        retained signed-content view keep the signed MIME container and its signature material. Save the generated attachment's bytes
+        when a later reader needs to verify that signature; readable-content merging remains a separate choice.</p>
+      <p>This restores retained content without changing Java calls or configuration. Standard and legacy opaque signed-data handling,
+        established decryption facts and ordinary content/resource ownership keep their existing behavior. See
+        <a href="security.html#section-reading-smime-merging">retained S/MIME content and merging</a>.</p>
+    </div></section>
+
   <h2 id="smime-media-type-capitalization">Keep equivalent S/MIME declarations intact</h2>
   <section><div class="wide">
     <p>With S/MIME support installed, media-type capitalization no longer makes a signed or encrypted message appear plain.
