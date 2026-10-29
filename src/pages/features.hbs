@@ -2753,6 +2753,8 @@ currentMailerBuilder.withProxyConfig(SocksProxyConfig.builder()
       <p>For an active authenticated proxy, the effective username and password must each contain 1 through 255 UTF-8 bytes.
         <code>buildMailer()</code> rejects credentials outside that range before connecting. See
         <a href="configuration.html#section-proxy-bridge-ports">the proxy setup boundaries</a> for details.</p>
+      <p>Established pooled or retained tunnels no longer hold proxy setup capacity, so new connections can start setup while those tunnels
+        remain open. Simultaneous unfinished setups stay bounded; overload refuses only a new setup and leaves healthy tunnels usable.</p>
       <p>See <a href="configuration.html#section-proxy-bridge-ports">Authenticated proxy bridge ports</a> for automatic loopback ports,
         optional fixed ports, and applications that use more than one authenticated-proxy Mailer.</p>
     </div>
