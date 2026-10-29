@@ -431,7 +431,7 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
     <div class="view">
       <p>
         Jakarta Mail cannot authenticate to a SOCKS proxy by itself. For authenticated proxies, Simple Java Mail starts a small local bridge that
-        handles the proxy login and relays the connection. The bridge listens only on the JVM's loopback address and stops when its Mailer has no
+        handles the proxy login and relays the connection. The bridge listens only on IPv4 loopback <code>127.0.0.1</code> and stops when its Mailer has no
         active proxy operations.
       </p>
       <p>
@@ -442,6 +442,20 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
       <p>
         Authentication trace messages describe the proxy login without printing the username/password packet. This applies independently of
         Jakarta Mail's debug settings.
+      </p>
+      <p>
+        In the unreleased 10.0.0 line, the bridge preserves IPv4 and IPv6 destinations, including a domain name passed to SOCKS because the JVM
+        could not resolve it locally. The remote proxy resolves that name. The provider/JDK's initial local lookup remains unchanged.
+        The IPv4 local hop does not restrict destination or remote-proxy connections to IPv4.
+      </p>
+      <p>
+        For an active authenticated route, the effective proxy username and password must each contain 1 through 255 UTF-8 bytes.
+        <code>buildMailer()</code> rejects an invalid effective length before connecting; collecting and inspecting the supplied
+        <code>SocksProxyConfig</code> choices remains passive. Non-ASCII characters can occupy more than one byte.
+      </p>
+      <p>
+        Proxy setup requires complete, valid authentication and CONNECT replies. A truncated CONNECT reply or an invalid protocol field fails
+        setup before the bridge starts forwarding SMTP traffic.
       </p>
       <p>
         After SOCKS setup, the bridge forwards bytes without an independent read or idle timeout. The SMTP client's configured connection
