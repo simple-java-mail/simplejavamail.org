@@ -1030,6 +1030,17 @@ boolean positiveReply = receipt.getSmtpResponse()
       Your explicitly supplied recipients and the separately controlled delivery-recipient override are unchanged.</p>
   </div></section>
 
+  <h2 id="typed-delivery-validation">Check typed delivery override addresses</h2>
+  <section><div class="wide">
+    <p>Addresses supplied through <code>withOverrideReceivers(...)</code> now receive the selected Mailer's configured address validation,
+      encoded-word protection and injection checks after defaults and overrides are applied. Earlier releases skipped these destinations.
+      Review routing addresses and configured validators when upgrading; recipient order, duplicate occurrences and metadata remain unchanged.</p>
+    <p>Raw custom <code>To</code>, <code>Cc</code> and <code>Bcc</code> headers retain their advanced mailbox-validation escape, with general
+      injection checks and mandatory locks. Warnings-only mode and exact EML's separate envelope contract keep their existing behavior.
+      See <a href="features.html#section-email-validation">validation and rehearsal</a> and
+      <a href="debugging.html#section-override-receivers">test-inbox routing</a>.</p>
+  </div></section>
+
   <h2 id="calendar-template-values">Keep a template's calendar method and text together</h2>
   <section><div class="wide">
     <p>Calendar method and text now resolve together from one source: override, your Email, then default. Earlier releases resolved the two
