@@ -2250,7 +2250,7 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         Both eager and lazy extraction retain equivalent content-type metadata, including valid parameters such as <code>charset</code>.
         Use a MIME parser when you need only the base type, rather than comparing the complete type string to <code>text/plain</code>.
       </p>
-      <p>In unreleased 10.0.0, imported attachment and embedded-image filenames retain their decoded spelling, including literal angle brackets such as <code>&lt;draft&gt;.txt</code>. Filename characters are separate from Content-ID delimiters; a missing filename can still use the existing CID-derived fallback.</p>
+      <p>In unreleased 10.0.0, imported attachment and embedded-image filenames retain their decoded spelling, including literal angle brackets such as <code>&lt;draft&gt;.txt</code> and the name <code>UnknownAttachment</code>. Filename characters are separate from Content-ID delimiters; only a missing filename uses the existing CID-derived fallback.</p>
       <p id="imported-inline-resources">
         A referenced image inside <code>multipart/related</code> needs no <code>Content-Disposition</code> header. When that header is absent,
         conversion puts the image once in <code>getEmbeddedImages()</code>, without adding a second copy to <code>getAttachments()</code>.
