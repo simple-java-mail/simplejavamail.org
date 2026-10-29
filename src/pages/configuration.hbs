@@ -440,6 +440,14 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
         proxies do not use a bridge.
       </p>
       <p>
+        Authentication trace messages describe the proxy login without printing the username/password packet. This applies independently of
+        Jakarta Mail's debug settings.
+      </p>
+      <p>
+        After SOCKS setup, the bridge forwards bytes without an independent read or idle timeout. The SMTP client's configured connection
+        timeouts govern its waits; idle pooled connections remain governed by their pool lifetime settings.
+      </p>
+      <p>
         Simple Java Mail writes the selected port to the effective Session before opening the SMTP connection. The value is available as
         <code class="inline language-properties">mail.smtp.socks.port</code> or <code class="inline language-properties">mail.smtps.socks.port</code>
         and can change when a stopped bridge starts again. Use <code class="inline language-java">SocksProxyConfig.Builder.withBridgePort(...)</code>, or the

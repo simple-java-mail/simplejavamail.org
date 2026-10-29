@@ -1038,6 +1038,8 @@ boolean positiveReply = receipt.getSmtpResponse()
     <p>Either <code>CALENDAR_METHOD</code> or <code>CALENDAR_TEXT</code> now excludes that source's whole calendar contribution. Your Email's own
       calendar remains. Default exclusions still leave overrides eligible, and override exclusions leave your own or default calendar eligible.
       If you depended on mixed components, supply the intended complete calendar through <code>withCalendarText(method, text)</code>.</p>
+    <p>Both arguments are required. A null method or text is now rejected before replacing an earlier calendar choice. Use
+      <code>clearCalendarText()</code> for removal; non-null text remains unparsed, including empty text.</p>
     <p>Stored exclusions remain exactly as supplied. Allowing one selector leaves the calendar excluded when the other is still excluded;
       remove both exclusions to re-enable that source. Calendar transfer encoding remains independent, and locks retain their existing meaning.
       Exact EML sending, rehearsal and export keep their byte-preservation boundary; explicitly completing an exact Email still creates composed

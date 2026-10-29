@@ -94,7 +94,8 @@ DELAYED 4.4.1</code></pre>
     <code>2026-10-16T10:20:30+02:00</code> can still be read. Each recovery adds a warning; it does not rewrite the original message.</p>
   <p>A valid mail date can end in a comment, such as <code>Fri, 16 Oct 2026 10:20:30 +0200 (CEST)</code>.
     Last-attempt and retry-until timestamps retain that instant without a recovery warning. Malformed comments, extra non-comment text,
-    impossible dates and missing or invalid timezones still leave the timestamp unavailable.</p>
+    impossible dates and missing or invalid timezones still leave the timestamp unavailable. Numeric timezone hours must be 00 through 23;
+    offsets such as <code>+2400</code> and <code>+9900</code> do not establish a timestamp.</p>
   <p>If the notification's only direct delivery-status part is in the wrong position, it can still be recognized. Two competing parts are different:
     Simple Java Mail leaves the report facts unavailable rather than choosing one. It likewise does not invent a timezone or turn an impossible date
     into another day. Attached or nested notifications remain separate from the outer email's report.</p>

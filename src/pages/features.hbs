@@ -1564,6 +1564,9 @@ simplejavamail.smtp.localport=25252
       <p>When used in Email defaults or overrides, the calendar's method and text are selected together: override, your Email, then default.
         Excluding either <code>CALENDAR_METHOD</code> or <code>CALENDAR_TEXT</code> skips that template's whole calendar while retaining your
         Email's own calendar. Transfer encoding stays separate. See <a href="configuration.html#section-config-mailer">template exclusions</a>.</p>
+      <p>Both <code>withCalendarText(method, text)</code> arguments are required. A null replacement leaves the earlier pair intact;
+        use <code>clearCalendarText()</code> to remove both and allow template fallback. Non-null calendar text, including an empty string,
+        is retained without parsing its contents.</p>
       <p>
         See the <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/simple-java-mail/src/test/java/demo/FullEmailDemoApp.java#L69">test demo app</a> included in the
         Simple Java Mail source for a working example.

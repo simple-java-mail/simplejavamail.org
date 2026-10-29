@@ -1017,6 +1017,12 @@ details.getFailureReason(); // safe diagnostic text when processing did not succ
 				the unopened ciphertext may contain a signature. After successful decryption, inspected unsigned content reports <code>NOT_SIGNED</code>.
 				A later signature-processing error reports <code>ERROR</code> verification while retaining <code>DECRYPTED</code> and readable content.
 			</p>
+			<p class="wide">
+				Opaque signed S/MIME content inside an encrypted message also contributes its signature result to the outer Email's
+				<code>getOriginalSmimeDetails()</code>. After decryption, its mode is <code>SIGNED_ENCRYPTED</code> and its decryption status stays
+				<code>DECRYPTED</code>, independently of whether signed content is merged into the Email. Standard and legacy MIME spellings
+				select the same inspection.
+			</p>
 			<div class="wide full-width-example">
 <pre><code class="small">Email encrypted = mail.converter()
     .fromEml(Path.of("signed-and-encrypted.eml"))
