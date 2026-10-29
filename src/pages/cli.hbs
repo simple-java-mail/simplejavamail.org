@@ -238,6 +238,13 @@ Elapsed: 142ms</code></pre>
       classpath without that module remains supported, but cannot retain pooled SMTP transports.
     </p>
     <p class="wide">
+      Status and stop have bounded handling capacity separate from waiting mail commands, so slow SMTP work does not occupy their workers.
+      When execution-reply capacity is full, a new command is refused as busy before admission. Stop refuses commands still waiting for
+      admission and drains admitted work under the existing bounded shutdown policy. A disconnected caller does not cancel an admitted command,
+      and an unavailable result never triggers automatic resubmission.
+      Status reports execution-reply handling separately from application work, so that pressure remains inspectable while commands run.
+    </p>
+    <p class="wide">
       The daemon is local to the operating-system user and authenticates every bounded request over a Unix-domain socket or a
       <code class="inline language-text">127.0.0.1</code> fallback. It is not a durable mail queue and never retries an outcome it cannot prove.
       The daemon is part of the CLI, so <code class="inline language-text">-d</code> is the normal cross-platform background route. The portable
