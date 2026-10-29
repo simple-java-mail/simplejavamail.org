@@ -440,6 +440,11 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
         proxies do not use a bridge.
       </p>
       <p>
+        In the unreleased 10.0.0 line, established pooled or retained tunnels no longer occupy proxy setup capacity. New connections can start
+        setup while those tunnels stay open. Simultaneous unfinished setups remain bounded; if setup capacity is full, the bridge refuses only
+        the new setup and keeps healthy established tunnels usable. Setup workers can retire while idle. No additional proxy setting is needed.
+      </p>
+      <p>
         Authentication trace messages describe the proxy login without printing the username/password packet. This applies independently of
         Jakarta Mail's debug settings.
       </p>

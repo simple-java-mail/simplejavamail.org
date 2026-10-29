@@ -1675,6 +1675,15 @@ Mailer mailer = mail.mailerBuilder()
       A proxy must also return a complete, valid CONNECT reply before SMTP forwarding starts. Truncated replies and invalid protocol fields now
       fail setup. See <a href="configuration.html#section-proxy-bridge-ports">authenticated proxy configuration</a> for the current boundaries.
     </p>
+    <h3>Keep established tunnels open while new connections start</h3>
+    <p class="wide">
+      Earlier bridge implementations kept setup workers occupied for the lifetime of established tunnels. In the unreleased 10.0.0 line,
+      forwarding releases that setup capacity, so pooled or retained connections can stay open while new connections start proxy setup.
+    </p>
+    <p class="wide">
+      Simultaneous unfinished setups remain bounded. When setup capacity is full, only the new setup is refused; healthy established tunnels
+      remain usable. Idle setup workers can retire. Existing proxy settings and timeouts are unchanged.
+    </p>
   </section>
 
   <a href="#direct-session" id="direct-session" class="section-link h2">&sect;</a>
