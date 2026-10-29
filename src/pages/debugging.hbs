@@ -127,6 +127,9 @@ mailer.sync().sendMail(email); // <-- this email will be logged but not sent
 			  For testing purposes, you can change where the email is sent to, without touching the actual email being sent, by overriding the envelope-level
 			  receivers. This keeps test routing outside the message content while preserving the original addresses for inspection.
 		  </p>
+		  <p>These typed delivery destinations follow the selected Mailer's address validator and relevant injection checks during validation,
+			  rehearsal and sending, including destinations supplied by defaults or overrides. Their order, repeated occurrences and recipient
+			  metadata remain intact. Raw custom recipient headers have a separate <a href="features.html#section-custom-headers">advanced header contract</a>.</p>
 		  <p>
 			  Copies made with <code>mail.emailBuilder().copying(email)</code> keep these overrides, including recipient order and repeated occurrences.
 			  Editing the copy's subject or body therefore keeps it routed to your testers. Use <code>clearOverrideReceivers()</code> on the copy's builder
