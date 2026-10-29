@@ -367,6 +367,13 @@ com.example.ExampleMailTransportAdapter</code></pre>
     <p class="wide">
       Key discovery, public keyservers, WKD, and application trust policy are outside the module. Pass the key-ring bytes selected by your application.
     </p>
+    <p>For a named Java module in unreleased 10.0.0, resolve the optional feature explicitly in your application's <code>module-info.java</code>:</p>
+    <pre><code class="language-java">module notifications {
+    requires org.simplejavamail;
+    requires org.simplejavamail.openpgp;
+}</code></pre>
+    <p>Continue using the normal signing, encryption and conversion API. The module resolves its existing Kotlin runtime dependency;
+      applications do not need additional access flags for SJM to load the OpenPGP implementation.</p>
   </section>
 
   <h2 id="cli-module" class="with-back-to-top">CLI support</h2>
