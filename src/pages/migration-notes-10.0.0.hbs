@@ -344,6 +344,10 @@ Email email = builder.buildEmail();</code></pre>
       <code>withPlainText</code>, <code>withHTMLText</code>, <code>withCalendarText</code>, the clear methods and the getters on a built
       <code>Email</code> keep their names. The <code>Path</code> variants introduced in 10.0.0 use the new names too; there is no released
       9.x <code>Path</code> overload to migrate.</p>
+    <p class="wide">The String append/prepend parameters are declared non-null. A separate validation correction now rejects a null
+      fragment before changing the draft instead of concatenating the literal text <code>null</code>. Skip an absent fragment in application
+      code; empty strings retain their behavior. Nullable <code>withPlainText((String) null)</code> and
+      <code>withHTMLText((String) null)</code> replacements still clear their respective body.</p>
     <p class="wide">Existing CLI options keep their spellings, including <code>--email:appendText</code>,
       <code>--email:prependText</code>, <code>--email:appendTextHTML</code>, <code>--email:prependTextHTML</code> and their
       <code>FromFile</code> variants.</p>
