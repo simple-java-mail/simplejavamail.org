@@ -2132,6 +2132,18 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
     </p>
   </section>
 
+  <h2 id="unparseable-imported-addresses">Inspect malformed imported address fields</h2>
+  <section><div class="wide">
+    <p>MIME/EML conversion now keeps the complete source value when existing address interpretation fails with an address-grammar error.
+      Input such as <code>Reply-To: broken &lt;address</code> can therefore import where earlier releases aborted. Readable neighboring fields,
+      bodies and attachments remain available, and the retained value stays in a typed <code>Recipient</code> so normal outgoing validation
+      can inspect it. Use validation or rehearsal when deciding whether an imported message is suitable for sending.</p>
+    <p>Successful parsing, existing non-strict To/Cc/Bcc interpretation, names, missing-field fallbacks and singular/list behavior remain unchanged.
+      This recovery does not replace malformed Reply-To with From, hide content/codec/protection failures, change Return-Path recovery or weaken
+      exact EML's byte and explicit-envelope boundaries. No Java method migration is needed. See
+      <a href="features.html#unparseable-imported-addresses">incoming address interpretation</a>.</p>
+  </div></section>
+
   <section aria-label="Migration sequence">
     <div class="button-group">
       <a class="button" href="migration-notes.html#version-10">All migration notes</a>

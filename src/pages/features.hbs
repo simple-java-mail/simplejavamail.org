@@ -2305,6 +2305,13 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         <code>Return-Path: (comment only)</code> remains available for inspection while the message body is still readable.
         This preserves received source data without treating it as a parsed address; it does not change the lenient caller-built recipient contract.
       </p>
+      <p id="unparseable-imported-addresses">
+        If existing MIME/EML address interpretation fails with an address-grammar error, conversion retains the complete offending From,
+        To/Cc/Bcc or Reply-To value in the corresponding <code>Recipient</code> and continues reading useful content. For example,
+        <code>Reply-To: broken &lt;address</code> remains visible instead of becoming the From address. Ordinary outgoing validation still
+        inspects the retained value. Successful lenient parsing, missing-field fallbacks and the separate Return-Path rule remain unchanged;
+        content, codec and protection failures keep their existing handling.
+      </p>
       <p>
         Message-level headers, bounce addresses and receipt destinations come from the effective root message after protection processing.
         An attachment's <code>Return-Path</code> cannot replace the email's bounce address, and its receipt or custom headers do not become
