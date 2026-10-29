@@ -44,6 +44,9 @@ DELAYED 4.4.1</code></pre>
   <h2 id="correlate-and-decide">Match the notification, then make your decision.</h2>
   <p><code>report.getEnvelopeId()</code> is the reported <code>Original-Envelope-Id</code>. When available, match it to the envelope identifier retained
     from your original <a href="/analyzing-send-results.html">submission receipt</a>. It is not Message-ID, a progress observation ID or a telemetry trace ID.</p>
+  <p>Keep the identifier's reported spelling when comparing it with the receipt, including trailing spaces. Do not trim it or decode it again.
+    Header parsing already handles leading field whitespace, so an already-removed prefix cannot be recovered from this value.
+    Repeated fields with different remaining spellings leave the identifier unavailable instead of silently merging them.</p>
   <p>Each recipient provides an original and final <code>ReportedRecipient</code>, a <code>DeliveryAction</code>, an
     <code>EnhancedStatusCode</code>, an optional <code>DeliveryDiagnostic</code> and any last-attempt/retry-until timestamps.
     Addresses keep their reported format and spelling, including duplicate occurrences. The reporting server likewise keeps its name and naming format
