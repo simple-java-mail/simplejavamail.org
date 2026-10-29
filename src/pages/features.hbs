@@ -2638,6 +2638,10 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
         </table>
       </div>
 
+      <p class="wide">String append/prepend methods require a non-null fragment. A null fragment is rejected before changing the draft;
+        an empty string keeps its normal behavior. To remove a body, use its clear method or the explicitly nullable
+        <code>withPlainText((String) null)</code> / <code>withHTMLText((String) null)</code> replacement.</p>
+
       <pre><code class="language-java">Email revised = SimpleJavaMail.fromDefaults().emailBuilder().copying(draft)
     .withPlainText(Path.of("mail", "body.txt"))
     .withHTMLText(Path.of("mail", "body.html"))
