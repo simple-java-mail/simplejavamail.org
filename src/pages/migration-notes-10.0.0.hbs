@@ -1634,6 +1634,22 @@ Mailer mailer = mail.mailerBuilder()
             .withBridgePort(7777)
             .build())
         .buildMailer();</code></pre>
+    <h3>Check proxy destinations and credential lengths</h3>
+    <p class="wide">
+      The authenticated bridge now carries IPv6 destinations and forwards names that the JVM could not resolve to the remote proxy.
+      Its generated local hop uses IPv4 loopback <code>127.0.0.1</code> for provider compatibility, while destination and remote-proxy connections
+      can still use IPv6. The provider/JDK's initial local lookup behavior remains unchanged.
+    </p>
+    <p class="wide">
+      For an active authenticated route, each effective proxy username and password must contain 1 through 255 UTF-8 bytes.
+      <code>buildMailer()</code> now rejects an invalid effective length before connecting instead of sending a malformed authentication request.
+      Check credentials loaded from deployment configuration as well as Java choices; non-ASCII characters can occupy more than one byte.
+      The Java builder calls and property names are unchanged.
+    </p>
+    <p class="wide">
+      A proxy must also return a complete, valid CONNECT reply before SMTP forwarding starts. Truncated replies and invalid protocol fields now
+      fail setup. See <a href="configuration.html#section-proxy-bridge-ports">authenticated proxy configuration</a> for the current boundaries.
+    </p>
   </section>
 
   <a href="#direct-session" id="direct-session" class="section-link h2">&sect;</a>

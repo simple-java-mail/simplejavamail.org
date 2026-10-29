@@ -2698,7 +2698,7 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
         to and then the bridge relays the connection to the target proxy performing the authentication outside of Jakarta Mail.
       </p>
       <p class="wide">
-        The bridge listens only on the JVM's loopback address and shuts down after the last active mail operation. It is an implementation detail for
+        The bridge listens only on IPv4 loopback <code>127.0.0.1</code> and shuts down after the last active mail operation. It is an implementation detail for
         Jakarta Mail, not a general-purpose network proxy.
       </p>
       <p class="wide">
@@ -2726,6 +2726,12 @@ currentMailerBuilder.withProxyConfig(SocksProxyConfig.builder()
         a Java host alone retains an applicable raw port. See <a href="understanding-configuration.html#connection-conflicts">the connection conflict policy</a>.</p>
       <p>With authentication, <code>mailer.getProxyConfig()</code> describes the remote proxy, while the effective Session connects to the local
         bridge. Its allocated loopback port is separate from the remote proxy port.</p>
+      <p>In the unreleased 10.0.0 line, the authenticated bridge carries IPv4 and IPv6 destinations. A hostname the JVM cannot resolve locally is
+        forwarded to the remote proxy for resolution, preserving the provider/JDK's existing initial lookup behavior. Connections to the remote
+        proxy can also use IPv6; the local bridge hop uses IPv4 for provider compatibility.</p>
+      <p>For an active authenticated proxy, the effective username and password must each contain 1 through 255 UTF-8 bytes.
+        <code>buildMailer()</code> rejects credentials outside that range before connecting. See
+        <a href="configuration.html#section-proxy-bridge-ports">the proxy setup boundaries</a> for details.</p>
       <p>See <a href="configuration.html#section-proxy-bridge-ports">Authenticated proxy bridge ports</a> for automatic loopback ports,
         optional fixed ports, and applications that use more than one authenticated-proxy Mailer.</p>
     </div>
