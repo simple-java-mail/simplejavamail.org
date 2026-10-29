@@ -1097,6 +1097,13 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 					Disable merging on the conversion builder to keep the views separate. You can inspect the nested message in either case.
 					Ordinary Email defaults and overrides still apply later during completion:
 				</p>
+				<p>
+					After decrypting an Outlook MSG containing a detached <code>multipart/signed</code> entity, the <code>signed-email.eml</code> entry in
+					<code>getDecryptedAttachments()</code> keeps its signed MIME container and detached signature. Saving that attachment's bytes
+					lets a later import verify the signature independently. The retained signed-content view and generated EML remain available
+					when merging is disabled. MSG-derived EML is generated from the decrypted entity; original outer EML bytes are retained when
+					the input supplies EML.
+				</p>
 			</div>
 
 			<div class="wide full-width-example">
