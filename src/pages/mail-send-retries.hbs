@@ -172,6 +172,8 @@ initiatingMailerBuilder.withMailSendRetryPolicy(resources);
 </div><div class="wide">
   <p>This illustrative output has one final successful outcome. Exhaustion fails with the final genuine exception and receipt, not a replacement
     retry-exhaustion exception. Partial failure stays failure. Retry wait includes backoff and waiting for resumed execution; initial scheduling stays separate.</p>
+  <p>An earlier refusal remains available during backoff or a failed reacquisition. Once another provider invocation starts, it no longer establishes
+    that the email is unsent. A later unchecked provider failure can therefore finish without a receipt; earlier results remain in submission history.</p>
   <p>Acquisition, submission and cleanup accumulate across attempts. Retained scopes exclude shared setup/teardown.
     History records real provider invocations, not failed reacquisitions. It is collected only with an observer and a retry-enabled SMTP send.</p>
   <p>At most 64 entries are retained: the first 63 and the latest. <code>getOmittedSubmissionSteps()</code> counts omitted intermediate entries without
