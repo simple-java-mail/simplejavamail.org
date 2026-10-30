@@ -50,6 +50,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
       <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
       <li><a href="#cli-daemon-startup-configuration">Keep complete configuration when starting a CLI daemon</a></li>
+      <li><a href="#cli-daemon-shutdown">Account for the CLI daemon shutdown deadline</a></li>
       <li><a href="#submission-results">Check exception reporting and SMTP acceptance checks</a></li>
       <li><a href="#email-convenience-mailboxes">Check address-list interpretation and display names</a></li>
       <li><a href="#notification-destination-lists">Read notification destinations as lists</a></li>
@@ -273,6 +274,17 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       keep their startup defaults; later client JVM properties do not replace them. Supply the complete desired configuration again with
       <code>daemon restart</code> to capture new defaults. Explicit request Mailer options retain the normal conflict policy and lock checks.
       See the <a href="cli.html#daemon-startup-configuration">CLI startup guide</a>. This concerns the unreleased 10.0.0 daemon.</p>
+  </div></section>
+
+  <h2 id="cli-daemon-shutdown">Account for the CLI daemon shutdown deadline</h2>
+  <section><div class="wide">
+    <p>Earlier 10.0.0 development builds could accept <code>daemon stop</code> and then wait indefinitely for a stalled command or cached
+      Mailer cleanup. The standalone daemon now allows accepted commands 30 seconds to finish within a fixed 60-second overall shutdown limit.
+      It interrupts workers after the grace period and terminates its process if cleanup or command code still blocks at the deadline.</p>
+    <p>Existing stop and restart commands need no syntax changes. Restart waits for actual exit before starting a replacement, and later startup
+      handles any stale discovery state left by forced termination. Preserve uncertain send outcomes instead of assuming mail was unsent or
+      automatically submitting it again. Ordinary Java <code>Mailer.close()</code> remains graceful. This corrects the unreleased daemon;
+      it adds no released 9.x API migration. See the <a href="cli.html#daemon-shutdown">CLI shutdown guide</a>.</p>
   </div></section>
 
   <h2 id="cli-help-values">Keep CLI values ending in --help</h2>
