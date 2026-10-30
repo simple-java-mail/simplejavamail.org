@@ -329,6 +329,10 @@ try (Mailer mailer = builder.buildMailer()) {
         report effective construction settings. <code>getSessionTimeout()</code> returns their common <code>Duration</code> only when all three
         are known and equal, otherwise <code>null</code>. Null does not mean unlimited, and inspection does not guess provider defaults or track
         direct Session mutations after construction. <code>ConnectionConfig.getSessionTimeout()</code> follows the same equality rule for its supplied choices.</p>
+<p><code>mailer.getOperationalConfig().getVerifyingServerIdentity()</code> returns <code>Boolean</code>: true or false for a known configured
+  setting, and null when unspecified or unrecognized. A supplied Session's omitted identity property stays omitted. Null does not mean that
+  its provider disables verification. A Session created by Simple Java Mail reports the default it actually applies. <code>TlsConfig</code>
+  and its builder expose stored choices instead. These getters describe configuration, not the security of a live connection.</p>
 <p>Builder getters inspect supplied choices. They do not complete the configuration or allocate connection resources. Each public setter's Javadoc
   defines its setting-specific validation and clearing behavior. Use the
   <a href="/debugging.html#section-config-diagnostics">configuration diagnostics guide</a> for safe logging and worked source-tracing examples.
