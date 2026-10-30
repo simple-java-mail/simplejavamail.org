@@ -1761,6 +1761,24 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
       Clearing a setting inherited through <code>Properties</code> defaults is also rejected when removal would simply reactivate that default.
       Supply a replacement value or a fresh Session with independent Properties containing only the intended settings.
     </p>
+    <h3 id="tls-identity-inspection">Handle an unspecified TLS identity setting</h3>
+    <p class="wide">Replace <code>OperationalConfig.isVerifyingServerIdentity()</code>, which returned primitive <code>boolean</code>, with
+      <code>OperationalConfig.getVerifyingServerIdentity()</code>, which returns nullable <code>Boolean</code>. Recompile integrations and update
+      method references as well as direct calls. True and false mean known configured values; null means unspecified or unrecognized,
+      including an omitted property on a supplied Session or an opaque protocol. It does not mean that its provider disables verification.
+      Simple Java Mail leaves the omitted property absent and keeps the provider's runtime behavior.</p>
+    <pre class="full-width-example"><code class="language-java">Boolean verification = mailer.getOperationalConfig().getVerifyingServerIdentity();
+if (verification == null) {
+    log.info("Server identity verification: unspecified");
+} else if (verification) {
+    log.info("Server identity verification: configured on");
+} else {
+    log.info("Server identity verification: configured off");
+}</code></pre>
+    <p class="wide">Choose how your application handles the unknown case explicitly. A direct rename in a primitive assignment or condition
+      can throw when Java unboxes null. Using <code>Boolean.TRUE.equals(...)</code> also combines unspecified and false; use it only when that
+      is your intended application policy. The getter captures construction settings without opening a connection or following later Session
+      edits. It does not prove runtime TLS security. <code>TlsConfig.getVerifyingServerIdentity()</code> keeps its existing stored-choice role.</p>
     <h3>Allow for a missing common timeout when inspecting configuration</h3>
     <p class="wide">
       <code class="inline language-java">OperationalConfig.getSessionTimeout()</code> now returns nullable <code>Duration</code> instead of

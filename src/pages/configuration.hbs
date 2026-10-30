@@ -352,6 +352,10 @@ mailerBuilder.withConnectionConfig(connection.build());
         Conflicting replacement requires <code>ALLOW_EXPLICIT_OVERRIDES</code>. Ordinary SJM timeout defaults do not replace its settings or fill
         missing values. Mandatory locks apply in both modes: an individual lock
         constrains its operation, while a shared session-timeout lock constrains all three. Conflicting choices or lock requirements are rejected.</p>
+      <p>The same absence rule applies to server-identity inspection: <code>mailer.getOperationalConfig().getVerifyingServerIdentity()</code>
+        returns nullable <code>Boolean</code>. Null means no usable configured setting was captured, including an omitted property on your Session;
+        it does not mean verification is disabled. Use <code>TlsConfig.builder().verifyingServerIdentity(true).build()</code> to select an explicit
+        setting, subject to the connection conflict policy and locks. See the <a href="migration-notes-10.0.0.html#tls-identity-inspection">read-call migration</a>.</p>
       <p>When write timeouts are enabled, Simple Java Mail shares one background timeout-monitoring thread across the connections from each Angus Session
         it creates, rather than using a thread for every connection. This thread watches for writes that take too long; it does not send emails.
         It stops when the last connection is closed. Returning a connection to the pool keeps it open, so the monitoring thread stays available too.
