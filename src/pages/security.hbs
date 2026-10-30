@@ -621,7 +621,8 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 				<p>Complete key-material reads for DKIM, S/MIME and PKCS12 report known opening, reading and closing I/O failures as
                     <code>MailException</code> with kind <code>PREPARATION</code>. The original I/O cause and suppressed closing errors remain available.
                     Filesystem readers close their own streams; supplied streams remain open for your code to close. This does not perform
-                    cryptographic validation before the feature is used.</p>
+                    cryptographic validation before the feature is used. A filesystem replacement is installed only after reading,
+                    preparation and closing all succeed. If the call fails, a reused builder keeps its previous material and related choices.</p>
 			</div>
 			<div class="side">
 <pre><code class="small">currentEmailBuilder.signWithDomainKey(
