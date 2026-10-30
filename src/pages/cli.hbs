@@ -240,9 +240,17 @@ Elapsed: 142ms</code></pre>
     <p class="wide">
       Status and stop have bounded handling capacity separate from waiting mail commands, so slow SMTP work does not occupy their workers.
       When execution-reply capacity is full, a new command is refused as busy before admission. Stop refuses commands still waiting for
-      admission and drains admitted work under the existing bounded shutdown policy. A disconnected caller does not cancel an admitted command,
+      admission and gives admitted work time to finish. A disconnected caller does not cancel an admitted command,
       and an unavailable result never triggers automatic resubmission.
       Status reports execution-reply handling separately from application work, so that pressure remains inspectable while commands run.
+    </p>
+    <p class="wide" id="daemon-shutdown">
+      In unreleased 10.0.0, <code>sjm daemon stop</code> gives accepted commands 30 seconds to finish within a 60-second overall shutdown limit.
+      After that grace period it interrupts command workers; replies and Mailer cleanup share the remaining time. If command code or cleanup
+      still blocks at the deadline, the standalone daemon terminates its own process. Repeated stop requests and a disconnected stop client do
+      not extend or cancel the deadline. An uncertain send is never automatically retried, and successful stop does not prove it was unsent.
+      <code>daemon restart</code> waits for the old process to exit before starting its replacement. A later start safely handles stale discovery
+      state left by forced termination. Ordinary Java <code>Mailer.close()</code> remains graceful.
     </p>
     <p class="wide">
       The daemon is local to the operating-system user and authenticates every bounded request over a Unix-domain socket or a
