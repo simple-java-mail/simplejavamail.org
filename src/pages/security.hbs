@@ -1031,6 +1031,10 @@ details.getFailureReason(); // safe diagnostic text when processing did not succ
 				the unopened ciphertext may contain a signature. After successful decryption, inspected unsigned content reports <code>NOT_SIGNED</code>.
 				A later signature-processing error reports <code>ERROR</code> verification while retaining <code>DECRYPTED</code> and readable content.
 			</p>
+			<p class="wide" id="nested-smime-ciphertext">
+				If successful outer decryption reveals another encrypted S/MIME entity, verification stays <code>UNKNOWN</code> because that unopened
+				content may contain a signature. <code>DECRYPTED</code> records the successful outer operation; import does not recursively decrypt the inner entity.
+			</p>
 			<p class="wide">
 				Opaque signed S/MIME content inside an encrypted message also contributes its signature result to the outer Email's
 				<code>getOriginalSmimeDetails()</code>. After decryption, its mode is <code>SIGNED_ENCRYPTED</code> and its decryption status stays
@@ -1048,8 +1052,8 @@ unopened.getVerificationStatus(); // UNKNOWN: the inner signature has not been i
 </code></pre>
 			</div>
 			<p class="wide">
-				Decryption is reported separately by <code class="inline language-java">getDecryptionStatus()</code>. When a message contains more than one
-				protected layer, Simple Java Mail keeps the most serious result. Verification uses
+				Decryption is reported separately by <code class="inline language-java">getDecryptionStatus()</code>. When results from several represented
+				protected layers are combined, Simple Java Mail keeps the most serious result. Verification uses
 				<code class="inline language-text">ERROR &gt; INVALID &gt; UNKNOWN &gt; VALID &gt; NOT_SIGNED</code>; decryption uses
 				<code class="inline language-text">FAILED &gt; KEY_MISSING &gt; UNKNOWN &gt; DECRYPTED &gt; NOT_ENCRYPTED</code>.
 				An uninspected represented layer prevents an all-valid or all-decrypted result. Unrelated attachments do not change the owning message's facts.

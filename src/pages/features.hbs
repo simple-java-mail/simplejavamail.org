@@ -2303,6 +2303,12 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         Ordinary nested body containers still contribute their content, including repeated plain-text and HTML parts. Inline and filename-only
         multipart containers, and the effective root after protection processing, keep that interpretation. Email does not retain arbitrary MIME nesting.
       </p>
+      <p id="empty-imported-bodies">
+        In unreleased 10.0.0, MIME/EML imports preserve a present plain-text or HTML body even when its decoded content is empty.
+        <code>getPlainText()</code> and <code>getHTMLText()</code> return <code>""</code> for that alternative and <code>null</code> only when it is absent.
+        Ordinary export retains the empty alternative, and ordinary defaults fill only an absent body. Whitespace and repeated body parts keep
+        their existing interpretation. See <a href="migration-notes-10.0.0.html#empty-imported-bodies">empty-body migration guidance</a>.
+      </p>
       <p>
         Calendar import recognizes <code>method</code> parameter names and recognized values without regard to capitalization, including quoted
         MIME parameters. The header's method takes priority over the calendar body's <code>METHOD</code>. A value such as <code>request</code>

@@ -93,6 +93,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#async-shutdown">Allow shutdown to wait for sends already in progress</a></li>
       <li><a href="#mail-send-execution-control">Update stored async results to MailSend</a></li>
       <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
+      <li><a href="#empty-imported-bodies">Distinguish empty imported bodies from absent alternatives</a></li>
       <li><a href="#finalized-mime">Check raw MIME tests and size limits</a></li>
     </ul>
   </section>
@@ -2200,6 +2201,20 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
       Keep those cases separate from confirmed absence and actual cryptographic failure. These OpenPGP result types are new in the 10.0.0 API;
       see the <a href="security.html#section-reading-openpgp-status">OpenPGP status guide</a> for the current meanings.
     </p>
+  </section>
+
+  <a href="#empty-imported-bodies" id="empty-imported-bodies" class="section-link h2">&sect;</a>
+  <h2>Distinguish empty imported bodies from absent alternatives</h2>
+
+  <section>
+    <p>MIME and EML imports now preserve a present plain-text or HTML alternative whose decoded content is empty.
+      <code>getPlainText()</code> and <code>getHTMLText()</code> return <code>""</code> for that body; an absent alternative still returns <code>null</code>.
+      Earlier releases returned null in both cases.</p>
+    <p>Review code that uses a null check to decide whether an imported alternative exists, and any templates that relied on filling an explicitly
+      empty imported body. Ordinary defaults now leave that empty value intact, consistently with a caller-built empty body. Ordinary export retains
+      its plain-text or HTML type. If your application treats empty and absent content alike, make that choice explicitly.</p>
+    <p>No conversion method changes. Whitespace, concatenation of repeated body parts and authoritative exact/protected bytes keep their contracts.
+      See <a href="features.html#empty-imported-bodies">body presence during conversion</a>.</p>
   </section>
 
   <a href="#finalized-mime" id="finalized-mime" class="section-link h2">&sect;</a>
