@@ -1253,6 +1253,10 @@ boolean positiveReply = receipt.getSmtpResponse()
       Previously, different capitalization could leave both values in the message.</p>
     <p>If you intended multiple values, add them without the replacement flag. Review templates that depended on capitalization to keep a conflicting
       value. Exact EML submission retains its original bytes.</p>
+    <p>MIME and EML import also combine differently capitalized names into one header. Interleaved values such as <code>X-Step: first</code>,
+      <code>x-step: second</code> and <code>X-Step: third</code> now retain the order <code>first, second, third</code> and the first display spelling.
+      Earlier releases grouped imported values by exact spelling, which could change their order during reconstructed export.
+      If you inspect imported header maps or compare reconstructed MIME, account for this correction. No conversion calls need to change.</p>
   </div></section>
 
   <h2 id="empty-custom-headers">Null custom headers produce empty fields</h2>

@@ -1400,6 +1400,9 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
       <p>In unreleased 10.0.0, <code>withHeaders(...)</code> also accepts declared maps of lists or sets. Values are added in their
         iteration order and copied into the Email; later changes to the supplied map or collections do not change the message.
         Use lists to control value order; repeated identical values keep the existing deduplication rule.</p>
+      <p>MIME and EML import use the same header identity. In unreleased 10.0.0, interleaved occurrences such as <code>X-Step: first</code>,
+        <code>x-step: second</code> and <code>X-Step: third</code> keep the first spelling and the distinct values in source order.
+        Copying or exporting the Email retains that order. Exact EML and original protected content keep their separate byte-preservation contracts.</p>
       <p>Raw <code>To</code>, <code>Cc</code> and <code>Bcc</code> headers are an advanced escape from mailbox validation and can change the actual
         delivery envelope. The configured address validator checks typed recipient fields, including <code>withOverrideReceivers(...)</code>;
         it does not interpret these raw header values. General injection checks and mandatory configuration locks still apply.</p>
