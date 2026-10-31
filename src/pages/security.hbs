@@ -869,7 +869,7 @@ Email emailToBeEncrypted = currentEmailBuilder
     .buildEmail();
 </code></pre>
 				Encrypting a group with exactly one certificate:
-				<pre><code>Collection&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
+				<pre><code>List&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withFixedSmimeCertificate(financeCertificate)
     .withRecipientsWithDefaultName("Finance", Message.RecipientType.TO,
             "alice@example.com", "bob@example.com")
@@ -880,14 +880,14 @@ Email emailToBeEncrypted = currentEmailBuilder
     .buildEmail();
 </code></pre>
 				Defaulting only missing certificates in a group:
-				<pre><code>Collection&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
+				<pre><code>List&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withDefaultSmimeCertificate(financeFallbackCertificate)
     .withRecipients(previousFinanceRecipients)
     .buildRecipients();
 // recipients that already had their own certificates keep them;
 // the others receive financeFallbackCertificate</code></pre>
 				Clearing reused recipient certificates so the email-level certificate applies:
-				<pre><code>Collection&lt;Recipient&gt; reusableRecipients = SimpleJavaMail.fromDefaults().recipientsBuilder()
+				<pre><code>List&lt;Recipient&gt; reusableRecipients = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .clearingSmimeCertificates()
     .withRecipients(previousRecipients)
     .buildRecipients();
@@ -901,10 +901,10 @@ Email emailToBeEncrypted = currentEmailBuilder
 				<pre><code class="language-java">IRecipientsBuilder group = mail.recipientsBuilder()
     .withRecipients(previousRecipients);
 
-Collection&lt;Recipient&gt; cleared =
+List&lt;Recipient&gt; cleared =
     group.clearingSmimeCertificates().buildRecipients();
 
-Collection&lt;Recipient&gt; preserved =
+List&lt;Recipient&gt; preserved =
     group.resetSmimeCertificatePolicy().buildRecipients();</code></pre>
 				<p>The previously built <code>cleared</code> list remains cleared, and the source recipients are unchanged.
 					Resetting this certificate policy leaves the group's NOTIFY policy unchanged. Neither the group clear nor the Email's
@@ -1243,7 +1243,7 @@ Email protectedEmail = currentEmailBuilder
 mailer.sync().sendMail(protectedEmail);</code></pre>
 
 				Reuse certified recipients for OpenPGP:
-<pre><code class="language-java">Collection&lt;Recipient&gt; pgpRecipients = mail.recipientsBuilder()
+<pre><code class="language-java">List&lt;Recipient&gt; pgpRecipients = mail.recipientsBuilder()
     .withRecipients(smimeEmail.getRecipients())
     .clearingSmimeCertificates()
     .buildRecipients();

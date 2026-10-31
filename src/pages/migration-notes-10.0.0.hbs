@@ -1359,6 +1359,11 @@ IRecipientBuilder recipient = mail.recipientBuilder();
 IRecipientsBuilder recipients = mail.recipientsBuilder();
 
 Recipient alice = recipient.to("Alice", "alice@example.org");</code></pre>
+    <p>The plural builder's <code>IRecipientsBuilder.buildRecipients()</code> now returns <code>List&lt;Recipient&gt;</code>, making its
+      ordered result usable directly with Reply-To and delivery-override setters. Released 9.x declared <code>Collection&lt;Recipient&gt;</code>.
+      Recompile callers because the JVM return descriptor changes; existing source that stores the result as a Collection remains valid.
+      Declare a List when passing the result to List-based setters. Insertion order, duplicates and detached unmodifiable snapshots remain
+      unchanged; ordinary To/Cc/Bcc envelope grouping is unchanged too.</p>
     <p>Import the builder interfaces from <code>org.simplejavamail.api.email</code>. Also update imports of the template-suppression selector
       from <code>org.simplejavamail.internal.config.EmailProperty</code> to <code>org.simplejavamail.api.email.EmailProperty</code>;
       the selected fields and suppression behavior are unchanged.</p>

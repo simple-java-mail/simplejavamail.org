@@ -360,6 +360,10 @@ public Mailer inhouseMailer(SimpleJavaMail mail) {
         replace the source data. For S/MIME, you can keep existing certificates, fill only the missing ones, replace them all, or clear them so the email or
         mailer fallback certificate is used.
       </p>
+      <p class="wide">In unreleased 10.0.0, <code>buildRecipients()</code> returns an unmodifiable <code>List&lt;Recipient&gt;</code>,
+        preserving insertion order and duplicate occurrences. Pass that list directly to <code>withReplyTo(...)</code> or
+        <code>withOverrideReceivers(...)</code>. Explicit delivery overrides keep their list order into Angus; ordinary To/Cc/Bcc
+        recipients retain order within each group and are submitted in To, Cc, Bcc group order.</p>
     </div>
 
     <div>
@@ -368,7 +372,7 @@ currentEmailBuilder.withRecipients(yourRecipient1, yourRecipient2);</code></pre>
 
       <pre><code>// Or build comma / semicolon separated recipient lists first
 String list = "twister@sweets.com,blue.tongue@sweets.com;honey@sweets.com";
-Collection&lt;Recipient&gt; archive = SimpleJavaMail.fromDefaults().recipientsBuilder()
+List&lt;Recipient&gt; archive = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withDefaultSmimeCertificate(archiveCertificate)
     .withRecipientsWithDefaultName("maintenance group", Message.RecipientType.BCC, list)
     .buildRecipients();
@@ -376,13 +380,13 @@ currentEmailBuilder.withRecipients(archive);</code></pre>
 
       <pre><code>// what about a group with one deviating name?
 String list = "bob@sweets.com, gene@sweets.com; Security Group &lt;security@sweets.com&gt;";
-Collection&lt;Recipient&gt; stakeholders = SimpleJavaMail.fromDefaults().recipientsBuilder()
+List&lt;Recipient&gt; stakeholders = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withRecipientsWithDefaultName("stakeholders", Message.RecipientType.TO, list)
     .buildRecipients();
 currentEmailBuilder.withRecipients(stakeholders);
 // bob and gene are named "stakeholders", "Security Group" keeps its own name</code></pre>
       <pre><code>// or force both display name and certificate for a controlled group
-Collection&lt;Recipient&gt; legal = SimpleJavaMail.fromDefaults().recipientsBuilder()
+List&lt;Recipient&gt; legal = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withFixedSmimeCertificate(legalDepartmentCertificate)
     .withRecipientsWithFixedName("Legal Department", Message.RecipientType.CC,
             "reviewer@example.com", "Counsel &lt;counsel@example.com&gt;")
@@ -390,7 +394,7 @@ Collection&lt;Recipient&gt; legal = SimpleJavaMail.fromDefaults().recipientsBuil
 currentEmailBuilder.withRecipients(legal);
 // all recipients are shown as "Legal Department" and use the same group certificate</code></pre>
       <pre><code>// or strip certificate state from reused recipients
-Collection&lt;Recipient&gt; reusedWithoutCertificates = SimpleJavaMail.fromDefaults().recipientsBuilder()
+List&lt;Recipient&gt; reusedWithoutCertificates = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .clearingSmimeCertificates()
     .withRecipients(reusedRecipients)
     .buildRecipients();
@@ -521,7 +525,7 @@ recipient.withName("Alice").withAddress("alice@example.org")
 Recipient alice = mail.recipientBuilder().to("Alice", "alice@example.com");
 
 // Each entry may be a complete list; the default fills only missing names
-Collection&lt;Recipient&gt; reviewers = SimpleJavaMail.fromDefaults().recipientsBuilder()
+List&lt;Recipient&gt; reviewers = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withRecipientsWithDefaultName("Service desk", Message.RecipientType.CC,
             "\"Support @ Acme, Europe\" &lt;support@example.org&gt;;audit@example.org")
     .buildRecipients();
@@ -1846,7 +1850,7 @@ Recipient customer = mail.recipientBuilder()
     .withDeliveryStatusNotificationNotifyOptions(NotifyOption.SUCCESS)
     .build();
 
-Collection&lt;Recipient&gt; team = SimpleJavaMail.fromDefaults().recipientsBuilder()
+List&lt;Recipient&gt; team = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withDefaultDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE)
     .withRecipient(customer) // keeps its explicit SUCCESS preference
     .withRecipient("support@example.com", Message.RecipientType.CC)
