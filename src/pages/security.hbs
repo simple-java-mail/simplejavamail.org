@@ -973,6 +973,10 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 					the resource retains its signed classification. A detached signature and an ordinary attachment
 					can both be named <code>smime.p7s</code>; <code>getAttachments()</code> retains both distinct resources without renaming them.
 					Use the resource's type and content when choosing an attachment rather than assuming its filename is unique.</p>
+				<p><code>getDecryptedAttachments()</code> contains the results of attachment processing during conversion. The S/MIME module unwraps supported
+					signed attachments and uses your decryption key for encrypted attachments. If a key is missing or the extracted content cannot
+					be converted to an attachment, the original protected resource stays in this list. This can happen with an independently protected
+					attachment whose clear content is a single MIME part. An entry here does not by itself mean that decryption succeeded or a signature is valid.</p>
 			</div>
 			<div class="wide full-width-example">
 <pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
@@ -982,7 +986,7 @@ Email mergedEmail = mail.converter().fromOutlookMsg(Path.of("yourSMIMESignedMess
 
 // all attachments as-is:
 mergedEmail.getAttachments(); // smime.p7m, my-doc.docx
-// all attachments with the encrypted ones replaced:
+// attachment inspection results, including extracted content when available:
 mergedEmail.getDecryptedAttachments(); // signed-email.eml, my-doc.docx
 
 // if the message itself was signed (rather than an independently signed attachment):
