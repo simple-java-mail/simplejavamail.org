@@ -696,6 +696,10 @@ currentMailerBuilder
 					<code>clearCipherAlgorithm()</code>. Clearing restores the downstream library's choice rather than selecting another algorithm.
 					Keep these objects and their serialized forms private even though automatic rendering hides known key material.
 				</p>
+				<p>In the unreleased 10.0.0 line, <code>dkimSigningDomain(null)</code> and <code>dkimSelector(null)</code> reject the
+					missing argument before replacing an earlier choice. Handle a missing domain or selector before calling the setter;
+					leave it uncalled when you intend to keep the current choice. Builder inspection stays passive, and optional algorithm
+					nulls still select the module default. See the <a href="migration-notes-10.0.0.html#grouped-configuration">signing configuration migration guidance</a>.</p>
 			</div>
 			<div class="side">
 <pre><code class="small">DkimConfig.builder()
@@ -964,6 +968,11 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 					preserve them. Defaults/overrides completion resolves outgoing content and protection settings without copying these results, the
 					decrypted-attachment inspection list or retained signed-content view. Fresh plain/unsigned result metadata on the completed Email does not
 					describe the input's protection or verify outgoing MIME. See <a href="understanding-configuration.html#repeated-email-completion">completion and source history</a>.</p>
+				<p>In the unreleased 10.0.0 line, retained protected attachments keep their complete valid Content-Type parameters.
+					For example, an opaque signature keeps <code>smime-type=signed-data</code> with its unchanged bytes, so saving or reusing
+					the resource retains its signed classification. A detached signature and an ordinary attachment
+					can both be named <code>smime.p7s</code>; <code>getAttachments()</code> retains both distinct resources without renaming them.
+					Use the resource's type and content when choosing an attachment rather than assuming its filename is unique.</p>
 			</div>
 			<div class="wide full-width-example">
 <pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();

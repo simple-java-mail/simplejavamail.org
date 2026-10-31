@@ -590,6 +590,11 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       A failed close after reading no longer leaves a reused DKIM builder with replacement bytes and the earlier selector.
       The same guarantee applies to S/MIME and PKCS12 file readers. Handle the failure and either keep the previous configuration
       or retry explicitly; no API call needs to be renamed for this behavior change.</p>
+    <p><code>DkimConfigBuilder.dkimSigningDomain(null)</code> and <code>dkimSelector(null)</code> now throw
+      <code>NullPointerException</code> before changing an earlier choice. Released versions stored null instead. Handle missing lookup
+      results before calling these setters; skip a replacement only when keeping the current domain or selector is intended.
+      Neither field has a clear operation. This does not add a requirement to <code>DkimConfigBuilder.build()</code> or change optional
+      algorithm defaults, non-null values or cryptographic validation at signing.</p>
     <p><code>Pkcs12Config.build()</code> now requires store bytes, both passwords and a key alias. Earlier incomplete values could be built,
       then fail in their getters or during use. Supply every choice before building; <code>""</code> or an empty <code>char[]</code> explicitly
       selects an empty password. Required null setter arguments now throw <code>IllegalArgumentException</code> without replacing an earlier choice.
