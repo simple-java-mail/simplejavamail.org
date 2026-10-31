@@ -320,6 +320,9 @@ Elapsed: 142ms</code></pre>
       <code>--email:withSubject "How to use --help"</code> keep their literal text, and all following options are processed.
       A genuine help option, such as <code>--email:withSubject--help</code>, displays documentation without sending;
       later arguments are ignored. Values keep the selected one-shot or daemon mode.</p>
+    <p class="wide">In unreleased 10.0.0, help and version output remain available even when conventional mail configuration is invalid.
+      For example, an invalid SMTP port setting does not prevent <code>sjm send --help</code> or option-specific help from appearing.
+      Commands that execute still load and validate their configuration normally.</p>
     <p class="wide">In unreleased 10.0.0, this also applies to removed execution options:
       <code>sjm send --help --mailer:async</code> shows help. Placing the removed option before help, or supplying it alone, keeps its migration error.
       Standard and option-specific help follow the same rule, including commands expanded from argument files.

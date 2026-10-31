@@ -1393,6 +1393,9 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
       <p>Header names ignore capitalization. To replace all earlier values for a header, pass <code>true</code> as the third argument:
         <code>withHeader("x-route", "new route", true)</code> also replaces a previously configured <code>X-Route</code>.
         Without that flag, calls add values. Email templates use the same header identity when applying defaults and overrides.</p>
+      <p>In unreleased 10.0.0, <code>withHeaders(...)</code> also accepts declared maps of lists or sets. Values are added in their
+        iteration order and copied into the Email; later changes to the supplied map or collections do not change the message.
+        Use lists to control value order; repeated identical values keep the existing deduplication rule.</p>
       <p>Raw <code>To</code>, <code>Cc</code> and <code>Bcc</code> headers are an advanced escape from mailbox validation and can change the actual
         delivery envelope. The configured address validator checks typed recipient fields, including <code>withOverrideReceivers(...)</code>;
         it does not interpret these raw header values. General injection checks and mandatory configuration locks still apply.</p>
@@ -1410,7 +1413,8 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
     .withHeader("X-MS-TNEF-Correlator", "")
     .withHeader("X-Empty", null); // also emits a present empty field
 // or
-currentEmailBuilder.withHeaders(yourHeadersMap);
+Map<String, List<String>> headers = Map.of("X-Tenant", List.of("acme"));
+currentEmailBuilder.withHeaders(headers);
 </code></pre>
     </div>
   </section>

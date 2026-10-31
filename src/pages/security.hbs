@@ -1154,6 +1154,9 @@ nonMergedEmail.getSmimeSignedEmail();
 				<a href="https://javadoc.io/doc/org.simplejavamail/maven-master-project/latest/org/simplejavamail/api/mailer/config/Pkcs12Config.html" target="_blank">Pkcs12Config</a>
 				instance, which contains details about your key store and certificate. With that, you can decrypt an S/MIME encrypted mail.
 			</p>
+			<p class="wide">In unreleased 10.0.0, S/MIME attachments inside ordinary multipart mail are recognized by their media type,
+				including when their Content-Type contains parameters such as <code>smime-type=enveloped-data</code> or a name.
+				The parameters remain part of the attachment metadata; they do not prevent requested decryption or signature inspection.</p>
 
 			<div class="wide">
 <pre><code>Pkcs12Config yourPkcs12Config = Pkcs12Config.builder()
