@@ -532,6 +532,10 @@ Retry candidates: 0</code></pre>
         terminating DATA command is known unsent; a lost final reply after DATA termination or BDAT LAST is
         <code>UNKNOWN</code> with <code>DUPLICATE_RISK</code>. Recipient replies already captured remain available.
         If final acceptance was observed first, a late request can still leave a normal successful completion.</p>
+      <p>In the unreleased 10.0.0 line, an independent close or pool-release failure still fails the operation after a late stop, with its
+        original cause and the accepted receipt retained. Cancellation/timeout translation can keep its existing exception type; the receipt
+        still says <code>ACCEPTED</code>. Report the cleanup problem rather than automatically resending accepted mail. See
+        <a href="/sending-and-execution.html#late-stop-cleanup">late-stop cleanup behavior</a>.</p>
       <p>The callback below sees the actual operation failure. <code>get()</code> and <code>join()</code> wrap it in
         ExecutionException and CompletionException, respectively. Cancelling the detached future itself affects only that view.
         For configuration, ownership, and the limitations of stopping I/O, see

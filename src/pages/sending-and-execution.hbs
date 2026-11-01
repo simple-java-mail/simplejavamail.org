@@ -275,6 +275,9 @@ simplejavamail.smtp.ratelimit.allowbursts=false</code></pre>
     <p><code>requestCancellation()</code> is a void, idempotent request, not an acknowledgement. Always inspect the eventual completion.
       A send can still succeed if SMTP acceptance was already observed. If the final reply was lost after the terminating DATA command
       or BDAT LAST could have reached the server, the receipt remains UNKNOWN with DUPLICATE_RISK. Cancellation does not recall accepted mail.</p>
+    <p id="late-stop-cleanup">In the unreleased 10.0.0 line, an unrelated connection cleanup failure remains visible even when cancellation
+      or deadline expiry arrives after SMTP acceptance. The failure retains its original cause and any accepted receipt. Expected socket-close
+      errors caused by a supported physical abort stay handled at the provider boundary; acceptance alone does not hide other cleanup problems.</p>
     <p><code>MailSendCancelledException</code> and <code>MailSendTimeoutException</code> describe execution control, not new SMTP statuses.
       Both can contain an optional submission receipt. Before preparation/scheduling or while waiting for a connection, there may be no receipt.
       <a href="/analyzing-send-results.html#section-control-results">Read those receipts before deciding to retry.</a></p>
