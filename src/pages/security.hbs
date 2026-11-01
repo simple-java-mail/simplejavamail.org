@@ -334,7 +334,8 @@ Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
 			<p class="wide" id="supplied-session-oauth2-token">
 				In unreleased 10.0.0, a supplied Session's fixed String token under <code>simplejavamail.oauth2.token</code> can come from its
 				<code>Properties</code> entries or inherited defaults. Configure that Session's protocol, username and XOAUTH2 mechanism as usual.
-				Sending, connection tests and authenticated probes use the effective token without copying an inherited value into a direct entry.
+				Sending, connection tests and authenticated probes use the effective token without adding or replacing a direct
+				<code>simplejavamail.oauth2.token</code> entry. The caller's inherited defaults remain intact.
 				See the <a href="/understanding-configuration.html#supplied-sessions">supplied-Session rules</a> and
 				<a href="/migration-notes-10.0.0.html#inherited-oauth2-token">inherited-token migration note</a>.
 			</p>
