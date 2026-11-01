@@ -224,7 +224,9 @@ omitted steps=0</code></pre>
   </div><div class="wide">
     <p>A later send might instead show <code>attempted=false</code> for A: it was skipped because of an earlier failure, not contacted again.
       History retains the first 63 steps and the latest step; the omitted count describes anything in between. This reporting bound never limits routing.
-      Optional configured-name and logical host/port getters let your application add endpoint labels deliberately. Automatic rendering excludes them.</p>
+      Optional configured-name and logical host/port getters let your application add endpoint labels deliberately. Failed and skipped entries retain
+      explicit provider-visible port choices, including a typed direct port above an inherited String default. Unspecified ports remain unavailable;
+      these facts do not identify a physical peer. Automatic rendering excludes them.</p>
     <p>Async scheduling includes admission and executor waiting. Preparation starts during execution, after selection, and accumulates governance and
       validation across candidates. Total elapsed time includes orchestration and retry delays, so the measurements need not sum to the total.
       <a href="/analyzing-send-results.html#section-send-timings">Send diagnostics</a> explain the other boundaries.</p>

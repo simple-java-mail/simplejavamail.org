@@ -774,6 +774,8 @@ SIMPLEJAVAMAIL_DEFAULTS_FROM_ADDRESS=sender@example.com
 		For <code class="inline language-properties">simplejavamail.dkim.signing.private_key_file_or_data</code>, prefix a path with
 		<code class="inline language-properties">file:</code> or inline Base64-encoded key bytes with
 		<code class="inline language-properties">base64:</code>. Unprefixed values retain their legacy path-or-UTF-8-data behavior.
+		The <a href="cli.html#selected-route-key-files">CLI daemon's reuse profile</a> also follows these spellings: replacing a selected
+		<code>file:</code> key prevents reuse of a Mailer holding its previous bytes.
 	  </p>
 	  <p>
 		The embedded-image flags describe their exact route: <code class="inline language-properties">outside.base.url</code> controls URL resolution and

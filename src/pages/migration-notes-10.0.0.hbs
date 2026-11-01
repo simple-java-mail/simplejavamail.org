@@ -461,6 +461,10 @@ boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
     <p>Earlier versions could reject an otherwise readable calendar when its method value used lowercase or mixed case. Import now recognizes
       existing method names and values without regard to capitalization: <code>method=request</code> and <code>METHOD="rEqUeSt"</code> expose
       <code>CalendarMethod.REQUEST</code>. Content-Type parameters follow the MIME grammar, including quoting and whitespace.</p>
+    <p>Released 9.3.9 also decoded provider-returned calendar streams as UTF-8 even when their Content-Type declared another charset. The 10.0.0
+      stream fallback now honors that declaration, matching the ordinary calendar handler. Review workarounds that preconverted those bytes or
+      depended on replacement characters. Invalid declarations fail before a content stream is acquired; existing absent-charset defaults and
+      stream-ownership rules remain unchanged. Conversion calls do not need a source edit.</p>
     <p>The conversion calls stay the same. A genuine MIME-header method still takes priority over the calendar body's <code>METHOD</code>,
       and <code>getCalendarText()</code> retains the original body text. Other parameter names such as <code>x-method</code>, or text such as
       <code>name="method=REQUEST"</code>, no longer masquerade as the method parameter; without a real method parameter, the body supplies it.</p>
@@ -1219,6 +1223,11 @@ boolean positiveReply = receipt.getSmtpResponse()
       attachment/image input is copied.</p>
     <p>If your code used a returned collection or retained input array to change an existing message, make the change through a builder and build
       a replacement instead. A collection change can now throw <code>UnsupportedOperationException</code>, or affect only your detached copy.</p>
+    <p>In released 9.3.9, copying a merged S/MIME Email could let retained signed content overwrite later builder changes. In 10.0.0, copying
+      supplies starting values and subsequent body, header, resource and encoding edits take precedence. An untouched copy retains its visible
+      content; repeated copies do not add nested resources again. Disabling merging after copying does not remove content already materialized
+      in the copy: use the ordinary clear or replacement methods for that content. Historical protection results still describe the original input,
+      not the edited message. See <a href="security.html#section-reading-smime-merging">copying merged S/MIME content</a>.</p>
     <p>This also applies to DKIM header exclusions restored from supported older snapshots, including 9.1.8. Their existing entries are retained
       in a detached immutable Set. Code that changed <code>getExcludedHeadersFromDkimDefaultSigningList()</code> must instead build a replacement
       <code>DkimConfig</code> and supply it to a new Email. No signing-key, exclusion-policy or serialized-format migration is required.</p>

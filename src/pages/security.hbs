@@ -1144,6 +1144,12 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 					Ordinary Email defaults and overrides still apply later during completion:
 				</p>
 				<p>
+					When you copy a built Email, its visible content becomes the new builder's starting point. Later body, header, resource and encoding
+					changes take precedence; retained signed-content history does not restore old values. Disabling merging after copying does not remove
+					content already copied into the builder. Clear that content explicitly when needed. The original protection results remain historical
+					facts, not a claim that edited content still has a valid original signature.
+				</p>
+				<p>
 					After decrypting an Outlook MSG containing a detached <code>multipart/signed</code> entity, the <code>signed-email.eml</code> entry in
 					<code>getDecryptedAttachments()</code> keeps its signed MIME container and detached signature. Saving that attachment's bytes
 					lets a later import verify the signature independently. The retained signed-content view and generated EML remain available
@@ -1167,6 +1173,10 @@ Email mergedEmail = mail.emailBuilder().copying(nonMergedEmail)
 				<pre><code class="small">mergedEmail.getSmimeSignedEmail();
 nonMergedEmail.getSmimeSignedEmail();
 </code></pre>
+				<pre><code class="small">Email edited = mail.emailBuilder().copying(mergedEmail)
+                .withPlainText("Replacement body")
+                .buildEmail();
+// The copied signed-content view cannot overwrite this edit.</code></pre>
 			</div>
 		</section>
 
@@ -1464,6 +1474,9 @@ OriginalOpenPgpDetails details =
 				The singular <code>getSignerKeyId()</code>, <code>getSignerFingerprint()</code>, <code>getSignatureAlgorithm()</code> and
 				<code>getHashAlgorithm()</code> shortcuts return a fact only for exactly one represented signature and otherwise return null.
 				The encryption algorithm getter retains its own meaning. Reading any of these results performs no further cryptographic work.
+				A <code>DECRYPTED</code> result requires an actual encrypted OpenPGP layer. An unencrypted packet inside a declared encrypted MIME
+				wrapper does not become successfully decrypted merely because a receive key was supplied; that inconsistent input retains failed-decryption
+				facts and the original protected representation.
 			</p>
 			<p class="wide">
 				Without <code>openpgp-module</code>, ordinary import preserves recognizable protected mail and reports <code>UNKNOWN</code> for results it
@@ -1488,6 +1501,7 @@ OriginalOpenPgpDetails details =
 				Keep the original converted Email for inspection.</p>
 			<p class="wide">Ordinary EML import recognizes tolerated LF and mixed outer header endings before interpreting the protected MIME
 				parts. The first supported header separator ends those outer headers; an inner part's CRLF separator does not replace it.
+				S/MIME encrypted EML follows the same rule, including later blank lines inside its encoded ciphertext.
 				The original protected bytes remain available unchanged. This does not relax the canonical CRLF requirement for
 				<a href="features.html#section-exact-eml">exact EML submission</a>.</p>
 			<div class="wide full-width-example">

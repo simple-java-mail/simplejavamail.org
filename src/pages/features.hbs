@@ -2275,6 +2275,8 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
         Eager extraction closes each attachment stream it opens, including when reading fails; calendar streams acquired during interpretation
         follow the same rule. An unsupported calendar charset still fails conversion without leaking a content stream.
+        A declared calendar charset is honored even when the mail provider returns its content as an InputStream; the existing defaults when no
+        charset is declared remain unchanged.
         This does not close the DataSource itself or a top-level EML stream supplied by your application.
         Both eager and lazy extraction retain equivalent content-type metadata, including valid parameters such as <code>charset</code>.
         Use a MIME parser when you need only the base type, rather than comparing the complete type string to <code>text/plain</code>.

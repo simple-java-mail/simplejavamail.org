@@ -224,6 +224,7 @@ Elapsed: 142ms</code></pre>
       A daemon captures its configuration when it starts. In unreleased 10.0.0, detached startup preserves all supported SJM JVM settings,
       including <code>simplejavamail.mailers.*</code> definitions and their <code>simplejavamail.locked.mailers.*</code> settings. A primary's named
       failover therefore keeps its complete definition. Property files, environment variables, source precedence and locks retain their normal rules.
+      A blank JVM value does not erase an environment value, and supported typed JVM values keep their precedence over inherited String defaults.
     </p>
     <p class="wide">
       Later client JVM properties do not change a running daemon's defaults, and <code>--daemon=acquire</code> reuses that instance.
@@ -241,6 +242,13 @@ Elapsed: 142ms</code></pre>
       Security-file contents in the selected named failover route also distinguish retained Mailers, including further named destinations in that route.
       Changing the selected key file therefore creates a different reusable entry. An unused named destination's key files are not read for an unrelated
       command. This applies to one-shot and daemon commands; selected-file read failures, configuration locks and explicit CLI route choices retain their usual behavior.
+      DKIM keys configured with <code>file:</code> use the selected file's content too; <code>base64:</code> remains inline key data.
+    </p>
+    <p class="wide" id="daemon-image-paths">
+      Relative filesystem image bases supplied with <code>--email:withEmbeddedImageBaseDir</code> resolve from the directory where the client command
+      was invoked. Relative image sources without a configured base use that directory too. Bases inherited from configuration retain the configuration
+      directory. A daemon started elsewhere therefore does not substitute its own same-named image. Absolute paths, containment checks and URL/classpath
+      image resolution retain their normal behavior.
     </p>
     <p class="wide">
       Status and stop have bounded handling capacity separate from waiting mail commands, so slow SMTP work does not occupy their workers.
