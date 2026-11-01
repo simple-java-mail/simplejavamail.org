@@ -368,6 +368,10 @@ Email email = builder.buildEmail();</code></pre>
 
   <h2 id="reply-body-alternatives">Review primed reply alternatives</h2>
   <section>
+    <p class="wide" id="readable-reply-protection">Composed <code>Email</code> reply/reply-all starters now quote the readable body without
+      applying outgoing protection first. In 9.3.9, an encryption setting could turn that body into ciphertext before quoting and leave an empty
+      quote. Normal conversion and sending still apply the original and reply's configured protection. Review any temporary-copy workaround
+      that cleared protection solely to create a quote; no method names or arguments change, and actual protection policy remains your choice.</p>
     <p class="wide">In 9.3.6, replying to a single-format original left an empty quote in the missing body alternative. In 10.0.0,
       <code>replyingTo(...)</code> and <code>replyingToAll(...)</code> generate that alternative once while priming the reply. Plain text is
       escaped into HTML with line breaks; HTML produces readable plain text with paragraph/list breaks, link destinations and image alt text.

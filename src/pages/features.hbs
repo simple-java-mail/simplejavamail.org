@@ -2608,6 +2608,12 @@ MimeMessage encrypted = MailerHelper.signAndOrEncryptMessageWithSmime(
         Both reply starters quote the original message in plain text and HTML. Add your response to both alternatives because the receiving mail client
         normally displays only one of them.
       </p>
+      <p id="readable-reply-protection">In unreleased 10.0.0, a composed <code>Email</code> supplies its already readable content for the quote,
+        even when it is configured for outgoing signing or encryption. Creating the reply does not apply that protection first or change the
+        original's settings. Normal conversion and sending still protect the original, and the reply's own protection and Mailer governance
+        remain separate choices. Reply routing, thread headers and referenced inline images keep their existing meaning.</p>
+      <p>Use ordinary incoming conversion with explicit receive keys to open received ciphertext before replying. <code>MimeMessage</code>
+        and exact EML inputs retain their existing source authority; readable reply priming is not an outgoing protection bypass.</p>
       <p>
         In unreleased 10.0.0, priming a reply to a single-format original generates the reply's missing alternative. Plain text becomes safely
         escaped HTML with its line breaks; HTML becomes readable text with paragraph and list breaks, link destinations and image alternative text.
