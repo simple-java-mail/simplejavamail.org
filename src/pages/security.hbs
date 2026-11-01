@@ -1096,10 +1096,27 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 				own trust policy before accepting that identity.
 			</p>
 			<p class="wide">
-				S/MIME is inspected before the regular multipart parser takes the message apart. When cryptographic verification fails, the clear signed
+				During ordinary conversion, S/MIME is inspected before the regular multipart parser takes the message apart. When cryptographic verification fails, the clear signed
 				content remains readable and the status records the failure. When a decryption key is missing, the encrypted content remains available
 				instead of being discarded. Unsupported encrypted S/MIME payloads in Outlook messages are also handled leniently so the surrounding message
 				can still be converted when possible.
+			</p>
+			<p class="wide">
+				<a href="features.html#section-exact-eml">Exact EML construction</a> also fills these inspection results automatically, preserving facts that
+				available inspection actually establishes, including self-contained signature results. Missing modules or inconclusive inspection leave
+				unestablished facts <code>UNKNOWN</code>. Missing modules do not by themselves prevent construction for relay from the original EML.
+				The raw parsed content view and authoritative EML remain
+				unchanged. Exact mode has no receive-key option; use ordinary conversion for explicit decryption keys or unwrapped content.
+			</p>
+			<p class="wide">
+				A Java snapshot containing S/MIME inspection facts still needs the result classes from their producer module when restored.
+				Retain the original EML for relay independently of those classes; Java serialization does not make arbitrary module classpaths interchangeable.
+			</p>
+			<p class="wide">
+				For an outer signature exposing an inner PKCS7 <code>enveloped-data</code> entity, exact inspection records <code>SIGNED_ENCRYPTED</code>
+				with <code>UNKNOWN</code> decryption and leaves the ciphertext unopened. Aggregate verification is <code>UNKNOWN</code> unless an established
+				<code>INVALID</code> or <code>ERROR</code> result takes precedence. Outer signer metadata and the original bytes remain available;
+				this does not add recursive decryption or change ordinary import.
 			</p>
 			<p class="wide">
 				For a protected top-level message, <code class="inline language-java">getOriginalProtectedMessage()</code> returns a defensive copy of the exact
@@ -1453,6 +1470,17 @@ OriginalOpenPgpDetails details =
 				could not inspect. A visible signed envelope retains <code>SIGNED</code> mode and <code>NOT_ENCRYPTED</code> for that outer layer; an encrypted
 				envelope retains <code>ENCRYPTED</code> mode with unknown signature and decryption results. If the envelope itself cannot be classified, its
 				mode is also <code>UNKNOWN</code>. Explicit receive configuration still requires the module.
+			</p>
+			<p class="wide">
+				<a href="features.html#section-exact-eml">Exact EML construction</a> automatically populates the same protection getters without changing
+				its raw parsed content view or authoritative bytes. Established feature results, including missing-key or failure results, remain precise;
+				unestablished facts remain <code>UNKNOWN</code>. Missing optional support alone does not prevent construction for relay from the original EML.
+				Exact mode has no receive-key option;
+				use ordinary conversion when supplying verification/decryption keys or reading unwrapped content.
+			</p>
+			<p class="wide">
+				When signed exact input cannot be inspected, including when <code>openpgp-module</code> is absent, its declared outer mode can be
+				<code>SIGNED</code> while decryption remains <code>UNKNOWN</code>: an outer signature does not establish that the inner content is unencrypted.
 			</p>
 			<p class="wide">These results describe the converted input. Ordinary copying and supported Java serialization preserve them;
 				defaults/overrides completion carries outgoing OpenPGP settings without copying historical results or original protected bytes.

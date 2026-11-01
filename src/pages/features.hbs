@@ -2066,6 +2066,23 @@ currentMailerBuilder.withValidationConfig(validation.resetClientValidationWarnin
 			  email builder intentionally returns to composed-email behavior.
 		  </p>
 		  <p>
+			  Existing <code>getOriginalSmimeDetails()</code> and <code>getOriginalOpenPgpDetails()</code> results are populated automatically during exact
+			  construction. Available incoming inspection can establish protection facts and precise results; facts it cannot establish remain
+			  <code>UNKNOWN</code>. When constructing from the original EML, missing optional modules do not by themselves prevent relay.
+			  Reading the getters performs no further inspection.
+			  See the <a href="security.html#section-reading-smime-verification">S/MIME</a> and
+			  <a href="security.html#section-reading-openpgp-status">OpenPGP result guidance</a> for their meanings.
+		  </p>
+		  <p>
+			  That inspection leaves the original parsed body, headers and attachments unchanged; a protection result does not replace them with unwrapped
+			  content. The exact builder has no receive-key option. Use ordinary conversion when supplying receive keys or reading unwrapped content,
+			  while retaining the original finalized input for unchanged relay.
+		  </p>
+		  <p>
+			  A Java snapshot still needs the classes and modules stored in its object graph when restored. S/MIME inspection results produced by
+			  <code>smime-module</code> can require that module's result classes. Retain the original EML for relay independently of those optional-module classes.
+		  </p>
+		  <p>
 			  SMTP-envelope recipients are mandatory and independent of visible <code class="inline language-text">To</code>,
 			  <code class="inline language-text">Cc</code>, and <code class="inline language-text">Bcc</code> headers. Add an envelope sender only when it should
 			  differ from the provider default. DSN notify and return options, including an optional <a href="#section-dsn-envelope-id">envelope identifier</a>,
@@ -2122,7 +2139,8 @@ Email rerouted = mail.emailBuilder()
 		  </table>
 		  <p>
 			  Exact mode bypasses Mailer defaults, overrides, composed-content validation, dynamic embedded-image resolution, MIME rebuilding, and Simple Java
-			  Mail's signing and encryption steps. It retains every supplied byte, including header order and folding, boundaries, transfer encodings,
+			  Mail's outgoing signing and encryption steps. Automatic incoming protection inspection does not rewrite that content.
+			  Exact mode retains every supplied byte, including header order and folding, boundaries, transfer encodings,
 			  <code class="inline language-text">Bcc</code>, <code class="inline language-text">Resent-Bcc</code>, and
 			  <code class="inline language-text">Content-Length</code>. Supply an already safe outbound representation.
 		  </p>
