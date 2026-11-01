@@ -1325,6 +1325,13 @@ byte[] content = logo.readAllBytes();</code></pre>
 				<code>&lt;img alt="example src='decoy.png'" src="real.png"&gt;</code>, it resolves <code>real.png</code> and leaves the alt text intact.
 				In the unreleased 10.0.0 line, quoted preceding attributes can contain source-like text or <code>&gt;</code> without changing that selection.
 			</p>
+			<p id="automatic-image-character-references">
+				In the unreleased 10.0.0 line, HTML character references are interpreted once before file, classpath or URL lookup.
+				For example, <code>&lt;img src="a&amp;amp;b.png"&gt;</code> selects <code>a&amp;b.png</code>.
+				To select a file literally named <code>a&amp;amp;b.png</code>, use <code>src="a&amp;amp;amp;b.png"</code>.
+				Decoded locations still pass through the configured base restrictions. Successful embedding replaces only the source value;
+				the surrounding markup is retained. Existing CID references are recognized after the same attribute interpretation.
+			</p>
 		</div>
 
 		<div class="side">
@@ -2307,6 +2314,15 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         Conversion recognizes those relationships while retaining the original HTML, Content-ID and image bytes. A literal <code>+</code> stays a plus;
         the complete Content-ID remains case-sensitive. Unreferenced resources retain the ordinary attachment behavior, with the same result from
         eager and lazy extraction. See <a href="migration-notes-10.0.0.html#imported-inline-resources">changes to imported image lists</a>.
+      </p>
+      <p id="resource-representation-boundaries">
+        In unreleased 10.0.0, MIME/EML and MSG conversion and readable Email replies use the same CID interpretation:
+        HTML character references are decoded once, followed by one CID URL percent-decoding step. The scheme is case-insensitive;
+        the complete ID is case-sensitive, so <code>cid:logo@example.org.extra</code> does not select <code>logo@example.org</code>.
+        A stored filename such as <code>a&amp;amp;b.png</code> stays literal; it is neither an HTML attribute nor a CID URL.
+        This keeps conversion separate from <a href="#automatic-image-character-references">automatic lookup of HTML image sources</a>.
+        MSG keeps its existing explicit-ID, short-filename and long-filename candidate priority, without promoting empty resources to images.
+        A raw Outlook source view retains the specialist parser's own interpretation; use the converted Email for this common resource view.
       </p>
       <p>
         MIME/EML import ignores valid parenthesized comments in body and resource transfer-encoding headers. For example,

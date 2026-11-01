@@ -1162,6 +1162,11 @@ boolean positiveReply = receipt.getSmtpResponse()
       <code>Content-ID: &lt;logo@example.org&gt;</code>. In <code>srcset</code>, each URL is interpreted separately from its descriptor, so
       <code>srcset="cid:logo&amp;#64;example.org 1x"</code> retains that image as embedded. Existing HTML, Content-IDs and bytes need no edits.
       See <a href="features.html#imported-inline-resources">conversion and inline resources</a>.</p>
+    <p>MSG conversion now applies the same HTML and CID URL interpretation as MIME/EML conversion. Encoded references can therefore move an
+      image from <code>getAttachments()</code> into <code>getEmbeddedImages()</code>; a resource sharing only an ID prefix no longer becomes an image.
+      Scheme capitalization is ignored, while ID case and literal plus signs are retained. HTML character references and CID percent escapes
+      are each decoded once. Review workarounds that reassigned these resources; no Java call needs changing. Literal filename text, including
+      <code>a&amp;amp;b.png</code>, is preserved. See <a href="features.html#resource-representation-boundaries">resource representations</a>.</p>
     <p>Automatic image resolution now skips existing <code>cid:</code> schemes regardless of capitalization. An existing
       <code>CID:logo</code> reference no longer fails required external resolution; the Content-ID and HTML spelling remain unchanged.
       See <a href="features.html#automatic-image-cid-schemes">existing CID references</a>.</p>
@@ -1253,6 +1258,11 @@ boolean positiveReply = receipt.getSmtpResponse()
       source-like text or <code>&gt;</code>. For example, <code>&lt;img alt="example src='decoy.png'" src="real.png"&gt;</code>
       resolves <code>real.png</code> while preserving the alt text. Existing templates need no edits; a decoy location is no longer
       looked up or embedded. See <a href="features.html#automatic-image-source-attributes">image source attributes</a>.</p>
+    <p>Automatic file, classpath and URL image lookup now interprets HTML character references once. For example,
+      <code>src="a&amp;amp;b.png"</code> selects <code>a&amp;b.png</code>, while a literal filename <code>a&amp;amp;b.png</code> needs
+      <code>src="a&amp;amp;amp;b.png"</code>. Review templates that relied on the earlier literal entity lookup. Base restrictions apply to the
+      interpreted location, and the required/optional failure and failed-pass rules remain unchanged. See
+      <a href="features.html#automatic-image-character-references">HTML image locations</a>.</p>
   </div></section>
 
   <h2 id="operational-snapshots">Configure Mailers through their builders</h2>
