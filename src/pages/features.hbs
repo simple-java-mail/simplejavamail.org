@@ -751,6 +751,9 @@ SimpleJavaMail.fromDefaults().mailerBuilder(yourSession)
 			  By default content is encoded in the target MimeMessage or EML using <a href="https://learn.microsoft.com/en-us/previous-versions/office/developer/exchange-server-2010/aa579632(v=exchg.140)" target="_blank">quoted-printable</a>,
 			  so the EML is nicely and safely readable. You can also use other encoders. Base64, for example, turns the content into ASCII text for reliable MIME transport. It is encoding, not encryption; the original content remains directly decodable.
 		  </p>
+		  <p id="smime-body-transfer-encoding">In the unreleased 10.0.0 line, selected body encodings are retained inside S/MIME signed or encrypted
+            content, whether the ordinary message has one body part or several. The protection wrapper has its own MIME headers; it does not
+            replace the encoding chosen for the enclosed body.</p>
 		  <p>
 			  The email header that governs this feature is <a href="https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html" target="_blank">Content-Transfer-Encoding</a> and Simple Java Mail takes care of inserting this header in the right places, which varies depending on the
 			  <a href="https://www.simplejavamail.org/rfc-compliant.html#section-explore-multipart">necessary email structure</a>.
@@ -2481,7 +2484,11 @@ for (OpenPgpSignatureResult signature : protection.getSignatures()) {
       <p id="outlook-receipt-header-names">In the unreleased 10.0.0 line, Outlook receipt fields use the same case-insensitive name recognition as
         MIME/EML: <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> supply their typed destination lists regardless of
         capitalization. Static and fluent imports, builder/data results and nested Outlook conversion share this interpretation; values,
-        destination order, duplicates and unrelated header spelling retain their existing behavior.</p>
+        destination order, duplicates and unrelated header spelling retain their existing behavior. Repeated receipt fields follow their raw
+        source order even when differently capitalized names are interleaved.</p>
+      <p id="outlook-missing-attachment-type">In the unreleased 10.0.0 line, a readable MSG attachment without a MIME type or usable filename
+        remains available as <code>application/octet-stream</code>. Supplied or filename-inferred types are retained. The same fallback applies
+        to a CID image whose type cannot be inferred; its content and existing naming rules remain unchanged.</p>
     </div>
 
     <div class="side">

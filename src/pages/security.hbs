@@ -827,6 +827,9 @@ currentMailerBuilder
 					available algorithms, see the <code class="inline language-java">SmimeEncryptionConfig</code> and
 					<code class="inline language-java">SmimeSigningConfig</code> classes.
 				</p>
+				<p>In the unreleased 10.0.0 line, S/MIME retains the finalized content headers and the
+                    <a href="features.html#smime-body-transfer-encoding">body transfer encoding you selected</a> for single-part and multipart
+                    messages alike. Signing and encryption wrap that prepared content without choosing a different inner-body encoding.</p>
 			</div>
 			<div class="side">
 				Signing an email:

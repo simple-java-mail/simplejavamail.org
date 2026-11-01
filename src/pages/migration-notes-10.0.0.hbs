@@ -1137,6 +1137,10 @@ boolean positiveReply = receipt.getSmtpResponse()
 
   <h2 id="imported-inline-resources">Check imported image lists</h2>
   <section><div class="wide">
+    <p>MSG import now retains readable binary attachments that have neither a MIME type nor a usable filename, using
+      <code>application/octet-stream</code> when no type can be inferred. Earlier versions could fail the complete import with
+      <code>mimetype is required</code>. No call needs changing; review any workaround that discarded these attachments. Supplied/inferred
+      types, resource content and existing naming rules remain unchanged.</p>
     <p>A referenced image without a disposition inside <code>multipart/related</code> now appears once in <code>Email.getEmbeddedImages()</code>.
       Earlier imports also placed that same resource in <code>getAttachments()</code>, so re-export could emit it twice. Remove any workaround
       that depends on that duplicate attachment entry. Explicitly attached, referenced images keep their downloadable and embedded views,
@@ -2210,10 +2214,11 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
       on child headers appearing at the message level, read the correct owning message instead; no method names or arguments change.
     </p>
     <p class="wide">
-      MIME/EML import now recognizes <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> regardless of capitalization.
+      MIME/EML and Outlook import now recognize <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> regardless of capitalization.
       If you read lowercase or mixed-case versions from <code>Email.getHeaders()</code>, use
       <code>getDispositionNotificationToRecipients()</code> or <code>getReturnReceiptToRecipients()</code> and the corresponding request flag
       instead. Recognized usable receipt fields follow those typed destinations, preserving mailbox spelling, order and duplicates.
+      Repeated Outlook receipt fields retain their raw source order across interleaved capitalization.
       Importing sends no receipt; value parsing and exact/protected source bytes retain their existing contracts.
     </p>
     <p class="wide">
