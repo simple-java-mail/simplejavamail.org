@@ -49,6 +49,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
       <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
+      <li><a href="#cli-metadata-build">Build CLI metadata through Maven</a></li>
       <li><a href="#cli-daemon-startup-configuration">Keep complete configuration when starting a CLI daemon</a></li>
       <li><a href="#cli-daemon-shutdown">Account for the CLI daemon shutdown deadline</a></li>
       <li><a href="#submission-results">Check exception reporting and SMTP acceptance checks</a></li>
@@ -265,6 +266,17 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       The CLI does not print send receipts, and daemon request concurrency is unchanged.</p>
     <p class="wide">See <a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> for the current operation contracts.</p>
   </section>
+
+  <h2 id="cli-metadata-build">Build CLI metadata through Maven</h2>
+  <section><div class="wide">
+    <p>Source builds no longer maintain <code>cli.data</code> and <code>therapi.data</code> in Git. The normal
+      <code>mvn -pl modules/cli-module -am verify</code> build generates or reuses a complete pair before tests. Its ignored
+      <code>modules/cli-module/.build-cache/metadata</code> entries survive <code>mvn clean</code> and refresh automatically when generation inputs change.</p>
+    <p>Release builds generate fresh files. Installed CLI commands only load their packaged data and report an installation error if it is missing,
+      damaged, incompatible or incomplete. They no longer rebuild it on startup, fill missing Javadoc entries, or use files in a source checkout
+      because of the working directory. Replace custom calls to the old demo generator or its regeneration property with the normal Maven build.
+      See <a href="cli.html#building-cli-from-source">building the CLI</a>.</p>
+  </div></section>
 
   <h2 id="cli-daemon-startup-configuration">Keep complete configuration when starting a CLI daemon</h2>
   <section><div class="wide">
