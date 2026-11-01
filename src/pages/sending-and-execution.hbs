@@ -329,9 +329,12 @@ simplejavamail.defaults.mailsend.timeout=PT30S</code></pre>
     <p>DNS, application callbacks, custom data sources, and provider code outside the supported I/O path cannot be forcibly terminated.
       Completion waits for that code and required cleanup to return. Observer work is excluded from the send budget, but the default inline
       observer can still delay completion. Deadline signalling itself never runs observers or CompletableFuture continuations.</p>
-    <p>Simple batches stop at the first failed/cancelled/expired attempt. Untouched emails receive no callbacks; a batch cancelled or rejected
-      before execution does not open its iterable. Validation, rehearsal, connection tests, and standalone BatchTransportExecutor operations
-      are not instrumented by this Mailer deadline or cancellation API.</p>
+    <p>Simple batches stop after the first failure or known cancellation/deadline expiry. Before entering another lazy iterator callback,
+      SJM checks for that stop, including after each email's inline observer. A source callback already running must still return cooperatively.
+      Already successful email outcomes stay successful and untouched emails receive no callbacks.</p>
+    <p>Cancellation from the final email's observer still cancels the batch: SJM does not call <code>hasNext()</code> again just to discover that
+      the source is exhausted. A batch cancelled or rejected before execution does not open its iterable. Validation, rehearsal, connection tests,
+      and standalone BatchTransportExecutor operations are not instrumented by this Mailer deadline or cancellation API.</p>
   </div>
 </section>
 

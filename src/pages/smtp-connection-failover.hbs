@@ -184,6 +184,9 @@ Before email 41: A is due for a recheck and connects successfully.
 Emails 41 onward: A sends under A's rate rules.</code></pre>
     <p>The current email and its required observer handoff finish before switching. The iterator is opened once and is never restarted. Only untouched
       emails move to A; none is cancelled and resubmitted mid-send. If A's recheck fails, the current eligible B connection can remain in use.</p>
+    <p>A known cancellation or expired deadline stops the batch before another lazy-source callback, including after an observer or connection
+      selection. Already successful email outcomes stay successful. Even cancellation from the final email's observer ends the batch without probing
+      for exhaustion. See <a href="/sending-and-execution.html#section-send-deadlines">batch cancellation</a> for the cooperative callback limit.</p>
     <p>The first message failure still stops the batch. A successful connection doesn't allow automatic recovery from a submission failure.
       A scoped <code>withOpenConnection</code> callback behaves differently: initial acquisition may fail over, then that callback stays pinned to its
       selected connection and is invoked exactly once. Shared setup and final teardown are not charged repeatedly to each email's diagnostic timings.</p>
