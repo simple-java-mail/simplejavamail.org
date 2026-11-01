@@ -2032,6 +2032,12 @@ JMail.isValid("your_address@domain.com");
 JMail.strictValidator()
 	.isValid("your_address@domain.com");
 </code></pre>
+		  <p id="rehearsal-recipient-addresses">
+			  <code>getEnvelopeRecipients()</code> returns the addresses this Mailer would pass to the mail transport, in order.
+			  A named group such as <code>Team:alice@example.org,bob@example.org;</code> can appear as one entry, so counting entries
+			  won't always tell you how many mailboxes will receive the message. If you set override receivers, you'll see those here
+			  instead of the recipients from the message headers. You cannot change the returned list.
+		  </p>
 	  </div>
   </section>
 
