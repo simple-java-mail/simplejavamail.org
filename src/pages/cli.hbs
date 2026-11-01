@@ -244,6 +244,13 @@ Elapsed: 142ms</code></pre>
       command. This applies to one-shot and daemon commands; selected-file read failures, configuration locks and explicit CLI route choices retain their usual behavior.
       DKIM keys configured with <code>file:</code> use the selected file's content too; <code>base64:</code> remains inline key data.
     </p>
+    <p class="wide" id="disabled-default-key-files">
+      In unreleased 10.0.0, <code>--mailer:withoutEmailDefaults</code> also keeps unused ordinary DKIM/S/MIME files out of the Mailer reuse
+      fingerprint. An unreadable unused file therefore does not block a command, and rotating it does not replace a retained Mailer.
+      Active defaults and mandatory locked material still require their files. <code>--mailer:clearEmailDefaults</code> restores captured
+      defaults; the last disable or restore option wins. Selected named Mailers keep their own independent defaults.
+    </p>
+    <pre class="wide"><code class="language-text">sjm connect --mailer:withoutEmailDefaults</code></pre>
     <p class="wide" id="daemon-image-paths">
       Relative filesystem image bases supplied with <code>--email:withEmbeddedImageBaseDir</code> resolve from the directory where the client command
       was invoked. Relative image sources without a configured base use that directory too. Bases inherited from configuration retain the configuration

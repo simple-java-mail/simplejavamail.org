@@ -995,6 +995,10 @@ simplejavamail.extraproperties.mail.smtp.timeout=30000
 		<p class="wide">Use <code>withoutEmailDefaults()</code> to omit ordinary message defaults, or <code>useConfiguredEmailDefaults()</code>
       to return to the factory's captured defaults. Configuration locks remain binding. See
       <a href="/understanding-configuration.html#configuration-operations">editing template choices</a> for more specific changes.</p>
+    <p class="wide">The unreleased 10.0.0 CLI follows that same choice when deriving its Mailer reuse identity:
+      <code>--mailer:withoutEmailDefaults</code> skips security-file reads for unused ordinary defaults, while
+      <code>--mailer:clearEmailDefaults</code> restores them. Active or locked material remains required; see
+      <a href="cli.html#disabled-default-key-files">CLI default-file selection</a>.</p>
 		<p class="wide">
 			Sending, rehearsing or exporting the original <a href="features.html#section-exact-eml">exact Email</a> bypasses ordinary message templates. Its supplied bytes are already final,
 			so Mailer defaults, overrides, configured content validation, and security transformations cannot change them. Put any required visible headers in the
