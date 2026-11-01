@@ -1780,6 +1780,15 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
       Clearing a setting inherited through <code>Properties</code> defaults is also rejected when removal would simply reactivate that default.
       Supply a replacement value or a fresh Session with independent Properties containing only the intended settings.
     </p>
+    <h3 id="inherited-oauth2-token">Use fixed OAuth2 tokens inherited by a supplied Session</h3>
+    <p class="wide">A fixed String token under <code>simplejavamail.oauth2.token</code> can now come from a supplied Session's
+      <code>Properties</code> defaults as well as its direct entries. In 9.3.9, a Session configured for XOAUTH2 could reject an inherited-only
+      token as missing during Mailer construction. The corrected path recognizes the token and passes it when connecting, without copying it
+      into a direct Session property.</p>
+    <p class="wide">No method or property name changes. Existing direct-token settings and runtime token providers keep their behavior;
+      providers remain application-owned and lazy. If your code duplicates an inherited token into direct properties as a workaround, that
+      duplication is no longer required for this lookup. Keep your protocol, username and XOAUTH2 settings. See
+      <a href="security.html#supplied-session-oauth2-token">OAuth2 with a supplied Session</a>.</p>
     <h3 id="tls-identity-inspection">Handle an unspecified TLS identity setting</h3>
     <p class="wide">Replace <code>OperationalConfig.isVerifyingServerIdentity()</code>, which returned primitive <code>boolean</code>, with
       <code>OperationalConfig.getVerifyingServerIdentity()</code>, which returns nullable <code>Boolean</code>. Recompile integrations and update
