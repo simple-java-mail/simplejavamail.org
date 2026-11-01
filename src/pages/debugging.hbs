@@ -312,6 +312,11 @@ Elapsed: 138ms</code></pre>
         during connection setup; it does not repeat that configuration setting.
       </p>
       <p>
+        For supported Angus connections, the reported port follows the provider's effective port setting. A supplied Session using
+        <code>mail.smtp.port=0x9db</code>, for example, connects to and reports port <code>2523</code>. Missing or unusable port values retain
+        the provider's protocol default; the probe does not rewrite the supplied properties.
+      </p>
+      <p>
         <code>getTlsDetails()</code> exposes the negotiated TLS protocol, cipher and public certificate identities when Angus's supported hooks
         allow it. The identity-check flag is configured policy, not a new trust verdict. A custom hostname verifier's result is separate,
         and handshake metadata can exist even when a later verifier rejects the connection. A verifier configured by class name is left

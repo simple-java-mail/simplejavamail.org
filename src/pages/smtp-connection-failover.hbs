@@ -116,6 +116,11 @@ try (Mailer alternative = mail.mailerBuilder()
     <p>By default, eligible failures include DNS lookup failure, connection refusal, unreachable endpoints, setup timeouts/disconnects and
       temporary service-unavailable setup replies. Invalid local configuration, message validation, lock conflicts and unmet required capabilities
       stop the send. So do unknown setup failures, ordinary pool-capacity timeouts, cancellation, shutdown and the overall deadline.</p>
+    <p>On managed Angus connections, reliably identified outages during AUTH are setup failures too. A timeout, disconnect or
+      <code>421</code> while authenticating can select the alternative without enabling credential-rejection failover. An actual rejection,
+      such as <code>535</code>, still requires <code>withFailoverOnAuthenticationFailure(true)</code>; certificate permissions stay separate.</p>
+    <p>A caller-supplied plain Angus Session is left unchanged. When its authentication exception does not distinguish an outage from rejected
+      credentials, failover keeps the conservative authentication-failure handling and its existing opt-in.</p>
     <p>With the default one-attempt policy, A fails and B is considered immediately. Working B continues under its own sending limits while A waits
       for reconsideration. When A is due, one operation tries it; other eligible operations can continue through B. A successful setup restores its
       preference. Background pool replenishment does not keep opening new connections to A during that interval, and no health-probe executor is added.</p>

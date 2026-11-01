@@ -1219,6 +1219,9 @@ boolean positiveReply = receipt.getSmtpResponse()
       attachment/image input is copied.</p>
     <p>If your code used a returned collection or retained input array to change an existing message, make the change through a builder and build
       a replacement instead. A collection change can now throw <code>UnsupportedOperationException</code>, or affect only your detached copy.</p>
+    <p>This also applies to DKIM header exclusions restored from supported older snapshots, including 9.1.8. Their existing entries are retained
+      in a detached immutable Set. Code that changed <code>getExcludedHeadersFromDkimDefaultSigningList()</code> must instead build a replacement
+      <code>DkimConfig</code> and supply it to a new Email. No signing-key, exclusion-policy or serialized-format migration is required.</p>
     <p>This does not freeze arbitrary attachment sources or forwarded <code>MimeMessage</code> objects. Keep those borrowed resources available
       and stable while sending, converting or serializing the Email.</p>
     <p>A failed required automatic-image resolution pass also leaves the builder's previous HTML and images intact. You can correct the HTML

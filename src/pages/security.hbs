@@ -704,6 +704,9 @@ currentMailerBuilder
 					<code>clearCipherAlgorithm()</code>. Clearing restores the downstream library's choice rather than selecting another algorithm.
 					Keep these objects and their serialized forms private even though automatic rendering hides known key material.
 				</p>
+				<p>Completed DKIM header exclusions are immutable, including after restoring a supported older serialized configuration.
+					A collection returned by the getter cannot change an Email's signing choices. Build a replacement <code>DkimConfig</code>
+					when selecting different exclusions; older stored entries keep their meaning.</p>
 				<p>In the unreleased 10.0.0 line, <code>dkimSigningDomain(null)</code> and <code>dkimSelector(null)</code> reject the
 					missing argument before replacing an earlier choice. Handle a missing domain or selector before calling the setter;
 					leave it uncalled when you intend to keep the current choice. Builder inspection stays passive, and optional algorithm
@@ -1455,6 +1458,10 @@ OriginalOpenPgpDetails details =
 				defaults/overrides completion carries outgoing OpenPGP settings without copying historical results or original protected bytes.
 				Protection is applied during later MIME preparation, and fresh plain/unsigned metadata on a completed Email does not verify that output.
 				Keep the original converted Email for inspection.</p>
+			<p class="wide">Ordinary EML import recognizes tolerated LF and mixed outer header endings before interpreting the protected MIME
+				parts. The first supported header separator ends those outer headers; an inner part's CRLF separator does not replace it.
+				The original protected bytes remain available unchanged. This does not relax the canonical CRLF requirement for
+				<a href="features.html#section-exact-eml">exact EML submission</a>.</p>
 			<div class="wide full-width-example">
 <pre><code class="language-java">OriginalOpenPgpDetails details = received.getOriginalOpenPgpDetails();
 

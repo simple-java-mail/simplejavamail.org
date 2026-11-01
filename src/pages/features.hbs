@@ -2837,6 +2837,9 @@ CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 			the restored email retains the configuration needed to sign and encrypt when sent. Java serialization does not itself apply cryptography.
 			For <a href="#section-exact-eml">exact protected EML</a>, restoration retains the authoritative bytes and does not sign or encrypt them again.
 		</p>
+		<p class="wide">Restoring a supported older DKIM configuration also gives it detached, immutable header exclusions. The original entries
+			remain selected, but changing a returned or separately retained collection cannot change the restored signing configuration.
+			Build a replacement <code>DkimConfig</code> when those choices need to change.</p>
 <pre class="wide"><code class="language-java">byte[] snapshot;
 try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
      ObjectOutputStream output = new ObjectOutputStream(bytes)) {
