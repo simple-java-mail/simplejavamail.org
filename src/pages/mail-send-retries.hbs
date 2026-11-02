@@ -92,7 +92,7 @@ MailSubmissionReceipt receipt = send.getCompletion().join();</code></pre>
     <tr><td>Waiting capacity and replay-memory limits</td><td>Initiating Mailer</td></tr>
   </tbody></table></div>
   <p>The observer receives one terminal outcome, not one callback per attempt. The deadline is not reset for another attempt.
-    <code>requestCancellation()</code> wakes a waiting retry. Graceful shutdown rejects new work but drains accepted retries before closing owned resources;
+    <code>requestCancellation()</code> wakes a waiting retry. Graceful shutdown rejects new sends but drains accepted retries before closing owned resources;
     a long configured delay can lengthen shutdown. Borrowed executors must remain usable until the Mailer has drained.</p>
   <p>Simple batches finish retries for the current email before advancing their lazy iterator, and still stop at the first terminal failure.
     Open-connection callbacks execute once. Both intentionally retain their connection and existing thread during retry waits;

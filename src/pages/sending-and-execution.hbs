@@ -869,7 +869,8 @@ observationWorkers.shutdown(); // application owns this executor
         on how the Mailer is used and whether its executor came from Simple Java Mail or from your application.
       </p>
       <p class="wide">
-        Closing a Mailer stops new work on its built-in executor, waits for accepted tasks to finish, and then closes its connection-pool registration.
+        Closing a Mailer stops new sends and drains accepted sending work. It then shuts down and waits for its built-in executor before closing
+        its connection-pool registration.
         It also tracks sends accepted through a caller-owned executor and its private completion worker, without shutting down the caller's executor.
         It waits for result-observer handoff attempts, not executor-backed callbacks or external downstream processing.
         Live-progress reporting is separate: shutdown discards pending updates after sending drains, without waiting for or interrupting progress callbacks.
@@ -877,6 +878,12 @@ observationWorkers.shutdown(); // application owns this executor
       <p class="wide">
         Once shutdown starts, connection tests and probes cannot open another connection. An asynchronous connection test checks again when its
         task starts, in case the Mailer closed while it waited. Build a new Mailer if you need to reconnect after closing this one.
+      </p>
+      <p class="wide">
+        <a href="features.html#rehearsal-after-close">Rehearsal and validation remain available</a> during and after closing, using the original
+        Mailer's retained preparation settings. A standalone preview can finish independently of sending cleanup, including when another Mailer
+        reuses the sending Session. Work your application deliberately runs inside an accepted send or on the Mailer's own executor keeps that
+        enclosing shutdown lifetime and its existing blocking-close guard.
       </p>
       <p class="wide">
         Enabled write timeouts also need a background monitoring thread. Connections from each Angus Session created by Simple Java Mail share that thread;

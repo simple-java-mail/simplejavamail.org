@@ -1984,6 +1984,13 @@ RCPT TO:&lt;archive@example.com&gt; NOTIFY=NEVER ORCPT=rfc822;archive@example.co
 		  </p>
 		  <p>Rehearsal uses the Mailer you call. It does not select or test a cluster/failover route; another selected Mailer can apply different
 			  defaults, overrides or security settings when the actual send runs.</p>
+		  <p id="rehearsal-after-close"><code>rehearse(...)</code> and <code>validate(...)</code> remain available while the Mailer is closing and after
+              it has closed. Open preparations use its effective Session settings; later calls use the preparation settings retained when sending
+              shutdown began. Another Mailer reusing the sending Session cannot replace the original Mailer's preview rules. Standalone preparation
+              does not hold up sending-resource cleanup; keep borrowed attachment sources available until preparation finishes.</p>
+		  <pre><code class="language-java">mailer.close(); // release sending resources
+MailRehearsal preview = mailer.rehearse(email);
+Files.write(Path.of("preview.eml"), preview.getEmlBytes());</code></pre>
 		  <p>
 			  <a href="#section-exact-eml">Exact EML</a> follows the same validate-versus-rehearse choice but not the composed-message transformation rules.
 			  Validation checks its explicit envelope and parseable canonical EML; full validation also checks the supplied byte length. Rehearsal returns those

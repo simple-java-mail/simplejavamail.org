@@ -1544,6 +1544,10 @@ mailer.validate(email);</code></pre>
       <code class="inline language-text">validate</code> command also performs complete preparation without connecting to SMTP.
       See <a href="features.html#section-email-validation">validation and rehearsal</a> for the current preparation APIs.
     </p>
+    <p class="wide">Both preparation APIs remain available while sending is closing and after it has closed. They retain the original Mailer's
+      rules and the preparation settings captured at shutdown, independently of another Mailer reusing the sending Session. Standalone preparation
+      does not add work to send draining. Keep borrowed files and data sources stable until their preparation finishes; the deeper 10.0.0
+      validation can still consume them after sending has closed. See <a href="features.html#rehearsal-after-close">preparation after close</a>.</p>
   </section>
 
   <a href="#smtp-content-compatibility" id="smtp-content-compatibility" class="section-link h2">&sect;</a>
