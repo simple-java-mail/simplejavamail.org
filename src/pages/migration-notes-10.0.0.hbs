@@ -1268,6 +1268,11 @@ boolean positiveReply = receipt.getSmtpResponse()
       or supply the missing source and build again without keeping unused images from the failed pass. Explicit images and intentional duplicates
       remain unchanged. See the <a href="features.html#automatic-image-resolution-failure">automatic-image failure boundary</a>;
       this does not promise rollback for external reads or failures after resolution.</p>
+    <p>Released 9.3.9 parses an ordinary configured image-base URL while creating the Email builder, even when URL resolution is disabled.
+      In 10.0.0, final automatic-image settings are checked at <code>buildEmail()</code>, before reading images. An inactive, replaced or
+      explicitly cleared ordinary base is not parsed; an active selected malformed base still fails, and mandatory locks remain enforced.
+      If you catch inherited image-configuration errors around builder creation, handle them around <code>buildEmail()</code> instead.
+      Explicit String-to-URL conversion keeps its immediate checks. See <a href="features.html#automatic-image-configuration-timing">image configuration timing</a>.</p>
     <p>Automatic image resolution also retains the opposite quote inside a quoted source: <code>&lt;img src="it's.png"&gt;</code>
       resolves <code>it's.png</code> rather than the prefix <code>it</code>. Existing templates need no edits. Code that accidentally relied on a
       truncated location now selects the full requested resource or follows the configured missing-image behavior. See

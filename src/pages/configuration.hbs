@@ -941,6 +941,9 @@ simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath=false
 simplejavamail.embeddedimages.dynamicresolution.outside.base.url=false
 simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 </code></pre>
+      <p>In the unreleased 10.0.0 line, automatic-image settings are finalized at <code>buildEmail()</code> before image reads. An ordinary
+        configured base URL is not parsed when URL resolution is disabled, or when the Email replaces or explicitly clears that base. An active
+        selected malformed base fails the build; mandatory locks remain enforced. See <a href="features.html#automatic-image-configuration-timing">image configuration timing</a>.</p>
     </div>
   </section>
 

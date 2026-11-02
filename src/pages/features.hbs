@@ -1301,6 +1301,12 @@ byte[] content = logo.readAllBytes();</code></pre>
 				option deliberately removes that boundary. Use <code class="inline language-java">embeddedImageAutoResolutionMustBeSuccesful(true)</code>
 				when a missing or blocked image should fail the build instead of remaining in the HTML.
 			</p>
+			<p id="automatic-image-configuration-timing">
+				In the unreleased 10.0.0 line, <code>buildEmail()</code> combines and checks the final automatic-image settings before reading images.
+				An ordinary inherited image-base URL is not parsed when URL resolution is disabled, or when you replace or explicitly clear that base.
+				A malformed selected base still fails the build when URL resolution is enabled. Mandatory locks remain enforced before content access.
+				Explicit String-to-URL conversion in a configuration setter still checks the supplied text immediately.
+			</p>
 			<p id="automatic-image-mime-types">
 				In the unreleased 10.0.0 line, filename-based MIME detection for classpath images and URLs without a reported content type
 				is independent of the JVM locale. An uppercase <code>.GIF</code> still produces <code>image/gif</code> under a Turkish locale.
@@ -1353,7 +1359,16 @@ email.getEmbeddedImages(); // now contains two data sources!
 
 		<div class="wide full-width-example">
 			<p>
-				To enable this:
+				If this factory captured a malformed ordinary image-base URL, an email that disables URL lookup can still be built:
+			</p>
+			<pre><code class="language-java">Email email = mail.emailBuilder().startingBlank()
+    .withImageResolutionConfig(ImageResolutionConfig.builder()
+        .withEmbeddedImageAutoResolutionForURLs(false)
+        .build())
+    .withPlainText("Hello")
+    .buildEmail();</code></pre>
+			<p>
+				To enable automatic lookup:
 			</p>
 			<pre><code class="small">emailBuilder
 	.withImageResolutionConfig(ImageResolutionConfig.builder()
