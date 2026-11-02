@@ -2321,6 +2321,11 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         Both eager and lazy extraction retain equivalent content-type metadata, including valid parameters such as <code>charset</code>.
         Use a MIME parser when you need only the base type, rather than comparing the complete type string to <code>text/plain</code>.
       </p>
+      <p id="streamed-text-bodies">In unreleased 10.0.0, plain-text and HTML bodies remain readable when the mail provider returns a stream instead of a String.
+        Conversion follows the ordinary text handler's declared MIME charset and aliases. With no declaration, its <code>us-ascii</code> MIME label
+        passes through Jakarta Mail's aliases, currently selecting ISO-8859-1. Already-decoded Strings keep the provider's interpretation.
+        Body streams acquired by the parser close on success or failure, including charset and read failures. The DataSource and an application-owned
+        top-level EML stream retain their ownership, and lazy attachments remain lazy. See <a href="migration-notes-10.0.0.html#streamed-text-import">the import migration guidance</a>.</p>
       <p>In unreleased 10.0.0, imported attachment and embedded-image filenames retain their decoded spelling, including literal angle brackets such as <code>&lt;draft&gt;.txt</code> and the name <code>UnknownAttachment</code>. Filename characters are separate from Content-ID delimiters; only a missing filename uses the existing CID-derived fallback.</p>
       <p id="imported-inline-resources">
         A referenced image inside <code>multipart/related</code> needs no <code>Content-Disposition</code> header. When that header is absent,

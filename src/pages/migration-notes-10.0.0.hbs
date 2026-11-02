@@ -41,6 +41,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#attachment-content-types">Keep attachment Content-Type parameters</a></li>
       <li><a href="#multipart-attachment-import">Keep explicitly attached multipart containers</a></li>
       <li><a href="#calendar-method-import">Review calendar method import</a></li>
+      <li><a href="#streamed-text-import">Read provider-returned text body streams</a></li>
       <li><a href="#imported-sent-dates">Handle unavailable imported sent dates</a></li>
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
@@ -488,6 +489,21 @@ boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
     <p>Review workarounds that uppercased calendar text before importing it or specifically handled the old case-related failure. Missing and
       unsupported methods retain their existing failure behavior. Existing blank/malformed-header fallback and leading-method-token recovery
       remain, while exact/protected source bytes retain their preservation contract.</p>
+  </div></section>
+
+  <h2 id="streamed-text-import">Read provider-returned text body streams</h2>
+  <section><div class="wide">
+    <p>In released 9.3.9, a plain-text or HTML body returned as an InputStream could become an object identity such as
+      <code>java.io.ByteArrayInputStream@...</code>. This can happen when no text content handler is registered. Unreleased 10.0.0 reads the stream
+      using the ordinary handler's MIME charset interpretation and closes the acquired body stream.</p>
+<pre><code class="language-java">Email received = mail.converter().fromMimeMessage(incoming).toEmail();
+String plainText = received.getPlainText();
+String htmlText = received.getHTMLText();</code></pre>
+    <p>The conversion calls stay the same. Declared MIME charsets use Jakarta Mail's aliases; without a declaration, the ordinary handler's
+      <code>us-ascii</code> label uses those aliases too, currently selecting ISO-8859-1. Review workarounds that predecoded body streams or
+      guessed UTF-8. Already-decoded String content is unchanged. Charset, read and close errors remain conversion failures, retaining original
+      and suppressed causes. This does not close the DataSource or a top-level EML stream supplied by your application, make lazy attachments
+      eager, or rewrite exact/protected bytes. See <a href="features.html#streamed-text-bodies">text-body import</a>.</p>
   </div></section>
 
   <h2 id="imported-sent-dates">Handle unavailable imported sent dates</h2>
