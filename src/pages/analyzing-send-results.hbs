@@ -69,7 +69,9 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
           <td>Application-linked traces, per-send timings and aggregate measurements, recorded independently of observer delivery.</td></tr>
       </tbody>
     </table></div>
-    <p>The result observer and telemetry reuse the same portable measurement boundaries. Detailed progress can identify greeting,
+    <p>The result observer and telemetry reuse the same portable measurement boundaries. Total diagnostics, live elapsed progress and the logical
+      telemetry span include per-send handler-factory work from attempt entry, including a factory failure. Result-observer delivery remains outside
+      the measured send. Detailed progress can identify greeting,
       TLS, authentication and other SMTP stages, but it does not turn them into separate duration measurements.</p>
     <p>Intermediate upload-count updates are throttled to one every 250 milliseconds; stage changes and the final count bypass that throttle
       but can still be combined.

@@ -96,7 +96,9 @@ Mailer quiet = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587)
   <section><div class="wide">
     <p>Each reached email produces one <code>mail.send</code> INTERNAL span, parented to the context at the initiating call.
       Async work and resumed retries keep that parent even when they run on another thread. Each actual provider invocation creates a
-      <code>mail.submit</code> CLIENT child. Its duration includes provider processing, not just network time.</p>
+      <code>mail.submit</code> CLIENT child. Its duration includes provider processing, not just network time.
+      The logical span starts at attempt entry, including per-send handler-factory work and a factory failure; total diagnostics and live elapsed
+      progress use that same origin. Result-observer delivery stays outside the measured send.</p>
     <p>A temporary refusal followed by a successful retry can look like this. Durations and formatting are illustrative:</p>
     <pre><code class="language-text">application request
   mail.send        2.4 s   outcome=success  submission.status=accepted
@@ -138,7 +140,7 @@ Mailer quiet = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587)
       <tbody>
         <tr><td><code>simplejavamail.mail.send.completed</code></td><td>Counter / sends</td><td>One terminal completion per reached email, not one per retry.</td></tr>
         <tr><td><code>simplejavamail.mail.send.active</code></td><td>Up/down counter / sends</td><td>Started logical sends that have not reached terminal completion.</td></tr>
-        <tr><td><code>simplejavamail.mail.send.duration</code></td><td>Histogram / seconds</td><td>Total elapsed send time, including admission, waiting and ordinary cleanup.</td></tr>
+        <tr><td><code>simplejavamail.mail.send.duration</code></td><td>Histogram / seconds</td><td>Total elapsed send time, including handler-factory work, admission, waiting and ordinary cleanup.</td></tr>
         <tr><td><code>simplejavamail.mail.submission.completed</code></td><td>Counter / invocations</td><td>Each completed provider or CustomMailer invocation, including retries.</td></tr>
         <tr><td><code>simplejavamail.mail.submission.duration</code></td><td>Histogram / seconds</td><td>Elapsed invocation time.</td></tr>
         <tr><td><code>simplejavamail.mail.send.phase.duration</code></td><td>Histogram / seconds</td><td>Available preparation, scheduling, rate-limit wait, acquisition, MIME preparation, submission, retry-wait and cleanup measurements.</td></tr>

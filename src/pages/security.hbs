@@ -829,7 +829,9 @@ currentMailerBuilder
 				</p>
 				<p>In the unreleased 10.0.0 line, S/MIME retains the finalized content headers and the
                     <a href="features.html#smime-body-transfer-encoding">body transfer encoding you selected</a> for single-part and multipart
-                    messages alike. Signing and encryption wrap that prepared content without choosing a different inner-body encoding.</p>
+                    messages alike. Signing and encryption wrap that prepared content without choosing a different inner-body encoding.
+                    Before signing, raw binary attachments receive a safe transfer encoding so MIME line canonicalization cannot change their decoded bytes.
+                    This preparation leaves the caller's content unchanged and keeps binary attachments supported.</p>
 			</div>
 			<div class="side">
 				Signing an email:
@@ -1239,6 +1241,10 @@ mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENC
 				<code>DECRYPTED</code>; recognized encryption without keys reports <code>KEY_MISSING</code>. Signature verification is separate:
 				readable decrypted content does not establish a valid signature or a trusted sender. An unrelated encrypted attachment does not
 				make its containing message an encrypted envelope.</p>
+            <p class="wide">For Outlook MSG envelopes, <code>DECRYPTED</code> records native decryption success even when single-part content cannot
+                become the importer's generated clear attachment. The existing protected-resource fallback, body fields and merge behavior remain
+                unchanged; decryption status does not promise that every convenience view exposes plaintext. Copying and serialization retain the
+                explicit status. Wrong keys, passwords and content I/O failures keep their existing exception behavior.</p>
 		</section>
 
 
@@ -1421,6 +1427,8 @@ OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
 					payloads before OpenPGP verification or decryption while retaining the signed MIME entity and original protected EML bytes.
 					Pass the original message to the converter so verification can use the received signed bytes; the same receive configuration
 					works for EML and <code class="inline language-java">MimeMessage</code> input.
+                    Signed or decrypted content can have an empty MIME header area; its first empty line retains the default plain-text interpretation,
+                    without changing protected bytes or treating a later body blank line as a header boundary.
 				</p>
 				<p>
 					The same receive keys also apply when OpenPGP packets combine signing and encryption. Each represented signature contributes

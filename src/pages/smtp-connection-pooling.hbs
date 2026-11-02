@@ -424,6 +424,8 @@ try (BatchTransportExecutor&lt;String&gt; batch =
       <p>
         Close the batch executor from its owning application thread, as in the try-with-resources example. Graceful shutdown waits for accepted
         callbacks and closes its pools and owned executor. An executor you supplied remains yours to drain and close.
+        If worker startup throws an <code>Error</code> before submitted work starts, the same error propagates and that unstarted operation does not
+        keep graceful shutdown pending.
       </p>
       <p>
         <code>shutdown()</code> and <code>shutdownNow()</code> each return an independent completion

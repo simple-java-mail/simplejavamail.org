@@ -1162,6 +1162,8 @@ Black Tie Optional
 		  <p>
 			  If attachment data is already encoded, use a pre-encoded attachment method. This tells Simple Java Mail to preserve the payload and use
 			  the provided <code class="inline language-java">ContentTransferEncoding</code> value instead of encoding the data again.
+              Before S/MIME signing, raw binary attachments are safely encoded so line canonicalization cannot change their decoded content.
+              The source bytes stay unchanged; the protected MIME may use a different transfer encoding.
 		  </p>
 		  <p>
 			  Attachment resource names and MIME <code class="inline language-text">Content-ID</code> values can also be set separately through
@@ -2409,6 +2411,10 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
         with legal folding safely unfolded, so neighboring fields and readable content remain available. This does not guess missing characters
         or relax required content decoding and outgoing validation. Importing an Email does not by itself promise that it can be sent;
         use <code>mailer.rehearse(email)</code> to prepare and validate it against the selected Mailer before submission.
+        A recognized attachment or inline disposition can survive malformed optional parameters; independent naming metadata or the existing unnamed
+        fallback keeps the resource readable. Unknown or competing malformed dispositions and actual content failures still fail conversion.
+        The effective plain-text, HTML or calendar root supplies message content even if its own disposition says attachment; explicitly attached
+        child entities remain attachments.
       </p>
 	  <p>
 		  If those original bytes must remain authoritative rather than editable, use <a href="#section-exact-eml">exact EML submission</a> instead of
@@ -2633,7 +2639,8 @@ MimeMessage encrypted = MailerHelper.signAndOrEncryptMessageWithSmime(
       <p id="readable-reply-protection">In unreleased 10.0.0, a composed <code>Email</code> supplies its already readable content for the quote,
         even when it is configured for outgoing signing or encryption. Creating the reply does not apply that protection first or change the
         original's settings. Normal conversion and sending still protect the original, and the reply's own protection and Mailer governance
-        remain separate choices. Reply routing, thread headers and referenced inline images keep their existing meaning.</p>
+        remain separate choices. Reply routing, thread headers and referenced inline images keep their existing meaning.
+        Selected pre-encoded images retain their encoded representation in owned quote snapshots, so quoting preserves the decoded image content.</p>
       <p>Use ordinary incoming conversion with explicit receive keys to open received ciphertext before replying. <code>MimeMessage</code>
         and exact EML inputs retain their existing source authority; readable reply priming is not an outgoing protection bypass.</p>
       <p>
@@ -2821,7 +2828,9 @@ currentMailerBuilder.withProxyConfig(SocksProxyConfig.builder()
         bridge. Its allocated loopback port is separate from the remote proxy port.</p>
       <p>In the unreleased 10.0.0 line, the authenticated bridge carries IPv4 and IPv6 destinations. A hostname the JVM cannot resolve locally is
         forwarded to the remote proxy for resolution, preserving the provider/JDK's existing initial lookup behavior. Connections to the remote
-        proxy can also use IPv6; the local bridge hop uses IPv4 for provider compatibility.</p>
+        proxy can also use IPv6; the local bridge hop uses IPv4 for provider compatibility.
+        A typed anonymous IPv6 proxy host also retains its complete address on library-owned managed Angus connections. Supplied Sessions and custom factories keep
+        their provider's address handling.</p>
       <p>For an active authenticated proxy, the effective username and password must each contain 1 through 255 UTF-8 bytes.
         <code>buildMailer()</code> rejects credentials outside that range before connecting. See
         <a href="configuration.html#section-proxy-bridge-ports">the proxy setup boundaries</a> for details.</p>

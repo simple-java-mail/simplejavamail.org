@@ -1153,6 +1153,12 @@ boolean positiveReply = receipt.getSmtpResponse()
 
   <h2 id="imported-inline-resources">Check imported image lists</h2>
   <section><div class="wide">
+    <p>Ordinary MIME/EML import now retains readable neighboring content when a recognized attachment or inline disposition has malformed optional
+      parameters. It uses independent naming metadata or the existing missing-name fallback. Review workarounds that discarded the entire message;
+      unknown or competing malformed dispositions and actual content failures retain their existing failure behavior.</p>
+    <p>A single-part plain-text, HTML or calendar root now supplies message content even when its own disposition says attachment. Earlier imports
+      classified that root as a resource and left its body getter empty. Review code that depends on that attachment entry or fills the missing body;
+      explicit attachment dispositions on child entities retain their meaning.</p>
     <p>MSG import now retains readable binary attachments that have neither a MIME type nor a usable filename, using
       <code>application/octet-stream</code> when no type can be inferred. Earlier versions could fail the complete import with
       <code>mimetype is required</code>. No call needs changing; review any workaround that discarded these attachments. Supplied/inferred
@@ -1746,6 +1752,9 @@ Mailer mailer = mail.mailerBuilder()
       <code>buildMailer()</code> now rejects an invalid effective length before connecting instead of sending a malformed authentication request.
       Check credentials loaded from deployment configuration as well as Java choices; non-ASCII characters can occupy more than one byte.
       The Java builder calls and property names are unchanged.
+      Effective active remote proxy ports must be 1 through 65535, and authenticated bridge ports must be 0 through 65535; zero retains automatic
+      local selection. Invalid effective ports now fail during <code>buildMailer()</code> before resource allocation. Review deployments that expected
+      a later connection failure. Failed bridge setup also closes partially prepared sockets after unchecked setup failures.
     </p>
     <p class="wide">
       A proxy must also return a complete, valid CONNECT reply before SMTP forwarding starts. Truncated replies and invalid protocol fields now
@@ -2186,6 +2195,8 @@ Transport.send(message);</code></pre>
       return types, but now return a fresh completion view on each call. Released 9.3.6 returned the same mutable future. Remove assumptions about
       future identity: cancellation, manual completion, <code>orTimeout(...)</code> and <code>completeOnTimeout(...)</code> now affect only the
       view you changed. They cannot cancel or falsely finish cleanup, and a later <code>close()</code> still waits for actual cleanup.
+      If worker startup throws an <code>Error</code> before submitted work starts, the same error still propagates; that unstarted operation no longer
+      leaves graceful shutdown waiting for phantom accepted work.
       Use <code>shutdownNow()</code> when you intend to request forced shutdown.
     </p>
     <p class="wide">

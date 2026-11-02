@@ -234,6 +234,7 @@ draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
         selects <code>chosen-proxy.example.org:1081</code>, rather than replacing the raw port with a proxy default.</p>
       <p>A raw SOCKS host can include a decimal port, such as <code>proxy.example.org:1081</code>. Without a separate port, a malformed inline
         suffix keeps the provider's default port. A separate raw SOCKS port takes precedence and keeps its numeric-property formats, including hexadecimal.
+        Typed anonymous IPv6 proxy hosts retain their complete address on library-owned managed Angus connections; raw provider grammar keeps its existing meaning.
         Adding SJM proxy credentials preserves that interpreted remote endpoint. An untouched supplied Session keeps an omitted port;
         an ordinary factory port does not silently replace the provider's fallback.</p>
       <p>Only String property names participate in Simple Java Mail's connection resolution. Non-String keys in a supplied <code>Properties</code> object remain opaque
