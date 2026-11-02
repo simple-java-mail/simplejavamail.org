@@ -45,6 +45,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#connection-conflicts">Review conflicting connection configuration</a></li>
+      <li><a href="#reused-session-oauth2">Reuse a Session with its current OAuth2 settings</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -731,6 +732,23 @@ Mailer mailer = mail.mailerBuilder()
         CLI syntax and supplied-Session behavior.</p>
     </div>
   </section>
+
+  <a href="#reused-session-oauth2" id="reused-session-oauth2" class="section-link h2">&sect;</a>
+  <h2>Reuse a Session with its current OAuth2 settings</h2>
+  <section><div class="wide">
+    <p>In 9.3.9, a Session previously used by an SJM Mailer can retain an old transport-strategy marker. After its authentication settings change,
+      that marker can reject a valid token provider or accept one without a current OAuth2 mechanism. In unreleased 10.0.0, a supplied Session's
+      effective protocol and authentication mechanisms determine provider eligibility.</p>
+<pre><code class="language-java">previousMailer.close(); // Complete shutdown before reusing its Session.
+Mailer next = mail.mailerBuilder(session)
+    .withProperty("mail.smtp.auth.mechanisms", "XOAUTH2")
+    .withOAuth2AccessTokenProvider(tokenProvider)
+    .buildMailer();</code></pre>
+    <p>Keep the Session's host, authentication and TLS settings configured for the intended server. Selecting a token provider does not enable TLS,
+      and the token remains fetched lazily when connecting. The supplied Session still requires exactly one fixed token or token provider when
+      configured for XOAUTH2. See <a href="security.html#supplied-session-oauth2-mechanisms">OAuth2 configuration</a> and
+      <a href="understanding-configuration.html#connection-conflicts">supplied-Session configuration rules</a>.</p>
+  </div></section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>
   <h2>Replace static ConfigLoader calls</h2>

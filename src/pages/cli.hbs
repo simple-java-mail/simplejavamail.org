@@ -232,6 +232,11 @@ Elapsed: 142ms</code></pre>
       failover therefore keeps its complete definition. Property files, environment variables, source precedence and locks retain their normal rules.
       A blank JVM value does not erase an environment value, and supported typed JVM values keep their precedence over inherited String defaults.
     </p>
+    <p class="wide" id="daemon-startup-log">
+      The daemon's <code>daemon-startup.log</code> must be a regular file. Startup refuses symbolic links, including dangling links,
+      and other file types before changing their content or permissions. New and existing regular startup logs are made private
+      before their previous content is cleared.
+    </p>
     <p class="wide">
       Later client JVM properties do not change a running daemon's defaults, and <code>--daemon=acquire</code> reuses that instance.
       To change startup defaults, supply the complete desired configuration again when invoking <code>daemon restart</code>; restart uses that

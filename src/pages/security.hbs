@@ -331,6 +331,19 @@ Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
 				<code class="inline language-properties">mail.smtps.auth.mechanisms=XOAUTH2</code> when its protocol is <code>smtps</code>, and then call
 				<code class="inline language-java">mail.mailerBuilder(session).withOAuth2AccessTokenProvider(...)</code>.
 			</p>
+			<p class="wide" id="supplied-session-oauth2-mechanisms">
+				In unreleased 10.0.0, provider eligibility follows the supplied Session's current protocol and authentication mechanisms, including explicit
+				additional properties. After the previous Mailer has completed shutdown, a reused Session can select XOAUTH2 and register a provider;
+				an old transport-strategy marker does not override those choices. Conversely, an old OAuth2 marker does not permit a provider when the
+				current mechanism is no longer OAuth2. Existing credential conflicts and TLS settings keep their meanings.
+			</p>
+			<pre class="full-width-example"><code class="language-java">// The previous Mailer using this Session has completed close().
+try (Mailer reused = mail.mailerBuilder(session)
+        .withProperty("mail.smtp.auth.mechanisms", "XOAUTH2") // for an smtp Session
+        .withOAuth2AccessTokenProvider(accessTokens)
+        .buildMailer()) {
+    reused.sync().sendMail(email);
+}</code></pre>
 			<p class="wide" id="supplied-session-oauth2-token">
 				In unreleased 10.0.0, a supplied Session's fixed String token under <code>simplejavamail.oauth2.token</code> can come from its
 				<code>Properties</code> entries or inherited defaults. Configure that Session's protocol, username and XOAUTH2 mechanism as usual.
@@ -728,11 +741,14 @@ currentMailerBuilder
 
 		<section>
 			<p class="wide">
-				You can also use the helper method to sign a message yourself, but beware that the signing
-				is only triggered when the MimeMessage streamed to a transport (or file):
+				You can also sign a MIME message directly. Keep the returned message and send or write that value;
+				the input message does not receive the DKIM signature. In unreleased 10.0.0, the helper finalizes and
+				signs the content during this call, and repeated writes retain the signed bytes:
 			</p>
 			<div class="wide">
-				<pre><code class="small">MailerHelper.signMessageWithDKIM(mimeMessageToSign, emailContainingSigningDetails);</code></pre>
+				<pre><code class="small">MimeMessage signed = MailerHelper.signMessageWithDKIM(
+    mimeMessageToSign, emailContainingSigningDetails);
+signed.writeTo(outputStream); // Or submit signed through your application-owned transport.</code></pre>
 			</div>
 		</section>
 
