@@ -43,7 +43,7 @@ description: "Understand how loaded settings, Java choices and Email templates c
         <tr><td><code>mailer.rehearse(...)</code> and <code>mailer.validate(...)</code></td><td>Use the invoked Mailer's own configuration. They do not select or validate a future cluster or failover destination.</td></tr>
         <tr><td>Conversion and export</td><td>Follow the governance chosen for that conversion. Fluent <code>fromEmail(...)</code> export does not implicitly apply factory Email templates; exporting a rehearsal uses its already-prepared snapshot.</td></tr>
       </tbody></table>
-      <p>These configuration checks run before starting workers, proxy bridges or pools. Later builder edits do not change the captured choices.
+      <p>These configuration checks run before starting workers, opening connections or allocating pools. Later builder edits do not change the captured choices.
         Some checks also need the actual runtime state, such as whether a Session is already in use or a shared pool has incompatible settings.
         If setup fails, Simple Java Mail cleans up the resources it started for that attempt.</p>
       <pre><code class="language-java">Email submitted = mail.emailBuilder().startingBlank()
@@ -251,7 +251,8 @@ draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
         .build())
     .buildMailer();</code></pre>
       <p>Without the policy selection, the different proxy hosts conflict. In either mode, compatible raw host/port values can combine with
-        SJM proxy credentials. The selected remote route is resolved before authenticated proxying uses its local bridge.</p>
+        SJM proxy credentials. The remote route is resolved before selecting authenticated proxy handling: the bridge for normal Angus 2.0.5
+        builds, or direct sockets for the explicit capable-provider development build.</p>
 <pre><code class="language-properties small"># Default; Java can select a different mode unless it is locked:
 simplejavamail.connection.conflictpolicy=REJECT_CONFLICTS
 
@@ -300,6 +301,10 @@ try (Mailer mailer = builder.buildMailer()) {
         settings you want.</p>
 <p>Reuse its Mailer for concurrent sends. A different Mailer cannot claim that Session or its shared Properties until the current owner has shut down successfully.
   Configure custom SSL factories and opportunistic TLS directly on the supplied Session; use an SJM-created Session when SJM should own those construction choices.</p>
+<p>In the explicit merged-Angus development build, authenticated SOCKS can use proxy-specific socket decoration on the same supplied Angus Session.
+  It preserves the selected provider, existing raw/TLS factory choices and TLS policy, without installing unrelated managed sending behavior
+  or automatically granting physical cancellation/deadline support. Normal builds retain the bridge with released Angus 2.0.5. See
+  <a href="configuration.html#section-proxy-bridge-ports">the proxy settings and development boundary</a>.</p>
 </div></section><section>
     <h3 id="locked-requirements">What locks protect</h3>
     <p class="wide">A lock prevents accidental changes within this factory. It is not a security sandbox: application code can deliberately create

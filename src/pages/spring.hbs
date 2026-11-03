@@ -218,6 +218,9 @@ public class MailConfiguration {
       <pre><code class="language-yaml small">simplejavamail:
   connection:
     conflictpolicy: ALLOW_EXPLICIT_OVERRIDES</code></pre>
+      <p>Authenticated SOCKS keeps its bridge and bridge-port choices in Java and Spring configuration. Normal builds use released Angus 2.0.5;
+        direct SOCKS is being developed separately in an explicit private merged-Angus build. See
+        <a href="configuration.html#section-proxy-bridge-ports">the proxy settings and development boundary</a>.</p>
       <p>Use <code>simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code> when the deployment requires strict handling.
         Existing value locks and mandatory transport rules remain binding in both modes.</p>
       <p>

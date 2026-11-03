@@ -1637,6 +1637,11 @@ Mailer mailer = mail.mailerBuilder()
   <h2>Check fixed local ports when using SOCKS proxy authentication</h2>
 
   <section>
+    <p class="wide">
+      Bridge-port settings remain supported. Normal builds keep the authenticated proxy bridge with released Angus 2.0.5. A direct route is
+      being developed separately against merged Angus code in an explicit private build; it does not introduce a released bridge-port
+      retirement or require removing Java, CLI, Spring, locked, environment or JVM property inputs.
+    </p>
     <p class="wide" style="font-size:smaller">
       <strong>What changes:</strong> If your SOCKS proxy requires a username and password, Simple Java Mail starts a local proxy bridge to handle that
       authentication. The bridge now chooses a free local port instead of always using <code class="inline language-text">1081</code>, so two Mailers

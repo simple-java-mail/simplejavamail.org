@@ -252,12 +252,13 @@ com.example.ExampleMailTransportAdapter</code></pre>
   <h2 id="authenticated-socks-module" class="with-back-to-top">Authenticated (SOCKS) proxy support</h2>
   <nav class="module-capability-links" aria-label="Authenticated SOCKS module capabilities">
     <a href="features.html#section-proxy"><span>Send</span><strong>Authenticated SOCKS</strong><b aria-hidden="true">→</b></a>
-    <a href="configuration.html#section-proxy-bridge-ports"><span>Configure</span><strong>Proxy bridge ports</strong><b aria-hidden="true">→</b></a>
+    <a href="configuration.html#section-proxy-bridge-ports"><span>Configure</span><strong>SOCKS proxy settings</strong><b aria-hidden="true">→</b></a>
   </nav>
 
   <section>
     <p>
-      Add this library for authenticated SOCKS proxy servers:
+      Add this library for authenticated SOCKS proxy servers. Normal builds use the local bridge with released Angus 2.0.5. The module is also
+      required by the direct route being developed against merged Angus code in an explicit private build; that route is not a supported released dependency:
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;

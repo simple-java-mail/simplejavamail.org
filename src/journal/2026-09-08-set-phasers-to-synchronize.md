@@ -28,6 +28,8 @@ Counting sends, admitting more work and cancelling it have each needed their own
 
 The [SOCKS bridge](/configuration.html#section-proxy-bridge-ports) is a small local server that forwards JavaMail's unauthenticated proxy connections through an authenticated SOCKS proxy. It must start when needed, stay alive while sends depend on it, and stop when the last one finishes. I covered its origins in [A tale of two proxies](/journal/the-libraries-behind-simple-java-mail.html#a-tale-of-two-proxies).
 
+The excerpts below trace earlier versions of the bridge's synchronization code. Normal builds still use a bridge with released Angus 2.0.5. A direct route is being developed separately against merged Angus code in an explicit private build, while the bridge and its configuration remain available. Use the [current proxy guide](/configuration.html#section-proxy-bridge-ports) for that distinction; the older code here illustrates how the ownership and synchronization problem evolved.
+
 I couldn't know the number of sends beforehand, and new ones could arrive while others were running. A `CountDownLatch` can only count down from its initial count, while a `CyclicBarrier` brings a fixed number of participants together. A `Phaser` supported the changing group: sends registered before submission and deregistered when finished. The last one out could turn off the lights.
 
 By Simple Java Mail 6.0.0, I had [replaced it with an `AtomicInteger`](https://github.com/bbottema/simple-java-mail/commit/5411f9c6a4165c10d5c9251135dbf6d7478bbfe2). I wasn't asking sends to wait for each other or advance through phases. I was counting them: one more send, one less send. Registration happened before executor submission, and the send closure decremented the counter in `finally`.

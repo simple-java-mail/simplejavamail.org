@@ -2723,7 +2723,12 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
         operation, while established pooled or retained tunnels stay usable until their transports close. It is an internal adapter for Jakarta Mail.
       </p>
       <p class="wide">
-        This temporary server is referred to as the <strong>Proxy Bridging Server</strong>.
+        This temporary server is referred to as the <strong>Proxy Bridging Server</strong>. Normal builds retain this route with released Angus 2.0.5.
+      </p>
+      <p class="wide">
+        A direct authenticated SOCKS route is being developed against merged Angus code in an explicit private build. It keeps the optional
+        module and per-Mailer credentials, while the bridge and bridge-port controls remain available. It is not a supported released
+        dependency; see <a href="configuration.html#section-proxy-bridge-ports">the current proxy settings and development boundary</a>.
       </p>
     </div>
 

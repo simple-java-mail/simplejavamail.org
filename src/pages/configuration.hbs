@@ -228,7 +228,7 @@ mailerBuilder
       <pre><code class="small">// skip actually sending email, just log it
 mailerBuilder.withTransportModeLoggingOnly(true);
 </code></pre>
-      <pre><code class="small">// custom SSL connection factory (note: breaks setups with authenticated proxy!)
+      <pre><code class="small">// custom SSL connection factory
 mailerBuilder.withTlsConfig(TlsConfig.builder()
     .withCustomSSLFactoryClass("org.mypackage.MySSLFactory")
     // or an already constructed factory; an instance takes precedence over the class
@@ -425,14 +425,31 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
   </div></section>
 
   <a href="#section-proxy-bridge-ports" id="section-proxy-bridge-ports" class="section-link h3">&sect;</a>
-  {{#> components/feature-heading-h3 socks=true}}Authenticated proxy bridge ports{{/components/feature-heading-h3}}
+  {{#> components/feature-heading-h3 socks=true}}Authenticated SOCKS proxy settings{{/components/feature-heading-h3}}
 
   <section>
     <div class="view">
       <p>
         Jakarta Mail cannot authenticate to a SOCKS proxy by itself. For authenticated proxies, Simple Java Mail starts a small local bridge that
         handles the proxy login and relays the connection. The bridge listens only on IPv4 loopback <code>127.0.0.1</code> and stops when its Mailer has no
-        active proxy operations.
+        active proxy operations. Normal builds still use this bridge with released Angus 2.0.5.
+      </p>
+      <p>
+        <strong>Development only:</strong> an explicit private build against merged Angus code can use its new transport-socket hook for a direct
+        authenticated SOCKS connection. The route is selected before connecting; an authentication, TLS or SMTP failure does not retry through
+        the bridge. This is not a supported released dependency. The bridge, <code>withBridgePort(...)</code>, CLI bridge-port option and
+        <code>simplejavamail.proxy.socks5bridge.port</code> remain available.
+      </p>
+      <p>
+        The direct development route keeps credentials scoped to each Mailer and composes the optional module's SOCKS client with Angus TLS
+        handling, without a JVM-wide <code>Authenticator</code>. It preserves the caller's Session, provider, raw/TLS factory choices and trust
+        policy. Its Session SOCKS settings name the remote endpoint, while the bridge route uses the local endpoint described below.
+        Custom factories and supplied Sessions retain the existing
+        <a href="sending-and-execution.html#section-send-deadlines">deadline and cancellation support checks</a>.
+      </p>
+      <p>
+        On the legacy Angus 2.0.5 route, a custom raw socket factory can establish its own connection and routing. The bridge does not guarantee
+        authenticated SOCKS handling for every such factory. This is separate from a custom SSL factory that Angus layers over an existing connection.
       </p>
       <p>
         Concurrent work through one Mailer shares that Mailer's bridge. By default the bridge asks the operating system for an available loopback port
@@ -1211,7 +1228,7 @@ Mailer mailer = mail.mailerBuilder()
       <li><a href="#section-programmatic-api-other">Programmatic API - other settings</a></li>
 	  <li><a href="#connection-conflicts" class="indent">Conflicting connection settings</a></li>
       <li><a href="/understanding-configuration.html" class="indent">Understanding configuration (advanced)</a></li>
-	  <li><a href="#section-proxy-bridge-ports" class="indent">Authenticated proxy bridge ports</a></li>
+	  <li><a href="#section-proxy-bridge-ports" class="indent">Authenticated SOCKS proxy settings</a></li>
       <li><a href="#section-config-properties">Properties files</a></li>
 	  <li><a href="#section-config-snapshot" class="indent">When changes take effect</a></li>
 	  <li><a href="#section-typed-config-keys" class="indent">Read configuration values in Java</a></li>

@@ -342,6 +342,11 @@ Elapsed: 138ms</code></pre>
         cluster member, and it does not call the mail-send observer.
       </p>
       <p>
+        An authenticated SOCKS probe uses the selected proxy route with a fresh connection. Normal builds use the bridge with released Angus
+        2.0.5; the explicit merged-Angus development build can use direct SOCKS. A probe does not borrow a send connection or its abort state.
+        The existing probe timeout and future-cancellation rules above still apply.
+      </p>
+      <p>
         Angus SMTP/SMTPS is supported through a dedicated probe adapter. Another provider needs its own
         <code>SmtpConnectionProbeAdapter</code>; absent support or a <code>CustomMailer</code> produces an explicit unsupported report without
         opening a connection. Your original Session's properties and provider registration are not rewritten.
@@ -648,8 +653,8 @@ try {
           <li><strong>"org.simplejavamail.internal.authenticatedsockssupport"</strong></li>
           <li><strong>"socks5bridge"</strong></li>
         </ul>
-        <p>The latter two are for the proxy bridge that is used for
-          <a href="features.html#section-proxy">authenticated proxy connections</a>.
+        <p>The latter two log authenticated SOCKS negotiation and the bridge used by normal builds with released Angus 2.0.5.
+          Authentication TRACE output omits the username/password packet. See <a href="features.html#section-proxy">proxy connections</a>.
         </p>
       </div>
       <p>
@@ -683,7 +688,7 @@ try {
             &lt;PatternLayout pattern=&quot;%d{HH:mm:ss} [%t] %-5level %c{1} - %msg%n&quot; /&gt;
         &lt;/Console&gt;
         &lt;Console name=&quot;simpleConsole&quot; target=&quot;SYSTEM_OUT&quot;&gt;
-            &lt;PatternLayout pattern=&quot;%d Simple Java Mail SOCKS5 bridge - %level %m%n&quot; /&gt;
+            &lt;PatternLayout pattern=&quot;%d Simple Java Mail SOCKS - %level %m%n&quot; /&gt;
         &lt;/Console&gt;
     &lt;/appenders&gt;
     &lt;Loggers&gt;
@@ -724,7 +729,7 @@ try {
     &lt;/appender&gt;
     &lt;appender name=&quot;simpleConsole&quot; class=&quot;ch.qos.logback.core.ConsoleAppender&quot;&gt;
         &lt;encoder&gt;
-            &lt;pattern&gt;%d Simple Java Mail SOCKS5 bridge - %level %m%n&lt;/pattern&gt;
+            &lt;pattern&gt;%d Simple Java Mail SOCKS - %level %m%n&lt;/pattern&gt;
         &lt;/encoder&gt;
     &lt;/appender&gt;
 
