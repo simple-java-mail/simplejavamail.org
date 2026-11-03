@@ -84,7 +84,7 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 				<li><a href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
 				<li><a href="#section-reading-smime">Reading S/MIME signed / encrypted attachments</a></li>
 				<li><a href="#section-reading-smime-verification" class="indent">What the signature status means</a></li>
-				<li><a href="#section-reading-smime-merging" class="indent">S/MIME signed messages are merged by default</a></li>
+				<li><a href="#section-reading-smime-merging" class="indent">Retained S/MIME content is merged by default</a></li>
 				<li><a href="#section-reading-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
 				<li><a href="#section-sending-openpgp">Signing / encrypting emails with OpenPGP/MIME</a></li>
 				<li><a href="#section-reading-openpgp">Reading OpenPGP/MIME messages</a></li>
@@ -1150,14 +1150,18 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 
 
 		<a href="#section-reading-smime-merging" id="section-reading-smime-merging" class="section-link h3">&sect;</a>
-		{{#> components/feature-heading-h3 smime=true}}S/MIME signed messages are merged by default{{/components/feature-heading-h3}}
+		{{#> components/feature-heading-h3 smime=true}}Retained S/MIME content is merged by default{{/components/feature-heading-h3}}
 
 		<section>
 			<div class="view">
 				<p>
-					As an S/MIME signed message is actually nested as an attachment, the default behavior is to merge the S/MIME signed content into the root message.
+					When conversion exposes a single S/MIME attachment as a retained inner message, its readable content is merged into the root Email by default.
 					This only happens if there was exactly one S/MIME signed attachment and the decrypted version is of type "message/rfc822".
-					The inner message supplies the body. For each header name, compared without regard to capitalization, its complete value list
+					The inner message supplies plain text and HTML, including absent alternatives and their specific encodings. A present inner calendar supplies
+					its method, text and specific encoding together; if it has no calendar, the outer calendar and encoding remain. An empty calendar string is present.
+					A selected inner body's omitted specific encoding clears that choice, allowing ordinary encoding fallback.
+					Outer identity, addressing and outgoing policy remain. Received reports and cryptographic facts stay with their source view.
+					For each custom header name, compared without regard to capitalization, its complete inner value list
 					replaces the outer list; unrelated headers and attachments from both messages remain. This merge does not establish signature validity.
 				</p>
 				<p>
@@ -1169,6 +1173,9 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 					changes take precedence; retained signed-content history does not restore old values. Disabling merging after copying does not remove
 					content already copied into the builder. Clear that content explicitly when needed. The original protection results remain historical
 					facts, not a claim that edited content still has a valid original signature.
+					Initial import builders apply merging when they build the Email. Copy the built result before making edits that must take precedence,
+					or keep the views separate before editing. Explicitly restoring merging on a copied separate view incorporates the inner content once;
+					later edits and clears still lead.
 				</p>
 				<p>
 					After decrypting an Outlook MSG containing a detached <code>multipart/signed</code> entity, the <code>signed-email.eml</code> entry in

@@ -1415,6 +1415,17 @@ boolean positiveReply = receipt.getSmtpResponse()
         <a href="security.html#section-reading-smime-merging">retained S/MIME content and merging</a>.</p>
     </div></section>
 
+  <h2 id="smime-calendar-merging">Keep calendars from retained S/MIME content</h2>
+  <section><div class="wide">
+    <p>Released 9.3.9 can retain a calendar in an Outlook message's extracted inner Email while omitting it from the merged Email and ordinary
+      export. In 10.0.0, a present inner calendar supplies its text, method and specific transfer encoding together, both on initial conversion
+      and when merging is explicitly restored on a copied separate view. An empty calendar string is present; an omitted selected encoding
+      clears the outer specific choice. If the inner message has no calendar, the outer calendar and encoding remain.</p>
+    <p>The converter calls stay the same. Applications that copied the inner calendar by hand after conversion can use the normal merged
+      view instead. Review that workaround before removing it; copying a built Email still preserves later edits and clears. Reports and
+      cryptographic facts remain with the view that parsed them. See <a href="security.html#section-reading-smime-merging">retained S/MIME content and merging</a>.</p>
+  </div></section>
+
   <h2 id="smime-media-type-capitalization">Keep equivalent S/MIME declarations intact</h2>
   <section><div class="wide">
     <p>With S/MIME support installed, media-type capitalization no longer makes a signed or encrypted message appear plain.
