@@ -2565,7 +2565,7 @@ String rawHeaders = outlookData.getRawHeaders();
       </p>
       <h3 id="section-protect-existing-mime">Protect a MimeMessage you already have</h3>
       <p>For an existing <code>MimeMessage</code>, use the low-level S/MIME helper when your application needs to retain its own content or header
-        changes. The Email supplies the S/MIME settings; the helper protects the supplied MIME message without rebuilding it from the Email or
+        changes. The Email supplies the S/MIME settings and optional fixed Message-ID; the helper protects the supplied MIME message without rebuilding it from the Email or
         applying Mailer defaults and overrides.</p>
 <pre><code class="language-java">Email protection = mail.emailBuilder().startingBlank()
     .encryptWithSmime(SmimeEncryptionConfig.builder()
@@ -2578,6 +2578,18 @@ MimeMessage encrypted = MailerHelper.signAndOrEncryptMessageWithSmime(
         and Email certificate fallback as <a href="security.html#section-sending-smime">ordinary S/MIME conversion</a>, including the configured
         encryption algorithms. With no S/MIME request, the helper returns the same supplied message without requiring <code>smime-module</code>.
         Requested protection requires that module. Each protected result is finalized for stable repeated writes; the helper applies only S/MIME.</p>
+      <p id="smime-helper-message-id">For active protection, a nonempty ID on the Email argument becomes the result's Message-ID. Otherwise the helper
+        generates a new ID, even when the supplied MIME message already has one. An observed MIME header alone does not request reuse.
+        To retain an existing ID deliberately, set it on the protection Email:</p>
+<pre><code class="language-java">Email retainIdentity = mail.emailBuilder().copying(protection)
+    .fixingMessageId(existingMimeMessage.getMessageID())
+    .buildEmail();
+MimeMessage encryptedWithSameId = MailerHelper.signAndOrEncryptMessageWithSmime(
+    session, existingMimeMessage, retainIdentity);</code></pre>
+      <p>Conversion and copying can already carry IDs onto an Email. Use <code>clearId()</code> on a copied builder when a new outgoing identity
+        is intended; a present ID does not prove that the caller directly used <code>fixingMessageId(...)</code>. Repeated writes retain the
+        finalized result's ID. With no S/MIME request, the original message and its existing ID remain unchanged. These are the helper's existing
+        selection rules; ordinary copy/import defaults are unchanged.</p>
       <p class="small">
         Ordinary EML, MIME and Outlook imports also work without <code>smime-module</code>. For protected input, uninspected signature and
         decryption results report <code>UNKNOWN</code>; recognizable headers can still identify the outer S/MIME mode. Clearly plain messages

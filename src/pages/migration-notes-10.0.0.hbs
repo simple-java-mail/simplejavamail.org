@@ -1430,11 +1430,16 @@ boolean positiveReply = receipt.getSmtpResponse()
       selected signing and encryption, including recipient certificates with the Email-level fallback and algorithm choices. Earlier versions
       unconditionally required both configurations: encryption-only failed before encryption, while signing-only signed and then failed.</p>
     <p>Pass the MIME message you want protected and an Email containing your already selected S/MIME settings. Caller changes to the MIME content
-      and headers remain the input; the helper does not rebuild the message, apply Mailer templates, or apply DKIM/OpenPGP. When both operations
+      and applicable headers remain the input; Message-ID follows the Email's configured choice. The helper does not rebuild the message, apply Mailer templates, or apply DKIM/OpenPGP. When both operations
       are selected, signing precedes encryption and each transformed stage is finalized. With neither selected, the same message is returned
       without reading its content or loading <code>smime-module</code>; requested protection still requires the module.</p>
     <p>No source change is required. Remove workarounds that supplied an unwanted second operation only if that matches your intended policy.
       See <a href="features.html#section-protect-existing-mime">protecting existing MIME content</a> for an encryption-only example.</p>
+    <p>The existing Message-ID rule remains: active protection uses a nonempty ID on the Email argument, or generates a new one if absent or empty.
+      A MIME header alone does not request reuse. Conversion/copying can already carry an ID, so use <code>clearId()</code> on a copied builder for
+      a new identity or deliberately choose <code>fixingMessageId(message.getMessageID())</code> to retain one. No-op requests retain the original
+      message unchanged. This is a contract clarification, not a change to runtime ID generation or copy/import defaults. See
+      <a href="features.html#smime-helper-message-id">the helper identity rules</a>.</p>
   </div></section>
 
   <h2 id="async-preparation">Account for validation running during async execution</h2>
