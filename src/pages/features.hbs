@@ -129,6 +129,7 @@ description: "Explore well-formed MIME, reusable message rules, security, diagno
 		<li><a href="#section-delivery-status-notification">Configure Delivery Status Notification</a></li>
 		<li><a href="#section-email-validation">Validating Email Addresses</a></li>
 		<li><a href="#section-exact-eml">Submitting finalized EML without rebuilding</a></li>
+		<li><a href="#section-source-inspection">Inspect received information</a></li>
 		<li><a href="#section-converting">Converting between email formats</a></li>
 		<li><a href="#section-bouncing-emails">Setting custom recipient for bouncing emails</a></li>
 		<li><a href="#section-reply-forward">Replying to and forwarding emails</a></li>
@@ -2285,6 +2286,72 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       </div>
   </section>
 
+
+
+    <a href="#section-source-inspection" id="section-source-inspection" class="section-link h2">&sect;</a>
+    <h2>Inspect received content and processing problems</h2>
+    <section><div class="view">
+      <p>Email is the inspection result, including when some received content cannot be interpreted. Successfully recovered bodies,
+        attachments and embedded images stay in their normal getters. Source data preserves the available evidence needed to inspect
+        the rest, and Problems explain actual interpretation, read or protection issues. There is no extra result wrapper around Email.</p>
+      <pre><code class="language-java">Email email = mail.converter().fromEml(emlBytes).toEmail();
+email.getPlainText();
+email.getAttachments();
+
+EmailSourceData source = email.getSourceData();
+List&lt;EmailSourceHeader&gt; headers = source.getHeaders();
+List&lt;EmailSourceProperty&gt; properties = source.getProperties();
+List&lt;EmailSourcePart&gt; parts = source.getParts();
+List&lt;EmailSourceData&gt; derivedViews = source.getDerivedSources();
+
+for (EmailProblem problem : email.getProblems()) {
+    EmailSourceIdentity origin = problem.getOrigin();
+    List&lt;EmailSourceElement&gt; affectedSources = problem.getSources();
+    // Inspect the observation and its affected source entries.
+}</code></pre>
+      <p>The source view is intended for generic diagnostic processing. Headers keep original spelling, raw values, repeated occurrences
+        and available order, including fields excluded from outgoing composition. Parts expose their own headers, properties and children;
+        native Outlook properties and actually materialized derived views remain distinguishable. The existing specialized
+        <code>OutlookEmailConversionResult</code> API remains available.</p>
+      <p>Source payloads are retained selectively. If an Outlook RTF body becomes HTML, the original RTF stays available in source data.
+        Successful Base64 decoding preserves the same attachment content normally and does not need another raw payload. A recovered
+        filename needs its original naming metadata, not another copy of the unchanged attachment bytes. Retained sources can therefore
+        exist with an empty Problems list: an expected successful transformation is not itself a Problem.</p>
+      <pre><code class="language-java">for (EmailSourcePart part : email.getSourceData().getParts()) {
+    // Inspect part.getHeaders()/getProperties(), then visit part.getChildren().
+    EmailSourceContent captured = part.getContent();
+    if (captured != null) {
+        long retainedBytes = captured.getSize();
+        boolean complete = captured.isFullyCaptured();
+    }
+}</code></pre>
+      <p>A non-null content object contains captured bytes, which can be read repeatedly with <code>openStream()</code> or
+        <code>readAllBytes()</code>. An incomplete capture contains only the available prefix; its size is the retained byte count.
+        A null content value means no bytes were retained, not an empty payload. These reads do not reopen an external resource or retry
+        decoding. The selected eager or deferred attachment-reading behavior still applies.</p>
+      <p>Problems are historical observations, not current validation or a live log of later attachment reads and sends. Their origins keep
+        the input's observed Message-ID and stable diagnostic reference even when the ID is missing, reused or changed on a copy. Copies
+        and later setters preserve captured sources and Problems without reinspection or coordinate matching. New outgoing completion
+        keeps its separate history boundary. An empty Problems list does not establish that every part or signature was inspected.</p>
+      <p>Use the optional diagnostic terminals when the target is EML bytes, EML text or MimeMessage rather than Email:</p>
+      <pre><code class="language-java">EmailConversionResult&lt;byte[]&gt; converted = mail.converter()
+    .fromOutlookMsg(msgPath)
+    .toEmlBytesResult();
+
+if (converted.hasValue()) {
+    Files.write(emlPath, converted.getValue());
+}
+List&lt;EmailProblem&gt; newProblems = converted.getProblems();
+List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pre>
+      <p>A recovered component failure can accompany a usable, complete output artifact. If no usable artifact can be produced,
+        <code>getFailure()</code> exposes the recognized conversion failure. The report contains observations newly made by this operation,
+        not a replay of the input Email's history. Direct value-returning terminals use the same conversion behavior; choose a result
+        terminal when you also need the diagnostics. Invalid use and unrelated application failures still throw.</p>
+      <p>Source data is not automatically added to outgoing MIME or logs, and historical Problems do not create a send gate. Existing
+        exact/protected-byte guarantees and outgoing validation remain independent. Fresh composition has empty source and problem values;
+        supported source-graph copying and serialization preserve captured evidence without further reads. See the
+        <a href="migration-notes-10.0.0.html#email-source-inspection">migration guidance</a>.</p>
+    </div></section>
 
   <a href="#section-converting" id="section-converting" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 outlook=true smime=true openpgp=true}}Converting between Email, MimeMessage, EML and Outlook .msg{{/components/feature-heading-h2}}

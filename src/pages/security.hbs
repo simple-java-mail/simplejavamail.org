@@ -1177,6 +1177,13 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
 					or keep the views separate before editing. Explicitly restoring merging on a copied separate view incorporates the inner content once;
 					later edits and clears still lead.
 				</p>
+                <p>Source evidence and processing observations are also available on the root Email through
+                    <code>getSourceData()</code> and <code>getProblems()</code>, for plain mail as well as protected content.
+                    Actually materialized received, extracted and generated views keep their source identities; qualified Problems
+                    retain their original owners. Source enumeration can expose retained originals even when no Problem occurred.
+                    Reading captured source content does not decrypt, verify, reopen resources or retry interpretation. Sources are not
+                    automatically sent or logged, and historical Problems do not determine whether current edited content can be sent.
+                    See <a href="features.html#section-source-inspection">source inspection</a>.</p>
 				<p>
 					After decrypting an Outlook MSG containing a detached <code>multipart/signed</code> entity, the <code>signed-email.eml</code> entry in
 					<code>getDecryptedAttachments()</code> keeps its signed MIME container and detached signature. Saving that attachment's bytes

@@ -1415,6 +1415,31 @@ boolean positiveReply = receipt.getSmtpResponse()
         <a href="security.html#section-reading-smime-merging">retained S/MIME content and merging</a>.</p>
     </div></section>
 
+  <h2 id="email-source-inspection">Inspect source information through Email</h2>
+  <section><div class="wide">
+    <p>10.0.0 makes Email the common inspection result for imperfect MIME, EML and Outlook input. The existing conversion calls still return
+      Email directly. Usable bodies and resources remain in the normal getters; <code>getSourceData()</code> exposes received headers,
+      native properties, source parts and derived views, while <code>getProblems()</code> explains actual processing issues.
+      Existing specialized Outlook conversion-result methods remain supported.</p>
+    <p>Accepted header, body and resource interpretation failures preserve available evidence and readable neighbors instead of necessarily
+      aborting the whole import. If your application previously used a thrown interpretation failure to reject a message, inspect its
+      Problems and the normal content your application requires. Unsupported or unreadable content does not become an invalid normal
+      attachment or an invented empty body. Invalid use and unrelated application failures retain their exceptions.</p>
+    <p>Source content is retained when the root Email no longer exposes it as received, excluding equivalent representations such as
+      successfully decoded Base64. Original RTF remains beside converted HTML, without a Problem for an expected successful conversion.
+      Enumerate source parts independently of Problems. Captured bytes can be partial; check <code>isFullyCaptured()</code> before treating
+      them as a complete payload. Source getters do not fetch deferred resources or retry interpretation.</p>
+    <p>For EML bytes/text and MimeMessage targets, optional <code>toEmlBytesResult()</code>, <code>toEmlResult()</code> and
+      <code>toMimeMessageResult()</code> terminals return a usable artifact or recognized failure alongside newly observed Problems and
+      retained sources. Email itself needs no result wrapper. The direct terminals remain available and use the same conversion behavior.</p>
+    <p>Problem origins keep the input Message-ID and diagnostic reference through copies and serialization, even when a copy selects another ID.
+      Later setters do not rewrite captured sources or observations. Outgoing completion starts its own history; source data is not
+      automatically rendered into composed output, and historical Problems do not determine current send validity. Whole-Email Java
+      restoration can still require existing optional producer classes; removing that dependency is separate future work under
+      <a href="https://github.com/bbottema/simple-java-mail/issues/965">#965</a>.
+      See <a href="features.html#section-source-inspection">source inspection and processing problems</a>.</p>
+  </div></section>
+
   <h2 id="smime-calendar-merging">Keep calendars from retained S/MIME content</h2>
   <section><div class="wide">
     <p>Released 9.3.9 can retain a calendar in an Outlook message's extracted inner Email while omitting it from the merged Email and ordinary
