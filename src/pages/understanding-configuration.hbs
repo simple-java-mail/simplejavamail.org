@@ -135,6 +135,9 @@ try (Mailer mailer = mail.mailerBuilder().withTransportModeLoggingOnly(true)
 			on the Email. Use <code>EmailProperty.MAIL_TO_FORWARD</code> with the per-field opt-outs below to skip that template contribution.
 			The subject still follows its own precedence. The selected <code>MimeMessage</code> remains borrowed, so keep it available and unchanged
 			while the Email is being used; applying templates does not read or copy its body. Sending, rehearsing and exporting an exact Email still bypass ordinary templates.
+			In unreleased 10.0.0, <code>clearEmailToForward()</code> removes a local forwarded source from an editable builder, allowing the same
+			ordinary fallback. It leaves other fields and suppression choices unchanged; use the <code>MAIL_TO_FORWARD</code> exclusions to prevent
+			templates from supplying another source. See <a href="features.html#clearing-forwarded-message">editing a forwarded draft</a>.
 		</p></section>
 <section><div class="wide">
       <h2 id="configuration-operations">Changing an existing choice</h2>

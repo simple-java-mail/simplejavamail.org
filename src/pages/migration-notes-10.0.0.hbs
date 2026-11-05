@@ -1228,6 +1228,9 @@ boolean positiveReply = receipt.getSmtpResponse()
       <code>dontApplyDefaultValueFor(EmailProperty.MAIL_TO_FORWARD)</code> or
       <code>dontApplyOverrideValueFor(EmailProperty.MAIL_TO_FORWARD)</code> on that Email's <code>EmailTemplateOptions.Builder</code>. These exclusions preserve a source explicitly supplied on
       the Email. Subject selection remains independent, and exact EML submission still bypasses ordinary templates.</p>
+    <p>Copies still retain the original message being forwarded. The optional new <code>clearEmailToForward()</code> operation removes that local
+      choice without changing other content or settings; ordinary template fallback remains eligible. Existing code needs no change. See
+      <a href="features.html#clearing-forwarded-message">editing a forwarded draft</a>.</p>
   </div></section>
 
   <h2 id="copied-receipt-requests">Check receipt requests on copied emails</h2>

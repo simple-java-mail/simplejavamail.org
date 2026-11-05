@@ -256,6 +256,19 @@ try (Mailer mailer = mail.mailerBuilder()
     <p class="wide">Attachment <code>DataSource</code> objects and forwarded <code>MimeMessage</code> objects remain borrowed. Building does not
       read or freeze them, so keep their content stable and available while an operation consumes it. Exact EML owns its supplied bytes;
       retry-enabled sends create their own repeatable content snapshot.</p>
+    <p class="wide" id="clearing-forwarded-message">Copying a forward keeps the original message as outgoing content. In unreleased 10.0.0,
+      <code>clearEmailToForward()</code> removes that local choice when you want to edit the draft into another kind of message. It leaves the
+      subject, body, ordinary attachments and other settings alone, and does not read or change the original message.</p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">Email edited = mail.emailBuilder().copying(forwardedEmail)
+    .clearEmailToForward()
+    .withSubject("Updated note")
+    .buildEmail();</code></pre>
+    </div>
+    <p class="wide">Clearing permits ordinary template fallback. To exclude a forwarded message supplied by defaults or overrides too, use
+      <code>EmailProperty.MAIL_TO_FORWARD</code> with the existing per-field
+      <a href="understanding-configuration.html#configuration-operations">template exclusions</a>. Previously built Emails and the borrowed
+      original remain unchanged.</p>
     <p class="wide" id="email-equality"><code>Email.equals()</code> compares selected represented message values and is useful in assertions
       about constructed, copied or converted messages. Its visible, Reply-To and delivery-override recipient lists, and attachment/image lists,
       ignore order while counting occurrences. It normalizes HTML line endings and compares attachment metadata without reading content bytes.
