@@ -48,6 +48,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#connection-conflicts">Review conflicting connection configuration</a></li>
       <li><a href="#reused-session-oauth2">Reuse a Session with its current OAuth2 settings</a></li>
       <li><a href="#pooled-oauth-usernames">Keep the selected OAuth account with connection pooling</a></li>
+      <li><a href="#pooled-oauth-registration">Use the current credentials after Session reuse</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -771,7 +772,7 @@ Mailer next = mail.mailerBuilder(session)
   <h2>Keep the selected OAuth account when pooling connections</h2>
   <section><div class="wide">
     <p>In 9.3.9, an SMTPS OAuth connection can use an inactive <code>mail.smtp.user</code> value when the batch module is present.
-      Unreleased 10.0.0 adopts SMTP Connection Pool 4.4.1, so the selected provider resolves its username normally for both fixed tokens
+      Unreleased 10.0.0 includes SMTP Connection Pool's 4.4.1 correction, so the selected provider resolves its username normally for both fixed tokens
       and connection-time providers. SMTP and STARTTLS use <code>mail.smtp.user</code>; SMTPS uses <code>mail.smtps.user</code>.</p>
 <pre><code class="language-java">properties.setProperty("mail.transport.protocol", "smtps");
 properties.setProperty("mail.smtps.user", "current@example.org");
@@ -787,6 +788,35 @@ try (Mailer mailer = mail.mailerBuilder(Session.getInstance(properties))
       Provider URL and mail-wide fallbacks remain available, and the Session's original username properties stay intact. See
       <a href="security.html#supplied-session-oauth2-usernames">OAuth2 configuration</a> and
       <a href="https://github.com/bbottema/simple-java-mail/issues/966">#966</a>.</p>
+  </div></section>
+
+  <a href="#pooled-oauth-registration" id="pooled-oauth-registration" class="section-link h2">&sect;</a>
+  <h2>Use the current credentials after Session reuse</h2>
+  <section><div class="wide">
+    <p>In 9.3.9, the pool can retain a copied OAuth callback after its Mailer closes. A later Mailer using the same Session can therefore
+      invoke that old callback instead of a replacement fixed token or ordinary Session authentication. Unreleased 10.0.0 passes the current
+      authentication choice directly to the pool registration and leaves caller property entries untouched.</p>
+<pre><code class="language-java">Session session = previousMailer.getSession();
+previousMailer.close(); // Finish shutdown before changing or reusing this Session.
+
+Properties credentials = session.getProperties();
+credentials.remove(TransportStrategy.OAUTH2_TOKEN_PROVIDER_PROPERTY);
+credentials.setProperty(TransportStrategy.OAUTH2_TOKEN_PROPERTY, newAccessToken);
+
+try (Mailer current = mail.mailerBuilder(session).buildMailer()) {
+    current.sync().sendMail(email);
+}</code></pre>
+    <p>The current fixed token is used without calling the removed provider. Keep host, mechanism and TLS settings appropriate for the
+      intended connection. Existing fixed-token/provider conflicts and failure handling still apply; changing configuration does not
+      reauthenticate an already-connected transport. Review an earlier internal-alias cleanup workaround before removing it, because
+      the application may also use those entries through a separate direct-pool integration.</p>
+    <p>No SJM API rename or new property is needed. If the application overrides the transitive SMTP Connection Pool version,
+      align it with SJM's declared 4.5.0 dependency or a compatible release containing the registration overloads; the batch adapter
+      uses that API internally. Direct pool callers can opt into nullable-supplier
+      <code>registerResourcePool</code> overloads, while their existing registration/property entry points remain supported. See
+      <a href="security.html#supplied-session-oauth2-registration">OAuth2 configuration</a>,
+      <a href="smtp-connection-pooling.html#option-direct-pool">direct pool registration</a> and
+      <a href="https://github.com/bbottema/simple-java-mail/issues/967">#967</a>.</p>
   </div></section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>

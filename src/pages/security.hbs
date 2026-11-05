@@ -351,6 +351,13 @@ try (Mailer reused = mail.mailerBuilder(session)
 				SJM does not copy the selected username into another protocol's property.
 				See <a href="/migration-notes-10.0.0.html#pooled-oauth-usernames">pooled OAuth username migration guidance</a>.
 			</p>
+			<p class="wide" id="supplied-session-oauth2-registration">
+				In unreleased 10.0.0, the batch integration passes the current authentication choice directly to each pool registration.
+				It does not copy tokens or callbacks into extra Session properties. After successful shutdown, reusing the Session with a
+				fixed token, another callback or ordinary authentication uses that current choice, even if older pool aliases remain.
+				Keep application-owned properties intact; no internal-alias cleanup is required. Existing credential validation and TLS
+				settings retain their meaning. See <a href="/migration-notes-10.0.0.html#pooled-oauth-registration">pooled authentication migration guidance</a>.
+			</p>
 			<p class="wide" id="supplied-session-oauth2-token">
 				In unreleased 10.0.0, a supplied Session's fixed String token under <code>simplejavamail.oauth2.token</code> can come from its
 				<code>Properties</code> entries or inherited defaults. Configure that Session's protocol, username and XOAUTH2 mechanism as usual.
