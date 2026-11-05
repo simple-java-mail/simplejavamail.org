@@ -55,6 +55,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
       <li><a href="#cli-metadata-build">Build CLI metadata through Maven</a></li>
       <li><a href="#cli-daemon-startup-configuration">Keep complete configuration when starting a CLI daemon</a></li>
+      <li><a href="#cli-daemon-state-paths">Keep daemon state paths consistent across startup</a></li>
       <li><a href="#cli-daemon-shutdown">Account for the CLI daemon shutdown deadline</a></li>
       <li><a href="#submission-results">Check exception reporting and SMTP acceptance checks</a></li>
       <li><a href="#email-convenience-mailboxes">Check address-list interpretation and display names</a></li>
@@ -291,6 +292,20 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       keep their startup defaults; later client JVM properties do not replace them. Supply the complete desired configuration again with
       <code>daemon restart</code> to capture new defaults. Explicit request Mailer options retain the normal conflict policy and lock checks.
       See the <a href="cli.html#daemon-startup-configuration">CLI startup guide</a>. This concerns the unreleased 10.0.0 daemon.</p>
+  </div></section>
+
+  <h2 id="cli-daemon-state-paths">Keep daemon state paths consistent across startup</h2>
+  <section><div class="wide">
+    <p>Earlier 10.0.0 development builds could derive different Unix-socket locations for the client and detached child when a relative or
+      unnormalized state root required a shorter socket path. The client then refused the child's discovery endpoint and startup timed out.</p>
+    <p>Both processes now use the same normalized absolute state root and, when a shorter Unix-socket location is required, the same
+      temporary-directory input. Existing relative values remain supported:</p>
+<pre><code class="language-shell">SJM_DAEMON_STATE_DIR=./sjm-state sjm daemon start</code></pre>
+    <p>Use the same resulting state directory for later commands targeting that instance. If a shortened socket uses a custom JVM temporary
+      directory, keep its resolved location the same too.
+      An absolute state directory is convenient when commands run from different working directories. No setting or command syntax changes are
+      required. This corrects the unreleased daemon and adds no released 9.x API migration. See
+      <a href="cli.html#daemon-state-paths">daemon state-directory configuration</a>.</p>
   </div></section>
 
   <h2 id="cli-daemon-shutdown">Account for the CLI daemon shutdown deadline</h2>

@@ -232,6 +232,21 @@ Elapsed: 142ms</code></pre>
       failover therefore keeps its complete definition. Property files, environment variables, source precedence and locks retain their normal rules.
       A blank JVM value does not erase an environment value, and supported typed JVM values keep their precedence over inherited String defaults.
     </p>
+    <p class="wide" id="daemon-state-paths">
+      Set <code>SJM_DAEMON_STATE_DIR</code> to choose a different daemon state directory. A relative value resolves from the directory where the
+      command is invoked. Use the same resulting directory for commands addressing that instance; an absolute value is convenient when commands
+      run from different working directories. Startup creates the selected directory through the normal private-state checks.
+    </p>
+<pre class="wide"><code class="language-shell">export SJM_DAEMON_STATE_DIR=./sjm-state
+sjm daemon start
+sjm daemon status
+sjm daemon stop</code></pre>
+    <p class="wide">
+      In unreleased 10.0.0, the client and detached child use the same normalized absolute state root. When a long state path requires a
+      shorter Unix-socket location, they also use the same temporary-directory input. If you customize the JVM temporary directory for that
+      shortened socket, select the same resulting directory for later client commands. See
+      <a href="migration-notes-10.0.0.html#cli-daemon-state-paths">daemon state-path guidance</a>.
+    </p>
     <p class="wide" id="daemon-startup-log">
       The daemon's <code>daemon.log</code> and <code>daemon-startup.log</code> must be regular files. Startup refuses symbolic links,
       including dangling links, and other file types before changing their content or permissions. An existing directory keeps its permissions
