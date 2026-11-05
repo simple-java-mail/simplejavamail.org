@@ -47,6 +47,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#connection-conflicts">Review conflicting connection configuration</a></li>
       <li><a href="#reused-session-oauth2">Reuse a Session with its current OAuth2 settings</a></li>
+      <li><a href="#pooled-oauth-usernames">Keep the selected OAuth account with connection pooling</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -764,6 +765,28 @@ Mailer next = mail.mailerBuilder(session)
       and the token remains fetched lazily when connecting. The supplied Session still requires exactly one fixed token or token provider when
       configured for XOAUTH2. See <a href="security.html#supplied-session-oauth2-mechanisms">OAuth2 configuration</a> and
       <a href="understanding-configuration.html#connection-conflicts">supplied-Session configuration rules</a>.</p>
+  </div></section>
+
+  <a href="#pooled-oauth-usernames" id="pooled-oauth-usernames" class="section-link h2">&sect;</a>
+  <h2>Keep the selected OAuth account when pooling connections</h2>
+  <section><div class="wide">
+    <p>In 9.3.9, an SMTPS OAuth connection can use an inactive <code>mail.smtp.user</code> value when the batch module is present.
+      Unreleased 10.0.0 adopts SMTP Connection Pool 4.4.1, so the selected provider resolves its username normally for both fixed tokens
+      and connection-time providers. SMTP and STARTTLS use <code>mail.smtp.user</code>; SMTPS uses <code>mail.smtps.user</code>.</p>
+<pre><code class="language-java">properties.setProperty("mail.transport.protocol", "smtps");
+properties.setProperty("mail.smtps.user", "current@example.org");
+properties.setProperty("mail.smtp.user", "other@example.org"); // inactive for this connection
+
+try (Mailer mailer = mail.mailerBuilder(Session.getInstance(properties))
+        .withOAuth2AccessTokenProvider(accessTokens)
+        .buildMailer()) {
+    mailer.sync().sendMail(email);
+}</code></pre>
+    <p>Keep the host, TLS and XOAUTH2 mechanism configured for the selected protocol. No username-property removal or copying is required.
+      Review any earlier workaround that synchronized the two usernames before removing it; it may also serve another connection.
+      Provider URL and mail-wide fallbacks remain available, and the Session's original username properties stay intact. See
+      <a href="security.html#supplied-session-oauth2-usernames">OAuth2 configuration</a> and
+      <a href="https://github.com/bbottema/simple-java-mail/issues/966">#966</a>.</p>
   </div></section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>

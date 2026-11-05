@@ -344,6 +344,13 @@ try (Mailer reused = mail.mailerBuilder(session)
         .buildMailer()) {
     reused.sync().sendMail(email);
 }</code></pre>
+			<p class="wide" id="supplied-session-oauth2-usernames">
+				OAuth usernames follow the selected connection protocol: <code>mail.smtp.user</code> for SMTP or STARTTLS and
+				<code>mail.smtps.user</code> for SMTPS. In unreleased 10.0.0, pooling preserves that selection even when the Session retains
+				a different username for the inactive protocol. The selected provider keeps its ordinary URL and mail-wide username fallbacks;
+				SJM does not copy the selected username into another protocol's property.
+				See <a href="/migration-notes-10.0.0.html#pooled-oauth-usernames">pooled OAuth username migration guidance</a>.
+			</p>
 			<p class="wide" id="supplied-session-oauth2-token">
 				In unreleased 10.0.0, a supplied Session's fixed String token under <code>simplejavamail.oauth2.token</code> can come from its
 				<code>Properties</code> entries or inherited defaults. Configure that Session's protocol, username and XOAUTH2 mechanism as usual.
