@@ -233,9 +233,10 @@ Elapsed: 142ms</code></pre>
       A blank JVM value does not erase an environment value, and supported typed JVM values keep their precedence over inherited String defaults.
     </p>
     <p class="wide" id="daemon-startup-log">
-      The daemon's <code>daemon-startup.log</code> must be a regular file. Startup refuses symbolic links, including dangling links,
-      and other file types before changing their content or permissions. New and existing regular startup logs are made private
-      before their previous content is cleared.
+      The daemon's <code>daemon.log</code> and <code>daemon-startup.log</code> must be regular files. Startup refuses symbolic links,
+      including dangling links, and other file types before changing their content or permissions. An existing directory keeps its permissions
+      and contents, and a dangling link does not create its target. New and existing regular logs are made private; only the startup log
+      is cleared before starting the next child.
     </p>
     <p class="wide">
       Later client JVM properties do not change a running daemon's defaults, and <code>--daemon=acquire</code> reuses that instance.
