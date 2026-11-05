@@ -1184,6 +1184,10 @@ if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
                     Reading captured source content does not decrypt, verify, reopen resources or retry interpretation. Sources are not
                     automatically sent or logged, and historical Problems do not determine whether current edited content can be sent.
                     See <a href="features.html#section-source-inspection">source inspection</a>.</p>
+                <p>If automatic inspection cannot interpret an independently attached signed file, the Email keeps its readable parent
+                    content and original attachment, with a Problem linked to the affected source. That child failure does not establish
+                    a failed signature or encryption result for the parent. Explicit decryption requests retain their exception behavior
+                    for incorrect keys and passwords.</p>
 				<p>
 					After decrypting an Outlook MSG containing a detached <code>multipart/signed</code> entity, the <code>signed-email.eml</code> entry in
 					<code>getDecryptedAttachments()</code> keeps its signed MIME container and detached signature. Saving that attachment's bytes
