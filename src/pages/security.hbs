@@ -1466,7 +1466,10 @@ OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
 				</p>
 				<p>
 					For a larger key store, use <code class="inline language-java">passphraseProvider(...)</code> to resolve a passphrase by key ID instead of
-					attaching one to every configured secret key ring.
+					attaching one to every configured secret key ring. Returning <code>null</code> uses that key ring's configured passphrase.
+					The provider runs only when reading needs a passphrase. If it throws a runtime exception, such as an unavailable key vault,
+					the original application exception escapes the import with its cause retained. It is not reported as a cryptographic
+					decryption failure; actual cryptographic failures and missing keys keep their normal result statuses.
 				</p>
 				<p id="receive-key-draft-validation">In the unreleased 10.0.0 line, verification and decryption setters copy non-null key material and allow unfinished empty bytes
 					while configuring the builder. Getters inspect detached choices without invoking the passphrase provider; <code>build()</code>
