@@ -429,8 +429,8 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 					for a custom factory. Sessions you create and supply yourself keep their existing behavior.</p>
 				<p>A class-based factory needs a public static <code>getDefault()</code> method. In a modular application, export its package to
 					<code>org.simplejavamail.mailprovider.angus</code>, or supply an instance instead. Factory initialization stays lazy.</p>
-				<p>Normal builds retain the authenticated SOCKS bridge with released Angus 2.0.5. The direct route being developed in an explicit private
-					merged-Angus build composes SOCKS transport sockets with normal Angus raw/TLS factory instances or classes, including existing choices
+				<p>Normal builds retain the authenticated SOCKS bridge with released Angus 2.0.5. The direct route being developed in an explicit
+					Angus snapshot development build composes SOCKS transport sockets with normal Angus raw/TLS factory instances or classes, including existing choices
 					on a supplied Angus Session. Proxy-specific decoration preserves the same Session, provider, certificate trust, SNI and SMTP hostname
 					handling. This is not a supported released dependency. Working connectivity does not add
 					<a href="sending-and-execution.html#section-send-deadlines">physical-abort support</a> to an otherwise unsupported route.</p>

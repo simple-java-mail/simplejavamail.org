@@ -435,7 +435,7 @@ boolean enabled = mailer.getOperationalConfig().isLegacySmtpContentSupportEnable
         active proxy operations. Normal builds still use this bridge with released Angus 2.0.5.
       </p>
       <p>
-        <strong>Development only:</strong> an explicit private build against merged Angus code can use its new transport-socket hook for a direct
+        <strong>Development only:</strong> an explicit build using a published Angus snapshot can use its new transport-socket hook for a direct
         authenticated SOCKS connection. The route is selected before connecting; an authentication, TLS or SMTP failure does not retry through
         the bridge. This is not a supported released dependency. The bridge, <code>withBridgePort(...)</code>, CLI bridge-port option and
         <code>simplejavamail.proxy.socks5bridge.port</code> remain available.

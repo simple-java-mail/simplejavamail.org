@@ -301,7 +301,7 @@ try (Mailer mailer = builder.buildMailer()) {
         settings you want.</p>
 <p>Reuse its Mailer for concurrent sends. A different Mailer cannot claim that Session or its shared Properties until the current owner has shut down successfully.
   Configure custom SSL factories and opportunistic TLS directly on the supplied Session; use an SJM-created Session when SJM should own those construction choices.</p>
-<p>In the explicit merged-Angus development build, authenticated SOCKS can use proxy-specific socket decoration on the same supplied Angus Session.
+<p>In the explicit Angus snapshot development build, authenticated SOCKS can use proxy-specific socket decoration on the same supplied Angus Session.
   It preserves the selected provider, existing raw/TLS factory choices and TLS policy, without installing unrelated managed sending behavior
   or automatically granting physical cancellation/deadline support. Normal builds retain the bridge with released Angus 2.0.5. See
   <a href="configuration.html#section-proxy-bridge-ports">the proxy settings and development boundary</a>.</p>
