@@ -10,6 +10,9 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 		<section><p class="wide">An expired primary certificate can be a reason to use another approved relay, without trusting that expired certificate.
       <a href="/smtp-connection-failover.html#section-policy">Connection failover</a> provides separate opt-ins for authentication rejection and
       certificate verification failure. The selected destination still has to pass its own TLS checks, and mandatory message locks remain binding.</p></section>
+    <section><p class="wide">On the direct authenticated SOCKS route, a rejected proxy login uses the existing authentication-failure permission too.
+      It stops failover by default. A certificate-verification opt-in does not permit a rejected proxy login, and allowing authentication failover
+      does not weaken the next destination's credentials, TLS checks or locks.</p></section>
 		<section class="doc-overview" aria-labelledby="security-overview-title">
 			<header>
 				<p class="eyebrow">Security at a glance</p>

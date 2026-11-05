@@ -100,7 +100,7 @@ try (Mailer alternative = mail.mailerBuilder()
         <tr><td><code>withPrimaryConnectionRetryDelay(duration)</code></td><td>Zero</td><td>Wait between additional attempts you explicitly enable</td></tr>
         <tr><td><code>withPrimaryRecheckInterval(duration)</code></td><td>30 seconds</td><td>When a previously failed destination becomes eligible for another check</td></tr>
         <tr><td><code>withPrimaryRecheckBackoff(multiplier, maximum)</code></td><td>Disabled</td><td>Increase that interval once per failed recheck, up to the supplied maximum</td></tr>
-        <tr><td><code>withFailoverOnAuthenticationFailure(true)</code></td><td>false</td><td>Allow another destination after credentials are rejected</td></tr>
+        <tr><td><code>withFailoverOnAuthenticationFailure(true)</code></td><td>false</td><td>Allow another destination after SMTP or direct SOCKS proxy credentials are rejected</td></tr>
         <tr><td><code>withFailoverOnCertificateVerificationFailure(true)</code></td><td>false</td><td>Allow another destination after certificate or server-identity checks fail</td></tr>
       </tbody></table></div>
     <p>Every policy setting has a matching reset method. Read the resolved policy through
@@ -113,6 +113,13 @@ try (Mailer alternative = mail.mailerBuilder()
     <p>For example, an expired certificate on A need not stop mail if your deployment permits another independently trusted relay.
       Enable certificate-failure failover explicitly. A still fails verification, and B must pass its own checks. This setting does not trust
       expired certificates, turn off hostname verification or downgrade mandatory TLS. Authentication failure is a separate decision.</p>
+    <p>On the direct authenticated SOCKS route, a rejected proxy login uses that same authentication permission. A wrong proxy password stops
+      failover by default, just like a rejected SMTP login. Enable <code>withFailoverOnAuthenticationFailure(true)</code> only when another configured
+      destination is intended to take over. The rule also applies when an earlier rejection is cached; malformed proxy replies do not become
+      authentication permission, and a certificate-failure opt-in does not authorize either login failure.</p>
+    <p>This proxy classification belongs to the <a href="configuration.html#section-proxy-bridge-ports">direct route in the Angus snapshot development build</a>.
+      Ordinary Angus 2.0.5 builds still use the compatibility bridge, whose proxy-rejection classification is unchanged. The bridge and its port
+      settings are scheduled for removal together with adoption of the compatible final Angus baseline.</p>
     <p>By default, eligible failures include DNS lookup failure, connection refusal, unreachable endpoints, setup timeouts/disconnects and
       temporary service-unavailable setup replies. Invalid local configuration, message validation, lock conflicts and unmet required capabilities
       stop the send. So do unknown setup failures, ordinary pool-capacity timeouts, cancellation, shutdown and the overall deadline.</p>
