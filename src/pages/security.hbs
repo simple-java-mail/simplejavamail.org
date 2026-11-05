@@ -1265,6 +1265,12 @@ nonMergedEmail.getSmimeSignedEmail();
 			<p class="wide">In unreleased 10.0.0, S/MIME attachments inside ordinary multipart mail are recognized by their media type,
 				including when their Content-Type contains parameters such as <code>smime-type=enveloped-data</code> or a name.
 				The parameters remain part of the attachment metadata; they do not prevent requested decryption or signature inspection.</p>
+			<p class="wide" id="signed-parent-attachments">In unreleased 10.0.0, opening a detached S/MIME signature also processes independent
+				protected attachments in that message. Supply your key through <code>withSmimeDecryption(...)</code> to open supported encrypted
+				attachments, just as you would for an unsigned message. <code>getAttachments()</code> keeps the original resources, while
+				<code>getDecryptedAttachments()</code> includes their supported opened representations. The parent's signature verdict and original
+				protected bytes remain intact; opening an attached file neither replaces the parent body nor makes the parent itself encrypted.
+				Further encrypted envelope layers are not opened automatically.</p>
 
 			<div class="wide">
 <pre><code>Pkcs12Config yourPkcs12Config = Pkcs12Config.builder()
@@ -1281,6 +1287,18 @@ Email mergedEmail = mail.converter()
 // For an EML file, choose .fromEml(Path.of("yourSMIMEEncryptedMessage.eml")) instead.
 
 mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENCRYPTED
+</code></pre>
+			</div>
+			<div class="wide">
+<pre><code class="language-java">Email signedParent = mail.converter()
+    .fromEml(Path.of("signed-message-with-encrypted-attachment.eml"))
+    .withSmimeDecryption(yourPkcs12Config)
+    .toEmail();
+
+signedParent.getAttachments();          // original protected resources
+signedParent.getDecryptedAttachments(); // opened child content when supported
+signedParent.getOriginalSmimeDetails().getSmimeMode(); // SIGNED
+signedParent.getOriginalSmimeDetails().getDecryptionStatus(); // NOT_ENCRYPTED: only the attachment was encrypted
 </code></pre>
 			</div>
 			<p class="wide">Requesting decryption requires <code>smime-module</code> at runtime. If it is missing, conversion explains which module

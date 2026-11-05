@@ -1466,6 +1466,10 @@ boolean positiveReply = receipt.getSmtpResponse()
       classpath. Previously the request could be silently ignored when the module was missing.</p>
     <p>Include the module when you want decryption. If you only want ordinary inspection without decryption, omit the keys or clear the configured
       decryption request. Reading mail without an explicit decryption request still does not require S/MIME support.</p>
+    <p>In unreleased 10.0.0, conversion also processes independent protected attachments after opening a detached S/MIME signature.
+      Existing <code>withSmimeDecryption(...)</code> calls apply to supported encrypted children while the original resources and parent's
+      signature facts remain intact. No method calls need changing; see
+      <a href="security.html#signed-parent-attachments">attachment processing inside signed messages</a>.</p>
     <p>Ordinary imports of protected input without that module no longer report the default <code>PLAIN</code> S/MIME mode. Recognizable headers
       retain the outer <code>SIGNED</code> or <code>ENCRYPTED</code> mode; ambiguous S/MIME reports <code>UNKNOWN</code>. Update code that treats every
       mode other than the known protected modes as confirmed plain content. The inspection result getters expose <code>UNKNOWN</code> when
