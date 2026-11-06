@@ -123,6 +123,9 @@ printReceipt(receipt);</code></pre>
     failure.getSubmissionReceipt().ifPresent(this::printReceipt);
     recordFailure(failure);
 }</code></pre>
+      <p>During <a href="/mail-send-retries.html">automatic retries</a>, that same getter retains the last refusal if retry waiting is interrupted
+        or the next connection cannot be acquired. The current failure keeps its own kind and cause. Once another provider invocation begins,
+        an earlier refusal no longer establishes the final submission result.</p>
       <p><code>failure.getKind()</code> returns a typed <code>MailFailureKind</code> such as <code>VALIDATION</code>, <code>MESSAGE_SIZE</code>,
         <code>PREPARATION</code>, <code>CAPACITY</code>, <code>CONNECTION</code>, <code>SUBMISSION</code>, <code>TIMEOUT</code>,
         <code>CANCELLED</code> or <code>CLEANUP</code>. Configuration and conversion failures have their own kinds too.
