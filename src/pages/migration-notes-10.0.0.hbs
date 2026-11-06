@@ -82,7 +82,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#opportunistic-tls">Configure optional SMTP encryption on the Mailer builder</a></li>
       <li><a href="#mandatory-starttls">Remove settings that contradict required SMTP encryption</a></li>
       <li><a href="#custom-factory-fallback">If you supply your own SMTP connection code</a></li>
-      <li><a href="#proxy-bridge-port">Check fixed local ports when using SOCKS proxy authentication</a></li>
+      <li><a href="#proxy-bridge-port">Remove authenticated SOCKS bridge settings</a></li>
       <li><a href="#direct-session">If you create Jakarta Mail Sessions yourself</a></li>
       <li><a href="#spring-context">Review Spring auto-configuration and beans</a></li>
       <li><a href="#embedded-route-flags">Check two embedded-image settings</a></li>
@@ -481,7 +481,7 @@ boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
         <td><code>withAsyncExecutionConfig(AsyncExecutionConfig)</code>; keep-alive becomes <code>withKeepAliveTime</code> inside the group.</td></tr>
       <tr><td><code>withProxy</code>, <code>withProxyHost</code>, <code>withProxyPort</code>, credentials and bridge port</td>
         <td><code>withProxyConfig(SocksProxyConfig)</code>; its builder uses <code>withHost</code>, <code>withPort</code>,
-        <code>withUsername</code>, <code>withPassword</code> and <code>withBridgePort</code>.</td></tr>
+        <code>withUsername</code> and <code>withPassword</code>; remove bridge-port calls.</td></tr>
       <tr><td><code>withSessionTimeout</code>, <code>withLocalBindAddress</code>, <code>withSmtpClientHostname</code></td>
         <td><code>withConnectionConfig(ConnectionConfig)</code>, retaining those setting names.</td></tr>
       <tr><td><code>trustingSSLHosts</code>, <code>trustingAllHosts</code>, <code>verifyingServerIdentity</code>, custom SSL factories</td>
@@ -1634,29 +1634,20 @@ Mailer mailer = mail.mailerBuilder()
   </section>
 
   <a href="#proxy-bridge-port" id="proxy-bridge-port" class="section-link h2">&sect;</a>
-  <h2>Check fixed local ports when using SOCKS proxy authentication</h2>
+  <h2>Remove authenticated SOCKS bridge settings</h2>
 
   <section>
     <p class="wide">
-      Bridge-port settings remain supported. Normal builds keep the authenticated proxy bridge with released Angus 2.0.5. A direct route is
-      being developed separately against merged Angus code in an explicit private build; it does not introduce a released bridge-port
-      retirement or require removing Java, CLI, Spring, locked, environment or JVM property inputs.
-    </p>
-    <p class="wide" style="font-size:smaller">
-      <strong>What changes:</strong> If your SOCKS proxy requires a username and password, Simple Java Mail starts a local proxy bridge to handle that
-      authentication. The bridge now chooses a free local port instead of always using <code class="inline language-text">1081</code>, so two Mailers
-      can use it without competing for the same port. If you explicitly set a positive bridge port, it still stays fixed.
+      Authenticated SOCKS now connects directly through the optional client module. The local bridge server and its port setting are removed.
+      Keep the remote proxy host, port, username and password. Remove <code>withProxyBridgePort(...)</code> and bridge-port getters from Java code;
+      there is no <code>SocksProxyConfig.Builder.withBridgePort(...)</code> replacement.
     </p>
     <p class="wide">
-      You no longer have to give every authenticated-proxy Mailer its own bridge port. Separate Mailers can run at the same time without fighting over
-      the old default. Simple Java Mail writes the selected port to the effective Session before the SMTP connection opens, and updates it if the bridge
-      later restarts on another port. Anonymous SOCKS proxies are unchanged.
-    </p>
-    <p class="wide">
-      Remove <code class="inline language-java">withProxyBridgePort(...)</code> or
-      <code class="inline language-properties">simplejavamail.proxy.socks5bridge.port</code> when you only set it to avoid collisions. Setting the value
-      to <code class="inline language-text">0</code> also selects automatic allocation. Keep a positive value only when the application really needs a
-      predictable local port:
+      Remove <code>simplejavamail.proxy.socks5bridge.port</code> from files and JVM properties, its
+      <code>simplejavamail.locked.proxy.socks5bridge.port</code> form, and any named-mailer equivalents. Remove the corresponding environment
+      variables such as <code>SIMPLEJAVAMAIL_PROXY_SOCKS5BRIDGE_PORT</code> and relaxed Spring/Boot settings.
+      These obsolete configuration keys produce migration guidance instead of being silently ignored. A value of <code>0</code> must also be removed.
+      Remove the CLI flag <code>--mailer:withProxyBridgePort</code> and any use of its option help; that option is no longer available.
     </p>
     <pre class="full-width-example"><code class="language-java">Mailer mailer = mail.mailerBuilder()
         .withProxyConfig(SocksProxyConfig.builder()
@@ -1664,33 +1655,28 @@ Mailer mailer = mail.mailerBuilder()
             .withPort(1080)
             .withUsername("user")
             .withPassword("password")
-            .withBridgePort(7777)
             .build())
         .buildMailer();</code></pre>
+    <p class="wide">
+      The effective Session's SOCKS endpoint now names the remote proxy. Remove application assumptions about a generated loopback host or port.
+      Authenticated proxying requires an Angus provider with the transport-socket hook; older or unsupported providers fail before connecting.
+      Anonymous SOCKS and existing HTTP-proxy precedence remain unchanged.
+    </p>
     <h3>Check proxy destinations and credential lengths</h3>
     <p class="wide">
-      The authenticated bridge now carries IPv6 destinations and forwards names that the JVM could not resolve to the remote proxy.
-      Its generated local hop uses IPv4 loopback <code>127.0.0.1</code> for provider compatibility, while destination and remote-proxy connections
-      can still use IPv6. The provider/JDK's initial local lookup behavior remains unchanged.
+      Authenticated SOCKS carries IPv4 and IPv6 destinations and passes names the JVM could not resolve to the remote proxy.
+      The provider/JDK's initial local lookup behavior remains unchanged.
     </p>
     <p class="wide">
       For an active authenticated route, each effective proxy username and password must contain 1 through 255 UTF-8 bytes.
-      <code>buildMailer()</code> now rejects an invalid effective length before connecting instead of sending a malformed authentication request.
-      Check credentials loaded from deployment configuration as well as Java choices; non-ASCII characters can occupy more than one byte.
-      The Java builder calls and property names are unchanged.
+      <code>buildMailer()</code> rejects an invalid effective length before connecting. Check credentials loaded from deployment configuration
+      as well as Java choices; non-ASCII characters can occupy more than one byte.
     </p>
     <p class="wide">
-      A proxy must also return a complete, valid CONNECT reply before SMTP forwarding starts. Truncated replies and invalid protocol fields now
-      fail setup. See <a href="configuration.html#section-proxy-bridge-ports">authenticated proxy configuration</a> for the current boundaries.
-    </p>
-    <h3>Keep established tunnels open while new connections start</h3>
-    <p class="wide">
-      Earlier bridge implementations kept setup workers occupied for the lifetime of established tunnels. In the unreleased 10.0.0 line,
-      forwarding releases that setup capacity, so pooled or retained connections can stay open while new connections start proxy setup.
-    </p>
-    <p class="wide">
-      Simultaneous unfinished setups remain bounded. When setup capacity is full, only the new setup is refused; healthy established tunnels
-      remain usable. Idle setup workers can retire. Existing proxy settings and timeouts are unchanged.
+      A proxy must return complete, valid authentication and CONNECT replies before SMTP starts. A known rejected proxy login follows
+      <code>FailoverPolicy.Builder.withFailoverOnAuthenticationFailure(...)</code>, disabled by default. Enabling it permits another configured,
+      eligible route; it does not permit an unknown protocol failure or change certificate-verification permission.
+      See <a href="configuration.html#section-proxy-bridge-ports">authenticated proxy configuration</a>.
     </p>
   </section>
 
@@ -1844,7 +1830,7 @@ private SimpleJavaMail mail;
 Mailer customMailer() {
     return mail.mailerBuilder()
             .withProxyConfig(SocksProxyConfig.builder()
-                .withBridgePort(7777)
+                .withHost("proxy.example.com").withPort(1080)
                 .build())
             .buildMailer();
 }</code></pre>

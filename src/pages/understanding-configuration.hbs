@@ -251,8 +251,7 @@ draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
         .build())
     .buildMailer();</code></pre>
       <p>Without the policy selection, the different proxy hosts conflict. In either mode, compatible raw host/port values can combine with
-        SJM proxy credentials. The remote route is resolved before selecting authenticated proxy handling: the bridge for normal Angus 2.0.5
-        builds, or direct sockets for the explicit capable-provider development build.</p>
+        SJM proxy credentials. The remote route is resolved before the authenticated socket is configured; the effective Session describes that same remote endpoint.</p>
 <pre><code class="language-properties small"># Default; Java can select a different mode unless it is locked:
 simplejavamail.connection.conflictpolicy=REJECT_CONFLICTS
 
@@ -301,10 +300,10 @@ try (Mailer mailer = builder.buildMailer()) {
         settings you want.</p>
 <p>Reuse its Mailer for concurrent sends. A different Mailer cannot claim that Session or its shared Properties until the current owner has shut down successfully.
   Configure custom SSL factories and opportunistic TLS directly on the supplied Session; use an SJM-created Session when SJM should own those construction choices.</p>
-<p>In the explicit Angus snapshot development build, authenticated SOCKS can use proxy-specific socket decoration on the same supplied Angus Session.
+<p>Authenticated SOCKS uses proxy-specific socket decoration on the same supplied Angus Session.
   It preserves the selected provider, existing raw/TLS factory choices and TLS policy, without installing unrelated managed sending behavior
-  or automatically granting physical cancellation/deadline support. Normal builds retain the bridge with released Angus 2.0.5. See
-  <a href="configuration.html#section-proxy-bridge-ports">the proxy settings and development boundary</a>.</p>
+  or automatically granting physical cancellation/deadline support. The selected provider must support the Angus transport-socket hook. See
+  <a href="configuration.html#section-proxy-bridge-ports">authenticated proxy settings</a>.</p>
 </div></section><section>
     <h3 id="locked-requirements">What locks protect</h3>
     <p class="wide">A lock prevents accidental changes within this factory. It is not a security sandbox: application code can deliberately create

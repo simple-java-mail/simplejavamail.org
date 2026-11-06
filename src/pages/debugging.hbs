@@ -342,8 +342,7 @@ Elapsed: 138ms</code></pre>
         cluster member, and it does not call the mail-send observer.
       </p>
       <p>
-        An authenticated SOCKS probe uses the selected proxy route with a fresh connection. Normal builds use the bridge with released Angus
-        2.0.5; the explicit Angus snapshot development build can use direct SOCKS. A probe does not borrow a send connection or its abort state.
+        An authenticated SOCKS probe opens a fresh direct connection through the selected proxy. It does not borrow a send connection or its abort state.
         The existing probe timeout and future-cancellation rules above still apply.
       </p>
       <p>
@@ -651,9 +650,8 @@ try {
           <li><strong>"org.simplejavamail.internal.dkimsupport"</strong></li>
           <li><strong>"org.simplejavamail.internal.smimesupport"</strong></li>
           <li><strong>"org.simplejavamail.internal.authenticatedsockssupport"</strong></li>
-          <li><strong>"socks5bridge"</strong></li>
         </ul>
-        <p>The latter two log authenticated SOCKS negotiation and the bridge used by normal builds with released Angus 2.0.5.
+        <p>The authenticated SOCKS logger describes proxy negotiation.
           Authentication TRACE output omits the username/password packet. See <a href="features.html#section-proxy">proxy connections</a>.
         </p>
       </div>
@@ -694,10 +692,9 @@ try {
     &lt;Loggers&gt;
         &lt;Logger name=&quot;org.simplejavamail&quot; level=&quot;trace&quot;/&gt;
         &lt;!-- in case you&#39;re using authenticated proxy --&gt;
-        &lt;Logger name=&quot;socks5bridge&quot; level=&quot;info&quot; additivity=&quot;false&quot;&gt;
+        &lt;Logger name=&quot;org.simplejavamail.internal.authenticatedsockssupport&quot; level=&quot;info&quot; additivity=&quot;false&quot;&gt;
             &lt;AppenderRef ref=&quot;simpleConsole&quot; /&gt;
         &lt;/Logger&gt;
-        &lt;Logger name=&quot;org.simplejavamail.internal.authenticatedsockssupport&quot; level=&quot;warn&quot;/&gt;
 
         &lt;Root level=&quot;warn&quot;&gt;
             &lt;AppenderRef ref=&quot;console&quot; /&gt;
@@ -735,10 +732,9 @@ try {
 
     &lt;logger name=&quot;org.simplejavamail&quot; level=&quot;TRACE&quot;/&gt;
     &lt;!-- in case you&#39;re using authenticated proxy --&gt;
-    &lt;logger name=&quot;socks5bridge&quot; level=&quot;INFO&quot; additivity=&quot;false&quot;&gt;
+    &lt;logger name=&quot;org.simplejavamail.internal.authenticatedsockssupport&quot; level=&quot;INFO&quot; additivity=&quot;false&quot;&gt;
         &lt;appender-ref ref=&quot;simpleConsole&quot; /&gt;
     &lt;/logger&gt;
-    &lt;logger name=&quot;org.simplejavamail.internal.authenticatedsockssupport&quot; level=&quot;WARN&quot;/&gt;
 
     &lt;root level=&quot;WARN&quot;&gt;
         &lt;appender-ref ref=&quot;console&quot; /&gt;

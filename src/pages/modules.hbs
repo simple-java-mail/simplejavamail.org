@@ -257,8 +257,8 @@ com.example.ExampleMailTransportAdapter</code></pre>
 
   <section>
     <p>
-      Add this library for authenticated SOCKS proxy servers. Normal builds use the local bridge with released Angus 2.0.5. The module is also
-      required by the direct route being developed against merged Angus code in an explicit private build; that route is not a supported released dependency:
+      Add this library for authenticated SOCKS proxy servers. Its client logs in and opens the SMTP tunnel directly through the Angus transport-socket hook.
+      Credentials remain scoped to their Mailer, and no local proxy server is started:
     </p>
     <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;

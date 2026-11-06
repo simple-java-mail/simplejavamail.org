@@ -595,7 +595,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
         the <code>MailSend&lt;MailSubmissionReceipt&gt;</code> completion.
       </p>
       <p>The views share the same Mailer, executor, pool and lifecycle. There is no Mailer-wide async default.
-        If an authenticated proxy is used, its bridge remains available while work needs it.</p>
+        An authenticated proxy connection follows the same transport ownership through setup, pooled reuse and disposal.</p>
     </div>
 
     <div class="side">
@@ -2715,20 +2715,9 @@ Email reply = SimpleJavaMail.fromDefaults().emailBuilder()
         STARTTLS and implicit-TLS SMTPS connections.
       </p>
       <p class="wide">
-        To make this work with authentication, Simple Java Mail uses a trick: it sets up a temporary anonymous proxy server for Jakarta Mail to connect
-        to and then the bridge relays the connection to the target proxy performing the authentication outside of Jakarta Mail.
-      </p>
-      <p class="wide">
-        The bridge listens only on IPv4 loopback <code>127.0.0.1</code>. Its listener stops accepting connections after the last active proxy
-        operation, while established pooled or retained tunnels stay usable until their transports close. It is an internal adapter for Jakarta Mail.
-      </p>
-      <p class="wide">
-        This temporary server is referred to as the <strong>Proxy Bridging Server</strong>. Normal builds retain this route with released Angus 2.0.5.
-      </p>
-      <p class="wide">
-        A direct authenticated SOCKS route is being developed against merged Angus code in an explicit private build. It keeps the optional
-        module and per-Mailer credentials, while the bridge and bridge-port controls remain available. It is not a supported released
-        dependency; see <a href="configuration.html#section-proxy-bridge-ports">the current proxy settings and development boundary</a>.
+        For authentication, the optional SOCKS client connects to the proxy, logs in and opens the SMTP tunnel before handing the socket to Angus.
+        Angus retains SMTP and TLS handling. No local proxy server or bridge port is needed, and credentials stay with their Mailer.
+        See <a href="configuration.html#section-proxy-bridge-ports">authenticated SOCKS configuration</a> for provider and factory requirements.
       </p>
     </div>
 
@@ -2747,21 +2736,17 @@ currentMailerBuilder.withProxyConfig(SocksProxyConfig.builder()
     .withPassword("proxy password")
     .build());
 </code></pre>
-      <p>In the unreleased 10.0.0 line, compatible raw SOCKS host/port settings can combine with SJM proxy credentials. Conflicting explicit
+      <p>Compatible raw SOCKS host/port settings can combine with SJM proxy credentials. Conflicting explicit
         endpoints fail by default. Select <code>ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES</code> to deliberately prefer typed Java members;
         a Java host alone retains an applicable raw port. See <a href="understanding-configuration.html#connection-conflicts">the connection conflict policy</a>.</p>
-      <p>With authentication, <code>mailer.getProxyConfig()</code> describes the remote proxy, while the effective Session connects to the local
-        bridge. Its allocated loopback port is separate from the remote proxy port.</p>
-      <p>In the unreleased 10.0.0 line, the authenticated bridge carries IPv4 and IPv6 destinations. A hostname the JVM cannot resolve locally is
-        forwarded to the remote proxy for resolution, preserving the provider/JDK's existing initial lookup behavior. Connections to the remote
-        proxy can also use IPv6; the local bridge hop uses IPv4 for provider compatibility.</p>
+      <p>With authentication, <code>mailer.getProxyConfig()</code> and the effective Session describe the same remote proxy.</p>
+      <p>The authenticated socket carries IPv4 and IPv6 destinations. A hostname the JVM cannot resolve locally is passed to the remote proxy
+        for resolution, preserving the provider/JDK's initial lookup behavior. Connections to the remote proxy can also use IPv6.</p>
       <p>For an active authenticated proxy, the effective username and password must each contain 1 through 255 UTF-8 bytes.
         <code>buildMailer()</code> rejects credentials outside that range before connecting. See
         <a href="configuration.html#section-proxy-bridge-ports">the proxy setup boundaries</a> for details.</p>
-      <p>Established pooled or retained tunnels no longer hold proxy setup capacity, so new connections can start setup while those tunnels
-        remain open. Simultaneous unfinished setups stay bounded; overload refuses only a new setup and leaves healthy tunnels usable.</p>
-      <p>See <a href="configuration.html#section-proxy-bridge-ports">Authenticated proxy bridge ports</a> for automatic loopback ports,
-        optional fixed ports, and applications that use more than one authenticated-proxy Mailer.</p>
+      <p>Each connection owns its authenticated socket. Pooled or retained connections can stay open while another connection performs setup,
+        without sharing credentials, cancellation state or a local proxy listener.</p>
     </div>
   </section>
 

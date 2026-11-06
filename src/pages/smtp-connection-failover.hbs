@@ -117,9 +117,8 @@ try (Mailer alternative = mail.mailerBuilder()
       failover by default, just like a rejected SMTP login. Enable <code>withFailoverOnAuthenticationFailure(true)</code> only when another configured
       destination is intended to take over. The rule also applies when an earlier rejection is cached; malformed proxy replies do not become
       authentication permission, and a certificate-failure opt-in does not authorize either login failure.</p>
-    <p>This proxy classification belongs to the <a href="configuration.html#section-proxy-bridge-ports">direct route in the Angus snapshot development build</a>.
-      Ordinary Angus 2.0.5 builds still use the compatibility bridge, whose proxy-rejection classification is unchanged. The bridge and its port
-      settings are scheduled for removal together with adoption of the compatible final Angus baseline.</p>
+    <p>The <a href="configuration.html#section-proxy-bridge-ports">authenticated SOCKS connection</a> preserves the rejection on its own socket.
+      Other connections and destinations keep their own credentials, TLS settings and failure facts.</p>
     <p>By default, eligible failures include DNS lookup failure, connection refusal, unreachable endpoints, setup timeouts/disconnects and
       temporary service-unavailable setup replies. Invalid local configuration, message validation, lock conflicts and unmet required capabilities
       stop the send. So do unknown setup failures, ordinary pool-capacity timeouts, cancellation, shutdown and the overall deadline.</p>
