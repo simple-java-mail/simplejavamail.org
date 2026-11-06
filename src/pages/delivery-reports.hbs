@@ -106,9 +106,14 @@ DELAYED 4.4.1</code></pre>
     Simple Java Mail leaves the report facts unavailable rather than choosing one. It likewise does not invent a timezone or turn an impossible date
     into another day. Attached or nested notifications remain separate from the outer email's report.</p>
   <p>If optional report reading stops partway through, the completed header blocks remain available and the warnings say extraction may be incomplete.
-    An interrupted block is not presented as complete. This does not hide failures to obtain message content: an eager attachment read can still fail
-    conversion with its original cause, rather than returning a silently truncated attachment. Check <code>report.getWarnings()</code> before treating
-    the extracted facts as a complete account.</p>
+    An unfinished block is not presented as complete. In unreleased 10.0.0, source data retains the bytes already acquired before a failed read,
+    with <code>isFullyCaptured()</code> set to <code>false</code>, and a Problem links to the affected part. A close failure after a complete read keeps
+    the fully captured content and a close observation. This uses the same selected read, including when ordinary attachment extraction is deferred;
+    it does not fetch another copy for diagnostics or turn a partial attachment into complete content. See
+    <a href="features.html#section-source-inspection">received-source inspection</a> and check <code>report.getWarnings()</code> before treating the
+    extracted facts as a complete account.</p>
+  <p>Cancellation remains a failure when acquiring, reading or closing the report stream. A typed interruption does not require the thread's interrupt
+    flag to remain set. Ordinary I/O failures and socket timeouts retain the optional recovery behavior above; application failures keep their own exceptions.</p>
 </section>
 <section>
   <h2 id="trust-and-preservation">Useful facts are not authenticated instructions.</h2>

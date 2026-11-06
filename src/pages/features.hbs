@@ -2351,6 +2351,9 @@ for (EmailProblem problem : email.getProblems()) {
         <code>readAllBytes()</code>. An incomplete capture contains only the available prefix; its size is the retained byte count.
         A null content value means no bytes were retained, not an empty payload. These reads do not reopen an external resource or retry
         decoding. The selected eager or deferred attachment-reading behavior still applies.</p>
+      <p>Optional <a href="delivery-reports.html#imperfect-notifications">delivery-report interpretation</a> can read its selected status part even when
+        ordinary attachment extraction is deferred. If that read fails, source data keeps the acquired prefix and a Problem identifies the affected part.
+        A close failure after a complete read keeps the complete capture. No second diagnostic read is made, and cancellation remains a failure.</p>
       <p>Problems are historical observations, not current validation or a live log of later attachment reads and sends. Their origins keep
         the input's observed Message-ID and stable diagnostic reference even when the ID is missing, reused or changed on a copy. Copies
         and later setters preserve captured sources and Problems without reinspection or coordinate matching. New outgoing completion
