@@ -292,6 +292,12 @@ sjm daemon stop</code></pre>
       and an unavailable result never triggers automatic resubmission.
       Status reports execution-reply handling separately from application work, so that pressure remains inspectable while commands run.
     </p>
+    <p class="wide" id="daemon-request-identity">
+      Completed request identities stay protected throughout the authentication freshness window, including its allowed future timestamps.
+      A full recent-request ledger refuses new commands as busy while every retained identity is still protected. Replaying an identical
+      retained request observes its original result or an explicit unavailable-result tombstone instead of submitting it again.
+      This bounded, memory-only history is not a durable archive or a guarantee of exactly-once SMTP delivery.
+    </p>
     <p class="wide" id="daemon-shutdown">
       In unreleased 10.0.0, <code>sjm daemon stop</code> gives accepted commands 30 seconds to finish within a 60-second overall shutdown limit.
       After that grace period it interrupts command workers; replies and Mailer cleanup share the remaining time. If command code or cleanup
