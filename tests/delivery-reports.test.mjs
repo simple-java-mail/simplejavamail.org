@@ -19,8 +19,12 @@ test("delivery-report guidance explains structured MIME and tolerant reading wit
   assert.match(source, /multipart\/report; report-type=delivery-status/);
   assert.match(source, /5\.01\.001/);
   assert.match(source, /completed header blocks remain available/);
-  assert.match(source, /An interrupted block is not presented as complete/);
+  assert.match(source, /An unfinished block is not presented as complete/);
   assert.match(source, /Two competing parts/);
-  assert.match(source, /an eager attachment read can still fail/);
+  assert.match(source, /source data retains the bytes already acquired before a failed read/);
+  assert.match(source, /isFullyCaptured\(\).*?false/s);
+  assert.match(source, /Problem links to the affected part/);
+  assert.match(source, /does not fetch another copy for diagnostics or turn a partial attachment into complete content/);
+  assert.match(source, /Cancellation remains a failure when acquiring, reading or closing the report stream/);
   assert.match(source, /report\.getWarnings\(\)/);
 });
