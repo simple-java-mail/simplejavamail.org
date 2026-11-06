@@ -92,6 +92,10 @@ DELAYED 4.4.1</code></pre>
     quoted values and malformed comments remain <code>UNKNOWN</code>; the original report content is unchanged.</p>
   <p>Missing or unusable scalar fields are <code>null</code>. Recipient and warning lists are immutable and never null.
     A recognized malformed report retains the usable facts and human-readable warnings; contradictory fields are not silently picked.</p>
+  <p>The corresponding interpretation warnings in <code>email.getProblems()</code> link to the affected status part through
+    <code>problem.getSources()</code>. Ambiguous reports can reference the known conflicting parts, and a missing status part can point
+    to the report container. Follow those references into <a href="features.html#section-source-inspection">received-source inspection</a>
+    without parsing a location string or reading the payload again.</p>
 </section>
 <section>
   <h2 id="imperfect-notifications">Read what you can, even from an imperfect notification.</h2>
