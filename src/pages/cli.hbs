@@ -248,9 +248,10 @@ sjm daemon stop</code></pre>
       <a href="migration-notes-10.0.0.html#cli-daemon-state-paths">daemon state-path guidance</a>.
     </p>
     <p class="wide" id="daemon-startup-log">
-      The daemon's <code>daemon.log</code> and <code>daemon-startup.log</code> must be regular files. Startup refuses symbolic links,
+      The daemon's <code>instance.lock</code>, <code>daemon.log</code> and <code>daemon-startup.log</code> must be regular files. Startup refuses symbolic links,
       including dangling links, and other file types before changing their content or permissions. An existing directory keeps its permissions
-      and contents, and a dangling link does not create its target. New and existing regular logs are made private; only the startup log
+      and contents, and a dangling link does not create its target. Lock acquisition does not follow symbolic links. New and existing regular
+      state files are made private; only the startup log
       is cleared before starting the next child.
     </p>
     <p class="wide">
