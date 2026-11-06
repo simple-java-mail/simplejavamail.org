@@ -86,7 +86,8 @@ description: "Choose a diagnostic tool, inspect prepared messages and SMTP conne
     .withTransportModeLoggingOnly(true)
     .buildMailer();
 
-mailer.sync().sendMail(email); // <-- this email will be logged but not sent
+MailSubmissionReceipt receipt = mailer.sync().sendMail(email); // logged, not sent
+receipt.getRecipientResults(); // prepared recipients; acceptance stays UNKNOWN
 </code></pre>
 		  or:
 		  <pre><code class="language-properties">simplejavamail.transport.mode.logging.only=true
@@ -113,6 +114,13 @@ mailer.sync().sendMail(email); // <-- this email will be logged but not sent
         custom-send outcomes. Both can complete successfully without server acceptance information, and application completion handlers still run.
         Logging-only mode also supports <code>withOpenConnection(...)</code> callbacks and configured total send deadlines; a <code>CustomMailer</code>
         supports neither. For connection diagnostics, use the explicit <code>testConnection()</code> or <code>probeConnection()</code> calls described above.
+      </p>
+      <p>
+        The logging-only receipt lists the prepared delivery recipients in order, including recipients added through raw To, Cc or Bcc headers.
+        Explicit override receivers replace that delivery list, and duplicate occurrences remain distinct. A named group in a raw header can
+        remain one planned entry, as in rehearsal. These entries describe intent, with no SMTP replies or acceptance facts. A custom-mailer
+        receipt likewise describes what Simple Java Mail prepared before the callback; your implementation owns its external delivery mapping.
+        If a raw recipient header cannot be parsed, the receipt retains the typed recipient view instead of introducing a new validation step.
       </p>
     </div>
   </section>

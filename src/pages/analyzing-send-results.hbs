@@ -938,6 +938,14 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
         Older serialized receipts retain their known recipient buckets, but cannot recover original envelope order or RCPT details that were never stored.
       </p>
       <p>
+        A logging-only receipt still describes the prepared recipient list, including raw To, Cc and Bcc headers, in its planned order.
+        Delivery overrides replace those header recipients, and duplicate occurrences remain separate. A raw named group can remain one
+        entry before transport-specific expansion, so the number of entries is not always the number of mailboxes. A CustomMailer receipt
+        captures Simple Java Mail's intent before the callback; it does not observe the external envelope chosen by your implementation.
+        Both paths retain <code>UNKNOWN</code> acceptance and absent SMTP replies. If a raw recipient header cannot be parsed, the existing
+        typed recipient view is retained; the receipt does not invent an invalid-recipient verdict or add a new callback-validation step.
+      </p>
+      <p>
         Receipts and recipient results are immutable snapshots of one attempt, including when a pooled transport is reused. They are not sanitized
         logging reports: addresses and raw server replies may contain personal information or control characters. The examples use fictional addresses
         and mostly print enums and codes. In application logs, decide which details to retain and escape untrusted text appropriately.
