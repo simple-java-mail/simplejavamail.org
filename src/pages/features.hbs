@@ -735,13 +735,18 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
       <p>Your Session is the starting point for connection settings. Its timeouts, local address, EHLO hostname and certificate-trust choices stay
         unchanged, including settings it leaves absent. Ordinary Simple Java Mail connection defaults do not overwrite them or fill those gaps,
         including when you reuse a Session after its previous Mailer has shut down. Deliberate customization and applicable locks can add settings.</p>
-      <p>In the unreleased 10.0.0 line, different explicit connection declarations fail at construction by default. To deliberately replace a
+      <p>Different explicit connection declarations fail at construction by default. To deliberately replace a
         Session's value, select <code>ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES</code>. For example, with that policy,
         <code>ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> selects all three socket timeouts, while
         <code>withReadTimeout(Duration.ofSeconds(5))</code> changes only reading and keeps the Session's connect and write values.
         See <a href="understanding-configuration.html#connection-conflicts">the advanced connection conflict policy</a> for raw properties, equivalent choices and locks.
-        Standard <code>smtp</code> and <code>smtps</code> Sessions need no special marker;
-        for a custom protocol, configure its provider-specific properties instead. See <a href="configuration.html#section-programmatic-api-other">timeout inspection</a>.</p>
+        For a custom protocol, use its provider-specific properties. See <a href="configuration.html#section-programmatic-api-other">timeout inspection</a>.</p>
+      <p>Set <code>mail.transport.protocol</code> when using Simple Java Mail's protocol-specific connection options or
+        <a href="debugging.html#section-smtp-capabilities">connection probe</a>. Set it on the Session or through the builder's
+        <code>withProperty(...)</code>; conflicts and locks still apply. Without it, you can still send using your Session's selected transport,
+        but Simple Java Mail reports protocol-specific settings as unspecified. Your Session, Authenticator and custom mail providers are preserved.</p>
+      <p>If you use <code>mail.event.scope=session</code>, configure its event executor before creating your Session.
+        Requesting a different executor on the Mailer builder is rejected. See <a href="configuration.html#session-construction-properties">using your own event executor</a>.</p>
     </div>
 
     <div class="side">

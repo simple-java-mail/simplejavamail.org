@@ -332,37 +332,35 @@ Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
 				<code class="inline language-java">mail.mailerBuilder(session).withOAuth2AccessTokenProvider(...)</code>.
 			</p>
 			<p class="wide" id="supplied-session-oauth2-mechanisms">
-				In unreleased 10.0.0, provider eligibility follows the supplied Session's current protocol and authentication mechanisms, including explicit
-				additional properties. After the previous Mailer has completed shutdown, a reused Session can select XOAUTH2 and register a provider;
-				an old transport-strategy marker does not override those choices. Conversely, an old OAuth2 marker does not permit a provider when the
-				current mechanism is no longer OAuth2. Existing credential conflicts and TLS settings keep their meanings.
+				Set <code>mail.transport.protocol</code> on the Session or Mailer builder to select the intended connection protocol. A token provider
+				requires <code>XOAUTH2</code> in that protocol's <code>auth.mechanisms</code> property. If you reuse a Session, wait for the previous
+				Mailer to finish shutting down before changing its credentials and building another Mailer. See the
+				<a href="understanding-configuration.html#supplied-session-protocol">protocol settings and conflict rules</a>.
 			</p>
 			<pre class="full-width-example"><code class="language-java">// The previous Mailer using this Session has completed close().
 try (Mailer reused = mail.mailerBuilder(session)
+        .withProperty("mail.transport.protocol", "smtp")
         .withProperty("mail.smtp.auth.mechanisms", "XOAUTH2") // for an smtp Session
         .withOAuth2AccessTokenProvider(accessTokens)
         .buildMailer()) {
     reused.sync().sendMail(email);
 }</code></pre>
 			<p class="wide" id="supplied-session-oauth2-usernames">
-				OAuth usernames follow the selected connection protocol: <code>mail.smtp.user</code> for SMTP or STARTTLS and
-				<code>mail.smtps.user</code> for SMTPS. In unreleased 10.0.0, pooling preserves that selection even when the Session retains
-				a different username for the inactive protocol. The selected provider keeps its ordinary URL and mail-wide username fallbacks;
-				SJM does not copy the selected username into another protocol's property.
+				For SMTP or STARTTLS, configure <code>mail.smtp.user</code>; for SMTPS, configure <code>mail.smtps.user</code>.
+				This works with direct and pooled connections. A different username configured for the other protocol does not change the account used.
+				Jakarta Mail also supports a username in the transport URL and the <code>mail.user</code> fallback.
 				See <a href="/migration-notes-10.0.0.html#pooled-oauth-usernames">pooled OAuth username migration guidance</a>.
 			</p>
 			<p class="wide" id="supplied-session-oauth2-registration">
-				In unreleased 10.0.0, the batch integration passes the current authentication choice directly to each pool registration.
-				It does not copy tokens or callbacks into extra Session properties. After successful shutdown, reusing the Session with a
-				fixed token, another callback or ordinary authentication uses that current choice, even if older pool aliases remain.
-				Keep application-owned properties intact; no internal-alias cleanup is required. Existing credential validation and TLS
-				settings retain their meaning. See <a href="/migration-notes-10.0.0.html#pooled-oauth-registration">pooled authentication migration guidance</a>.
+				After a Mailer has fully shut down, you can reuse its Session with a fixed token, a different token provider or ordinary authentication.
+				Configure the credentials you want for the next Mailer, along with the matching authentication mechanism and TLS settings.
+				Do not change the Session while its Mailer is still in use. See
+				<a href="/migration-notes-10.0.0.html#pooled-oauth-registration">pooled authentication migration guidance</a> for a fixed-token example.
 			</p>
 			<p class="wide" id="supplied-session-oauth2-token">
-				In unreleased 10.0.0, a supplied Session's fixed String token under <code>simplejavamail.oauth2.token</code> can come from its
-				<code>Properties</code> entries or inherited defaults. Configure that Session's protocol, username and XOAUTH2 mechanism as usual.
-				Sending, connection tests and authenticated probes use the effective token without adding or replacing a direct
-				<code>simplejavamail.oauth2.token</code> entry. The caller's inherited defaults remain intact.
+				For a Session you supply, set a fixed token with the String property <code>simplejavamail.oauth2.token</code>.
+				String values inherited through <code>Properties</code> defaults are accepted too. Configure the Session's protocol, username and
+				XOAUTH2 mechanism as usual. Sending, connection tests and authenticated probes all use that token.
 				See the <a href="/understanding-configuration.html#supplied-sessions">supplied-Session rules</a> and
 				<a href="/migration-notes-10.0.0.html#inherited-oauth2-token">inherited-token migration note</a>.
 			</p>

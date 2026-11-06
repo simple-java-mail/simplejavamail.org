@@ -16,17 +16,17 @@ description: "Understand how loaded settings, Java choices and Email templates c
   <li><a href="#configuration-resolution-timing">When choices take effect</a></li>
   <li><a href="#configuration-precedence">When values replace or combine</a></li>
   <li><a href="#configuration-operations">Changing an existing choice</a></li>
-  <li><a href="#connection-conflicts">Connection authority and restrictions</a></li>
+  <li><a href="#connection-conflicts">Conflicting connection settings</a></li>
   <li><a href="#configuration-diagnostics">Tracing an unexpected result</a></li>
 </ul></section>
 <section><div class="wide"><h2 id="configuration-inputs">Where values come from</h2>
-<p>A factory captures loaded configuration. Java builders contribute choices for a particular Mailer or Email. A supplied Jakarta Mail Session
-  brings its existing connection setup. Email defaults and overrides contribute message values when the Email is completed or prepared.</p>
+<p>A factory uses one loaded configuration. Its Java builders let you customize individual Mailers and Emails. If you supply a Jakarta Mail Session,
+  its connection settings are the starting point. Email defaults and overrides apply when you complete the Email or prepare it for sending.</p>
 <p>Source loading happens first. With an explicit <code>ConfigLoader</code>, later non-blank source entries win; blank or null entries do not erase an earlier value.
   <code>SimpleJavaMail.fromDefaults()</code> loads the conventional classpath file, then environment variables, then JVM system properties on its first call.
   <a href="/spring.html">Spring</a> supplies its own Environment precedence, profiles and placeholder handling. A file value replaced by an environment value
   for the same property is already resolved before later Java choices are considered.</p>
-<p>The captured snapshot does not change when you edit its original Properties or process settings. Create a new factory and fresh Mailers to use new configuration;
+<p>After loading, changes to the original Properties, environment variables or JVM properties do not update the factory. Load new configuration and create a new factory and Mailers to use it;
   see <a href="/configuration.html#section-config-snapshot">replacing a configuration snapshot</a>. A CLI daemon captures startup settings once and needs a restart to reload them.</p>
 </div></section>
 <section><div class="wide full-width-example">
@@ -47,9 +47,8 @@ description: "Understand how loaded settings, Java choices and Email templates c
         <code>buildEmail()</code>. Disabled URL resolution leaves that base unparsed; an active selected malformed base fails the build before
         image reads. Mandatory locks still apply, and explicit String-to-URL conversion keeps its immediate argument checks.
         See <a href="features.html#automatic-image-configuration-timing">image configuration timing</a>.</p>
-      <p>These configuration checks run before starting workers, proxy bridges or pools. Later builder edits do not change the captured choices.
-        Some checks also need the actual runtime state, such as whether a Session is already in use or a shared pool has incompatible settings.
-        If setup fails, Simple Java Mail cleans up the resources it started for that attempt.</p>
+      <p>Later builder edits do not reconfigure a Mailer or Email you already built. Building a Mailer can also fail if its Session is already in use
+        or its settings conflict with an existing shared pool. If setup fails, Simple Java Mail cleans up resources it started for that attempt.</p>
       <pre><code class="language-java">Email submitted = mail.emailBuilder().startingBlank()
     .withSubject("Draft subject")
     .withPlainText("Draft body")
@@ -225,17 +224,20 @@ draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
 				or <code>clearOverrideValueSuppressions()</code> to remove all exclusions in that family. These edits leave global
 				<code>ignoringDefaults()</code>/<code>ignoringOverrides()</code> choices and configuration locks unchanged.</p></section>
 <a href="#connection-conflicts" id="connection-conflicts" class="section-link h2">&sect;</a>
-  <h2>Connection authority and restrictions</h2>
+  <h2>Conflicting connection settings</h2>
   <section>
     <div class="view">
-      <p>In the unreleased 10.0.0 line, <code>ConnectionConflictPolicy.REJECT_CONFLICTS</code> is the default. If factory configuration,
-        recognized Jakarta Mail properties, a supplied Session and explicit Java choices declare different values for the same supported
-        connection setting, <code>buildMailer()</code> fails before changing the Session or opening a connection. The error identifies the
-        setting and available source labels. Equivalent parsed values are accepted; built-in defaults are not competing declarations.
-        Trusted-host lists with the same exact names are compatible even when their order or repeated names differ. Factory objects are
-        compared by identity, and empty text is kept distinct from an omitted setting.</p>
-      <p>Property sources resolve first. A later environment value replacing the same property from a file is ordinary loading, including in
-        Spring. The policy checks the resulting declarations against each other, such as an SJM proxy host and a different raw SOCKS host.</p>
+      <p><code>ConnectionConflictPolicy.REJECT_CONFLICTS</code> is the default. If your factory configuration, Jakarta Mail properties,
+        supplied Session or Java builder calls specify different values for the same supported connection setting, <code>buildMailer()</code>
+        rejects the conflict before changing your Session. The error names the setting and its sources. Equivalent values are accepted, and library defaults alone do not
+        cause conflicts. Trusted-host lists containing the same exact names are compatible regardless of order or duplicates. Object values
+        such as socket factories must refer to the same instance; an empty string is different from an omitted setting.</p>
+      <p>Normal file, environment and Spring property-source priority applies first. The conflict policy then compares the selected configured
+        values with your Session and builder choices. For example, configuring a proxy host through Simple Java Mail and a different host
+        through a Jakarta Mail SOCKS property causes a conflict.</p>
+      <p>The policy also checks <code>mail.smtp.class</code> or <code>mail.smtps.class</code> for the selected protocol, including choices made
+        with <code>Session.setProvider(...)</code>. If the Session and builder specify different transport class names, they conflict.
+        Matching names are accepted. Select <code>ALLOW_EXPLICIT_OVERRIDES</code> to deliberately replace the choice.</p>
       <p>Select <code>ALLOW_EXPLICIT_OVERRIDES</code> when the application deliberately replaces supplied connection setup. Explicit typed Java
         members then win over their raw counterparts regardless of call order. Unspecified members retain applicable raw values: the example
         selects <code>chosen-proxy.example.org:1081</code>, rather than replacing the raw port with a proxy default.</p>
@@ -258,8 +260,8 @@ draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
         .withHost("chosen-proxy.example.org")
         .build())
     .buildMailer();</code></pre>
-      <p>Without the policy selection, the different proxy hosts conflict. In either mode, compatible raw host/port values can combine with
-        SJM proxy credentials. The selected remote route is resolved before authenticated proxying uses its local bridge.</p>
+      <p>Without the policy selection, the different proxy hosts conflict. In either mode, you can configure a matching host and port through
+        Jakarta Mail properties and supply the proxy credentials through Simple Java Mail.</p>
 <pre><code class="language-properties small"># Default; Java can select a different mode unless it is locked:
 simplejavamail.connection.conflictpolicy=REJECT_CONFLICTS
 
@@ -267,9 +269,9 @@ simplejavamail.connection.conflictpolicy=REJECT_CONFLICTS
 simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code></pre>
     </div>
     <div class="wide">
-      <p>This advanced policy covers supported SMTP, proxy, socket-timeout, local-binding, EHLO and TLS connection settings.
-        It does not change Email defaults, execution, pooling or telemetry rules, or interpret arbitrary provider extensions and hidden
-        Authenticator state. <a href="#locked-requirements">Locks</a> and mandatory TLS requirements remain binding in both modes.</p>
+      <p>This policy covers supported SMTP, proxy, socket-timeout, local-binding, EHLO and TLS connection settings. Other settings keep their
+        normal precedence. Custom provider properties and credentials supplied by an Authenticator are not compared by this policy.
+        <a href="#locked-requirements">Locks</a> and mandatory TLS requirements still apply in both modes.</p>
       <p>Repeated setters still replace earlier local choices, and replacing a group discards its previous supplied choices. The policy compares
         the completed choices, not setter history. Clearing an imported connection value is a conflict in strict mode; clearing a local-only
         choice remains normal builder editing. See <a href="#configuration-operations">clearing, resetting and restoring configuration</a>.</p>
@@ -299,13 +301,18 @@ try (Mailer mailer = builder.buildMailer()) {
 }</code></pre>
 <p>If the Java value only supplied <code>withLegacySmtpContentSupport(false)</code>, construction would succeed in strict mode
   and retain the configured ten-second read timeout. Applicable locks constrain both examples.</p></div></section>
-<section><div class="wide"><h3 id="supplied-sessions">A supplied Session keeps its baseline</h3><p>A supplied Session keeps its connection settings, including settings it leaves absent. Ordinary factory connection defaults do not
+<section><div class="wide"><h3 id="supplied-sessions">Using your own Session</h3><p>The Mailer uses the Session you provide and keeps its connection settings, including settings it leaves absent. Ordinary factory connection defaults do not
         replace its timeouts, local binding, EHLO name or certificate trust, or fill their gaps. Deliberate customization and applicable locks
         can add settings. Different explicit declarations of the same setting fail under the default
         <a href="#connection-conflicts">connection conflict policy</a>; select <code>ALLOW_EXPLICIT_OVERRIDES</code> when replacement is intended.
         This is independent of whether the Session previously belonged to another Mailer.</p><p>If a setting comes from an inherited <code>Properties</code> default, clearing it cannot remove that default. Such a clear is rejected
         before changing the Session. Supply a replacement value or create a new Session with independent Properties containing only the
         settings you want.</p>
+<p id="supplied-session-protocol">Set <code>mail.transport.protocol</code> to <code>smtp</code> or <code>smtps</code> when using Simple Java Mail's
+  connection options or inspecting those protocol-specific settings. Set it on the Session or use the builder's <code>withProperty(...)</code>.
+  Replacing a different protocol already set on the Session follows the conflict policy and locks above. Without this setting, you can still
+  send using your Session's selected transport, but Simple Java Mail reports protocol-specific settings as unspecified. A connection probe
+  returns an unsupported report without connecting. Use your provider's own properties for custom protocols.</p>
 <p>Reuse its Mailer for concurrent sends. A different Mailer cannot claim that Session or its shared Properties until the current owner has shut down successfully.
   Configure custom SSL factories and opportunistic TLS directly on the supplied Session; use an SJM-created Session when SJM should own those construction choices.</p>
 </div></section><section>

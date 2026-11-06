@@ -166,6 +166,10 @@ currentEmailBuilder.withOverrideReceivers(tester1Recipient, testGroupInboxRecipi
 		  Use <code class="inline language-java">SessionDebugConfig.builder().withPrinter(PrintStream)</code> when the built-in targets do not fit. Simple Java Mail passes that
 		  stream to Jakarta Mail but does not close it. Keep it open for as long as the Mailer may use it, then close it yourself.
 	  </p>
+	  <p>Use <code>SessionDebugConfig</code> or the Simple Java Mail properties shown below to configure debug logging.
+        Setting <code>mail.debug</code> alone does not enable debugging for a Session created by Simple Java Mail.</p>
+	  <p>If you supply your own Session, Simple Java Mail preserves its debug setting and output stream unless your Mailer
+        configuration changes them.</p>
 	  <p>
 		  A custom <code class="inline language-java">PrintStream</code> is a Java-only setting: a live stream cannot be represented by a property or CLI
 		  argument. For those forms, choose <code class="inline language-java">STDOUT</code>, <code class="inline language-java">STDERR</code>, or
@@ -231,6 +235,10 @@ simplejavamail.javaxmail.debug.out=SLF4J
         The CLI exposes the same report through <code>sjm probe</code>, with an optional <code>--authenticate</code> flag.
         See the <a href="cli.html#section-probe">CLI examples and exit codes</a> for one-shot and daemon use.
       </p>
+      <p>When you supply your own Session, set <code>mail.transport.protocol</code> before calling <code>probeConnection()</code>.
+        You can set it on the Session or use <code>mailerBuilder.withProperty("mail.transport.protocol", "smtps")</code> for SMTPS.
+        Without it, the probe returns an unsupported report explaining the missing setting and opens no connection. You can still send
+        normally using your Session's selected transport. See <a href="understanding-configuration.html#supplied-session-protocol">protocol settings and conflicts</a>.</p>
       <p>
         The default probe does not authenticate with the SMTP server: it neither consults cached SMTP credentials nor calls your Jakarta Mail
         authenticator or OAuth2 token provider. Configured proxy authentication and TLS client certificates still apply.

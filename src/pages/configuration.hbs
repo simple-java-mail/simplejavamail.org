@@ -266,7 +266,7 @@ mailerBuilder.withProperties(new Properties());
 mailerBuilder.withProperties(new HashMap());
 mailerBuilder.withProperty("mail.smtp.timeout", 10000);
 
-// or directly modify the internal Session instance:
+// advanced: change a property on the Mailer's Session:
 mailer.getSession().getProperties().setProperty("mail.smtp.timeout", "10000");
 </code></pre>
       <p>The builder and <code>mailer.getOperationalConfig()</code> return separate property containers for inspection. Editing those returned
@@ -275,6 +275,25 @@ mailer.getSession().getProperties().setProperty("mail.smtp.timeout", "10000");
       <p><code>mailerBuilder.withProperties(properties)</code> copies only entries stored directly in that Java <code>Properties</code> object,
         not values inherited from its defaults. Add any inherited value explicitly with <code>withProperty(...)</code> if the Session needs it.
         This differs from <code>ConfigLoader.builder().withProperties(...)</code>, which includes inherited string defaults when loading factory settings.</p>
+      <h3 id="session-construction-properties">Use your own executor for mail events</h3>
+      <p>Use <code>withProperties(Properties)</code> to supply an executor for Jakarta Mail events, or other object-valued settings such as
+        socket factories. <code>withProperty(String, Object)</code> converts the value to text, so it cannot pass an executor instance.</p>
+<pre><code class="language-java">Properties extra = new Properties();
+extra.setProperty("mail.event.scope", "session");
+extra.put("mail.event.executor", eventExecutor);
+
+Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 25)
+    .withProperties(extra)
+    .buildMailer();</code></pre>
+      <p>Your application owns the executor; Simple Java Mail does not shut it down. Put it directly in the <code>Properties</code> object,
+        as shown above. An executor inherited through <code>Properties</code> defaults is not used.</p>
+      <p>If you supply your own Session and use <code>mail.event.scope=session</code>, set the executor before calling
+        <code>Session.getInstance(...)</code>. Requesting a different executor on the Mailer builder is rejected by <code>buildMailer()</code>,
+        even with <code>ALLOW_EXPLICIT_OVERRIDES</code>. Supplying the same executor instance is accepted. For Jakarta Mail's default
+        <code>folder</code> scope, you can supply the executor on the Mailer builder. Scope names such as <code>session</code> are case-insensitive.</p>
+      <p>When you supply a Session, that instance is used for sending, including its Authenticator and custom mail providers.
+        See <a href="debugging.html#section-debug-logging">debug logging</a> to configure its diagnostic output.</p>
       <p>For recipient-rejection handling, prefer the Email API over a raw provider property:
         <code>SmtpDeliveryOptions.Builder.withSendingToAcceptedRecipients(true)</code> continues for accepted recipients, and <code>false</code> withholds content after
         a known recipient rejection. Configure <code>simplejavamail.defaults.sendtoacceptedrecipients</code> for an ordinary Email default, or

@@ -49,6 +49,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#reused-session-oauth2">Reuse a Session with its current OAuth2 settings</a></li>
       <li><a href="#pooled-oauth-usernames">Keep the selected OAuth account with connection pooling</a></li>
       <li><a href="#pooled-oauth-registration">Use the current credentials after Session reuse</a></li>
+      <li><a href="#session-initialization">Configure event executors and supplied Session protocols</a></li>
       <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
       <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
       <li><a href="#config-types">Check types if you read config values yourself</a></li>
@@ -760,7 +761,7 @@ Mailer mailer = mail.mailerBuilder()
         <a href="/understanding-configuration.html#explicit-connection-clears">clearing an imported setting</a> is a conflict in strict mode.
         Existing value locks and mandatory TLS rules apply in both modes. A deployment can require strict mode with
         <code>simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code>.</p>
-      <p>Unknown provider extensions and hidden Authenticator state are outside this comparison. See the
+      <p>The conflict check does not compare custom provider properties or credentials supplied by an Authenticator. See the
         <a href="understanding-configuration.html#connection-conflicts">advanced configuration guide</a> for policy inspection, reset and restore operations,
         CLI syntax and supplied-Session behavior.</p>
     </div>
@@ -769,11 +770,12 @@ Mailer mailer = mail.mailerBuilder()
   <a href="#reused-session-oauth2" id="reused-session-oauth2" class="section-link h2">&sect;</a>
   <h2>Reuse a Session with its current OAuth2 settings</h2>
   <section><div class="wide">
-    <p>In 9.3.9, a Session previously used by an SJM Mailer can retain an old transport-strategy marker. After its authentication settings change,
-      that marker can reject a valid token provider or accept one without a current OAuth2 mechanism. In unreleased 10.0.0, a supplied Session's
-      effective protocol and authentication mechanisms determine provider eligibility.</p>
+    <p>In 9.3.9, reusing a Session after changing its authentication settings could reject a valid token provider or accept one when the
+      selected authentication method was no longer XOAUTH2. In 10.0.0, the new Mailer checks the Session's current protocol and authentication
+      settings. Configure both before building it.</p>
 <pre><code class="language-java">previousMailer.close(); // Complete shutdown before reusing its Session.
 Mailer next = mail.mailerBuilder(session)
+    .withProperty("mail.transport.protocol", "smtp")
     .withProperty("mail.smtp.auth.mechanisms", "XOAUTH2")
     .withOAuth2AccessTokenProvider(tokenProvider)
     .buildMailer();</code></pre>
@@ -808,9 +810,9 @@ try (Mailer mailer = mail.mailerBuilder(Session.getInstance(properties))
   <a href="#pooled-oauth-registration" id="pooled-oauth-registration" class="section-link h2">&sect;</a>
   <h2>Use the current credentials after Session reuse</h2>
   <section><div class="wide">
-    <p>In 9.3.9, the pool can retain a copied OAuth callback after its Mailer closes. A later Mailer using the same Session can therefore
-      invoke that old callback instead of a replacement fixed token or ordinary Session authentication. Unreleased 10.0.0 passes the current
-      authentication choice directly to the pool registration and leaves caller property entries untouched.</p>
+    <p>In 9.3.9, a later Mailer using the same Session could invoke the previous OAuth callback instead of using a replacement fixed token
+      or ordinary Session authentication. In 10.0.0, the new Mailer uses the credentials you configure for it after the previous Mailer has
+      fully shut down.</p>
 <pre><code class="language-java">Session session = previousMailer.getSession();
 previousMailer.close(); // Finish shutdown before changing or reusing this Session.
 
@@ -823,15 +825,40 @@ try (Mailer current = mail.mailerBuilder(session).buildMailer()) {
 }</code></pre>
     <p>The current fixed token is used without calling the removed provider. Keep host, mechanism and TLS settings appropriate for the
       intended connection. Existing fixed-token/provider conflicts and failure handling still apply; changing configuration does not
-      reauthenticate an already-connected transport. Review an earlier internal-alias cleanup workaround before removing it, because
-      the application may also use those entries through a separate direct-pool integration.</p>
-    <p>No SJM API rename or new property is needed. If the application overrides the transitive SMTP Connection Pool version,
-      align it with SJM's declared 4.5.0 dependency or a compatible release containing the registration overloads; the batch adapter
-      uses that API internally. Direct pool callers can opt into nullable-supplier
-      <code>registerResourcePool</code> overloads, while their existing registration/property entry points remain supported. See
-      <a href="security.html#supplied-session-oauth2-registration">OAuth2 configuration</a>,
-      <a href="smtp-connection-pooling.html#option-direct-pool">direct pool registration</a> and
-      <a href="https://github.com/bbottema/simple-java-mail/issues/967">#967</a>.</p>
+      reauthenticate an already-connected transport. If you used a workaround that removed pool-specific Session properties, review whether
+      it is still needed. An application that also uses SMTP Connection Pool directly may still rely on those properties.</p>
+    <p>If the application overrides the transitive SMTP Connection Pool version, use SJM's declared 4.5.0 dependency or a compatible version.
+      See <a href="security.html#supplied-session-oauth2-registration">OAuth2 configuration</a> and
+      <a href="https://github.com/bbottema/simple-java-mail/issues/967">#967</a>. Applications using the pool directly can follow the
+      <a href="smtp-connection-pooling.html#option-direct-pool">direct pool registration guide</a>.</p>
+  </div></section>
+
+  <a href="#session-initialization" id="session-initialization" class="section-link h2">&sect;</a>
+  <h2>Configure event executors and supplied Session protocols</h2>
+  <section><div class="wide">
+    <p>In 9.3.9, when Simple Java Mail created the Session, an executor supplied through <code>withProperties(...)</code> was not used for Session-scoped mail events.
+      In 10.0.0, this setting takes effect. Use <code>withProperties(Properties)</code> to pass an executor or socket-factory instance;
+      <code>withProperty(String, Object)</code> converts the value to text. Invalid property values may now fail during <code>buildMailer()</code>.</p>
+    <p>If you supply your own Session with <code>mail.event.scope=session</code>, set its executor before creating the Session.
+      Requesting a different executor on the Mailer builder now fails at <code>buildMailer()</code>, even with
+      <code>ALLOW_EXPLICIT_OVERRIDES</code>. Supplying the same executor instance is accepted. For Jakarta Mail's default <code>folder</code>
+      scope, you can still set the executor on the Mailer builder.</p>
+<pre><code class="language-java">Properties properties = new Properties();
+properties.setProperty("mail.transport.protocol", "smtps");
+properties.setProperty("mail.event.scope", "session");
+properties.put("mail.event.executor", eventExecutor);
+// Add the host, credentials and TLS settings for the intended provider.
+Session session = Session.getInstance(properties);
+Mailer mailer = mail.mailerBuilder(session).buildMailer();</code></pre>
+    <p>Set <code>mail.transport.protocol</code> on a Session you supply, or through the Mailer builder's <code>withProperty(...)</code>,
+      before using protocol-specific connection options, inspection or probes. Earlier versions could assume SMTP when the setting was
+      absent. Ordinary sending still follows your Session's selected transport without requiring this declaration. Conflicts and locks
+      continue to apply when you change an existing protocol setting.</p>
+    <p>Direct OAuth connections now use Jakarta Mail's username selection, including usernames supplied through a transport URL or
+      <code>mail.user</code>. Review any workaround that copied or removed username properties to make sure it is still needed.
+      See <a href="configuration.html#session-construction-properties">event executor configuration</a>,
+      <a href="understanding-configuration.html#supplied-session-protocol">protocol declarations</a> and
+      <a href="security.html#supplied-session-oauth2-usernames">OAuth usernames</a>.</p>
   </div></section>
 
   <a href="#config-loader" id="config-loader" class="section-link h2">&sect;</a>
