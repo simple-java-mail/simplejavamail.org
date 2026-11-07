@@ -1060,6 +1060,11 @@ details.getFailureReason(); // safe diagnostic text when processing did not succ
 				means signature presence or verification could not be established; it does not mean verification failed.
 			</p>
 			<p class="wide">
+				These outcomes also apply to signed-only Outlook messages. If their signature cannot be checked because the embedded signer certificate
+				is missing, inspection reports <code>ERROR</code> with an explanation while keeping readable content available.
+				Choosing a merged or separate content view does not change that result.
+			</p>
+			<p class="wide">
 				A malformed root <code>Content-Type</code> does not establish S/MIME. Mode, verification and decryption stay <code>UNKNOWN</code>,
 				with or without the optional module, and <code>Email.getProblems()</code> retains the MIME interpretation problem.
 				An unreadable declaration does not create a failed signature or decryption result; recognized protected content keeps its actual results.
