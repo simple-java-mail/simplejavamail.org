@@ -2437,6 +2437,10 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
         Both eager and lazy extraction retain equivalent content-type metadata, including valid parameters such as <code>charset</code>.
         Use a MIME parser when you need only the base type, rather than comparing the complete type string to <code>text/plain</code>.
       </p>
+      <p>Use <code>withFetchAttachmentData(false)</code> to retain attachment sources for later access. In unreleased 10.0.0, installing
+        <code>openpgp-module</code> does not make OpenPGP inspection read unrelated attachments when a valid MIME declaration identifies
+        ordinary, non-OpenPGP mail. Reading signed or encrypted content can still require reading the protected message. Ordinary body parsing,
+        delivery-report interpretation and S/MIME processing keep their own content needs; this option does not disable them.</p>
       <p id="streamed-text-bodies">In unreleased 10.0.0, plain-text and HTML bodies remain readable when the mail provider returns a stream instead of a String.
         Conversion follows the ordinary text handler's declared MIME charset and aliases. With no declaration, its <code>us-ascii</code> MIME label
         passes through Jakarta Mail's aliases, currently selecting ISO-8859-1. Already-decoded Strings keep the provider's interpretation.
