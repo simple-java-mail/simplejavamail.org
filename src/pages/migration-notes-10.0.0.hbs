@@ -2069,6 +2069,11 @@ if (commonTimeout != null) {
         mailer.getOperationalConfig().getReadTimeout(),
         mailer.getOperationalConfig().getWriteTimeout());
 }</code></pre>
+    <h3 id="session-diagnostic-objects">Session diagnostics leave application objects alone</h3>
+    <p class="wide">Session summaries and Mailer descriptions no longer call <code>toString()</code> on application objects stored in
+      properties. Those values are shown by type, and entries with non-String keys are omitted. The SLF4J Session summary is formatted
+      only when its logger has DEBUG enabled; Jakarta Mail's separate protocol debug setting keeps its existing role. No Java or
+      configuration changes are needed. See <a href="debugging.html#session-diagnostic-values">Session diagnostic values</a>.</p>
     <h3>If you call the internal Session factory directly</h3>
     <p class="wide" style="font-size:smaller">
       <strong>You can skip this part</strong> unless your code calls

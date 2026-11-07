@@ -456,6 +456,11 @@ Transport security:
       <p>Rendering a Mailer or its operational configuration redacts recognized secret property names, including advanced Jakarta Mail passwords
         and tokens. Explicit property getters still return actual values. The operational snapshot stays as it was when the Mailer was built;
         changing a builder afterwards or editing a returned property container cannot alter it.</p>
+      <p id="session-diagnostic-values">Application objects stored in properties are described by type, without calling their
+        <code>toString()</code> methods. Entries with non-String keys are omitted from these descriptions.</p>
+      <p>The Session summary written through SLF4J is formatted only when DEBUG is enabled for
+        <code>org.simplejavamail.mailer.internal.util.SessionLogger</code>. This logger is separate from Jakarta Mail's
+        <a href="#section-debug-logging">protocol debug output</a>.</p>
     </div>
 
     <div class="side">
