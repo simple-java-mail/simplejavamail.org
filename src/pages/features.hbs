@@ -2327,6 +2327,8 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       <p>If an optional field cannot be read and no raw value was captured, that field stays unavailable while readable neighbors remain
         accessible. For addresses, an unavailable sender is absent and an unavailable recipient list is empty. The Problem retains the
         read failure and any available source references; conversion does not create a recipient from missing address text.</p>
+      <p>An interrupted read throws <code>CancellationException</code> instead of returning a recovered Email, including when optional
+        S/MIME inspection is unavailable. Its cause retains the original read failure. A socket timeout by itself does not count as interruption.</p>
       <pre><code class="language-java">Email email = mail.converter().fromEml(emlBytes).toEmail();
 email.getPlainText();
 email.getAttachments();
