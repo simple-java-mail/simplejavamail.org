@@ -2499,6 +2499,10 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
         cryptographic processing. The signed MIME entity and retained original protected EML stay unchanged. Use the ordinary EML or
         <code>MimeMessage</code> conversion entry point with your
         <a href="security.html#section-reading-openpgp">OpenPGP receive configuration</a>.
+        When that processing exposes a readable message with independent S/MIME attachments, supplied
+        <code>withSmimeDecryption(...)</code> keys also apply to those supported files. Original attachments, parent protection results and
+        the message body remain separate from the opened-file view; see
+        <a href="security.html#signed-parent-attachments">reading protected attachments</a>.
       </p>
       <p>
         A child multipart explicitly marked <code>Content-Disposition: attachment</code> remains one attachment with its filename,

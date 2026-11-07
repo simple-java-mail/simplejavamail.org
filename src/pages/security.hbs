@@ -1276,11 +1276,11 @@ nonMergedEmail.getSmimeSignedEmail();
 			<p class="wide">In unreleased 10.0.0, S/MIME attachments inside ordinary multipart mail are recognized by their media type,
 				including when their Content-Type contains parameters such as <code>smime-type=enveloped-data</code> or a name.
 				The parameters remain part of the attachment metadata; they do not prevent requested decryption or signature inspection.</p>
-			<p class="wide" id="signed-parent-attachments">In unreleased 10.0.0, opening a detached S/MIME signature also processes independent
-				protected attachments in that message. Supply your key through <code>withSmimeDecryption(...)</code> to open supported encrypted
+			<p class="wide" id="signed-parent-attachments">In unreleased 10.0.0, opening a detached S/MIME signature or an OpenPGP message also processes
+				independent S/MIME attachments in its readable content. Supply your key through <code>withSmimeDecryption(...)</code> to open supported encrypted
 				attachments, just as you would for an unsigned message. <code>getAttachments()</code> keeps the original resources, while
-				<code>getDecryptedAttachments()</code> includes their supported opened representations. The parent's signature verdict and original
-				protected bytes remain intact; opening an attached file neither replaces the parent body nor makes the parent itself encrypted.
+				<code>getDecryptedAttachments()</code> includes their supported opened representations. The parent's protection results and original
+				protected bytes remain intact. Opening an attached file does not replace the message body or add protection facts to the parent.
 				Further encrypted envelope layers are not opened automatically.</p>
 
 			<div class="wide">
@@ -1510,6 +1510,13 @@ OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
 				<p>
 					The same receive keys also apply when OpenPGP packets combine signing and encryption. Each represented signature contributes
 					an individual result, including repeated signatures from one key and signatures found through nested MIME protection layers.
+				</p>
+				<p>
+					If the readable message contains an independently encrypted S/MIME file, also supply its key store with
+					<code>withSmimeDecryption(...)</code>. With <code>smime-module</code> installed, conversion opens supported files into
+					<code>getDecryptedAttachments()</code> while keeping the originals in <code>getAttachments()</code>.
+					The file keeps its own result; it does not replace the message body or change the parent's OpenPGP results.
+					This does not automatically open a further S/MIME envelope around the message itself.
 				</p>
 				<p>
 					For a larger key store, use <code class="inline language-java">passphraseProvider(...)</code> to resolve a passphrase by key ID instead of
