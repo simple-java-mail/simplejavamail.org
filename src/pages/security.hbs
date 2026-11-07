@@ -1576,6 +1576,13 @@ OriginalOpenPgpDetails details =
 				mode is also <code>UNKNOWN</code>. Explicit receive configuration still requires the module.
 			</p>
 			<p class="wide">
+				A malformed <code>Content-Type</code> does not establish that a message is plain, unsigned or unencrypted. Ordinary and exact import
+				keep those unestablished OpenPGP facts <code>UNKNOWN</code>, whether or not <code>openpgp-module</code> is installed. Available source
+				metadata, interpretation problems and readable content remain accessible on the Email. Already established individual signature results
+				and outer decryption facts are retained. If an inner MIME declaration cannot be interpreted, the overall signature status can still be
+				<code>ERROR</code> because inspection did not complete.
+			</p>
+			<p class="wide">
 				<a href="features.html#section-exact-eml">Exact EML construction</a> automatically populates the same protection getters without changing
 				its raw parsed content view or authoritative bytes. Established feature results, including missing-key or failure results, remain precise;
 				unestablished facts remain <code>UNKNOWN</code>. Missing optional support alone does not prevent construction for relay from the original EML.
