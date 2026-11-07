@@ -414,9 +414,13 @@ batch.getCompletion().join(); // optional: wait for the whole sequential batch
 	<div class="view">
 		<p>
 			When the caller owns the queue and needs custom work between successful sends, use
-			<code class="inline language-java">withOpenConnection(...)</code>. Simple Java Mail owns and closes the SMTP connection for the callback, while the
+			<code class="inline language-java">withOpenConnection(...)</code>. Simple Java Mail keeps one SMTP connection open while the
 			callback decides what to send next. This is useful for database-backed queues where a message should be marked as sent before the next one is read.
 		</p>
+		<p>Without failover, the connection is separate from the pool and closes when the callback finishes. With
+			<a href="/smtp-connection-failover.html#section-batches">failover</a> and the batch module, Simple Java Mail can borrow it from the selected pool
+			and return it afterward for reuse. It remains occupied while your callback does other work, so don't wait there for another send that needs a connection
+			from the same full pool. Use the callback's sender, or start that independent work after the callback ends.</p>
 		<p>Use the sender only on the thread running this callback, before the callback returns or throws. Don't pass it to another thread or save it
 			for later: those calls are rejected before preparing or sending an email. Use <code>mailer.async().sendMail(...)</code> for independent
 			asynchronous sends.</p>
@@ -437,8 +441,8 @@ batch.getCompletion().join(); // optional: wait for the whole sequential batch
 });
 </code></pre>
 		<p>
-			The scoped sender is sequential, not asynchronous, not pooled and not clustered. For asynchronous queueing, higher throughput, pooled connections
-			or clustered load balancing, use <a href="#section-reusing-connections">pooled connections</a>.
+			The callback sends one email at a time. For asynchronous queueing, concurrent sends or clustered load balancing, use
+			<a href="#section-reusing-connections">pooled connections</a>.
 		</p>
 		<p>
 			Keep the receipt returned by <code class="inline language-java">sender.sendMail(next)</code> when the checkpoint needs provider-neutral submission

@@ -644,8 +644,11 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
 </code></pre>
       <p class="wide">
         If the caller owns the queue and needs custom work between sends, use
-        <code class="inline language-java">withOpenConnection(...)</code>. The scoped sender keeps one SMTP connection open for the callback, but it is still
-        caller-managed, sequential and not pooled.
+        <code class="inline language-java">withOpenConnection(...)</code>. It keeps one SMTP connection open while your callback decides what to send next.
+        Without failover, that connection is separate from the pool and closes when the callback finishes. With
+        <a href="/smtp-connection-failover.html#section-batches">failover</a> and the batch module, Simple Java Mail can borrow it from the selected pool
+        and return it afterward for reuse. It stays in use throughout the callback, including your work between sends. Use the callback's sender for further
+        sends, or finish the callback before waiting for another send that needs a connection from the same full pool.
         This form uses the Mailer's built-in SMTP connection. A <a href="#section-custom-mailer">CustomMailer</a> owns its own connection, so call
         <code class="inline language-java">mailer.sync().sendMail(...)</code> or its async equivalent and manage any connection reuse inside that implementation.
       </p>
