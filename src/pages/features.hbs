@@ -750,6 +750,10 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
       <p>One Mailer at a time owns the Session and its Properties. If construction fails after applying settings, that ownership stays in place
         until resource cleanup and restoration of the earlier settings finish. A competing build is rejected during that cleanup; after it
         completes, a replacement can use the Session safely. If cleanup itself fails, create a fresh Session with independent Properties.</p>
+      <p>Effective configuration and shared sending-limit rules are checked before applying settings. New allowance rules are established only
+        after the complete privately constructed failover route succeeds. If later resource setup fails, restoration includes changed properties,
+        OAuth callbacks and native debug settings. Keep the Session unchanged while <code>buildMailer()</code> runs; a changed captured baseline
+        is rejected before application, so retry after that change finishes.</p>
     </div>
 
     <div class="side">
