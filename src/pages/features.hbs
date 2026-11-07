@@ -747,6 +747,9 @@ MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // o
         but Simple Java Mail reports protocol-specific settings as unspecified. Your Session, Authenticator and custom mail providers are preserved.</p>
       <p>If you use <code>mail.event.scope=session</code>, configure its event executor before creating your Session.
         Requesting a different executor on the Mailer builder is rejected. See <a href="configuration.html#session-construction-properties">using your own event executor</a>.</p>
+      <p>One Mailer at a time owns the Session and its Properties. If construction fails after applying settings, that ownership stays in place
+        until resource cleanup and restoration of the earlier settings finish. A competing build is rejected during that cleanup; after it
+        completes, a replacement can use the Session safely. If cleanup itself fails, create a fresh Session with independent Properties.</p>
     </div>
 
     <div class="side">
