@@ -272,6 +272,11 @@ sjm daemon stop</code></pre>
       <code class="inline language-text">batch-module</code>, which allows compatible daemon commands to reuse its SMTP connection pool. A custom
       classpath without that module remains supported, but cannot retain pooled SMTP transports.
     </p>
+    <p class="wide" id="daemon-mailer-capacity">
+      When the daemon's Mailer cache is full, a new configuration can replace the oldest fully constructed idle Mailer. A Mailer still starting
+      up or in use is retained, while other idle Mailers remain available for replacement. If every retained Mailer is starting up or in use,
+      the new configuration is refused for capacity. Commands with a compatible configuration can continue using their retained Mailer.
+    </p>
     <p class="wide" id="selected-route-key-files">
       Security-file contents in the selected named failover route also distinguish retained Mailers, including further named destinations in that route.
       Changing the selected key file therefore creates a different reusable entry. An unused named destination's key files are not read for an unrelated
