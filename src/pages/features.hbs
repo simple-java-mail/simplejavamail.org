@@ -2366,6 +2366,9 @@ for (EmailProblem problem : email.getProblems()) {
       <p>If a malformed <code>Sender</code> header supplies the fallback for a missing <code>From</code>, the recovered address remains
         readable and a Problem points to that Sender header. From and Reply-To can share that fallback without duplicating the observation.
         A Sender header that is not used, or that the mail provider interprets successfully, is left alone.</p>
+      <p>When an embedded Outlook message becomes an EML attachment, address recoveries from that child also appear in the parent Email's
+        <code>getProblems()</code>. Each observation identifies the child's original source and links to the affected received header.
+        Copies and serialization preserve those links, even if you later change the parent's Message-ID.</p>
       <p>Automatic inspection of one malformed independent signed S/MIME attachment keeps its readable parent and the original attachment.
         A protection Problem links to that child, including when several resources have the same filename; it does not turn the plain
         parent's signature or decryption facts into a child result. Explicit wrong-key/password failures and direct low-level protection
