@@ -3121,6 +3121,7 @@ mailer.sync().sendMail(restored);</code></pre>
 			A CustomMailer owns its sending connection, so call <code class="inline language-java">mailer.sync().sendMail(...)</code> normally.
 			<code class="inline language-java">withOpenConnection(...)</code> is unavailable in this setup; keep any connection reuse inside the CustomMailer
 			implementation.
+			Simple Java Mail leaves retained SMTP OAuth credentials unused; your implementation owns authentication. Installing the batch module does not change this.
 		</p>
 		<p class="wide">
 			The submission receipt retains the recipient intent prepared before this callback, with unknown acceptance and no SMTP replies.
