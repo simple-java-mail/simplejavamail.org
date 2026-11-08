@@ -1355,6 +1355,13 @@ byte[] content = logo.readAllBytes();</code></pre>
 				in place and keeps other successfully resolved images; required resolution still rejects it. A malformed selected base remains
 				a configuration error.
 			</p>
+			<p id="automatic-image-interruption">
+				In the unreleased 10.0.0 line, interrupted image I/O cancels building or converting an Email even when unresolved images are
+				optional. The <code>CancellationException</code> retains the original failure as its cause, including suppressed cleanup failures,
+				and leaves the caller's thread interrupt state intact. The draft keeps its HTML and images from before the pass. Ordinary URL
+				socket timeouts still count as unresolved sources; required image read failures retain their causes. An actual classpath read
+				failure remains an error even when resolution is optional.
+			</p>
 			<p id="automatic-image-cid-schemes">
 				In the unreleased 10.0.0 line, existing <code>cid:</code> references are skipped before automatic lookup regardless of scheme
 				capitalization. For example, <code>&lt;img src="CID:logo"&gt;</code> keeps its supplied <code>logo</code> image even when external
