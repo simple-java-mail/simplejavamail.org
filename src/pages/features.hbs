@@ -638,6 +638,8 @@ MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
         <strong>Simple sequential batch sending</strong><br/>
         If reconnecting for each email is the only overhead you need to avoid, use <code class="inline language-java">sendMailsInSimpleBatch(...)</code>.
         It sends multiple emails sequentially over one SMTP connection.
+        If a custom provider fails while preparing that connection, the acquired transport is still closed before the failure is reported.
+        A secondary close failure remains attached to the original failure as a suppressed exception.
       </p>
       <pre><code class="small">mailer.sync().sendMailsInSimpleBatch(emails); // completion only, no receipt collection
 MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails); // one sequential task
