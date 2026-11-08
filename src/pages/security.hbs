@@ -1590,6 +1590,13 @@ OriginalOpenPgpDetails details =
 				<code>ERROR</code> because inspection did not complete.
 			</p>
 			<p class="wide">
+				The MIME type and OpenPGP protocol must agree. For example, <code>multipart/encrypted</code> with
+				<code>protocol="application/pgp-signature"</code> does not establish either encryption or a signature. Both that combination and
+				<code>multipart/signed</code> with <code>protocol="application/pgp-encrypted"</code> retain <code>UNKNOWN</code> mode, signature and
+				decryption results in ordinary and exact import, whether or not <code>openpgp-module</code> is installed. Readable content and available
+				source metadata remain accessible.
+			</p>
+			<p class="wide">
 				<a href="features.html#section-exact-eml">Exact EML construction</a> automatically populates the same protection getters without changing
 				its raw parsed content view or authoritative bytes. Established feature results, including missing-key or failure results, remain precise;
 				unestablished facts remain <code>UNKNOWN</code>. Missing optional support alone does not prevent construction for relay from the original EML.
