@@ -1405,6 +1405,11 @@ boolean positiveReply = receipt.getSmtpResponse()
       just as it does without a base, and continues resolving other images. Required resolution still rejects the unresolved source.
       Existing calls need no edits. This does not relax selected-base validation, containment or locks; see
       <a href="features.html#automatic-image-resolution-failure">automatic-image resolution failures</a>.</p>
+    <p id="automatic-image-interruption">In released 9.3.9, optional URL image resolution can continue after an interrupted read, and required
+      image-read errors can discard their cause. In 10.0.0, interrupted image I/O cancels composition or conversion with a
+      <code>CancellationException</code> retaining the original cause. Let that cancellation stop the owning operation rather than treating
+      it as a missing image or retrying it automatically. Required read failures retain their causes; ordinary optional URL misses and
+      socket timeouts keep their existing behavior. See <a href="features.html#automatic-image-interruption">image read failures</a>.</p>
     <p>Released 9.3.9 parses an ordinary configured image-base URL while creating the Email builder, even when URL resolution is disabled.
       In 10.0.0, final automatic-image settings are checked at <code>buildEmail()</code>, before reading images. An inactive, replaced or
       explicitly cleared ordinary base is not parsed; an active selected malformed base still fails, and mandatory locks remain enforced.
