@@ -43,6 +43,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#calendar-method-import">Review calendar method import</a></li>
       <li><a href="#streamed-text-import">Read provider-returned text body streams</a></li>
       <li><a href="#imported-sent-dates">Handle unavailable imported sent dates</a></li>
+      <li><a href="#outlook-optional-dates">Handle missing Outlook date metadata</a></li>
       <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
       <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
       <li><a href="#connection-conflicts">Review conflicting connection configuration</a></li>
@@ -532,6 +533,18 @@ String htmlText = received.getHTMLText();</code></pre>
       Keep a null check when using an imported date; valid dates and unambiguous supported legacy formats retain their meaning.</p>
     <p>The conversion calls stay the same. Ordinary reconstruction still generates a current date when none was fixed, while exact EML keeps
       its original bytes. The original <code>Date</code> header is not added to ordinary Email headers. See
+      <a href="features.html#interpreted-sent-dates">sent-date interpretation</a>.</p>
+  </div></section>
+
+  <h2 id="outlook-optional-dates">Handle missing Outlook date metadata</h2>
+  <section><div class="wide">
+    <p>In 9.3.9, importing a readable Outlook MSG could fail with <code>NullPointerException</code> when a source, creation or modification
+      date was missing. These optional values now remain absent while bodies, recipients, attachments and available source metadata stay
+      inspectable. No converter call needs changing.</p>
+    <p>Check for null before using <code>Email.getSentDate()</code>, <code>Email.getSentDateAsInstant()</code> or the date getters on
+      <code>OutlookMessageData</code>. The Email sent date still prefers client-submit time, followed by Outlook's existing source-date
+      fallback. If neither exists, the converter leaves the date unfixed; an ordinary reconstructed MIME message can still generate a
+      current date. Present Date values retain their defensive-copy behavior. See
       <a href="features.html#interpreted-sent-dates">sent-date interpretation</a>.</p>
   </div></section>
 

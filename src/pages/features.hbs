@@ -2576,6 +2576,13 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
         not also appear in <code>Email.getHeaders()</code>. Ordinary reconstruction supplies a current date when none was fixed;
         <a href="#section-exact-eml">exact EML</a> preserves the original bytes even when their interpreted date is unavailable.
       </p>
+      <p>
+        Outlook MSG dates are optional too. A missing source date, creation time or last-modification time leaves the corresponding
+        <code>OutlookMessageData</code> getter null while readable message content remains available. The Email sent date prefers the
+        client-submit time, then the existing Outlook source date; when neither is available, <code>getSentDate()</code> and
+        <code>getSentDateAsInstant()</code> remain null. A present Date returned by Email or Outlook metadata is a defensive copy.
+        See the <a href="migration-notes-10.0.0.html#outlook-optional-dates">sparse-MSG migration note</a>.
+      </p>
       <p id="undecodable-optional-headers">
         In the unreleased 10.0.0 line, an optional generic header whose encoded-word charset is unavailable retains its undecoded source text,
         with legal folding safely unfolded, so neighboring fields and readable content remain available. This does not guess missing characters
