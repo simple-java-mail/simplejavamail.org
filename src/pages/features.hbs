@@ -2689,6 +2689,12 @@ for (OpenPgpSignatureResult signature : protection.getSignatures()) {
       <p id="outlook-missing-attachment-type">In the unreleased 10.0.0 line, a readable MSG attachment without a MIME type or usable filename
         remains available as <code>application/octet-stream</code>. Supplied or filename-inferred types are retained. The same fallback applies
         to a CID image whose type cannot be inferred; its content and existing naming rules remain unchanged.</p>
+      <p id="outlook-missing-sender">In the unreleased 10.0.0 line, an Outlook message without a sender address has
+        <code>Email.getFromRecipient() == null</code>. Conversion preserves any available sender name and other native properties in
+        <code>Email.getSourceData()</code>; it does not substitute a dummy address or a last-modifier identity. Copies preserve the missing
+        sender and source evidence. Set From before using that message as outgoing mail. Imported messages ignore defaults by default;
+        deliberately enable their participation when a Mailer's Email defaults should supply From. See the
+        <a href="migration-notes-10.0.0.html#missing-outlook-sender">migration examples</a>.</p>
     </div>
 
     <div class="side">

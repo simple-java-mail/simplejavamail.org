@@ -1283,6 +1283,37 @@ boolean positiveReply = receipt.getSmtpResponse()
       delivery envelope.</p>
   </div></section>
 
+  <h2 id="missing-outlook-sender">Handle a missing Outlook sender explicitly</h2>
+  <section><div class="wide">
+    <p>In 9.3.9, MSG import substituted <code>donotreply@unknown-from-address.net</code> when the Outlook reader had no sender address.
+      In 10.0.0, <code>Email.getFromRecipient()</code> returns <code>null</code> for that source. Check for absence when inspecting imported
+      messages. Any available sender name and native metadata remain in <code>Email.getSourceData()</code>; an Outlook last-modifier value
+      does not establish a sender.</p>
+    <p>For outgoing mail, configure the intended From address on a copy:</p>
+<pre><code class="language-java">Email received = mail.converter().fromOutlookMsg(msgPath).toEmail();
+Email outgoing = mail.emailBuilder().copying(received)
+    .from("Archive", "archive@example.org")
+    .buildEmail();</code></pre>
+    <p>Alternatively, let the selected Mailer's Email defaults supply From. MSG imports already ignore defaults, so deliberately restore
+      default participation on the copy. This preserves its other template choices:</p>
+<pre><code class="language-java">EmailPopulatingBuilder draft = mail.emailBuilder().copying(received);
+Email outgoing = draft.withTemplateOptions(draft.getTemplateOptions().toBuilder()
+        .resetIgnoreDefaults().build())
+    .buildEmail();
+
+Email defaults = mail.emailBuilder().startingBlank()
+    .from("Archive", "archive@example.org").buildEmail();
+try (Mailer mailer = mail.mailerBuilder()
+        .withSMTPServer("smtp.example.org", 587, smtpUser, smtpPassword)
+        .withTransportStrategy(TransportStrategy.SMTP_TLS)
+        .withEmailDefaults(defaults).buildMailer()) {
+    mailer.sync().sendMail(outgoing);
+}</code></pre>
+    <p>Ordinary validation rejects outgoing mail whose From is still missing. Explicit overrides keep their existing authority.
+      The original imported Email and its source evidence stay available. See
+      <a href="features.html#outlook-missing-sender">Outlook sender inspection</a>.</p>
+  </div></section>
+
   <h2 id="imported-inline-resources">Check imported image lists</h2>
   <section><div class="wide">
     <p>Ordinary MIME/EML import now retains readable neighboring content when a recognized attachment or inline disposition has malformed optional
