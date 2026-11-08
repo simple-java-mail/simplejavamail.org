@@ -76,6 +76,12 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
     <p class="wide">
       Builder flags are deliberately explicit because they map directly to builder methods.
     </p>
+    <p class="wide" id="integer-option-values">
+      Integer options accept whole decimal numbers within the signed 32-bit range. Boolean words, fractions and overflowing values produce an
+      argument error. For example, use <code>--mailer:withSessionTimeout 10000</code> for ten seconds, or <code>0</code> for unlimited socket
+      timeouts. <code>false</code> is invalid for this numeric option. Each option's own range and units still apply; Boolean options accept
+      their usual Boolean values. See the <a href="migration-notes-10.0.0.html#cli-integer-values">integer-input migration guidance</a> when upgrading.
+    </p>
     <p class="wide">
       Message-file arguments for options such as <code>--email:copying</code>, <code>--email:forwarding</code> and
       <code>--email:replyingTo</code> accept EML and Outlook MSG. The file's contents select the parser, so extensionless or renamed files keep

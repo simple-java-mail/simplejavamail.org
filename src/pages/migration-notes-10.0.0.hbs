@@ -34,6 +34,7 @@ breadcrumbParent: "/migration-notes.html"
       <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
       <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
       <li><a href="#cli-help-values">Keep CLI values ending in --help</a></li>
+      <li><a href="#cli-integer-values">Supply whole numbers for CLI integer options</a></li>
       <li><a href="#required-mailer-inputs">Use named operations to remove Mailer choices</a></li>
       <li><a href="#email-construction">Build Email objects through buildEmail()</a></li>
       <li><a href="#email-body-method-names">Use consistent body method names</a></li>
@@ -320,6 +321,17 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       handles any stale discovery state left by forced termination. Preserve uncertain send outcomes instead of assuming mail was unsent or
       automatically submitting it again. Ordinary Java <code>Mailer.close()</code> remains graceful. This corrects the unreleased daemon;
       it adds no released 9.x API migration. See the <a href="cli.html#daemon-shutdown">CLI shutdown guide</a>.</p>
+  </div></section>
+
+  <h2 id="cli-integer-values">Supply whole numbers for CLI integer options</h2>
+  <section><div class="wide">
+    <p>CLI integer options now reject Boolean words, fractions and numbers outside the signed 32-bit range. Earlier versions, including 9.3.9,
+      could coerce those inputs into different settings. For example, <code>--mailer:withSessionTimeout false</code> became zero and selected
+      unlimited socket timeouts; it now produces an argument error before a Mailer is created.</p>
+    <p>Check shell scripts and argument files for these inputs. Supply an explicit whole number, such as
+      <code>--mailer:withSessionTimeout 10000</code> for ten seconds. Use <code>0</code> only when you intend that option's documented zero behavior.
+      Option names, units, valid integer values and Boolean options keep their existing meaning. See
+      <a href="cli.html#integer-option-values">CLI integer values</a>.</p>
   </div></section>
 
   <h2 id="cli-help-values">Keep CLI values ending in --help</h2>
