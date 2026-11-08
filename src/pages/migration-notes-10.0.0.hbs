@@ -1535,12 +1535,13 @@ try (Mailer mailer = mail.mailerBuilder()
 
   <h2 id="eml-export-failures">Handle content failures during email conversion</h2>
   <section><div class="wide">
-    <p>If an attachment cannot be read or message content cannot be written when converting an Email to MIME or exporting MIME as EML, the operation
-      now throws a conversion exception in the <code>MailException</code> family with an explanation and the original cause.
+    <p>If a content-read or write failure prevents conversion from producing a usable MIME or EML artifact, direct conversion
+      throws a conversion exception in the <code>MailException</code> family with an explanation and the original cause.
       Previously these failures threw <code>IllegalStateException</code>, sometimes saying <code>"This should never happen"</code>, even for an
       ordinary unavailable attachment.</p>
     <p>If your code specifically caught that <code>IllegalStateException</code>, catch <code>MailException</code> around the conversion instead.
-      Keep borrowed attachment sources available until export completes.</p>
+      Known component failures can instead yield the remaining usable content. Use Result-suffixed conversion methods to inspect those observations
+      and available source evidence. Keep borrowed attachment sources available until export completes.</p>
   </div></section>
 
   <h2 id="address-only-name">Check names when importing only a recipient address</h2>

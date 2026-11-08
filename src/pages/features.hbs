@@ -2451,7 +2451,8 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
         If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
         and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
         Eager extraction closes each attachment stream it opens, including when reading fails; calendar streams acquired during interpretation
-        follow the same rule. An unsupported calendar charset still fails conversion without leaking a content stream.
+        follow the same rule. A known calendar interpretation failure, such as an unsupported charset, is reported through
+        <code>Email.getProblems()</code> while readable neighboring content and available source evidence remain accessible.
         A declared calendar charset is honored even when the mail provider returns its content as an InputStream; the existing defaults when no
         charset is declared remain unchanged.
         This does not close the DataSource itself or a top-level EML stream supplied by your application.
@@ -2466,7 +2467,9 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
         Conversion follows the ordinary text handler's declared MIME charset and aliases. With no declaration, its <code>us-ascii</code> MIME label
         passes through Jakarta Mail's aliases, currently selecting ISO-8859-1. Already-decoded Strings keep the provider's interpretation.
         Body streams acquired by the parser close on success or failure, including charset and read failures. The DataSource and an application-owned
-        top-level EML stream retain their ownership, and lazy attachments remain lazy. See <a href="migration-notes-10.0.0.html#streamed-text-import">the import migration guidance</a>.</p>
+        top-level EML stream retain their ownership, and lazy attachments remain lazy. Recovered component failures appear in
+        <code>Email.getProblems()</code> with available source evidence. Conversion exceptions retain their original and suppressed causes;
+        cancellation and unrelated application failures still propagate. See <a href="migration-notes-10.0.0.html#streamed-text-import">the import migration guidance</a>.</p>
       <p>In unreleased 10.0.0, imported attachment and embedded-image filenames retain their decoded spelling, including literal angle brackets such as <code>&lt;draft&gt;.txt</code> and the name <code>UnknownAttachment</code>. Filename characters are separate from Content-ID delimiters; only a missing filename uses the existing CID-derived fallback.</p>
       <p id="imported-inline-resources">
         A referenced image inside <code>multipart/related</code> needs no <code>Content-Disposition</code> header. When that header is absent,
