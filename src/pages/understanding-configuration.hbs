@@ -41,6 +41,7 @@ description: "Understand how loaded settings, Java choices and Email templates c
         <tr><td><code>buildEmailCompletedWithDefaultsAndOverrides(...)</code></td><td>Explicitly applies the chosen Email governance during this call.</td></tr>
         <tr><td>Sending a composed Email</td><td>Applies the selected destination's Email defaults, overrides and locks during preparation for that send.</td></tr>
         <tr><td><code>mailer.rehearse(...)</code> and <code>mailer.validate(...)</code></td><td>Use the invoked Mailer's own configuration. They do not select or validate a future cluster or failover destination.</td></tr>
+        <tr><td>Email import</td><td>The terminal operation combines captured import limits with its supplied <code>ImportLimitsConfig</code>, checks applicable locks and creates one allowance for that import and its selected nested content.</td></tr>
         <tr><td>Conversion and export</td><td>Follow the governance chosen for that conversion. Fluent <code>fromEmail(...)</code> export does not implicitly apply factory Email templates; exporting a rehearsal uses its already-prepared snapshot.</td></tr>
       </tbody></table>
       <p>In the unreleased 10.0.0 line, an ordinary inherited image-base URL can be replaced or explicitly cleared before
@@ -49,6 +50,9 @@ description: "Understand how loaded settings, Java choices and Email templates c
         See <a href="features.html#automatic-image-configuration-timing">image configuration timing</a>.</p>
       <p>Later builder edits do not reconfigure a Mailer or Email you already built. Building a Mailer can also fail if its Session is already in use
         or its settings conflict with an existing shared pool. If setup fails, Simple Java Mail cleans up resources it started for that attempt.</p>
+      <p><a href="features.html#conversion-import-limits">Import limits</a> remain reusable supplied configuration rather than live shared counters.
+        Their getters do not consume input or resolve defaults. Replacing the group discards its earlier choices; omitted members inherit the factory,
+        zero explicitly means unlimited and the usual fixed-value locks still apply. The resulting Email does not carry a limit policy into later sends.</p>
       <pre><code class="language-java">Email submitted = mail.emailBuilder().startingBlank()
     .withSubject("Draft subject")
     .withPlainText("Draft body")

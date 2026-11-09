@@ -87,6 +87,15 @@ description: "Send, validate, test connections, and inspect SMTP capabilities fr
       <code>--email:replyingTo</code> accept EML and Outlook MSG. The file's contents select the parser, so extensionless or renamed files keep
       their format. <code>--email:startingFromExactEml</code> accepts EML for exact submission.
     </p>
+    <p class="wide" id="message-file-import-limits">
+      The copying and reply message-file arguments become a <code>MimeMessage</code> that the builder then imports. A finite
+      <code>simplejavamail.conversion.import.maximuminputbytes</code> value is rejected before file content is read on these routes, following
+      the supplied-MIME applicability rule. EML forwarding only borrows its MIME message, so ordinary import defaults do not activate there.
+      MSG forwarding performs a combined MSG import and applies its supported limits. Message-file conversion uses the request's captured
+      factory, including applicable <a href="configuration.html#section-import-limits">part/depth limits</a>. Use raw EML/MSG input through the
+      <a href="features.html#conversion-import-limits">Java converter</a> when an input-byte acceptance bound is required for an Email import.
+      Configure CLI import limits through the existing properties and environment sources.
+    </p>
     <p class="wide">
       Each repeated builder flag is a separate call, applied in command-line order with its own arguments. For example,
       <code>--email:to alice@example.org --email:to bob@example.org</code> adds both recipients. An optional display name belongs only to its own occurrence:

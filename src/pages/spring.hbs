@@ -20,6 +20,7 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
       <li><a href="#section-spring-beans">Customize Spring-managed beans</a></li>
       <li><a href="#section-spring-oauth2">Provide OAuth2 access tokens</a></li>
       <li><a href="#section-spring-sending-limits">Configure sending limits</a></li>
+      <li><a href="#section-spring-import-limits">Configure received-mail import limits</a></li>
       <li><a href="#section-spring-recipient-rejection">Choose how recipient rejections are handled</a></li>
       <li><a href="#section-spring-profiles">Configure profiles and dynamic properties</a></li>
       <li><a href="#section-spring-locked-configuration">Keep selected settings fixed</a></li>
@@ -308,6 +309,32 @@ OAuth2AccessTokenProvider smtpAccessTokens(
       <p>The equivalent property names begin with <code>simplejavamail.smtp.ratelimit.</code>.
         Use the factory's <code>getConfig().getDiagnostics()</code> to trace loaded values and sources;
         <code>mailer.getOperationalConfig()</code> includes later Java builder choices.</p>
+    </div>
+  </section>
+
+  <a href="#section-spring-import-limits" id="section-spring-import-limits" class="section-link h2">&sect;</a>
+  <h2>Configure received-mail import limits</h2>
+  <section>
+    <div class="view">
+      <p>Plain Spring and the Boot starter capture import limits through the same Environment loader as other factory settings.
+        These example values are application choices. An omitted choice inherits the captured factory value; the library fallback is unlimited.
+        An explicit zero selects unlimited, subject to any configured lock.</p>
+      <p>Imports from the injected <code>SimpleJavaMail</code> factory use these defaults. One import owns its allowance across selected nested messages;
+        another import starts independently. You can supply an <code>ImportLimitsConfig</code> group on a particular conversion, with omitted members
+        inheriting the captured factory choices. See <a href="features.html#conversion-import-limits">the Java API and result handling</a>.</p>
+      <p>The equivalent fixed-value namespace is <code>simplejavamail.locked.conversion.import.</code>. Equal explicit choices are permitted;
+        conflicting values, including an unlimited reset, fail before the import consumes input. Spring metadata supplies IDE hints for both forms.</p>
+    </div>
+    <div class="side">
+      <pre><code class="language-yaml small">simplejavamail:
+  conversion:
+    import:
+      maximuminputbytes: 26214400
+      maximumpartcount: 1000
+      maximumnestingdepth: 30</code></pre>
+      <p>The input-size choice applies to raw EML/MSG sources. A supplied <code>MimeMessage</code> cannot establish its original encoded size;
+        use raw input, or explicitly set/reset <code>maximumInputBytes</code> to zero on the limits builder (subject to locks) while retaining
+        part/depth choices. <code>getConfig().getDiagnostics()</code> shows captured values and sources.</p>
     </div>
   </section>
 

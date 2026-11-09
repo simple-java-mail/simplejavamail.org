@@ -2688,6 +2688,67 @@ for (OpenPgpSignatureResult signature : protection.getSignatures()) {
   </section>
 
   <section>
+    <div class="wide full-width-example">
+      <h3 id="conversion-import-limits">Limit a received-mail import</h3>
+      <p>Use <code>ImportLimitsConfig</code> when your application needs to bound raw input size, the number of interpreted parts or their nesting.
+        The same configuration value can be reused across imports. Each conversion has its own allowance, shared by the selected nested messages
+        and opened protection views within that operation.</p>
+      <pre><code class="language-java">ImportLimitsConfig limits = ImportLimitsConfig.builder()
+    .withMaximumInputBytes(25L * 1024 * 1024)
+    .withMaximumPartCount(1_000)
+    .withMaximumNestingDepth(30)
+    .build();
+
+Email limited = mail.converter().fromEml(emlPath)
+    .withImportLimitsConfig(limits)
+    .toEmail();</code></pre>
+      <p>These are application examples, not defaults. An omitted choice inherits the captured factory setting; zero explicitly selects unlimited,
+        and a positive value supplies a bound. Negative values are invalid. Root depth is one. Use <code>toEmailBuilder()</code> instead when you
+        want an editable import, or supply the same group after <code>fromOutlookMsg(...)</code>. The source and result methods keep their ordinary syntax.</p>
+      <p>The input-byte limit counts the original encoded EML/MSG representation. String EML input uses its UTF-8 byte representation.</p>
+      <p>The initial MIME root consumes one part. Its interpreted children consume further nodes; an opened protection view also consumes a node
+        at the same logical depth as the representation it opens. Re-reading an admitted occurrence for retained content does not count it again.
+        In Outlook imports, root metadata is node one, while represented plain/HTML bodies, retained original RTF or native body parts and
+        attachment occurrences are child nodes. An embedded message root adds another level beneath its attachment.</p>
+      <p>A configured stop preserves completed usable content and records <code>EmailProblem.Code.IMPORT_LIMIT_EXCEEDED</code> in
+        <code>getProblems()</code>. An oversized raw source can return only its available source evidence and an incomplete prefix; the input limit
+        is enforced while acquiring it, rather than after reading the whole stream. At most one additional byte can establish that a stream exceeds
+        its bound. Incomplete attachment data is not exposed as a complete normal resource.</p>
+      <p>When the part allowance runs out, further parts are omitted with bounded reporting. A depth stop omits that subtree while eligible siblings
+        remain readable. See <a href="#section-source-inspection">source inspection</a> for captured content, original identities and historical Problems.
+        A limit stop does not establish verification or decryption success.</p>
+      <p>If a limit prevents a retained inner view from materializing any plain-text, HTML or calendar body, its partial Email stays available for
+        inspection while the existing separate-view presentation preserves completed outer content. Fully visited absent body alternatives keep
+        their ordinary merge meaning. A later independent attachment omission does not suppress a body that was already materialized.</p>
+      <p>A partial attachment list also does not establish whole-message protection merely because only one protected file remains.
+        Independent files keep their child-processing meaning, while original native source structure and envelope declarations retain their authority.</p>
+      <p>A supplied <code>MimeMessage</code> has no reliable original encoded size. A finite input-byte limit is rejected for that source before consuming
+        the conversion; supply original EML/MSG input, or explicitly choose unlimited input on the limits builder with <code>withMaximumInputBytes(0)</code>
+        or <code>resetMaximumInputBytes()</code>, subject to locks. Part/depth limits remain available. Direct MIME/EML transformations that bypass
+        Email import reject an explicitly supplied import group. A combined Outlook-to-MIME/EML operation applies the limits during its import.</p>
+      <p>For a limited import from a supplied <code>MimeMessage</code>, the protection details' <code>getOriginalProtectedMessage()</code> can return
+        <code>null</code> when a complete protected representation was unavailable. A missing optional module or failed inspection does not make
+        uncaptured bytes available. Complete raw EML bytes already captured remain exact and available even when later traversal omits content.
+        Byte availability and verification/decryption results are independent.</p>
+      <p>For a bounded import of an unsaved supplied <code>MimeMessage</code>, an absent <code>Date</code> or <code>Message-ID</code> remains absent
+        in the converted Email, even if diagnostic serialization generates that metadata.</p>
+      <p><a href="cli.html#message-file-import-limits">CLI copying and reply message-file arguments</a> pass through a native <code>MimeMessage</code>
+        before the builder imports it, and reject a finite raw-input limit before file content is read. EML forwarding only borrows MIME and leaves
+        ordinary import defaults inactive; MSG forwarding performs a combined MSG import with its supported limits. Message-file conversion uses
+        the request's captured factory. Use the raw-input Java converter when an input-byte acceptance bound is required for an Email import.</p>
+      <p><code>getImportLimitsConfig()</code> inspects supplied choices without reading the message. Replacing the group discards its previous supplied
+        choices; <code>useConfiguredImportLimitsConfig()</code> restores the factory's captured defaults. On the value builder, <code>resetMaximumInputBytes()</code>
+        selects the unlimited fallback, while <code>useConfiguredMaximumInputBytes()</code> restores inheritance. The other two limits have the same companions.
+        <a href="configuration.html#section-import-limits">Property defaults and fixed values</a> use the same choices.</p>
+      <p>These limits govern work performed during import. Byte-array defensive copying and String encoding may already have happened when the source
+        was selected; native parsers and cryptographic libraries can allocate before Simple Java Mail regains control. They are not a whole-JVM memory
+        limit or a timeout. Deferred attachment reads after conversion keep their normal ownership, and configuring limits does not fetch them.
+        <a href="#section-exact-eml">Exact-EML relay construction</a> keeps its authoritative-byte contract and requires any application acceptance limit
+        at its own input boundary.</p>
+    </div>
+  </section>
+
+  <section>
     <div class="view">
       <p>
         When converting Outlook <code class="inline language-text">.msg</code> files, use the result API if you need to inspect source-specific Outlook data.

@@ -927,6 +927,11 @@ simplejavamail.defaults.connectionpool.clusters.orders.expireafter.millis=600000
 simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RANDOM_ACCESS
 simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.maxsize=8
 
+# Optional Email import limits; zero means unlimited for each member
+simplejavamail.conversion.import.maximuminputbytes=26214400
+simplejavamail.conversion.import.maximumpartcount=1000
+simplejavamail.conversion.import.maximumnestingdepth=30
+
 # S/MIME defaults
 simplejavamail.smime.signing.keystore=my_keystore.pkcs12
 simplejavamail.smime.signing.keystore_password=keystore_password
@@ -974,6 +979,26 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
 			</p>
 		</div>
 	</section>
+
+  <a href="#section-import-limits" id="section-import-limits" class="section-link h2">&sect;</a>
+  <h2>Optional limits for received-mail imports</h2>
+  <section>
+    <div class="wide">
+      <p>The <code>simplejavamail.conversion.import.</code> properties above supply defaults to imports performed by this factory's converter.
+        Omitted limits fall back to unlimited. A conversion can supply <code>ImportLimitsConfig</code> through its existing fluent stage;
+        omitted members inherit the captured factory. These settings do not become Email templates or Mailer sending limits.</p>
+      <p>Use the corresponding <code>simplejavamail.locked.conversion.import.</code> property to keep a value fixed within the adopting factory.
+        Equal explicit values are allowed; a different value, including an unlimited reset, conflicts. A tighter value is still a different fixed
+        choice. The factory's <code>getConfig().getDiagnostics()</code> identifies the captured values and sources.</p>
+      <p>Input size is the original raw EML/MSG byte size. Part count and nesting apply while Simple Java Mail visits the import's structure, with
+        one allowance shared across selected nested messages. A supplied <code>MimeMessage</code> cannot establish its original encoded size, so a
+        finite input-byte limit is rejected there before source consumption. See <a href="features.html#conversion-import-limits">import-limit usage
+        and result handling</a> and <a href="spring.html#section-spring-import-limits">Spring configuration</a>.</p>
+      <p><a href="cli.html#message-file-import-limits">CLI copying and reply message-file arguments</a> use the captured request configuration for
+        applicable part/depth limits and reject a finite raw-input limit before reading file content. EML forwarding borrows MIME with ordinary
+        import defaults inactive; MSG forwarding performs an import with its supported limits.</p>
+    </div>
+  </section>
 
 	<section>
 		<div class="view">
