@@ -1564,12 +1564,26 @@ emailBuilder   	     =    EmailConverter.mimeMessageToEmailBuilder(yourMimeMessa
     </div>
   </section>
 
-  <section>
+  <section id="outlook-source-data">
     <div class="view">
       <p>
         When converting Outlook <code class="inline language-text">.msg</code> files, use the result API if you need to inspect source-specific Outlook data.
         The converted email keeps only meaningful email headers; structural Outlook source headers stay available through
         <code class="inline language-java">OutlookMessageData</code>.
+      </p>
+      <p>
+        Since 9.3.10, <code class="inline language-java">getBodyHTML()</code> exposes the native HTML body without the RTF fallback, and
+        <code class="inline language-java">getBodyRTF()</code> exposes the reader's decompressed and decoded RTF text. Both are captured during
+        the same conversion. RTF text is not the original compressed RTF property or the MSG bytes.
+      </p>
+      <p>
+        A <code class="inline language-java">null</code> value means the source body is unavailable or was not captured; an explicitly empty
+        body stays empty. Results created with older constructors or read from older serialized data have unknown source bodies.
+        Missing native HTML does not establish plain-text origin: RTF can contain plain text, encapsulated HTML or rich text.
+      </p>
+      <p>
+        These values describe the native MSG. They can differ from the HTML returned by the converted email after S/MIME processing or your
+        builder changes. The existing conversion and best-effort HTML fallback stay enabled.
       </p>
     </div>
 
@@ -1583,7 +1597,14 @@ OutlookMessageData outlookData = result.getOutlookMessageData();
 List&lt;String&gt; receivedHeaders = outlookData.getHeaderValues("Received");
 String messageClass = outlookData.getMessageClass();
 String rawHeaders = outlookData.getRawHeaders();
+String nativeHtml = outlookData.getBodyHTML();
+String sourceRtf = outlookData.getBodyRTF();
 </code></pre>
+      <p class="small">
+        If your application has selected plain-text output for an ordinary unprotected MSG, use
+        <code class="inline language-java">result.getEmailBuilder().clearHTMLText().buildEmail()</code>.
+        Choose that policy using your application's requirements and source information; do not infer it from missing native HTML alone.
+      </p>
       <p class="small">
         Outlook conversion is lenient about unsupported encrypted S/MIME payloads. For signed S/MIME content, parsed email content is preserved
         even when cryptographic signature verification fails. Check <code class="inline language-java">email.getOriginalSmimeDetails().getSmimeSignatureValid()</code>
