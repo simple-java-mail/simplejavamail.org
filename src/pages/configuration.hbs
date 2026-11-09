@@ -666,6 +666,11 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
         For example, <code>mail.converter().fromEml(emlPath).toEmailBuilder()</code> keeps that snapshot without restricting the supported conversion routes.
         See <a href="/features.html#section-converting">source-first conversion</a> for the complete shape and receive-side options.
       </p>
+      <p><a href="security.html#section-smime-key-cache">S/MIME key reuse</a> belongs to the factory. Its Mailers and converters share the
+        selected <code>simplejavamail.smime.cache.capacity</code>; a separate factory has independent reuse even when it receives the same
+        snapshot object. Change capacity by creating replacement configured objects. Reading
+        <code>get(ConfigKeys.SMIME_KEY_CACHE_CAPACITY)</code> reports the captured input, so an absent value remains null while active use
+        falls back to the published unlimited value <code>-1</code>.</p>
       <p>
         When replacing a <code class="inline language-java">Mailer</code>, let any work already using the old instance finish and then
         <a href="/sending-and-execution.html#section-mailer-lifecycle">close it</a>.
@@ -931,6 +936,9 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
 simplejavamail.conversion.import.maximuminputbytes=26214400
 simplejavamail.conversion.import.maximumpartcount=1000
 simplejavamail.conversion.import.maximumnestingdepth=30
+
+# S/MIME key reuse for this factory: -1 unlimited (default), 0 no completed entries, positive LRU entry count
+simplejavamail.smime.cache.capacity=-1
 
 # S/MIME defaults
 simplejavamail.smime.signing.keystore=my_keystore.pkcs12

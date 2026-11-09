@@ -53,6 +53,11 @@ description: "Understand how loaded settings, Java choices and Email templates c
       <p><a href="features.html#conversion-import-limits">Import limits</a> remain reusable supplied configuration rather than live shared counters.
         Their getters do not consume input or resolve defaults. Replacing the group discards its earlier choices; omitted members inherit the factory,
         zero explicitly means unlimited and the usual fixed-value locks still apply. The resulting Email does not carry a limit policy into later sends.</p>
+      <p><a href="security.html#section-smime-key-cache">S/MIME key reuse capacity</a> is factory-wide. Mailers and converters from one
+        <code>SimpleJavaMail</code> factory share it; separate factories remain independent even when constructed from the same snapshot.
+        Its default is unlimited (<code>-1</code>), <code>0</code> keeps no completed entries, and positive values bound the retained entry count.
+        Creating an Email does not give it that cache or determine the policy of a later sending Mailer. Replace the configured factory and
+        participating objects to change capacity.</p>
       <pre><code class="language-java">Email submitted = mail.emailBuilder().startingBlank()
     .withSubject("Draft subject")
     .withPlainText("Draft body")

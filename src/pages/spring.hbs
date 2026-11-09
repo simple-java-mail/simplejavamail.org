@@ -21,6 +21,7 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
       <li><a href="#section-spring-oauth2">Provide OAuth2 access tokens</a></li>
       <li><a href="#section-spring-sending-limits">Configure sending limits</a></li>
       <li><a href="#section-spring-import-limits">Configure received-mail import limits</a></li>
+      <li><a href="#section-spring-smime-cache">Choose S/MIME key reuse capacity</a></li>
       <li><a href="#section-spring-recipient-rejection">Choose how recipient rejections are handled</a></li>
       <li><a href="#section-spring-profiles">Configure profiles and dynamic properties</a></li>
       <li><a href="#section-spring-locked-configuration">Keep selected settings fixed</a></li>
@@ -335,6 +336,29 @@ OAuth2AccessTokenProvider smtpAccessTokens(
       <p>The input-size choice applies to raw EML/MSG sources. A supplied <code>MimeMessage</code> cannot establish its original encoded size;
         use raw input, or explicitly set/reset <code>maximumInputBytes</code> to zero on the limits builder (subject to locks) while retaining
         part/depth choices. <code>getConfig().getDiagnostics()</code> shows captured values and sources.</p>
+    </div>
+  </section>
+
+  <a href="#section-spring-smime-cache" id="section-spring-smime-cache" class="section-link h2">&sect;</a>
+  <h2>Choose S/MIME key reuse capacity</h2>
+  <section>
+    <div class="view">
+      <p>Configure how many loaded S/MIME key configurations the injected <code>SimpleJavaMail</code> factory may keep for signing and
+        decryption. Its Mailers and converters share that reuse. The default <code>-1</code> is unlimited; <code>0</code> keeps no completed
+        entries, and a positive integer selects least-recently-used entry capacity.</p>
+      <p>Use <code>simplejavamail.locked.smime.cache.capacity</code> when the captured value must remain fixed. This setting belongs to the
+        factory root; named Mailer definitions cannot override it. Separately configured factories have independent reuse.</p>
+      <p>Changing an Environment value does not reconfigure existing objects. Create a replacement configured factory and its Mailers and
+        converters to use another capacity. Closing one Mailer releases its sending resources and leaves other participants' shared keys
+        available. See <a href="security.html#section-smime-key-cache">capacity values, Java usage and lifetime</a>.</p>
+    </div>
+    <div class="side">
+      <pre><code class="language-yaml small">simplejavamail:
+  smime:
+    cache:
+      capacity: 10000</code></pre>
+      <p>This example chooses 10,000 configurations, not bytes or employees. Key reuse has no time-based expiry. Choosing capacity alone
+        does not enable signing or decryption.</p>
     </div>
   </section>
 

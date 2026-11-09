@@ -82,6 +82,7 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 				<li><a href="#section-crlf-scanning">Scanning for suspicious content</a></li>
 				<li><a href="#section-sending-dkim">Signing emails with DKIM</a></li>
 				<li><a href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
+				<li><a href="#section-smime-key-cache">Choose S/MIME key reuse capacity</a></li>
 				<li><a href="#section-reading-smime">Reading S/MIME signed / encrypted attachments</a></li>
 				<li><a href="#section-reading-smime-verification" class="indent">What the signature status means</a></li>
 				<li><a href="#section-reading-smime-merging" class="indent">Retained S/MIME content is merged by default</a></li>
@@ -997,6 +998,43 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 			</div>
 		</section>
 
+
+		<a href="#section-smime-key-cache" id="section-smime-key-cache" class="section-link h3">&sect;</a>
+		<h3>Choose S/MIME key reuse capacity</h3>
+		<section><div class="wide full-width-example">
+			<p>When an application signs or decrypts with many different key configurations, choose how many loaded configurations it may keep
+				for reuse. Configure <code>simplejavamail.smime.cache.capacity</code> on the <code>SimpleJavaMail</code> factory:</p>
+			<pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.withConfig(
+    ConfigLoader.builder()
+        .withMap(Map.of(ConfigKeys.SMIME_KEY_CACHE_CAPACITY.key(), 10_000))
+        .load());</code></pre>
+			<p>The example chooses 10,000 entries. The published fallback,
+				<code>ConfigLoader.DEFAULT_SMIME_KEY_CACHE_CAPACITY</code>, is <code>-1</code>:</p>
+			<div class="doc-table-wrap" tabindex="0" aria-label="Scrollable S/MIME key reuse capacity values">
+				<table><thead><tr><th>Configured value</th><th>Behavior</th></tr></thead><tbody>
+					<tr><td>Absent or <code>-1</code></td><td>Keep entries without a count limit while the application retains the factory or its participating Mailers and converters.</td></tr>
+					<tr><td><code>0</code></td><td>Keep no completed entries. Signing and decryption still load and use keys; overlapping work can share a load.</td></tr>
+					<tr><td>Positive integer</td><td>Keep at most that many completed configurations. A new entry removes the least recently used entry when space is needed.</td></tr>
+				</tbody></table>
+			</div>
+			<p>This counts key configurations, including their retained keystore/password material and parsed keys. It is not a byte or heap limit.
+				An operation already using a key can finish after eviction; a later operation may reload it from the material held by the configuration. Entries do not expire
+				with time. Values below <code>-1</code> are rejected before key loading for signing or decryption; fractions, overflow and unsupported
+				input types are configuration errors.</p>
+			<p>Mailers and converters obtained from the same factory share this capacity and reuse. For example, incoming decryption uses the
+				same factory as sending:</p>
+			<pre><code class="language-java">Email received = mail.converter().fromEml(incomingEml)
+    .withSmimeDecryption(customerKeys)
+    .toEmail();</code></pre>
+			<p>Separate factories have independent caches, even if they use the same configuration snapshot. A send uses the selected Mailer's
+				factory, including a borrowed failover Mailer from another factory; the factory that originally built the Email does not choose it.
+				Private named Mailers share their creating factory's capacity. Put the property at the configuration root; a named-Mailer definition
+				cannot override it. The fixed-value form is <code>simplejavamail.locked.smime.cache.capacity</code>.</p>
+			<p>To change capacity, create a replacement configured factory and obtain its Mailers and converters. Existing objects keep their
+				selected policy. Close Mailers as usual to release sending resources; closing one does not clear keys shared with other participants.
+				Retaining a factory, one of its converters or a Mailer can retain its cached keys. No additional cache cleanup call is required.
+				<code>SimpleJavaMail.fromDefaults()</code> and static conversion helpers use the conventional default factory.</p>
+		</div></section>
 
 		<a href="#section-reading-smime" id="section-reading-smime" class="section-link h2">&sect;</a>
 		{{#> components/feature-heading-h2 smime=true}}Reading S/MIME signed / encrypted attachments{{/components/feature-heading-h2}}
