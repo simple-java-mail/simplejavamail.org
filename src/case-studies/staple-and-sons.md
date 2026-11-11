@@ -678,6 +678,8 @@ MailSend<MailSubmissionReceipt> send =
 
 The dispatcher uses the same archive helper and completion handling as before. In a test exchange, the partner decrypts the message and verifies the signature. A test client without the corresponding private key cannot read the PDF. The relays still forward the email as usual.
 
+If the partner automates processing of that PDF, its application can check [the selected document's protection](/security.html#section-inspecting-received-protection) against an explicitly approved signing key before acting. A mathematically valid signature elsewhere or a claimed From address does not supply that approval. The [receiving recipe](/email-workload-field-guide.html#check-a-partner-document-before-processing-it) shows a process-or-hold decision while keeping usable bytes and retained original input distinct.
+
 ---
 
 <img src="/assets/journal/company-logos/polar-meridian-systems.png" alt="Polar Meridian Systems" class="journal-paragraph-image image-align-left" style="width:200px;" />

@@ -116,11 +116,10 @@ receipt.getRecipientResults(); // prepared recipients; acceptance stays UNKNOWN
         supports neither. For connection diagnostics, use the explicit <code>testConnection()</code> or <code>probeConnection()</code> calls described above.
       </p>
       <p>
-        The logging-only receipt lists the prepared delivery recipients in order, including recipients added through raw To, Cc or Bcc headers.
-        Explicit override receivers replace that delivery list, and duplicate occurrences remain distinct. A named group in a raw header can
-        remain one planned entry, as in rehearsal. These entries describe intent, with no SMTP replies or acceptance facts. A custom-mailer
-        receipt likewise describes what Simple Java Mail prepared before the callback; your implementation owns its external delivery mapping.
-        If a raw recipient header cannot be parsed, the receipt retains the typed recipient view instead of introducing a new validation step.
+        The logging-only receipt lists the prepared MIME recipients in order. Explicit override receivers supply the delivery list when present,
+        and duplicate occurrences remain distinct. A custom-mailer receipt describes the same intent before the callback. Both modes leave
+        acceptance <code>UNKNOWN</code> and SMTP replies absent. If the prepared MIME recipient headers cannot be parsed, the receipt uses the
+        typed recipients or the explicit override receivers.
       </p>
     </div>
   </section>
@@ -137,7 +136,8 @@ receipt.getRecipientResults(); // prepared recipients; acceptance stays UNKNOWN
 		  </p>
 		  <p>These typed delivery destinations follow the selected Mailer's address validator and relevant injection checks during validation,
 			  rehearsal and sending, including destinations supplied by defaults or overrides. Their order, repeated occurrences and recipient
-			  metadata remain intact. Raw custom recipient headers have a separate <a href="features.html#section-custom-headers">advanced header contract</a>.</p>
+			  metadata remain intact. The <a href="features.html#section-custom-headers">custom headers reference</a> covers how generic
+			  <code>To</code>, <code>Cc</code> and <code>Bcc</code> setters populate the visible recipient fields.</p>
 		  <p>
 			  Copies made with <code>mail.emailBuilder().copying(email)</code> keep these overrides, including recipient order and repeated occurrences.
 			  Editing the copy's subject or body therefore keeps it routed to your testers. Use <code>clearOverrideReceivers()</code> on the copy's builder

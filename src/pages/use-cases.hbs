@@ -5,7 +5,7 @@ tags:
   - "publicPage"
 title: "Use cases"
 style: "home"
-description: "Find the Simple Java Mail APIs and settings for correct MIME, secure sending, high throughput, batches, application integration, and delivery diagnostics."
+description: "Find the Simple Java Mail APIs and settings for correct MIME, secure sending, received-message inspection, high throughput, batches, application integration, and delivery diagnostics."
 ---
     <div id="navigation" class="compatibility-anchor" aria-hidden="true"></div>
 
@@ -25,6 +25,7 @@ description: "Find the Simple Java Mail APIs and settings for correct MIME, secu
           <a href="#batch-delivery"><span>04</span>Send batches</a>
           <a href="#application-integration"><span>05</span>Fit your application</a>
           <a href="#delivery-diagnostics"><span>06</span>Diagnose a send</a>
+          <a href="#inspect-incoming-mail"><span>07</span>Inspect incoming mail</a>
         </nav>
       </div>
     </section>
@@ -118,9 +119,25 @@ description: "Find the Simple Java Mail APIs and settings for correct MIME, secu
             {{> components/use-case-link href="/analyzing-send-results.html#section-send-timings" title="Explain a slow send" description="Measure preparation, connection and submission time" core=true}}
           </nav>
         </article>
+
+        <article id="inspect-incoming-mail" class="use-case">
+          <div class="use-case-copy">
+            <p class="use-case-coordinate">07 · Receiving</p>
+            <h2>Inspect incoming mail before acting on it.</h2>
+            <p>Read supplied EML or MSG through the ordinary Email model, including supported decrypted content. Before processing a partner document,
+              check the exact selected value against your approved signing keys, full signature coverage and decryption requirements. Keep unknown evidence,
+              readable native fallback and actual processing failures distinct, then let your application process or hold the document.</p>
+          </div>
+          <nav class="use-case-links" aria-label="Received mail inspection documentation">
+            {{> components/use-case-link href="/security.html#section-inspecting-received-protection" title="Check received protection" description="Approved keys, selected values and decisions" core=true}}
+            {{> components/use-case-link href="/features.html#section-source-inspection" title="Inspect sources and Problems" description="Read available evidence and retain originals" core=true}}
+            {{> components/use-case-link href="/email-workload-field-guide.html#check-a-partner-document-before-processing-it" title="Partner-document recipe" description="One focused process-or-hold decision" core=true}}
+            {{> components/use-case-link href="/patterns/protected-partners.html#check-the-required-document" title="Protected partners application" description="Run the receiving workflow" smime=true}}
+          </nav>
+        </article>
       </div>
     </section>
 
-  <section><h2>A mailbox is temporarily unavailable</h2><p class="wide">Alice's relay refuses her email with a temporary reply, while Bob's mail still succeeds.
+  <section class="ruled-section"><div class="shell"><h2>A mailbox is temporarily unavailable</h2><p class="wide">Alice's relay refuses her email with a temporary reply, while Bob's mail still succeeds.
     An opt-in <a href="/mail-send-retries.html">mail-send retry policy</a> waits for Alice without imposing a relay-wide cooldown. Keep attempts and memory bounded;
-    use your job system when work must survive a restart. <a href="/analyzing-send-results.html#section-retry-history">Attempt history</a> explains the final outcome.</p></section>
+    use your job system when work must survive a restart. <a href="/analyzing-send-results.html#section-retry-history">Attempt history</a> explains the final outcome.</p></div></section>

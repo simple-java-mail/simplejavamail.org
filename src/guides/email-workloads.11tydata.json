@@ -40,6 +40,7 @@
         { "id": "the-pdf-fits-but-the-email-does-not", "title": "The PDF fits, but the email does not", "target": "Check encoded size, not file size" },
         { "id": "a-recipient-address-needs-smtputf8", "title": "A recipient address needs SMTPUTF8", "target": "Check the customer's relay capabilities" },
         { "id": "a-partner-update-must-stay-confidential", "title": "A partner update must stay confidential", "target": "Protect content and require onward TLS" },
+        { "id": "check-a-partner-document-before-processing-it", "title": "Check a partner document before processing it", "target": "Require approved protection before processing" },
         { "id": "reproduce-last-month-s-instructions", "title": "Reproduce last month's instructions", "target": "Retain the submitted bytes and envelope" }
       ]
     },

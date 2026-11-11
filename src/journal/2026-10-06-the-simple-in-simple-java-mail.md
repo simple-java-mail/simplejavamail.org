@@ -113,6 +113,8 @@ Take a reply addressed to three people. The server accepts one recipient and rej
 
 The same idea runs through [configuration snapshots and redacted diagnostics](/debugging.html#section-config-diagnostics), [offline rehearsal](/debugging.html#section-choose-diagnostic), and [execution controls and sending limits](/sending-and-execution.html). Which settings reached this Mailer? What does the prepared message require? Where did the send spend its time? Those are ordinary questions once email is part of an application people depend on. Making them easier to answer belongs under Simple too.
 
+It applies to receiving protected mail as well. A successfully decrypted document should be an ordinary attachment, while the application still needs to know whether that exact document has full signature coverage from a key it approves. The [received-protection workflow](/security.html#section-inspecting-received-protection) and [partner-document application](/patterns/protected-partners.html#check-the-required-document) keep that decision explicit. They also distinguish usable content from retained original input and make confidential reuse a deliberate reply/forward choice. That improves the experience around existing cryptography; it doesn't add another SMTP protocol capability.
+
 There are still gaps. The October progress assessment keeps MailKit ahead on protocol breadth, and does not count PIPELINING or CHUNKING as implemented SJM capabilities. Nor does it claim that dispatching blocking work makes SJM an event-loop-native client. I don't need the new website to hide those differences; I need it to give people a fair picture of what the library does well and what remains to be done.
 
 ## I'm keeping the Simple

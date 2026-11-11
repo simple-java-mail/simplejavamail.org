@@ -10,6 +10,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.EmailPopulatingBuilder;
+import org.simplejavamail.api.email.ApprovedSigners;
+import org.simplejavamail.api.email.ProtectionCheck;
+import org.simplejavamail.api.email.ProtectionRequirements;
 import org.simplejavamail.api.SimpleJavaMail;
 import org.simplejavamail.api.mailer.MailSendDiagnostics;
 import org.simplejavamail.api.mailer.SmtpConnectionReport;
@@ -27,6 +30,23 @@ public final class FieldGuideExamples {
 
     static MailSubmissionReceipt submitOne(Mailer mailer, Email email) {
         return mailer.sync().sendMail(email);
+    }
+
+    static ProtectionCheck processPartnerDocument(
+            Email received, int documentIndex, ApprovedSigners approvedPartner,
+            Consumer<byte[]> process, Consumer<ProtectionCheck> holdForReview) {
+        ProtectionRequirements requirements = ProtectionRequirements.builder()
+            .requireVerifiedSignatureFrom(approvedPartner)
+            .requireDecryptedContent()
+            .build();
+        ProtectionCheck check = requirements.check(
+            received.getInspection().getAttachment(documentIndex));
+        if (check.isSatisfied()) {
+            process.accept(received.getAttachments().get(documentIndex).readAllBytes());
+        } else {
+            holdForReview.accept(check);
+        }
+        return check;
     }
 
     static Mailer retryingMailer(MailerRegularBuilder<?> smtpBuilder) {

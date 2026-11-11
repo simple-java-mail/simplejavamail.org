@@ -85,8 +85,9 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 				<li><a href="#section-smime-key-cache">Choose S/MIME key reuse capacity</a></li>
 				<li><a href="#section-reading-smime">Reading S/MIME signed / encrypted attachments</a></li>
 				<li><a href="#section-reading-smime-verification" class="indent">What the signature status means</a></li>
-				<li><a href="#section-reading-smime-merging" class="indent">Retained S/MIME content is merged by default</a></li>
+				<li><a href="#section-reading-smime-merging" class="indent">One readable message, with retained originals</a></li>
 				<li><a href="#section-reading-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
+				<li><a href="#section-inspecting-received-protection">Check incoming mail before acting on it</a></li>
 				<li><a href="#section-sending-openpgp">Signing / encrypting emails with OpenPGP/MIME</a></li>
 				<li><a href="#section-reading-openpgp">Reading OpenPGP/MIME messages</a></li>
 				<li><a href="#section-reading-openpgp-status" class="indent">What the OpenPGP status means</a></li>
@@ -588,7 +589,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 			</p>
 			<ul class="indent">
 				<li>subject</li>
-				<li>every header name and value</li>
+				<li>additional outgoing header names and values, including explicit choices</li>
 				<li>every attachment name, content ID, nested datasource name and description</li>
 				<li>every embedded image name, content ID, nested datasource name and description</li>
 				<li>from recipient name and address</li>
@@ -1036,332 +1037,244 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 				<code>SimpleJavaMail.fromDefaults()</code> and static conversion helpers use the conventional default factory.</p>
 		</div></section>
 
-		<a href="#section-reading-smime" id="section-reading-smime" class="section-link h2">&sect;</a>
-		{{#> components/feature-heading-h2 smime=true}}Reading S/MIME signed / encrypted attachments{{/components/feature-heading-h2}}
 
-		<section>
-			<div class="view">
-				<p>
-					Simple Java Mail can automatically handle
-					<a href="https://en.wikipedia.org/wiki/S/MIME">S/MIME signed messages</a>
-					or attachments and has some useful extras such as providing you with metadata.
-				</p>
-				<p>Inspect the original converted Email for historical S/MIME results and protected bytes. Ordinary copying and supported Java serialization
-					preserve them. Defaults/overrides completion resolves outgoing content and protection settings without copying these results, the
-					decrypted-attachment inspection list or retained signed-content view. Fresh plain/unsigned result metadata on the completed Email does not
-					describe the input's protection or verify outgoing MIME. See <a href="understanding-configuration.html#repeated-email-completion">completion and source history</a>.</p>
-				<p>In the unreleased 10.0.0 line, retained protected attachments keep their complete valid Content-Type parameters.
-					For example, an opaque signature keeps <code>smime-type=signed-data</code> with its unchanged bytes, so saving or reusing
-					the resource retains its signed classification. A detached signature and an ordinary attachment
-					can both be named <code>smime.p7s</code>; <code>getAttachments()</code> retains both distinct resources without renaming them.
-					Use the resource's type and content when choosing an attachment rather than assuming its filename is unique.</p>
-				<p><code>getDecryptedAttachments()</code> contains the results of attachment processing during conversion. The S/MIME module unwraps supported
-					signed attachments and uses your decryption key for encrypted attachments. If a key is missing or the extracted content cannot
-					be converted to an attachment, the original protected resource stays in this list. This can happen with an independently protected
-					attachment whose clear content is a single MIME part. An entry here does not by itself mean that decryption succeeded or a signature is valid.</p>
-			</div>
-			<div class="wide full-width-example">
-<pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
-Email mergedEmail = mail.converter().fromOutlookMsg(Path.of("yourSMIMESignedMessage.msg")).toEmail();
-// Or read an EML file:
-// Email mergedEmail = mail.converter().fromEml(Path.of("yourSMIMESignedMessage.eml")).toEmail();
+        <a href="#section-reading-smime" id="section-reading-smime" class="section-link h2">&sect;</a>
+        {{#> components/feature-heading-h2 smime=true}}Reading S/MIME messages and attachments{{/components/feature-heading-h2}}
 
-// all attachments as-is:
-mergedEmail.getAttachments(); // smime.p7m, my-doc.docx
-// attachment inspection results, including extracted content when available:
-mergedEmail.getDecryptedAttachments(); // signed-email.eml, my-doc.docx
-
-// if the message itself was signed (rather than an independently signed attachment):
-OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
-details.getSmimeMode(); // SIGNED
-details.getSmimeMime(); // application/pkcs7-mime or multipart/signed
-details.getSmimeType(); // signed-data, enveloped-data
-details.getSmimeName(); // smime.p7m or smime.p7s
-details.getSmimeMicalg(); // ie. sha-512
-details.getSmimeSignedBy(); // common name from the first signer certificate
-details.getVerificationStatus(); // NOT_SIGNED, VALID, INVALID, ERROR, or UNKNOWN
-details.getDecryptionStatus(); // NOT_ENCRYPTED, DECRYPTED, KEY_MISSING, FAILED, or UNKNOWN
-details.getFailureReason(); // safe diagnostic text when processing did not succeed
-</code></pre>
-			</div>
-		</section>
-
-		<a href="#section-reading-smime-verification" id="section-reading-smime-verification" class="section-link h3">&sect;</a>
-		{{#> components/feature-heading-h3 smime=true}}What the signature status means{{/components/feature-heading-h3}}
-
-		<section>
-			<p class="wide">
-				Use <code class="inline language-java">getVerificationStatus()</code> for the signature result. <code class="inline language-java">VALID</code>
-				means the content matches every signature represented by these details. <code class="inline language-java">INVALID</code> means at least one
-				signature does not match, while <code class="inline language-java">ERROR</code> means the signature could not be processed. A message without a
-				signature reports <code class="inline language-java">NOT_SIGNED</code>. <code class="inline language-java">UNKNOWN</code>
-				means signature presence or verification could not be established; it does not mean verification failed.
-			</p>
-			<p class="wide">
-				These outcomes also apply to signed-only Outlook messages. If their signature cannot be checked because the embedded signer certificate
-				is missing, inspection reports <code>ERROR</code> with an explanation while keeping readable content available.
-				Choosing a merged or separate content view does not change that result.
-			</p>
-			<p class="wide">
-				A malformed root <code>Content-Type</code> does not establish S/MIME. Mode, verification and decryption stay <code>UNKNOWN</code>,
-				with or without the optional module, and <code>Email.getProblems()</code> retains the MIME interpretation problem.
-				If the metadata reader cannot obtain that declaration while <code>smime-module</code> is installed, those facts also stay <code>UNKNOWN</code>.
-				<code>Email.getProblems()</code> records the failed read with the available source headers; readable neighboring content and independently
-				attached protected files remain available. An unreadable declaration does not create a failed signature or decryption result;
-				recognized protected content keeps its actual results.
-			</p>
-			<p class="wide">
-				Ordinary EML, MIME and Outlook imports remain available without <code>smime-module</code>. Protected input then has
-				<code>UNKNOWN</code> verification and decryption results. Recognizable MIME declarations can still identify an outer
-				<code>SIGNED</code> or <code>ENCRYPTED</code> mode; ambiguous S/MIME uses <code>SmimeMode.UNKNOWN</code>.
-				Clearly plain messages keep their plain, unsigned and unencrypted results. Explicitly requesting decryption still requires the module.
-				In unreleased 10.0.0, equivalent media-type capitalization is also recognized with the module installed: <code>Multipart/Signed</code>
-				and <code>multipart/signed</code> select the same inspection. Known <code>smime-type</code> values also ignore capitalization:
-				<code>SIGNED-DATA</code> selects signature processing and <code>ENVELOPED-DATA</code> identifies encrypted content.
-				Original headers and protected bytes remain intact; missing and unknown parameter values keep their existing interpretation.
-			</p>
-			<p class="wide">
-				With <code>smime-module</code> installed, an encrypted message without a supplied key reports <code>KEY_MISSING</code> decryption and
-				<code>UNKNOWN</code> verification. An actual decryption failure reports <code>FAILED</code> with <code>UNKNOWN</code> verification too:
-				the unopened ciphertext may contain a signature. After successful decryption, inspected unsigned content reports <code>NOT_SIGNED</code>.
-				A later signature-processing error reports <code>ERROR</code> verification while retaining <code>DECRYPTED</code> and readable content.
-			</p>
-			<p class="wide" id="nested-smime-ciphertext">
-				If successful outer decryption reveals another encrypted S/MIME entity, verification stays <code>UNKNOWN</code> because that unopened
-				content may contain a signature. <code>DECRYPTED</code> records the successful outer operation; import does not recursively decrypt the inner entity.
-			</p>
-			<p class="wide">
-				Opaque signed S/MIME content inside an encrypted message also contributes its signature result to the outer Email's
-				<code>getOriginalSmimeDetails()</code>. After decryption, its mode is <code>SIGNED_ENCRYPTED</code> and its decryption status stays
-				<code>DECRYPTED</code>, independently of whether signed content is merged into the Email. Standard and legacy MIME spellings
-				select the same inspection.
-			</p>
-			<div class="wide full-width-example">
-<pre><code class="small">Email encrypted = mail.converter()
-    .fromEml(Path.of("signed-and-encrypted.eml"))
-    .toEmail(); // smime-module is installed; no decryption key was supplied
-
-OriginalSmimeDetails unopened = encrypted.getOriginalSmimeDetails();
-unopened.getDecryptionStatus();   // KEY_MISSING
-unopened.getVerificationStatus(); // UNKNOWN: the inner signature has not been inspected
-</code></pre>
-			</div>
-			<p class="wide">
-				Decryption is reported separately by <code class="inline language-java">getDecryptionStatus()</code>. When results from several represented
-				protected layers are combined, Simple Java Mail keeps the most serious result. Verification uses
-				<code class="inline language-text">ERROR &gt; INVALID &gt; UNKNOWN &gt; VALID &gt; NOT_SIGNED</code>; decryption uses
-				<code class="inline language-text">FAILED &gt; KEY_MISSING &gt; UNKNOWN &gt; DECRYPTED &gt; NOT_ENCRYPTED</code>.
-				An uninspected represented layer prevents an all-valid or all-decrypted result. Unrelated attachments do not change the owning message's facts.
-			</p>
-			<div class="wide full-width-example">
-<pre><code class="small">OriginalSmimeDetails details = mergedEmail.getOriginalSmimeDetails();
-
-if (details.getVerificationStatus() != VerificationStatus.VALID) {
-    // The message is unsigned, invalid, or could not be checked.
-    // Reject or quarantine the message when integrity is required.
-}
-
-if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
-    byte[] originalEncryptedEml = details.getOriginalProtectedMessage();
-}
-
-// Passing this check does not authenticate the From address.</code></pre>
-			</div>
-			<p class="wide">
-				The older <code class="inline language-java">getSmimeSignatureValid()</code> method is still available when existing code needs its nullable
-				Boolean shape. Its value is derived from the status above, so the two APIs cannot disagree. It returns <code>null</code> for
-				<code>UNKNOWN</code> as well as <code>NOT_SIGNED</code>.
-			</p>
-			<p class="wide">
-				The signer certificate is supplied by the message itself. Simple Java Mail does not validate its certificate path, validity period,
-				revocation status or key usage, and it does not compare the certificate identity with the message's <code class="inline language-text">From</code>
-				address. Likewise, <code class="inline language-java">getSmimeSignedBy()</code> is the common name printed on the first signer certificate,
-				not a trusted sender identity. Applications that authenticate senders must validate the original S/MIME certificate and identity under their
-				own trust policy before accepting that identity.
-			</p>
-			<p class="wide">
-				During ordinary conversion, S/MIME is inspected before the regular multipart parser takes the message apart. When cryptographic verification fails, the clear signed
-				content remains readable and the status records the failure. When a decryption key is missing, the encrypted content remains available
-				instead of being discarded. Unsupported encrypted S/MIME payloads in Outlook messages are also handled leniently so the surrounding message
-				can still be converted when possible.
-			</p>
-			<p class="wide">
-				<a href="features.html#section-exact-eml">Exact EML construction</a> also fills these inspection results automatically, preserving facts that
-				available inspection actually establishes, including self-contained signature results. Missing modules or inconclusive inspection leave
-				unestablished facts <code>UNKNOWN</code>. Missing modules do not by themselves prevent construction for relay from the original EML.
-				The raw parsed content view and authoritative EML remain
-				unchanged. Exact mode has no receive-key option; use ordinary conversion for explicit decryption keys or unwrapped content.
-			</p>
-			<p class="wide">
-				A Java snapshot containing S/MIME inspection facts still needs the result classes from their producer module when restored.
-				Retain the original EML for relay independently of those classes; Java serialization does not make arbitrary module classpaths interchangeable.
-			</p>
-			<p class="wide">
-				For an outer signature exposing an inner PKCS7 <code>enveloped-data</code> entity, exact inspection records <code>SIGNED_ENCRYPTED</code>
-				with <code>UNKNOWN</code> decryption and leaves the ciphertext unopened. Aggregate verification is <code>UNKNOWN</code> unless an established
-				<code>INVALID</code> or <code>ERROR</code> result takes precedence. Outer signer metadata and the original bytes remain available;
-				this does not add recursive decryption or change ordinary import.
-			</p>
-			<p class="wide">
-				For a protected top-level message, <code class="inline language-java">getOriginalProtectedMessage()</code> returns a defensive copy of the exact
-				outer EML. Those bytes stay in memory with the converted <code class="inline language-java">Email</code> and are included if you Java-serialize it,
-				so a large protected message costs roughly another full-message byte array while you retain the result. Simple Java Mail does not spill this
-				data to a temporary file. Recognizable protected EML retains these bytes even when the S/MIME module is absent.
-				MSG input has no exact original outer EML, so the accessor does not invent one. Ordinary unprotected conversion does not keep this extra EML snapshot.
-			</p>
-		</section>
-
-
-		<a href="#section-reading-smime-merging" id="section-reading-smime-merging" class="section-link h3">&sect;</a>
-		{{#> components/feature-heading-h3 smime=true}}Retained S/MIME content is merged by default{{/components/feature-heading-h3}}
-
-		<section>
-			<div class="view">
-				<p>
-					When conversion exposes a single S/MIME attachment as a retained inner message, its readable content is merged into the root Email by default.
-					This only happens if there was exactly one S/MIME signed attachment and the decrypted version is of type "message/rfc822".
-					The inner message supplies plain text and HTML, including absent alternatives and their specific encodings. A present inner calendar supplies
-					its method, text and specific encoding together; if it has no calendar, the outer calendar and encoding remain. An empty calendar string is present.
-					A selected inner body's omitted specific encoding clears that choice, allowing ordinary encoding fallback.
-					Outer identity, addressing and outgoing policy remain. Received reports and cryptographic facts stay with their source view.
-					For each custom header name, compared without regard to capitalization, its complete inner value list
-					replaces the outer list; unrelated headers and attachments from both messages remain. This merge does not establish signature validity.
-				</p>
-				<p>
-					Disable merging on the conversion builder to keep the views separate. You can inspect the nested message in either case.
-					Ordinary Email defaults and overrides still apply later during completion:
-				</p>
-				<p>
-					When you copy a built Email, its visible content becomes the new builder's starting point. Later body, header, resource and encoding
-					changes take precedence; retained signed-content history does not restore old values. Disabling merging after copying does not remove
-					content already copied into the builder. Clear that content explicitly when needed. The original protection results remain historical
-					facts, not a claim that edited content still has a valid original signature.
-					Initial import builders apply merging when they build the Email. Copy the built result before making edits that must take precedence,
-					or keep the views separate before editing. Explicitly restoring merging on a copied separate view incorporates the inner content once;
-					later edits and clears still lead.
-				</p>
-                <p>Source evidence and processing observations are also available on the root Email through
-                    <code>getSourceData()</code> and <code>getProblems()</code>, for plain mail as well as protected content.
-                    Actually materialized received, extracted and generated views keep their source identities; qualified Problems
-                    retain their original owners. Source enumeration can expose retained originals even when no Problem occurred.
-                    Reading captured source content does not decrypt, verify, reopen resources or retry interpretation. Sources are not
-                    automatically sent or logged, and historical Problems do not determine whether current edited content can be sent.
-                    See <a href="features.html#section-source-inspection">source inspection</a>.</p>
-                <p>If automatic inspection cannot interpret an independently attached signed file, the Email keeps its readable parent
-                    content and original attachment, with a Problem linked to the affected source. That child failure does not establish
-                    a failed signature or encryption result for the parent. Explicit decryption requests retain their exception behavior
-                    for incorrect keys and passwords.</p>
-				<p>
-					After decrypting an Outlook MSG containing a detached <code>multipart/signed</code> entity, the <code>signed-email.eml</code> entry in
-					<code>getDecryptedAttachments()</code> keeps its signed MIME container and detached signature. Saving that attachment's bytes
-					lets a later import verify the signature independently. The retained signed-content view and generated EML remain available
-					when merging is disabled. MSG-derived EML is generated from the decrypted entity; original outer EML bytes are retained when
-					the input supplies EML.
-				</p>
-			</div>
-
-			<div class="wide full-width-example">
-<pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
-Email nonMergedEmail = mail.converter().fromEml(emlFile).toEmailBuilder()
-                .notMergingSingleSMIMESignedAttachment()
-                .buildEmail();
-// fromOutlookMsg(msgFile).toEmailBuilder() supports the same choice.
-
-// Restore the default merge when copying a previously unmerged Email:
-Email mergedEmail = mail.emailBuilder().copying(nonMergedEmail)
-                .clearSMIMESignedAttachmentMergingBehavior()
-                .buildEmail();</code></pre>
-				You always have access to the nested decrypted message:
-				<pre><code class="small">mergedEmail.getSmimeSignedEmail();
-nonMergedEmail.getSmimeSignedEmail();
-</code></pre>
-				<pre><code class="small">Email edited = mail.emailBuilder().copying(mergedEmail)
-                .withPlainText("Replacement body")
-                .buildEmail();
-// The copied signed-content view cannot overwrite this edit.</code></pre>
-			</div>
-		</section>
-
-		<section>
-			<div class="view">
-				<p>If a message is <em>both</em> signed and encrypted, <code class="inline language-java">getSmimeSignedEmail()</code>
-					will itself have a nested <code class="inline language-java">getOriginalSmimeDetails().</code></p>
-			</div>
-
-			<div class="side">
-      <pre><code class="small">
-        signedAndEncrypted.getOriginalSmimeDetails().getSmimeMode(); // SIGNED_ENCRYPTED
-        Email signedOrEncrypted = signedAndEncrypted.getSmimeSignedEmail();
-
-        signedOrEncrypted.getOriginalSmimeDetails().getSmimeMode(); // SIGNED or ENCRYPTED
-
-        // whether it is SIGNED or ENCRYPTED depends on the order in which the original
-        // email client handled this S/MIME scenario
-</code></pre>
-			</div>
-		</section>
-
-
-		<a href="#section-reading-smime-decryption" id="section-reading-smime-decryption" class="section-link h3">&sect;</a>
-		{{#> components/feature-heading-h3 smime=true}}Decrypting S/MIME attachments using certificate{{/components/feature-heading-h3}}
-
-		<section>
-			<p class="wide">
-				Every conversion method optionally accepts a
-				<a href="https://javadoc.io/doc/org.simplejavamail/maven-master-project/latest/org/simplejavamail/api/mailer/config/Pkcs12Config.html" target="_blank">Pkcs12Config</a>
-				instance, which contains details about your key store and certificate. With that, you can decrypt an S/MIME encrypted mail.
-			</p>
-			<p class="wide">In unreleased 10.0.0, S/MIME attachments inside ordinary multipart mail are recognized by their media type,
-				including when their Content-Type contains parameters such as <code>smime-type=enveloped-data</code> or a name.
-				The parameters remain part of the attachment metadata; they do not prevent requested decryption or signature inspection.</p>
-			<p class="wide" id="signed-parent-attachments">In unreleased 10.0.0, opening a detached S/MIME signature or an OpenPGP message also processes
-				independent S/MIME attachments in its readable content. Supply your key through <code>withSmimeDecryption(...)</code> to open supported encrypted
-				attachments, just as you would for an unsigned message. <code>getAttachments()</code> keeps the original resources, while
-				<code>getDecryptedAttachments()</code> includes their supported opened representations. The parent's protection results and original
-				protected bytes remain intact. Opening an attached file does not replace the message body or add protection facts to the parent.
-				Further encrypted envelope layers are not opened automatically.</p>
-
-			<div class="wide">
-<pre><code>Pkcs12Config yourPkcs12Config = Pkcs12Config.builder()
-      .pkcs12Store(Path.of("smime_keystore.pkcs12")) // or String, File or InputStream
-      .storePassword("letmein")
-      .keyAlias("smime_test_user_alias")
-      .keyPassword("letmein")
-      .build();
-
-Email mergedEmail = mail.converter()
-      .fromOutlookMsg(Path.of("yourSMIMEEncryptedMessage.msg"))
-      .withSmimeDecryption(yourPkcs12Config)
-      .toEmail();
-// For an EML file, choose .fromEml(Path.of("yourSMIMEEncryptedMessage.eml")) instead.
-
-mergedEmail.getOriginalSmimeDetails().getSmimeMode(); // ENCRYPTED or SIGNED_ENCRYPTED
-</code></pre>
-			</div>
-			<div class="wide">
-<pre><code class="language-java">Email signedParent = mail.converter()
-    .fromEml(Path.of("signed-message-with-encrypted-attachment.eml"))
-    .withSmimeDecryption(yourPkcs12Config)
+        <section><div class="view">
+            <p>Convert supplied EML or Outlook MSG with the incoming keys your application makes available. Successfully opened content is readable
+                through the ordinary Email getters: bodies stay bodies, files stay attachments, and an independent attached message stays one attachment.
+                Reading a getter never starts decryption, verification or another input read.</p>
+            <pre><code class="language-java">Email received = mail.converter()
+    .fromEml(Path.of("partner-message.eml"))
+    .withSmimeDecryption(recipientKeys)
     .toEmail();
 
-signedParent.getAttachments();          // original protected resources
-signedParent.getDecryptedAttachments(); // opened child content when supported
-signedParent.getOriginalSmimeDetails().getSmimeMode(); // SIGNED
-signedParent.getOriginalSmimeDetails().getDecryptionStatus(); // NOT_ENCRYPTED: only the attachment was encrypted
+String body = received.getPlainText();
+AttachmentResource document = received.getAttachments().get(0);
+byte[] usableDocument = document.readAllBytes();
+Email attachedMessage = document.getEmail(); // Already parsed, or null.
 </code></pre>
-			</div>
-			<p class="wide">Requesting decryption requires <code>smime-module</code> at runtime. If it is missing, conversion explains which module
-				to include instead of silently ignoring your keys. Ordinary import without a decryption request remains available without it.</p>
-			<p class="wide">The original S/MIME details describe the protection layers of this message. A successfully decrypted envelope reports
-				<code>DECRYPTED</code>; recognized encryption without keys reports <code>KEY_MISSING</code>. Signature verification is separate:
-				readable decrypted content does not establish a valid signature or a trusted sender. An unrelated encrypted attachment does not
-				make its containing message an encrypted envelope.</p>
-            <p class="wide">For Outlook MSG envelopes, <code>DECRYPTED</code> records native decryption success even when single-part content cannot
-                become the importer's generated clear attachment. The existing protected-resource fallback, body fields and merge behavior remain
-                unchanged; decryption status does not promise that every convenience view exposes plaintext. Copying and serialization retain the
-                explicit status. Wrong keys, passwords and content I/O failures keep their existing exception behavior.</p>
-		</section>
+            <p>An independently protected PDF exposes the recovered PDF through that same resource when opening succeeds. Its complete protected input
+                remains available separately through <code>received.getInspection().getOriginalAttachment(0)</code>. A file inside a whole-message
+                encrypted envelope can have the same PDF as its original attachment; the enclosing envelope belongs to
+                <code>getOriginalMessage()</code>. Names are not unique identifiers, and an attachment's position identifies the occurrence being inspected.</p>
+            <p>When one valid configured key cannot open a particular file, readable neighbors remain available and the file keeps its protected payload
+                with a source-linked Problem. Corrupt or unsupported input also keeps available evidence. An unusable configured keystore, an explicitly
+                requested missing module, cancellation and unrelated application failures still fail the operation. Invalid signatures do not discard
+                readable content. The <a href="#section-inspecting-received-protection">received-protection workflow</a> shows how an application can decide whether to act on it.</p>
+        </div></section>
 
+        <a href="#section-reading-smime-verification" id="section-reading-smime-verification" class="section-link h3">&sect;</a>
+        {{#> components/feature-heading-h3 smime=true}}Read the protection of the value you use{{/components/feature-heading-h3}}
+        <section><div class="view">
+            <p>A valid signature over plain text does not verify native HTML, a Subject or an independently attached child's files. Inspect the exact
+                selected value with <code>getPlainText()</code>, <code>getHTMLText()</code>, <code>getSubject()</code> or <code>getAttachment(index)</code>
+                on <code>EmailInspection</code>. These return metadata, while the useful content remains on Email and AttachmentResource.</p>
+            <p><code>VERIFIED</code> means established full signature coverage of that value; it does not approve the signer. <code>INVALID</code>
+                means an actual signature check failed. <code>UNVERIFIED</code> is a recognized associated signature whose verification was not
+                established. <code>UNSIGNED</code> needs established absence. <code>UNKNOWN</code> means presence or coverage could not be established.
+                <code>MIXED</code> preserves differing outcomes or known partial coverage. Inspect individual observations when a summary needs explanation.</p>
+            <p>The family view, <code>received.getInspection().getSmime()</code>, lists captured S/MIME signature and decryption observations, algorithms,
+                available signer-key facts and source references. It includes the actual opening layers of this message's direct resources as source-scoped
+                history, including after a resource is cleared or replaced. It does not declare the parent body or whole Email trusted. An attached child's
+                internal body observations remain on <code>attachment.getEmail().getInspection()</code> when that child is available.</p>
+            <p>A supplied certificate approves a signing key only when your application chooses it. SJM does not discover a certificate path, check
+                revocation or make a claimed From address trustworthy. <code>ApprovedSigners</code> below pins explicitly configured signing public keys;
+                certificate identity, validity and organizational authorization remain your application's responsibility.</p>
+            <p id="nested-smime-ciphertext">Nested protection retains individual layer observations. A successful outer decryption does not establish
+                the signature or encryption coverage of an unopened inner value. Missing or malformed MIME declarations retain unknown facts and
+                their actual Problems; they do not establish plain, unsigned content. Explicit keys and normal shared import limits apply during conversion.</p>
+        </div></section>
+
+        <a href="#section-reading-smime-merging" id="section-reading-smime-merging" class="section-link h3">&sect;</a>
+        {{#> components/feature-heading-h3 smime=true}}One readable message, with retained originals{{/components/feature-heading-h3}}
+        <section><div class="view">
+            <p>Conversion selects this logical message's representations rather than merging an outer Email with a second inner Email. Protected body
+                content supplies an available plain or HTML alternative, including a present empty string. When that alternative is absent or unavailable,
+                an already materialized native alternative can fill it. Each alternative has its own source, derivation and protection evidence.</p>
+            <p>HTML keeps its associated embedded resources. An unambiguous already read same-message resource can fill a missing reference; an independent
+                child's images are never borrowed. Materialized images unused by the selected HTML remain ordinary attachments. Ambiguity keeps its
+                source-linked Problem rather than creating a verified resource association. Calendar method and text are selected together.</p>
+            <p>A present readable protected Subject takes precedence, including an explicitly empty string; otherwise an available earlier/native Subject
+                can supply the selected fallback. A missing or unavailable final Subject is null. Recognized protected authored headers supply the logical
+                addresses, identity, stated sent date and threading with their meaningful omissions. Body-only protection leaves those native headers in place.
+                Generated adapter headers and independently attached messages do not supply the parent's
+                identity. The normal case-insensitive <code>getHeaders()</code> read view keeps useful represented received and custom values; it is not an exact wire dump.</p>
+            <p>When input positively identifies a protected authored address view but that view cannot be read, automatic replies leave destinations
+                unresolved for the caller to choose. Available outer metadata remains readable with its actual source and protection facts.</p>
+            <pre><code class="language-java">AttachmentResource originalMessage = received.getInspection().getOriginalMessage();
+AttachmentResource originalDocument = received.getInspection().getOriginalAttachment(0);
+
+Email edited = mail.emailBuilder().copying(received)
+    .withPlainText("Replacement body")
+    .buildEmail();
+// The new plain text is caller-supplied with unknown incoming protection.
+// Unchanged fields keep their evidence; retained originals remain historical input.
+</code></pre>
+            <p>Complete raw EML and MSG supplied to conversion are retained automatically under its import contract, in their actual format. A supplied
+                MimeMessage without captured raw input has no invented original file. Incomplete prefixes remain diagnostic source evidence and cannot
+                be forwarded as complete originals. Captured storage can be shared by ordinary copies and snapshots; raw originals and genuinely different
+                decoded content can still require additional memory. There is no whole-JVM memory promise or automatic temporary-file spill.</p>
+            <p>For EML String input, retained bytes are the UTF-8 representation the converter actually consumed. They do not establish an unknown external wire encoding.</p>
+            <p>Current field and indexed resource inspections describe the selected values after edits. Family observations retain their historical
+                source scope; use the current value's inspection for a requirements check, rather than treating an old family observation as protection of a replacement.</p>
+            <p>Reading a child Email leaves its parent's selected attachment payload unchanged. Edit a child, render the replacement and replace the parent
+                attachment explicitly when that is your intent. Source data and Problems are read separately through
+                <a href="features.html#section-source-inspection">source inspection</a>; they are never extra outgoing MIME attachments.</p>
+        </div></section>
+
+        <a href="#section-reading-smime-decryption" id="section-reading-smime-decryption" class="section-link h3">&sect;</a>
+        {{#> components/feature-heading-h3 smime=true}}Supply incoming S/MIME keys{{/components/feature-heading-h3}}
+        <section><div class="view">
+            <pre><code class="language-java">Pkcs12Config recipientKeys = Pkcs12Config.builder()
+    .pkcs12Store(Path.of("recipient.p12"))
+    .storePassword(storePassword)
+    .keyAlias("recipient")
+    .keyPassword(keyPassword)
+    .build();
+
+Email received = mail.converter()
+    .fromOutlookMsg(Path.of("partner-message.msg"))
+    .withSmimeDecryption(recipientKeys)
+    .toEmail();
+</code></pre>
+            <p>Use <code>fromEml(...)</code> for EML input. Requesting decryption requires <code>smime-module</code>; ordinary recognition/import without that
+                capability remains available. Key reuse belongs to the converter's configured factory, under its
+                <a href="#section-smime-key-cache">S/MIME key reuse capacity</a>. A getter never loads keys or retries a failed attempt.</p>
+            <p id="signed-parent-attachments">The supplied keys also apply to supported independent protected attachments in signed or OpenPGP content.
+                Successful opening exposes their usable ordinary resources. Their observations remain associated with those resources; an encrypted
+                attachment does not make every parent field decrypted.</p>
+            <p>For a selected value, <code>DECRYPTED</code> means full established recovery from encrypted input; <code>ENCRYPTED</code> means its selected
+                payload is recognized unopened ciphertext; <code>NOT_ENCRYPTED</code> needs established absence; <code>UNKNOWN</code> keeps unresolved
+                coverage. Detailed attempts distinguish <code>DEFERRED</code>, <code>UNAVAILABLE</code> and <code>FAILED</code>. Decryption alone does not approve a sender.</p>
+        </div></section>
+
+        <a href="#section-inspecting-received-protection" id="section-inspecting-received-protection" class="section-link h2">&sect;</a>
+        <h2>Check incoming mail before acting on it</h2>
+        <section><div class="view">
+            <p>A partner sends an encrypted, signed document for automatic processing. First convert it with the receive keys you have, then select
+                the exact attachment your application requires. Parsing successfully, seeing readable text or finding an empty Problems list does not
+                establish that the document meets your protection policy.</p>
+            <pre><code class="language-java">ApprovedSigners approvedPartner = ApprovedSigners.builder()
+    .addSmimeCertificate(currentPartnerCertificate)
+    .addSmimeCertificate(replacementPartnerCertificate)
+    .build();
+
+ProtectionRequirements documentRequirements = ProtectionRequirements.builder()
+    .requireVerifiedSignatureFrom(approvedPartner)
+    .requireDecryptedContent()
+    .build();
+
+Email received = mail.converter().fromEml(input)
+    .withSmimeDecryption(recipientKeys)
+    .toEmail();
+
+int documentIndex = findRequiredDocument(received.getAttachments()); // Application choice.
+AttachmentResource document = received.getAttachments().get(documentIndex);
+ProtectionCheck check = documentRequirements.check(
+    received.getInspection().getAttachment(documentIndex));
+
+if (check.isSatisfied()) {
+    processDocument(document.readAllBytes());
+} else {
+    holdForReview(check.getOutcome(), check.getReasons(), received.getProblems());
+}
+</code></pre>
+            <p>The document lookup and process/hold functions belong to the application. Choose by your expected document contract, and retain the
+                attachment occurrence; duplicate names need not identify the same input. A parsed attached Email has its own inspection. Checking the
+                parent's whole attachment does not silently substitute a check of one child body.</p>
+            <p><code>requireVerifiedSignatureFrom(...)</code> requires one same signature that is verified, fully covers the selected value and uses an
+                explicitly approved actual signing key. A valid unapproved signer cannot combine with an invalid approved signer. Renewed S/MIME
+                certificates with the same normalized public key can match; a new key needs explicit approval. This is signing-key pinning, not automatic PKI validation.</p>
+            <p>For OpenPGP, configure <code>ApprovedSigners.builder().addOpenPgpSigningKeyFingerprint(fullFingerprint).build()</code> with the full
+                fingerprint of the actual signing key, including the signing subkey when applicable. Short key IDs do not approve a key, and approving
+                one key does not automatically approve unrelated or unvalidated subkeys. Receive-key configuration enables verification; it is separate from approval.</p>
+            <p><code>requireDecryptedContent()</code> checks that this selected content was recovered from encryption. A plain PDF and an unopened encrypted
+                resource fail that requirement. It does not attempt decryption. The requirements value can be reused for HTML, Subject or one resource
+                inspection at a time; checking a document says nothing about unselected fields.</p>
+            <div class="doc-table-wrap" tabindex="0" aria-label="Protection check outcomes">
+                <table><thead><tr><th>Outcome</th><th>Application meaning</th></tr></thead><tbody>
+                    <tr><td><code>SATISFIED</code></td><td>The supplied requirements are established for this selected value.</td></tr>
+                    <tr><td><code>NOT_SATISFIED</code></td><td>At least one requirement is positively unmet, such as an unsigned document or a definitely unapproved signing key.</td></tr>
+                    <tr><td><code>INDETERMINATE</code></td><td>Unavailable evidence prevents a decision, such as an unverified candidate that might otherwise qualify.</td></tr>
+                </tbody></table>
+            </div>
+            <p>Reasons have stable codes, explanations and captured source references. They belong to the returned check and do not add Email Problems.
+                A recognized unsigned message can have no processing Problems while failing a required-signature rule. A missing value differs from a
+                present empty value. Deferred, unavailable and uncaptured history do not become successful empty checks.</p>
+            <h3 id="received-protection-explanations">Explain the selected value</h3>
+            <pre><code class="language-java">ValueInspection html = received.getInspection().getHTMLText();
+html.getOrigin();
+html.getDerivation();
+html.getAvailability();
+html.getSignatureStatus();
+html.getEncryptionStatus();
+
+for (SignatureInspection signature : html.getSignatures()) {
+    ProtectionCoverage coverage = signature.getCoverage();
+    SignatureObservation observation = signature.getObservation();
+    SignatureVerification verification = observation.getStatus();
+    String signingKey = observation.getSigningKeyFingerprint();
+    // Explain this observation and its captured sources without verifying again.
+}
+</code></pre>
+            <p>A wholly signed and encrypted HTML representation can have <code>VERIFIED</code>, <code>DECRYPTED</code> and full coverage. If protected
+                content supplies only plain text while the native message supplies HTML, both remain readable; checking the plain text cannot approve
+                that fallback HTML. Its own inspection describes its native/derived origin and actual coverage. Native origin alone is not proof of
+                unsigned content: an enclosing layer may itself cover it.</p>
+            <p>One full verified approved signature plus another invalid signature yields a <code>MIXED</code> summary and can satisfy the base
+                approved-signature requirement. Add <code>requireAllSignaturesVerified()</code> deliberately when every relevant associated signature
+                must verify. That stricter choice still needs the approved-signature requirement; it does not approve all signers. Known partial coverage
+                remains <code>PARTIAL</code> and cannot be the full-coverage witness. Unknown coverage remains uncertain. Requirements evaluate one selected value per check.</p>
+            <p>Keep the complete original input when your application needs evidence or later original-preserving forwarding. Use
+                <code>received.getInspection().getOriginalMessage()</code> and <code>getOriginalAttachment(documentIndex)</code>; null means no suitable
+                complete captured input was retained. Do not rebuild a signed archive from getters and call it the original. Protect your stored plaintext,
+                original input and credentials under your own retention/access policy.</p>
+            <h3 id="received-protection-reuse">Reply or forward deliberately</h3>
+            <pre><code class="language-java">Email interpretedForward = mail.emailBuilder().forwarding(received)
+    .from("operator@example.org").to("reviewer@example.org")
+    .encryptWithSmime(reviewerEncryption)
+    .buildEmail();
+
+Email originalForward = mail.emailBuilder().forwardingOriginal(received)
+    .from("operator@example.org").to("reviewer@example.org")
+    .buildEmail();
+</code></pre>
+            <p>The interpreted forward uses represented content, including edits and recovered document bytes. The original forward carries retained input
+                in its actual EML or MSG format and fails clearly if suitable complete input is unavailable. It does not rewrite the original payload.
+                Reading a parsed child does not change either attachment payload. An intact encrypted original can be forwarded in an unencrypted outer
+                message when no other derived value discloses confidential content; it does not grant the new recipient a decryption key.</p>
+            <p>A child's retained original contains that child's EML or MSG, without its parent's encryption envelope. If it was extracted through the
+                parent's encryption, forwarding that original still reuses confidential content and needs outgoing encryption or the conversion's explicit
+                permission. Even an encrypted child body can leave its own headers clear inside that original file. A signature alone does not establish confidentiality.</p>
+            <p>For known confidential input, the new original-forward carrier uses a neutral format-based filename and omits inherited description/CID
+                metadata. The original resource getter keeps its actual input metadata and bytes.</p>
+            <p>Reply and interpreted-forward helpers require suitable outgoing encryption when they automatically reuse confidential content. Drafts remain
+                readable and editable. Enforcement happens at final MIME/EML output and sending after outgoing choices have resolved, including suitable
+                enclosing encryption. Incoming credentials are not outgoing protection settings.</p>
+            <pre><code class="language-java">Email permittedReply = mail.emailBuilder()
+    .replyingTo(received, ReplyOptions.allowUnencryptedContent())
+    .from("operator@example.org")
+    .buildEmail();
+
+byte[] handoff = mail.converter().fromEmail(confidentialDraft)
+    .allowUnencryptedContent()
+    .toEmlBytes();
+// This conversion's permission leaves confidentialDraft unchanged.
+// A fresh conversion or later send still needs protection or draft permission.
+</code></pre>
+            <p><code>ForwardOptions.allowUnencryptedContent()</code> supplies the corresponding deliberate forward permission. Neither permission disables
+                configured or mandatory outgoing encryption or allows fallback when encryption fails. Ordinary copies/snapshots preserve a draft's own
+                choice; a new reply or forward uses its own options. Editing one body does not waive a remaining quote. Explicitly clearing every reused
+                confidential body/resource removes those components' requirement; merely replacing text does not prove the quote is gone.</p>
+            <p>The received getter keeps a private Subject. A new helper-generated public Subject uses an actually known public counterpart, otherwise
+                <code>Re: Your message</code> or <code>Fwd: Message</code>. Permission to reuse body content leaves that safe default in place. Body
+                encryption does not hide every outer header; this is not full outbound header protection. See
+                <a href="features.html#section-reply-forward">reply/forward details</a>, the
+                <a href="email-workload-field-guide.html#check-a-partner-document-before-processing-it">partner-document recipe</a> and the
+                <a href="patterns/protected-partners.html">runnable protected-partners application</a>.</p>
+        </div></section>
 
 		<a href="#section-sending-openpgp" id="section-sending-openpgp" class="section-link h2">&sect;</a>
 		{{#> components/feature-heading-h2 openpgp=true}}Signing / encrypting emails with OpenPGP/MIME{{/components/feature-heading-h2}}
@@ -1527,179 +1440,67 @@ OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
 			</div>
 		</section>
 
-		<a href="#section-reading-openpgp" id="section-reading-openpgp" class="section-link h2">&sect;</a>
-		{{#> components/feature-heading-h2 openpgp=true}}Reading OpenPGP/MIME messages{{/components/feature-heading-h2}}
 
-		<section>
-			<div class="view">
-				<p>
-					Configure the public keys you trust for verification and the secret keys available for decryption, then pass that configuration while
-					converting EML. “Reading” here means parsing an <code class="inline language-text">.eml</code> stream or a
-					<code class="inline language-java">MimeMessage</code> supplied by your application. Simple Java Mail does not fetch a mailbox over IMAP or POP3.
-				</p>
-				<p>
-					Incoming signature and ciphertext parts can use MIME base64 or quoted-printable transport encoding. Conversion decodes those
-					payloads before OpenPGP verification or decryption while retaining the signed MIME entity and original protected EML bytes.
-					Pass the original message to the converter so verification can use the received signed bytes; the same receive configuration
-					works for EML and <code class="inline language-java">MimeMessage</code> input.
-                    Signed or decrypted content can have an empty MIME header area; its first empty line retains the default plain-text interpretation,
-                    without changing protected bytes or treating a later body blank line as a header boundary.
-				</p>
-				<p>
-					The same receive keys also apply when OpenPGP packets combine signing and encryption. Each represented signature contributes
-					an individual result, including repeated signatures from one key and signatures found through nested MIME protection layers.
-				</p>
-				<p>
-					If the readable message contains an independently encrypted S/MIME file, also supply its key store with
-					<code>withSmimeDecryption(...)</code>. With <code>smime-module</code> installed, conversion opens supported files into
-					<code>getDecryptedAttachments()</code> while keeping the originals in <code>getAttachments()</code>.
-					The file keeps its own result; it does not replace the message body or change the parent's OpenPGP results.
-					This does not automatically open a further S/MIME envelope around the message itself.
-				</p>
-				<p>
-					For a larger key store, use <code class="inline language-java">passphraseProvider(...)</code> to resolve a passphrase by key ID instead of
-					attaching one to every configured secret key ring. Returning <code>null</code> uses that key ring's configured passphrase.
-					The provider runs only when reading needs a passphrase. If it throws a runtime exception, such as an unavailable key vault,
-					the original application exception escapes the import with its cause retained. It is not reported as a cryptographic
-					decryption failure; actual cryptographic failures and missing keys keep their normal result statuses.
-				</p>
-				<p id="receive-key-draft-validation">In the unreleased 10.0.0 line, verification and decryption setters copy non-null key material and allow unfinished empty bytes
-					while configuring the builder. Getters inspect detached choices without invoking the passphrase provider; <code>build()</code>
-					rejects empty keys in either list. This is configuration-shape validation; the optional module still owns cryptographic interpretation.</p>
-			</div>
-			<div class="side">
-<pre><code class="language-java">OpenPgpReceiveConfig receive = OpenPgpReceiveConfig.builder()
+        <a href="#section-reading-openpgp" id="section-reading-openpgp" class="section-link h2">&sect;</a>
+        {{#> components/feature-heading-h2 openpgp=true}}Reading OpenPGP/MIME messages{{/components/feature-heading-h2}}
+        <section><div class="view">
+            <p>Supply verification public keys and available decryption secret keys while converting EML or a supplied MimeMessage. “Reading” here
+                means interpreting input supplied by your application; SJM does not fetch a mailbox over IMAP or POP3. Receive keys enable processing;
+                they do not automatically approve a sender for an application action.</p>
+            <pre><code class="language-java">OpenPgpReceiveConfig receive = OpenPgpReceiveConfig.builder()
     .addVerificationKeyRing(senderPublicKeyRing)
     .addDecryptionKeyRing(recipientSecretKeyRing, recipientPassphrase)
     .build();
 
-Email received = mail.converter()
-    .fromEml(emlInputStream)
+Email received = mail.converter().fromEml(emlInputStream)
     .withOpenPgpReceiveConfig(receive)
     .toEmail();
 
-OriginalOpenPgpDetails details =
-    received.getOriginalOpenPgpDetails();</code></pre>
-			</div>
-		</section>
+ProtectionInspection openPgp = received.getInspection().getOpenPgp();
+ValueInspection document = received.getInspection().getAttachment(0);
+</code></pre>
+            <p>Successful decryption makes the selected bodies and attachment payloads usable through their normal getters. Independently attached
+                messages stay child-owned. Supply <code>withSmimeDecryption(...)</code> too when supported S/MIME files need opening; each optional module
+                owns its family processing and its own unavailable-module boundary. All selected nested processing shares the import's allowances.</p>
+            <p>Base64 or quoted-printable signature/ciphertext transport encoding is decoded before processing. Verification uses the received signed MIME
+                entity, not a reconstruction from selected values. Tolerated outer line endings for ordinary import do not relax exact-EML relay's canonical
+                byte requirements. A signed entity with an empty MIME header area retains its default plain-text meaning.</p>
+            <p>Use <code>passphraseProvider(...)</code> when passphrases are resolved by key ID. Returning null uses that key ring's configured passphrase.
+                The provider runs only when processing needs it. An application/provider defect escapes with its original cause; it is not relabeled as bad
+                ciphertext. Missing matching keys and actual input failures retain their separate processing observations.</p>
+            <p id="receive-key-draft-validation">Receive configuration setters snapshot non-null key material and allow unfinished empty bytes on the builder.
+                Getters return detached choices without invoking the passphrase provider; <code>build()</code> rejects empty keys. The optional module owns
+                cryptographic interpretation. Use the <a href="#section-inspecting-received-protection">same requirements workflow</a> to approve an actual full signing-key fingerprint.</p>
+        </div></section>
 
-
-		<a href="#section-reading-openpgp-status" id="section-reading-openpgp-status" class="section-link h3">&sect;</a>
-		{{#> components/feature-heading-h3 openpgp=true}}What the OpenPGP status means{{/components/feature-heading-h3}}
-
-		<section>
-			<p class="wide">
-				<code class="inline language-java">OriginalOpenPgpDetails</code> reports the detected mode, signature status, decryption status, key IDs,
-				fingerprint, algorithms, and a safe failure reason when processing did not succeed. Signature states are
-				<code class="inline language-java">NOT_PRESENT</code>, <code class="inline language-java">VALID</code>,
-				<code class="inline language-java">INVALID</code>, <code class="inline language-java">KEY_MISSING</code>, and
-				<code class="inline language-java">ERROR</code>, plus <code class="inline language-java">UNKNOWN</code> when inspection could not happen.
-				Decryption separately reports <code class="inline language-java">NOT_ENCRYPTED</code>,
-				<code class="inline language-java">DECRYPTED</code>, <code class="inline language-java">KEY_MISSING</code>,
-				<code class="inline language-java">FAILED</code>, or <code class="inline language-java">UNKNOWN</code>.
-			</p>
-			<p class="wide">
-				Use <code>getSignatures()</code> for immutable <code>OpenPgpSignatureResult</code> values with each occurrence's status, available
-				key ID and fingerprint, algorithms and failure reason. Repeated occurrences remain separate in a stable metadata order.
-				The whole-message signature status is <code>VALID</code> only when inspection is complete, at least one signature is represented
-				and every result is valid. Known problems take precedence as <code>INVALID</code>, <code>ERROR</code>, <code>KEY_MISSING</code>, then
-				<code>UNKNOWN</code>. <code>NOT_PRESENT</code> requires complete inspection with no signatures; an empty list can also mean that
-				inspection was unavailable or ciphertext remained unopened.
-			</p>
-			<p class="wide">
-				The singular <code>getSignerKeyId()</code>, <code>getSignerFingerprint()</code>, <code>getSignatureAlgorithm()</code> and
-				<code>getHashAlgorithm()</code> shortcuts return a fact only for exactly one represented signature and otherwise return null.
-				The encryption algorithm getter retains its own meaning. Reading any of these results performs no further cryptographic work.
-				A <code>DECRYPTED</code> result requires an actual encrypted OpenPGP layer. An unencrypted packet inside a declared encrypted MIME
-				wrapper does not become successfully decrypted merely because a receive key was supplied; that inconsistent input retains failed-decryption
-				facts and the original protected representation.
-			</p>
-			<p class="wide">
-				Without <code>openpgp-module</code>, ordinary import preserves recognizable protected mail and reports <code>UNKNOWN</code> for results it
-				could not inspect. A visible signed envelope retains <code>SIGNED</code> mode and <code>NOT_ENCRYPTED</code> for that outer layer; an encrypted
-				envelope retains <code>ENCRYPTED</code> mode with unknown signature and decryption results. If the envelope itself cannot be classified, its
-				mode is also <code>UNKNOWN</code>. Explicit receive configuration still requires the module.
-			</p>
-			<p class="wide">
-				A malformed <code>Content-Type</code> does not establish that a message is plain, unsigned or unencrypted. Ordinary and exact import
-				keep those unestablished OpenPGP facts <code>UNKNOWN</code>, whether or not <code>openpgp-module</code> is installed. Available source
-				metadata, interpretation problems and readable content remain accessible on the Email. Already established individual signature results
-				and outer decryption facts are retained. If an inner MIME declaration cannot be interpreted, the overall signature status can still be
-				<code>ERROR</code> because inspection did not complete.
-			</p>
-			<p class="wide">
-				The MIME type and OpenPGP protocol must agree. For example, <code>multipart/encrypted</code> with
-				<code>protocol="application/pgp-signature"</code> does not establish either encryption or a signature. Both that combination and
-				<code>multipart/signed</code> with <code>protocol="application/pgp-encrypted"</code> retain <code>UNKNOWN</code> mode, signature and
-				decryption results in ordinary and exact import, whether or not <code>openpgp-module</code> is installed. Readable content and available
-				source metadata remain accessible.
-			</p>
-			<p class="wide">
-				<a href="features.html#section-exact-eml">Exact EML construction</a> automatically populates the same protection getters without changing
-				its raw parsed content view or authoritative bytes. Established feature results, including missing-key or failure results, remain precise;
-				unestablished facts remain <code>UNKNOWN</code>. Missing optional support alone does not prevent construction for relay from the original EML.
-				Exact mode has no receive-key option;
-				use ordinary conversion when supplying verification/decryption keys or reading unwrapped content.
-			</p>
-			<p class="wide">
-				When signed exact input cannot be inspected, including when <code>openpgp-module</code> is absent, its declared outer mode can be
-				<code>SIGNED</code> while decryption remains <code>UNKNOWN</code>: an outer signature does not establish that the inner content is unencrypted.
-			</p>
-			<p class="wide">These results describe the converted input. Ordinary copying and supported Java serialization preserve them;
-				defaults/overrides completion carries outgoing OpenPGP settings without copying historical results or original protected bytes.
-				Protection is applied during later MIME preparation, and fresh plain/unsigned metadata on a completed Email does not verify that output.
-				Keep the original converted Email for inspection.</p>
-			<p class="wide">Ordinary EML import recognizes tolerated LF and mixed outer header endings before interpreting the protected MIME
-				parts. The first supported header separator ends those outer headers; an inner part's CRLF separator does not replace it.
-				S/MIME encrypted EML follows the same rule, including later blank lines inside its encoded ciphertext.
-				The original protected bytes remain available unchanged. This does not relax the canonical CRLF requirement for
-				<a href="features.html#section-exact-eml">exact EML submission</a>.</p>
-			<div class="wide full-width-example">
-<pre><code class="language-java">OriginalOpenPgpDetails details = received.getOriginalOpenPgpDetails();
-
-if (details.getSignatureStatus() != SignatureStatus.VALID) {
-    // Reject, quarantine, or continue under your application's policy.
+        <a href="#section-reading-openpgp-status" id="section-reading-openpgp-status" class="section-link h3">&sect;</a>
+        {{#> components/feature-heading-h3 openpgp=true}}Inspect OpenPGP observations{{/components/feature-heading-h3}}
+        <section><div class="view">
+            <p><code>getOpenPgp()</code> exposes immutable individual signature/decryption observations and whether family inspection completed. Direct resources'
+                actual opening layers remain source-scoped history; a parsed child's internal body evidence stays with that child. Repeated
+                signatures from the same key remain distinct. Each signature retains its actual signing-key fingerprint, available key ID, algorithms,
+                verification result, explanation and captured source references. It is not a whole-Email trusted Boolean.</p>
+            <pre><code class="language-java">for (SignatureObservation signature : received.getInspection().getOpenPgp().getSignatures()) {
+    SignatureVerification verification = signature.getStatus();
+    String signingKeyFingerprint = signature.getSigningKeyFingerprint();
+    String algorithm = signature.getSignatureAlgorithm();
+    // Diagnostic facts; application approval remains separate.
 }
 
-for (OpenPgpSignatureResult signature : details.getSignatures()) {
-    SignatureStatus status = signature.getStatus();
-    String signerFingerprint = signature.getSignerFingerprint();
-    // Apply your application's approved-key policy to each result.
-}
-
-if (details.getDecryptionStatus() == DecryptionStatus.KEY_MISSING) {
-    byte[] originalEncryptedEml = details.getOriginalProtectedMessage();
-}</code></pre>
-			</div>
-			<p class="wide">
-				A <code class="inline language-java">VALID</code> summary means the supplied keys validate every represented signature and inspection is complete. It does not prove
-				that the key belongs to the address in the From header. Key ownership, acceptable fingerprints, revocation handling, and the application's
-				trust rules remain with your code.
-			</p>
-			<p class="wide">
-				When a verification key is missing, the clear signed content remains readable and the result says
-				<code class="inline language-java">KEY_MISSING</code>. When no decryption key matches, the encrypted message stays intact and its exact protected
-				EML bytes remain available through <code class="inline language-java">getOriginalProtectedMessage()</code>.
-				Uninspected inner signatures remain <code>UNKNOWN</code>. Missing keys and actual cryptographic failures keep their separate results;
-				unknown inspection does not establish success or absence. Established <code>DECRYPTED</code> remains independent when signatures
-				are invalid, lack verification keys or have a processing error. Ciphertext and integrity failures keep their decryption-failure boundary.
-				If a native signature-processing error prevents completion, decryption stays <code>UNKNOWN</code> until an outcome is established.
-			</p>
-			<p class="wide">
-				Older serialized snapshots containing only one selected signature can retain that established per-signature fact, but cannot establish
-				complete inspection of all signatures. Their summary stays conservative, including <code>UNKNOWN</code> for an older selected
-				<code>VALID</code> result. Known invalid or failed results retain their precedence. Ordinary copying and serialization preserve the
-				current result list, its meaning and the original protected bytes.
-			</p>
-			<p class="wide">
-				Simple Java Mail processes at most two nested OpenPGP/MIME protection wrappers. That covers the normal sign-then-encrypt message. If input
-				contains a third wrapper, processing stops there, the status and failure reason report the nesting limit, and the exact outer protected EML
-				remains available.
-			</p>
-			<p class="wide">
-				Protected MIME is finalized in memory so the bytes checked or produced by cryptography cannot change between writes. Incoming protected EML
-				also stays in memory with the converted <code class="inline language-java">Email</code> and is included if you Java-serialize it. Plan for roughly
-				another full-message byte array while you retain a large protected result. There is no temporary-file spill. Ordinary unprotected conversion
-				does not keep this extra EML snapshot.
-			</p>
-		</section>
+ProtectionCheck decision = documentRequirements.check(
+    received.getInspection().getAttachment(0));
+</code></pre>
+            <p>The family-neutral <a href="#section-reading-smime-verification">signature and encryption meanings</a> also apply here. A recognized
+                signature without an available verification key is <code>UNVERIFIED</code>; unavailable presence/coverage is <code>UNKNOWN</code>.
+                A supplied receive key does not establish decryption of an unencrypted packet in a misleading encrypted wrapper. Actual established
+                decryption and individual signature results remain distinct when another selected layer cannot be processed.</p>
+            <p>Without <code>openpgp-module</code>, ordinary import keeps available metadata and recognizable protected input, with unestablished results
+                unknown or unavailable. An explicit receive configuration requires the module. Malformed MIME declarations and a protocol that disagrees
+                with its wrapper do not establish plain, unsigned or decrypted content; available sources and actual Problems remain readable.</p>
+            <p><a href="features.html#section-exact-eml">Exact EML construction</a> retains authoritative bytes and its independent SMTP envelope contract.
+                Captured self-contained observations may be available, while missing support or keys leave facts unestablished. Exact mode has no receive-key
+                option; use ordinary conversion when you need explicit keys or readable opened content. Inspection never rewrites exact bytes.</p>
+            <p>Complete raw input is retained in its actual format and can be shared by copies. Different decoded content and captured originals can cost
+                additional memory; import byte limits are not whole-JVM memory limits. Old snapshots with uncaptured history remain unknown rather than
+                acquiring new proof during deserialization. Do not assume that arbitrary whole-Email optional-module snapshots are portable to another classpath.</p>
+        </div></section>

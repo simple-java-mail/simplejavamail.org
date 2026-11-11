@@ -389,6 +389,8 @@ Email maintenanceUpdate(SmimeSigningConfig partnerSigningConfig,
 
 Ravi also requires [onward TLS](/security.html#section-requiretls): S/MIME protects the content, while REQUIRETLS tells cooperating relays not to continue over an unencrypted connection. SJM rejects submission if its server cannot support that requirement; it cannot prove every later server complied.
 
+At the receiving application, a readable document still needs its own acceptance decision. The [partner-document recipe](/email-workload-field-guide.html#check-a-partner-document-before-processing-it) checks the exact attachment's full signature coverage, explicitly approved signing key and decryption evidence before processing it. A protected body or independent attached message cannot approve another document by implication. The [runnable partner example](/patterns/protected-partners.html) keeps that decision separate from SMTP submission and retains the actual original input.
+
 ### Keeping the certificates up to date
 
 The partners' encryption certificates and Polar Meridian's signing certificate will need replacing while the service is running:

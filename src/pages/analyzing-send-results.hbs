@@ -95,9 +95,10 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
         A provider-internal preflight failure can have a receipt without a server response; receipt presence alone does not prove an SMTP command was reached.
       </p>
       <p id="local-envelope-preparation-failures">In the unreleased 10.0.0 line, local MIME/envelope preparation failures use <code>MailFailureKind.PREPARATION</code> and have
-        no submission receipt, even if a connection has already been acquired. For example, a raw recipient header can make the final envelope
-        disagree with typed per-recipient notification settings. Ordinary and retry-enabled sends report that same local failure consistently,
-        and the terminal observer agrees with the caller. Genuine provider compatibility results retain their separate receipt behavior.</p>
+        no submission receipt, even if a connection has already been acquired. For example, a <code>Newsgroups</code> destination in the final
+        envelope can prevent per-recipient notification settings from matching the SMTP recipients. Ordinary and retry-enabled sends report
+        that same local failure consistently, and the terminal observer agrees with the caller. Genuine provider compatibility results retain
+        their separate receipt behavior.</p>
       <p>
         The snippets below reuse a configured <code>mailer</code> and an <code>email</code>, and omit imports. <code>printReceipt</code> is a small
         application method defined in the next example, not another Simple Java Mail API.
@@ -941,12 +942,10 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
         Older serialized receipts retain their known recipient buckets, but cannot recover original envelope order or RCPT details that were never stored.
       </p>
       <p>
-        A logging-only receipt still describes the prepared recipient list, including raw To, Cc and Bcc headers, in its planned order.
-        Delivery overrides replace those header recipients, and duplicate occurrences remain separate. A raw named group can remain one
-        entry before transport-specific expansion, so the number of entries is not always the number of mailboxes. A CustomMailer receipt
-        captures Simple Java Mail's intent before the callback; it does not observe the external envelope chosen by your implementation.
-        Both paths retain <code>UNKNOWN</code> acceptance and absent SMTP replies. If a raw recipient header cannot be parsed, the existing
-        typed recipient view is retained; the receipt does not invent an invalid-recipient verdict or add a new callback-validation step.
+        A logging-only receipt describes the prepared MIME recipients in order. Explicit override receivers supply the delivery list when
+        present, and duplicate occurrences remain separate. A CustomMailer receipt captures the same prepared intent before the callback.
+        Your implementation owns its external delivery mapping. Both paths retain <code>UNKNOWN</code> acceptance and absent SMTP replies.
+        If the prepared MIME recipient headers cannot be parsed, the receipt uses the typed recipients or the explicit override receivers.
       </p>
       <p>
         Receipts and recipient results are immutable snapshots of one attempt, including when a pooled transport is reused. They are not sanitized

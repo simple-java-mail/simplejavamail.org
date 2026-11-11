@@ -102,6 +102,8 @@ The exact builder preserves those finalized bytes and explicitly restores envelo
 
 Implement storage encryption, access auditing and retention in the archive adapter. Retaining encrypted S/MIME without an approved means of decrypting it later is not a readable long-term record: arrange archival key access or a separately protected readable record under the company's records policy. Private signing keys and passwords must not be serialized as archive content.
 
+When inspecting a recovered archive, check the exact value the application consumes through `getInspection()`. A signature status for the selected plain-text body does not approve every header or attachment, and mathematical validity does not establish a trusted partner. The [partner-document workflow](https://www.simplejavamail.org/security.html#section-inspecting-received-protection) adds explicit approved signing keys and process-or-hold requirements. Keep an exact archive as original bytes; reconstructed interpreted Email output does not promise continuing old signatures.
+
 On shutdown, call `dispatcher.stopAndAwait()`, close the primary, supplied backup and bulk Mailers in `configured.all()` order, then shut down and await `observationWorkers`. Closing A does not close a borrowed B. A failed wait is an operational failure, not permission to pretend all work finished. In-flight result callbacks may still use the outbox, archive and quota database until the executor drains.
 
 ## Verification and further work

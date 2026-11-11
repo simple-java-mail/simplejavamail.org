@@ -23,6 +23,9 @@ export const patternDemonstrations = z.array(topic).parse([
     { pattern: "custom-handoff", section: "protected-packages", label: "Protect a message without SMTP", scenario: "custom-handoff" },
     { pattern: "protected-partners", section: "byte-preserving-archive", label: "Verify and archive a partner message", scenario: "protected-partners" },
   ] },
+  { id: "received-protection", title: "Received document requirements", reference: "/security.html#section-inspecting-received-protection", demonstrations: [
+    { pattern: "protected-partners", section: "check-the-required-document", label: "Process or hold the exact partner document", scenario: "protection" },
+  ] },
   { id: "exact-content", title: "Exact-message submission", reference: "/features.html#section-exact-eml", demonstrations: [
     { pattern: "polar-meridian", section: "protected-archive", label: "Compare archived and submitted bytes", scenario: "polar-meridian" },
   ] },

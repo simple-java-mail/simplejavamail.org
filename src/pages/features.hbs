@@ -303,8 +303,9 @@ try (Mailer mailer = mail.mailerBuilder()
 		<code class="inline language-java">EmailGovernance</code> instance.
 	</p>
 	<p class="wide">
-		Completion resolves outgoing content and configuration. Keep the original converted Email when inspecting historical protection results,
-		received delivery reports or original protected bytes; completion does not copy that history. See <a href="understanding-configuration.html#repeated-email-completion">completion and source history</a>.
+		Completion resolves outgoing content and configuration while retaining the submitted draft's captured sources, Problems, originals and
+        unchanged field evidence. Actual template replacements are current caller-supplied values with unknown incoming protection; templates do not
+        supply historical proof or permission to disclose confidential reused content. See <a href="understanding-configuration.html#repeated-email-completion">completion and source history</a>.
 	</p>
     <p class="wide">
       Need the company relay or an archive BCC to stay fixed while jobs customize their messages?
@@ -1026,9 +1027,9 @@ email.getId(); // <1420232606.6.1509560747190@Cypher>
         <a href="/mail-send-retries.html">retry policy</a> can retry safely refused whole emails, but never a partially accepted email.
       </p>
       <p>
-        In <a href="/debugging.html#section-debug-mode">logging-only mode</a>, recipient results describe the prepared delivery list, including
-        raw recipient headers and explicit override receivers, while acceptance stays <code>UNKNOWN</code>. Their order and duplicate
-        occurrences are retained. A CustomMailer receipt describes the prepared intent rather than an observed external delivery list.
+        In <a href="/debugging.html#section-debug-mode">logging-only mode</a>, recipient results describe the prepared delivery list in order.
+        Explicit override receivers supply that list when present. Duplicate occurrences remain separate and acceptance stays <code>UNKNOWN</code>.
+        A CustomMailer receipt captures the prepared recipients before the callback. The callback owns its external delivery mapping.
       </p>
     </div>
   </section>
@@ -1248,6 +1249,11 @@ String text = attachment.readAllData(StandardCharsets.UTF_8);</code></pre>
     <p>Handle or declare <code>IOException</code> around the streaming example. Both forms leave the DataSource itself under its existing
       ownership. Construction and copying remain lazy; keep borrowed content available and stable while it is read.</p>
   </div></section>
+
+  <section><p class="wide">Received attachment access exposes selected usable payloads after successful supported decryption. An independently attached
+    email can expose its already parsed <code>AttachmentResource.getEmail()</code>; the getter performs no work and does not rewrite the resource bytes.
+    Use indexed <code>getInspection().getAttachment(index)</code> for its current evidence and <code>getOriginalAttachment(index)</code> for retained
+    original input. See <a href="security.html#section-inspecting-received-protection">checking a received document</a>.</p></section>
 
   <a href="#section-embedding" id="section-embedding" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Embedding images{{/components/feature-heading-h2}}
@@ -1476,10 +1482,10 @@ simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true
       <p>MIME and EML import use the same header identity. In unreleased 10.0.0, interleaved occurrences such as <code>X-Step: first</code>,
         <code>x-step: second</code> and <code>X-Step: third</code> keep the first spelling and the distinct values in source order.
         Copying or exporting the Email retains that order. Exact EML and original protected content keep their separate byte-preservation contracts.</p>
-      <p>Raw <code>To</code>, <code>Cc</code> and <code>Bcc</code> headers are an advanced escape from mailbox validation and can change the actual
-        delivery envelope. The configured address validator checks typed recipient fields, including <code>withOverrideReceivers(...)</code>;
-        it does not interpret these raw header values. General injection checks and mandatory configuration locks still apply.</p>
-      <p>Pass an empty String or <code>null</code> to emit a present empty header, such as <code>X-MS-TNEF-Correlator:</code>.
+      <p>In unreleased 10.0.0, <code>withHeader(...)</code> populates the corresponding recipient fields when you set <code>To</code>,
+        <code>Cc</code> or <code>Bcc</code>. Address groups expand into their member mailboxes. These recipients and
+        <code>withOverrideReceivers(...)</code> go through the selected address validator, injection checks and mandatory configuration locks.</p>
+      <p>For an ordinary custom header, pass an empty String or <code>null</code> to emit a present empty field, such as <code>X-MS-TNEF-Correlator:</code>.
         Null does not omit the header or write the text <code>null</code>. Stored null values remain visible in <code>Email.getHeaders()</code>
         and survive copying and serialization. Stored whitespace is retained; non-null values keep the usual MIME encoding and folding.</p>
     </div>
@@ -1499,6 +1505,12 @@ currentEmailBuilder.withHeaders(headers);
     </div>
   </section>
 
+
+  <section><p class="wide">For received mail, <code>Email.getHeaders()</code> is an immutable case-insensitive read view of the represented logical
+    message. Typed getters and their header values use one selected authority; editing a typed field does not leave a conflicting old active header.
+    Reconstructed output writes typed fields once, generates MIME structure and omits received trace/authentication history and obsolete DKIM/ARC
+    signatures as current claims. The parsed Bounce-To still supplies the ordinary SMTP envelope choice. Exact relay and retained originals keep
+    their authoritative bytes. See <a href="security.html#section-reading-smime-merging">logical content and originals</a>.</p></section>
 
   <a href="#section-custom-properties" id="section-custom-properties" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Setting custom properties on the internal Session{{/components/feature-heading-h2}}
@@ -2152,7 +2164,7 @@ currentMailerBuilder.withValidationConfig(validation.resetClientValidationWarnin
 			  email builder intentionally returns to composed-email behavior.
 		  </p>
 		  <p>
-			  Existing <code>getOriginalSmimeDetails()</code> and <code>getOriginalOpenPgpDetails()</code> results are populated automatically during exact
+			  <code>getInspection().getSmime()</code> and <code>getInspection().getOpenPgp()</code> observations are populated automatically during exact
 			  construction. Available incoming inspection can establish protection facts and precise results; facts it cannot establish remain
 			  <code>UNKNOWN</code>. When constructing from the original EML, missing optional modules do not by themselves prevent relay.
 			  Reading the getters performs no further inspection.
@@ -2342,6 +2354,8 @@ mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre
       <p>If an optional field cannot be read and no raw value was captured, that field stays unavailable while readable neighbors remain
         accessible. For addresses, an unavailable sender is absent and an unavailable recipient list is empty. The Problem retains the
         read failure and any available source references; conversion does not create a recipient from missing address text.</p>
+      <p>A missing or unavailable selected Subject can be null. An explicitly empty received Subject remains present; it does not trigger fallback
+        to another view. Inspect availability when absence and unavailable processing matter to your application.</p>
       <p>An interrupted read throws <code>CancellationException</code> instead of returning a recovered Email, including when optional
         S/MIME inspection is unavailable. Its cause retains the original read failure. A socket timeout by itself does not count as interruption.</p>
       <pre><code class="language-java">Email email = mail.converter().fromEml(emlBytes).toEmail();
@@ -2371,12 +2385,17 @@ for (EmailProblem problem : email.getProblems()) {
         Copies and serialization preserve those links, even if you later change the parent's Message-ID.</p>
       <p>Automatic inspection of one malformed independent signed S/MIME attachment keeps its readable parent and the original attachment.
         A protection Problem links to that child, including when several resources have the same filename; it does not turn the plain
-        parent's signature or decryption facts into a child result. Explicit wrong-key/password failures and direct low-level protection
-        helper exceptions keep their existing behavior.</p>
-      <p>Source payloads are retained selectively. If an Outlook RTF body becomes HTML, the original RTF stays available in source data.
-        Successful Base64 decoding preserves the same attachment content normally and does not need another raw payload. A recovered
-        filename needs its original naming metadata, not another copy of the unchanged attachment bytes. Retained sources can therefore
-        exist with an empty Problems list: an expected successful transformation is not itself a Problem.</p>
+        parent's signature or decryption facts into a child result. A usable configured key that cannot open one file preserves that file and a located processing Problem. Unusable key-store configuration, cancellation and direct low-level protection
+        helper failures retain their operation-failure boundaries.</p>
+      <p>Complete supplied raw EML and MSG are retained automatically under the import contract, in the actual consumed format. Use
+        <code>getInspection().getOriginalMessage()</code> for that complete original and <code>getOriginalAttachment(index)</code> for a retained
+        original associated with the selected attachment occurrence. A successfully opened independent file has usable ordinary bytes and
+        its protected original separately. An unchanged safely captured payload can share storage. Input from a MimeMessage without captured
+        raw bytes has no invented original file; an incomplete prefix is diagnostic evidence only.</p>
+      <p>Other source payloads are retained where they add evidence. Original Outlook RTF remains beside derived HTML, while successful Base64
+        decoding does not require another equivalent attachment payload. A recovered filename needs its original metadata, not a second copy
+        of unchanged content. Retained sources can exist with no Problems: an expected transformation is not itself a Problem. Raw originals
+        and different decoded content can require additional memory; copies can share owned captures, and import limits are not a whole-JVM memory cap.</p>
       <pre><code class="language-java">for (EmailSourcePart part : email.getSourceData().getParts()) {
     // Inspect part.getHeaders()/getProperties(), then visit part.getChildren().
     EmailSourceContent captured = part.getContent();
@@ -2397,8 +2416,9 @@ for (EmailProblem problem : email.getProblems()) {
         These are references into the captured source graph, so inspecting them does not fetch the report again or require another payload copy.</p>
       <p>Problems are historical observations, not current validation or a live log of later attachment reads and sends. Their origins keep
         the input's observed Message-ID and stable diagnostic reference even when the ID is missing, reused or changed on a copy. Copies
-        and later setters preserve captured sources and Problems without reinspection or coordinate matching. New outgoing completion
-        keeps its separate history boundary. An empty Problems list does not establish that every part or signature was inspected.</p>
+        and later setters preserve captured sources and Problems without reinspection or coordinate matching. Outgoing completion retains the
+        submitted draft's history and unchanged associations; actual template replacements have caller-supplied/unknown incoming evidence.
+        An empty Problems list does not establish that every part or signature was inspected.</p>
       <p>Use the optional diagnostic terminals when the target is EML bytes, EML text or MimeMessage rather than Email:</p>
       <pre><code class="language-java">EmailConversionResult&lt;byte[]&gt; converted = mail.converter()
     .fromOutlookMsg(msgPath)
@@ -2434,9 +2454,9 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
         <a href="security.html#section-reading-openpgp">OpenPGP/MIME messages</a> from supplied EML.
       </p>
       <p>
-        Encrypted S/MIME content that could not be opened has an <code>UNKNOWN</code> signature result, alongside <code>KEY_MISSING</code>
-        or <code>FAILED</code> decryption. Successful decryption remains <code>DECRYPTED</code> even when later signature processing reports
-        <code>ERROR</code>. See <a href="security.html#section-reading-smime-verification">S/MIME inspection results</a> for the separate facts.
+        Unopened encrypted content does not establish its inner signature presence or coverage. Detailed attempts distinguish unavailable,
+        deferred and failed decryption, while selected-value inspection retains actual coverage. A verified, invalid or unverified signature
+        is separate from decryption and key approval. See <a href="security.html#section-inspecting-received-protection">the received-protection workflow</a>.
       </p>
       <p>
         For example, if you need a MimeMessage, you can convert <code class="inline language-java">Email</code> objects, EML data and even Outlook .msg files.
@@ -2449,7 +2469,8 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
       </p>
       <p>
         If you already have a MimeMessage, you can convert it into an Email instance with its addresses, content, embedded images, attachments,
-        and non-structural custom headers preserved where possible. You can also parse just the metadata without fetching attachment data.
+        and non-structural custom headers preserved where possible. Use <code>withFetchAttachmentData(false)</code> to defer ordinary attachment
+        payload reads. Selected protection and delivery-report processing can still read the content they need.
         Eager extraction closes each attachment stream it opens, including when reading fails; calendar streams acquired during interpretation
         follow the same rule. A known calendar interpretation failure, such as an unsupported charset, is reported through
         <code>Email.getProblems()</code> while readable neighboring content and available source evidence remain accessible.
@@ -2561,7 +2582,7 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
         Import an attached message separately when you want to inspect that message's own headers.
         <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> are recognized without regard to their names'
         capitalization and expose the same ordered destination lists and request flags. Their usable values follow the typed fields
-        rather than also appearing in <code>Email.getHeaders()</code>. Existing blank and unusual value interpretation is unchanged.
+        and the corresponding case-insensitive <code>Email.getHeaders()</code> read view. Existing blank and unusual value interpretation is unchanged.
       </p>
       <p>
         A converted delivery notification also exposes an immutable <code>DeliveryStatusReport</code> through the same Email object.
@@ -2569,23 +2590,24 @@ List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pr
         <a href="/delivery-reports.html">Read structured delivery feedback</a> without walking MIME parts or interpreting human bounce prose yourself.
       </p>
       <p>
-        Conversion does not copy the original header block verbatim. Addressing, date, subject, reply, message ID, and MIME content headers are
-        represented by Email fields or rebuilt when another MimeMessage is produced. Transport-history headers such as <code class="inline language-text">Received</code>
-        and <code class="inline language-text">Resent-*</code>, along with obsolete structural metadata, are omitted from the outgoing
-        header map. Available received occurrences remain inspectable through <code>Email.getSourceData()</code>.
-        See the <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/core-module/src/main/java/org/simplejavamail/api/internal/general/HeadersToIgnoreWhenParsingExternalEmails.java">complete filtered-header list</a>.
+        Conversion provides represented headers for reading, without promising original folding or a union of every source layer. Typed fields and
+        the case-insensitive header view agree when interpretation is available; useful raw fallback remains readable with its actual limitation.
+        Source data preserves original occurrences and displaced alternatives. Normal reconstructed output applies
+        <a href="security.html#section-reading-smime-merging">semantic header ownership</a>: typed values once, producer-owned MIME structure,
+        appropriate custom fields, and no automatic re-emission of obsolete delivery/authentication claims. Exact relay preserves its bytes.
       </p>
       <p id="interpreted-sent-dates">
         In the unreleased 10.0.0 line, MIME/EML import leaves <code>getSentDate()</code> and <code>getSentDateAsInstant()</code> null when the
         source date is impossible or its timezone is missing or unrecognized. For example, <code>31 Feb 2026 10:20:30 +0000</code> does not
-        become a date in March. Readable content and unambiguous legacy date formats remain usable. The source <code>Date</code> header does
-        not also appear in <code>Email.getHeaders()</code>. Ordinary reconstruction supplies a current date when none was fixed;
+        become a date in March. Readable content and unambiguous legacy date formats remain usable. A useful raw <code>Date</code> value remains
+        readable when typed interpretation is unavailable. Ordinary reconstruction supplies a current date when none was fixed;
         <a href="#section-exact-eml">exact EML</a> preserves the original bytes even when their interpreted date is unavailable.
       </p>
       <p>
         Outlook MSG dates are optional too. A missing source date, creation time or last-modification time leaves the corresponding
         <code>OutlookMessageData</code> getter null while readable message content remains available. The Email sent date prefers the
-        client-submit time, then the existing Outlook source date; when neither is available, <code>getSentDate()</code> and
+        actual client-submit time, then a usable actual <code>Date</code> header. A generic reader date that might represent creation time does not
+        supply the message's stated sent date. When neither sent-date source is available, <code>getSentDate()</code> and
         <code>getSentDateAsInstant()</code> remain null. A present Date returned by Email or Outlook metadata is a defensive copy.
         See the <a href="migration-notes-10.0.0.html#outlook-optional-dates">sparse-MSG migration note</a>.
       </p>
@@ -2659,16 +2681,21 @@ Email protectedEmail = mail.converter()
     .withSession(yourSession)
     .toEmail();
 
-OriginalOpenPgpDetails protection = protectedEmail.getOriginalOpenPgpDetails();
-for (OpenPgpSignatureResult signature : protection.getSignatures()) {
-    SignatureStatus status = signature.getStatus();
-    String signerKeyId = signature.getSignerKeyId();
+ProtectionInspection protection = protectedEmail.getInspection().getOpenPgp();
+for (SignatureObservation signature : protection.getSignatures()) {
+    SignatureVerification verification = signature.getStatus();
+    String signingKeyFingerprint = signature.getSigningKeyFingerprint();
 }
+// Check the exact value your application consumes:
+ProtectionCheck decision = documentRequirements.check(
+    protectedEmail.getInspection().getAttachment(documentIndex));
 </code></pre>
-      <p>Received OpenPGP results retain every represented signature occurrence, including combined signed/encrypted packets and nested MIME
-        protection. <code>getSignatures()</code> is an immutable reading view. A whole-message <code>VALID</code> requires complete inspection
-        with at least one signature and every result valid. Unopened or unavailable inspection remains <code>UNKNOWN</code>; established
-        decryption stays independent of signature failures. See <a href="security.html#section-reading-openpgp-status">OpenPGP result meanings</a>.</p>
+      <p>Incoming family views retain individual captured observations without a whole-Email trusted Boolean. Field/resource inspection binds
+        those observations to the exact selected content. The reusable <code>ProtectionRequirements</code> API checks one selected value against
+        explicitly approved signing keys, established full coverage and optional decryption/strict-signature requirements. It performs no reads
+        or cryptography and does not mutate Problems. Family history includes direct resources' actual opening layers after later edits; it does not
+        import a parsed child's internal body observations or approve a replacement field. Follow the
+        <a href="security.html#section-inspecting-received-protection">complete received-protection workflow</a> before automating an action.</p>
       <p>PKCS12 and OpenPGP configuration builders can be inspected before <code>build()</code>, even when the configuration is incomplete.
         For example, <code>getPkcs12StoreData()</code> returns the supplied store bytes, or <code>null</code> before a store is supplied.
         Key and password getters return copies; changing those arrays does not change the builder or an earlier configuration.
@@ -2720,19 +2747,18 @@ Email limited = mail.converter().fromEml(emlPath)
       <p>When the part allowance runs out, further parts are omitted with bounded reporting. A depth stop omits that subtree while eligible siblings
         remain readable. See <a href="#section-source-inspection">source inspection</a> for captured content, original identities and historical Problems.
         A limit stop does not establish verification or decryption success.</p>
-      <p>If a limit prevents a retained inner view from materializing any plain-text, HTML or calendar body, its partial Email stays available for
-        inspection while the existing separate-view presentation preserves completed outer content. Fully visited absent body alternatives keep
-        their ordinary merge meaning. A later independent attachment omission does not suppress a body that was already materialized.</p>
+      <p>A limit that prevents protected content from materializing keeps available evidence and any permitted already materialized native fallback.
+        The selected field's inspection distinguishes absent, unavailable, deliberately uninspected and unknown content. A later independent
+        attachment omission does not suppress a body already materialized or promote the remaining file into the parent's body.</p>
       <p>A partial attachment list also does not establish whole-message protection merely because only one protected file remains.
         Independent files keep their child-processing meaning, while original native source structure and envelope declarations retain their authority.</p>
       <p>A supplied <code>MimeMessage</code> has no reliable original encoded size. A finite input-byte limit is rejected for that source before consuming
         the conversion; supply original EML/MSG input, or explicitly choose unlimited input on the limits builder with <code>withMaximumInputBytes(0)</code>
         or <code>resetMaximumInputBytes()</code>, subject to locks. Part/depth limits remain available. Direct MIME/EML transformations that bypass
         Email import reject an explicitly supplied import group. A combined Outlook-to-MIME/EML operation applies the limits during its import.</p>
-      <p>For a limited import from a supplied <code>MimeMessage</code>, the protection details' <code>getOriginalProtectedMessage()</code> can return
-        <code>null</code> when a complete protected representation was unavailable. A missing optional module or failed inspection does not make
-        uncaptured bytes available. Complete raw EML bytes already captured remain exact and available even when later traversal omits content.
-        Byte availability and verification/decryption results are independent.</p>
+      <p>A supplied <code>MimeMessage</code> without captured raw input has no complete original file, so
+        <code>getInspection().getOriginalMessage()</code> is null. Missing optional support or failed inspection cannot invent uncaptured input.
+        Complete raw EML already acquired remains retained even if later traversal omits content. Byte availability and protection results are independent.</p>
       <p>For a bounded import of an unsaved supplied <code>MimeMessage</code>, an absent <code>Date</code> or <code>Message-ID</code> remains absent
         in the converted Email, even if diagnostic serialization generates that metadata.</p>
       <p><a href="cli.html#message-file-import-limits">CLI copying and reply message-file arguments</a> pass through a native <code>MimeMessage</code>
@@ -2786,10 +2812,11 @@ String messageClass = outlookData.getMessageClass();
 String rawHeaders = outlookData.getRawHeaders();
 </code></pre>
       <p class="small">
-        Outlook conversion is lenient about unsupported encrypted S/MIME payloads. For signed S/MIME content, parsed email content is preserved
-        even when cryptographic signature verification fails. Check <code class="inline language-java">email.getOriginalSmimeDetails().getSmimeSignatureValid()</code>
-        when integrity matters; a <code class="inline language-java">true</code> result does not establish certificate trust or sender identity.
-        See <a href="security.html#section-reading-smime-verification">What the signature status means</a> for the exact contract.
+        Outlook conversion preserves readable content when an incoming signature is invalid, with actual source-linked observations. Use
+        <code>email.getInspection().getHTMLText()</code> for selected HTML's origin, derivation and protection, and apply supplied requirements
+        to the actual value your application consumes. Native <code>outlookData.getBodyHTML()</code> and <code>getBodyRTF()</code> remain directly
+        readable when you need the reader's source bodies. Native HTML, HTML extracted from RTF and rendered RTF have distinct derivations.
+        See the <a href="security.html#section-inspecting-received-protection">received-protection workflow</a>.
       </p>
       <h3 id="section-protect-existing-mime">Protect a MimeMessage you already have</h3>
       <p>For an existing <code>MimeMessage</code>, use the low-level S/MIME helper when your application needs to retain its own content or header
@@ -2819,9 +2846,9 @@ MimeMessage encryptedWithSameId = MailerHelper.signAndOrEncryptMessageWithSmime(
         finalized result's ID. With no S/MIME request, the original message and its existing ID remain unchanged. These are the helper's existing
         selection rules; ordinary copy/import defaults are unchanged.</p>
       <p class="small">
-        Ordinary EML, MIME and Outlook imports also work without <code>smime-module</code>. For protected input, uninspected signature and
-        decryption results report <code>UNKNOWN</code>; recognizable headers can still identify the outer S/MIME mode. Clearly plain messages
-        retain plain, unsigned and unencrypted results. Explicitly requesting S/MIME decryption requires the module.
+        Ordinary EML, MIME and Outlook imports also work without <code>smime-module</code>. Recognizable protected input and available source metadata
+        remain inspectable, while unestablished processing/coverage facts stay unknown or unavailable. Established plain content can remain unsigned
+        and unencrypted. Explicitly requesting S/MIME decryption requires the module.
       </p>
     </div>
   </section>
@@ -2876,17 +2903,22 @@ MimeMessage encryptedWithSameId = MailerHelper.signAndOrEncryptMessageWithSmime(
           <tr>
             <td><code>replyingTo(...)</code></td>
             <td>A reply subject, reply headers, quoted plain and HTML bodies, and the original embedded images</td>
-            <td>The original message's reply address</td>
+            <td>The selected authored view's Reply-To, otherwise its From; an unreadable protected destination view stays unresolved</td>
           </tr>
           <tr>
             <td><code>replyingToAll(...)</code></td>
-            <td>The same quoted reply, prepared through Jakarta Mail's reply-all behavior</td>
+            <td>The same quoted reply using the selected logical message's reply destinations and To/Cc roles</td>
             <td>The reply address and the other recipients calculated from the original message</td>
           </tr>
           <tr>
             <td><code>forwarding(...)</code></td>
-            <td>A forward subject and the original message as a <code>message/rfc822</code> body part</td>
+            <td>A safe forward subject and the current interpreted Email rendered as a <code>message/rfc822</code> body part; selected attachment bytes are used</td>
             <td>None; add the forward's recipients yourself</td>
+          </tr>
+          <tr>
+            <td><code>forwardingOriginal(email)</code></td>
+            <td>Retained complete original input in its actual EML or MSG format; unavailable originals fail clearly</td>
+            <td>None; add the new outer message's recipients yourself</td>
           </tr>
           </tbody>
         </table>
@@ -2908,6 +2940,29 @@ MimeMessage encryptedWithSameId = MailerHelper.signAndOrEncryptMessageWithSmime(
         original's settings. Normal conversion and sending still protect the original, and the reply's own protection and Mailer governance
         remain separate choices. Reply routing, thread headers and referenced inline images keep their existing meaning.
         Selected pre-encoded images retain their encoded representation in owned quote snapshots, so quoting preserves the decoded image content.</p>
+      <p>Reply destinations and threading follow the selected logical message's authored headers, including meaningful protected-header omissions.
+        A new reply has its own identity and uses the selected parent for In-Reply-To and References; reply-all never adds hidden Bcc recipients.
+        A private received Subject stays readable on the input Email. The new public Subject uses a positively known public counterpart, otherwise
+        <code>Re: Your message</code> or <code>Fwd: Message</code>. Permission to reuse body content leaves that safe default in place.</p>
+      <p>If input positively identifies a protected authored address view that cannot be read, automatic reply destinations remain unresolved for
+        explicit caller selection. Available outer addressing remains readable; it does not silently supply those reply destinations.</p>
+      <p>When a helper automatically includes confidential content, final MIME/EML output and sending require suitable outgoing encryption by default.
+        Drafts remain readable/editable. Supply <code>ReplyOptions.allowUnencryptedContent()</code> or <code>ForwardOptions.allowUnencryptedContent()</code>
+        deliberately for a draft that may expose it. Copies and supported snapshots preserve that draft choice; a new helper operation has its own options.
+        Editing one alternative does not waive the remaining quote; explicit clears remove the cleared components. Configured and mandatory encryption remain binding.</p>
+      <pre><code class="language-java">byte[] handoff = mail.converter().fromEmail(confidentialReply)
+    .allowUnencryptedContent()
+    .toEmlBytes();
+// Permission belongs to this conversion. The source draft is unchanged.
+// A fresh conversion or later send still requires protection or draft permission.
+</code></pre>
+      <p>The same conversion choice governs MIME, EML and diagnostic result terminals. A recognized refusal has no successful unprotected output value.
+        Internal reconstruction inside an interpreted forward waits for the completed outer message's protection decision. An intact retained encrypted
+        original may travel in an unencrypted outer message when its other derived content does not disclose confidential values. Body encryption does not
+        hide every outer header. A child's original extracted through a parent's encryption is the child's own file, without that parent envelope;
+        original forwarding still needs protection or conversion-local permission, including when only the child's body is encrypted and its headers
+        remain clear. A known confidential original gets neutral new carrier metadata; its input resource is unchanged. See
+        <a href="security.html#received-protection-reuse">protected-content reuse</a> for the connected workflow.</p>
       <p>Use ordinary incoming conversion with explicit receive keys to open received ciphertext before replying. <code>MimeMessage</code>
         and exact EML inputs retain their existing source authority; readable reply priming is not an outgoing protection bypass.</p>
       <p>
@@ -3149,7 +3204,7 @@ CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 			and restored later with the data needed to send it, subject to the limitations below.
 		</p>
 		<ul class="indent wide">
-			<li>Attachments, embedded images and decrypted attachments are stored with their bytes and MIME metadata.</li>
+			<li>Selected attachments and embedded images are stored with their bytes and MIME metadata. Complete retained originals and core-owned inspection facts keep their historical meaning.</li>
 			<li>A forwarded message is stored in RFC 822 form and restored with a neutral mail session.</li>
 			<li>S/MIME signing configuration is kept, including its PKCS12 data and passwords.</li>
 			<li>OpenPGP signing and encryption configuration is kept, including signing key selection, hash and cipher preferences.
@@ -3160,6 +3215,9 @@ CompletableFuture&lt;Void&gt; test = mailer.async().testConnection();
 			repeatable, read-only byte source; the original class and any lazy loading, network access, caching, write support or other custom behavior are
 			not recreated. This also means that a lazy or remote source must be available at serialization time, and a read failure stops serialization.
 		</p>
+		<p class="wide">Current-value inspection, unchanged occurrence associations and helper-derived confidentiality requirements/draft permission survive supported snapshots.
+            Old snapshots with uncaptured history report unknown evidence; deserialization does not verify or invent original input. Captured metadata
+            does not make arbitrary whole-Email optional-module classpaths interchangeable.</p>
 		<p class="wide">
 			Treat the serialized data as sensitive. It can contain the complete message, attachments, credentials, private keys and passwords.
 		</p>

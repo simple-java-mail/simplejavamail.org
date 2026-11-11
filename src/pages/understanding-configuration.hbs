@@ -119,10 +119,14 @@ try (Mailer mailer = mail.mailerBuilder().withTransportModeLoggingOnly(true)
 			<p>A completed Email can be completed or sent again, including through another Mailer. Each pass can fill missing scalar values and apply
 				the selected Mailer's overrides. Completion keeps your suppression choices and always enforces applicable locks. It does not freeze the message.</p>
 			<p>Completion carries outgoing content and settings, including S/MIME, OpenPGP and DKIM configuration; protection is applied later when MIME
-				is prepared. Historical cryptographic results and original protected bytes, <a href="delivery-reports.html#trust-and-preservation">received delivery reports</a>
-				and their nested facts, decrypted-attachment inspection lists and retained S/MIME
-				signed-content views are not copied into the completed Email. Inspect the original converted Email for those results. Ordinary copying and
-				supported Java serialization preserve input history. Content already present in ordinary bodies, headers and resources remains outgoing content.</p>
+				is prepared. It also retains the submitted draft's captured sources, Problems, complete originals and unchanged field/resource evidence.
+                Actual default/override replacements are current caller-supplied values with unknown incoming protection; they do not acquire a
+                template's historical signature claims. Family processing observations, including direct resources' opening layers, and originals remain
+                historical input, not proof of replacement values or new outgoing MIME. A parsed child's internal body evidence remains child-owned.
+                Ordinary copying and supported snapshots preserve that distinction. See the <a href="security.html#section-inspecting-received-protection">receiving workflow</a>.</p>
+            <p>Helper-derived confidentiality requirements and a draft's own deliberate permission survive completion. Templates cannot grant that permission
+                or erase a submitted draft's requirement. A conversion's local permission belongs to that conversion only. Explicit removal of every
+                automatically reused confidential component can remove the corresponding requirement; changing a body does not prove its quote is gone.</p>
 			<p>Additive templates contribute only values not already present. For example, supplied recipients <code>[A, A, B]</code>, overrides
 				<code>[A, C, C]</code> and defaults <code>[B, D, D]</code> produce <code>[C, A, A, B, D]</code>. Reapplying those templates keeps that
 				order. Recipient matching includes the name, address, To/Cc/Bcc role, certificate and notification preferences, accounting for missing

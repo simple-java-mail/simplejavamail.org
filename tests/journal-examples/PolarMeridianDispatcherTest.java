@@ -189,7 +189,7 @@ public final class PolarMeridianDispatcherTest {
                         .storePassword("letmein").keyAlias("smime_test_user_alias_rsa").keyPassword("letmein").build());
         check(decrypted.getPlainText().trim().equals("Never sent"),
                 "Retained protected EML remains decryptable with the test recipient's key");
-        check(Boolean.TRUE.equals(decrypted.getOriginalSmimeDetails().getSmimeSignatureValid()),
+        check(decrypted.getInspection().getPlainText().getSignatureStatus().name().equals("VERIFIED"),
                 "SMTP line termination and exact submission preserve the S/MIME signature");
 
         for (PolarMeridianDispatcher.Workload workload : PolarMeridianDispatcher.Workload.values()) {

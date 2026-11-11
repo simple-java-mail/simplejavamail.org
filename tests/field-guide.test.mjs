@@ -30,7 +30,7 @@ test("every directory group and scenario resolves to its own matching heading", 
   const expected = groups.flatMap((group) => [[2, group.id], ...group.scenarios.map((scenario) => [3, scenario.id])]);
   assert.deepEqual(headingIds, expected);
   const scenarios = groups.flatMap((group) => group.scenarios);
-  assert.equal(scenarios.length, 26);
+  assert.equal(scenarios.length, 27);
   assert.equal((html.match(/class="field-guide-goal"/g) || []).length, scenarios.length);
   assert.doesNotMatch(html, /field-guide-check|Try it:/);
 });
@@ -94,7 +94,7 @@ test("visible Java snippets are present verbatim in the downloadable examples", 
   const java = readFileSync(new URL("../src/assets/guides/email-workloads/FieldGuideExamples.java", import.meta.url), "utf8");
   const compact = (value) => value.replace(/\s+/g, " ").trim();
   const blocks = [...body.matchAll(/```java\r?\n([\s\S]*?)\r?\n```/g)];
-  assert.equal(blocks.length, 15);
+  assert.equal(blocks.length, 16);
   for (const [, snippet] of blocks) assert.ok(compact(java).includes(compact(snippet)), snippet);
   const allBlocks = [...body.matchAll(/```(?:java|text)\r?\n[\s\S]*?\r?\n```/g)];
   assert.equal((html.match(/class="journal-captioned"/g) || []).length, allBlocks.length);

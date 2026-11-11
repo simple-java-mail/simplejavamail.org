@@ -6,6 +6,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.simplejavamail.api.SimpleJavaMail;
+import org.simplejavamail.api.email.ApprovedSigners;
+import org.simplejavamail.api.email.Email;
+import org.simplejavamail.api.email.ProtectionCheck;
+import org.simplejavamail.api.email.ProtectionOutcome;
+import org.simplejavamail.config.ConfigLoader;
 import org.simplejavamail.api.mailer.MailRecipientDisposition;
 import org.simplejavamail.api.mailer.MailRecipientResult;
 import org.simplejavamail.api.mailer.MailRetryDisposition;
@@ -41,7 +48,27 @@ public final class FieldGuideExamplesTest {
         verifyCapabilities();
         verifyReplacement(true);
         verifyReplacement(false);
-        System.out.println("PASS: recipient decisions, shutdown order, unknown/absent/present SMTPUTF8 and verified/rejected replacement credentials (12 checks); no SMTP");
+        verifyUnsignedPartnerDocumentIsHeld();
+        System.out.println("PASS: recipient decisions, shutdown order, SMTPUTF8 and replacement credentials, plus an unsigned partner document held before processing; no SMTP");
+    }
+
+    private static void verifyUnsignedPartnerDocumentIsHeld() {
+        SimpleJavaMail mail = SimpleJavaMail.withConfig(ConfigLoader.builder().load());
+        Email source = mail.emailBuilder().startingBlank().from("sender@example.test").to("reader@example.test")
+            .withPlainText("An ordinary unsigned document")
+            .withAttachment("partner-order.txt", new byte[] {1, 2, 3}, "application/octet-stream").buildEmail();
+        Email received = mail.converter().fromEml(mail.converter().fromEmail(source).toEmlBytes()).toEmail();
+        ApprovedSigners expected = ApprovedSigners.builder()
+            .addOpenPgpSigningKeyFingerprint("0123456789ABCDEF0123456789ABCDEF01234567").build();
+        AtomicInteger processed = new AtomicInteger();
+        List<ProtectionCheck> held = new ArrayList<>();
+        int inputProblems = received.getProblems().size();
+        ProtectionCheck decision = FieldGuideExamples.processPartnerDocument(received, 0, expected,
+            bytes -> processed.incrementAndGet(), held::add);
+        check(decision.getOutcome() == ProtectionOutcome.NOT_SATISFIED, "Known unsigned unencrypted content fails the document requirements");
+        check(processed.get() == 0 && held.size() == 1 && held.get(0) == decision,
+            "The application holds the returned decision without processing the document");
+        check(received.getProblems().size() == inputProblems, "Checking requirements does not add input-processing Problems");
     }
 
     private static SmtpConnectionReport connectionReport(boolean authenticated, SmtpCapabilities capabilities) {

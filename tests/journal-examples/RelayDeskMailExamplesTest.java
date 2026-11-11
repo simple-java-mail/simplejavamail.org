@@ -180,7 +180,7 @@ public final class RelayDeskMailExamplesTest {
                     .addDecryptionKeyRing(privateKey, "openpgpjs-fixture-passphrase").build();
             Email decoded = EmailConverter.emlToEmailWithOpenPgp(new ByteArrayInputStream(encrypted), receiving);
             check(decoded.getPlainText().trim().equals("Confidential test reply"), "The example really encrypts a readable PGP/MIME message");
-            check(decoded.getOriginalOpenPgpDetails().getSignatureStatus().name().equals("VALID"),
+            check(decoded.getInspection().getPlainText().getSignatureStatus().name().equals("VERIFIED"),
                     "The protected reply has a valid signature");
             boolean tenantBlocked = false;
             try { RelayDeskMailExamples.protectWholesaleReply(mail, mailer, "juniper", reply, keys); }

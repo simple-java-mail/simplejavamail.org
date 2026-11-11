@@ -362,6 +362,41 @@ For messages that also require encrypted onward transport, add [`SmtpDeliveryOpt
 
 Run the [protected partner documents application](/patterns/protected-partners.html) to inspect signing, encryption and the retained outbound copy together.
 
+### Check a partner document before processing it
+
+<p class="field-guide-goal"><strong>Target:</strong> Process the required received document only when its own captured evidence establishes your approved signing key, full signature coverage and decryption.</p>
+
+Convert supplied mail with the available receive keys, then identify the exact required attachment occurrence under your application's document contract. Successfully parsing the message or seeing a valid signature elsewhere does not approve that document. An independently attached message keeps its own Email view; checking one of its body values is different from checking the parent's whole attachment.
+
+Configure an immutable `ApprovedSigners` value from the partner signing certificates you explicitly approve, including an approved replacement key during rotation. The [received-protection guide](/security.html#section-inspecting-received-protection) shows certificate setup and the full OpenPGP signing-key fingerprint alternative. A claimed From address, decryption key or mathematically valid unapproved signer cannot supply that approval.
+
+```java
+static ProtectionCheck processPartnerDocument(
+        Email received, int documentIndex, ApprovedSigners approvedPartner,
+        Consumer<byte[]> process, Consumer<ProtectionCheck> holdForReview) {
+    ProtectionRequirements requirements = ProtectionRequirements.builder()
+        .requireVerifiedSignatureFrom(approvedPartner)
+        .requireDecryptedContent()
+        .build();
+    ProtectionCheck check = requirements.check(
+        received.getInspection().getAttachment(documentIndex));
+    if (check.isSatisfied()) {
+        process.accept(received.getAttachments().get(documentIndex).readAllBytes());
+    } else {
+        holdForReview.accept(check);
+    }
+    return check;
+}
+```
+
+*Evaluate captured evidence before your application reads and processes the usable document payload.*
+
+The process and hold callbacks belong to your application. Preserve `check.getOutcome()` and its stable reason codes so a known mismatch remains distinct from unavailable evidence. `MIXED` can satisfy the base approved-signature rule when one same signature is verified, fully covers the value and has an approved key. Add `requireAllSignaturesVerified()` deliberately if your workflow also holds any relevant invalid or unresolved signature. Partial or unknown coverage cannot become that full-coverage witness. A native HTML fallback has its own evidence; a protected plain-text body does not approve it.
+
+Retain [the original input](/features.html#section-source-inspection) through `received.getInspection().getOriginalMessage()` when evidence or original-preserving forwarding matters. Its format can be EML or MSG; a missing complete original is null, and a diagnostic prefix is not a complete file. The ordinary attachment exposes selected usable bytes, including successful decryption. Keep this receive decision separate from the [outgoing confidentiality recipe](#a-partner-update-must-stay-confidential) and the [submitted-byte archive](#reproduce-last-month-s-instructions). The [protected-partners application](/patterns/protected-partners.html#check-the-required-document) assembles receive, process/hold and original retention while keeping SMTP uncertainty separate.
+
+A child's original file does not include its parent's encryption envelope. If that file was extracted through parent encryption, [original forwarding still needs outgoing protection or explicit conversion permission](/security.html#received-protection-reuse). An encrypted child body can leave child headers clear; retaining original bytes does not make the whole file public.
+
 ### Reproduce last month's instructions
 
 <p class="field-guide-goal"><strong>Target:</strong> Retrieve the maintenance instructions actually submitted last month without recreating them from today's template and configuration.</p>
