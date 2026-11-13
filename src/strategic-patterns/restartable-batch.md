@@ -37,7 +37,7 @@ The restart experiment should report two submissions before interruption and fiv
 
 ## The problem
 
-A nightly run stops after submitting two emails. Restarting the whole input could send those two again; trusting a rolled-back chunk index can be just as misleading.
+Your nightly invoice run sends two emails and then crashes. Restart from the beginning and those customers might get a second invoice. A rolled-back batch checkpoint won't necessarily tell you which emails already left, either.
 
 ## Where Simple Java Mail helps
 
@@ -51,7 +51,7 @@ The [submission-receipt walkthrough](/analyzing-send-results.html) and [Reading 
 
 ## Try a send where the reply goes missing
 
-The scenario tries successful sends, sends accepted for only some recipients, and sends where the final reply goes missing. It also repeats the input and supplies a delayed delivery notification. You can compare the database records with the messages captured by the test server to see what actually happened.
+The demo tries a normal send, a send accepted for only some recipients, and a send whose final reply goes missing. It also submits the same request twice and supplies a delayed delivery notification. Take a look at the job records and the test server's captured messages to see how each case turned out.
 
 ```json
 {"scenario":"unknown","state":"HELD","submission":"UNKNOWN","smtpSubmissions":1,"duplicateSuppressed":true}
@@ -79,7 +79,7 @@ Before using a delivery report to update customer records, check where it came f
 
 ## Source, resources and cleanup
 
-[Download the canonical example sources](/assets/guides/integration-patterns/strategic-patterns.zip) and extract them into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/restartable-batch) explain this pattern; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resource requirements, container images, licensing and supported architectures.
+[Download the example sources](/assets/guides/integration-patterns/strategic-patterns.zip) and extract them into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/restartable-batch) explain this pattern; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resource requirements, container images, licensing and supported architectures.
 
 The memory and disk requirements above are a starting point; brokers and workflow engines may need more. The examples pin their container images, but haven't been tested on every CPU architecture. You don't need a paid service or cloud account to run them locally. Check each framework's licensing before using it in production.
 

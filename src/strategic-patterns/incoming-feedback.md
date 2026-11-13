@@ -25,13 +25,13 @@ docker compose -f tools/integration-patterns/incoming-feedback/compose.yaml run 
 
 Once the demo is running, open [the job records](http://localhost:8787/jobs) and [the test server's capture summary](http://localhost:8788/stats) to compare what the application recorded with what the server received. The first build downloads images and dependencies, which Docker caches for later runs. If you want to run more than one pattern at once, choose different local ports with `PATTERN_PORT` and `PATTERN_SMTP_PORT`.
 
-Successful submissions should appear as `SUBMITTED`. If only some recipients were accepted, or the server's reply was lost, the job should stay `HELD` for review. The scenario checks those records against the captured messages and repeats the input to check that it doesn't send again.
+A successful send should show up as `SUBMITTED`. If the server accepts only some recipients or its reply goes missing, the job stays `HELD` so you can decide what to do. The demo also checks that asking for the same job again doesn't send another email.
 
 ## Follow one job
 
 Begin at [`PatternEndpoints.report`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/common/src/main/java/org/simplejavamail/examples/patterns/PatternEndpoints.java) to see how received mail enters the application. It converts the EML into an Email, then passes the report data to [`JobStore.recordFeedback`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/common/src/main/java/org/simplejavamail/examples/patterns/JobStore.java), which matches it to a job and saves it. From there, follow the job ID and action into [`IncomingFeedback`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/incoming-feedback/src/main/java/org/simplejavamail/examples/patterns/IncomingFeedback.java) and its business HTTP endpoint. That endpoint gets a small message it can act on without needing to understand MIME.
 
-Append `delayed` to the scenario command, then look for `DELAYED` in the job record and the resulting `HTTP_BUSINESS_FEEDBACK` event. Try repeating the report or supplying one that cannot be matched to a job, and check that neither triggers another business action.
+Append `delayed` to the scenario command, then look for `DELAYED` in the job record and the resulting `HTTP_BUSINESS_FEEDBACK` event. Try sending the same report again, or one that doesn't match a job. Neither should trigger another business action.
 
 ## The problem
 
@@ -53,7 +53,7 @@ Look for `getDeliveryStatusReport()` after the ordinary Email conversion. The ap
 
 ## Try a send where the reply goes missing
 
-The scenario tries successful sends, sends accepted for only some recipients, and sends where the final reply goes missing. It also repeats the input and supplies a delayed delivery notification. You can compare the database records with the messages captured by the test server to see what actually happened.
+The demo tries a normal send, a send accepted for only some recipients, and a send whose final reply goes missing. It also submits the same request twice and supplies a delayed delivery notification. Take a look at the job records and the test server's captured messages to see how each case turned out.
 
 ```json
 {"scenario":"unknown","state":"HELD","submission":"UNKNOWN","smtpSubmissions":1,"duplicateSuppressed":true}
@@ -77,7 +77,7 @@ Before using a delivery report to update customer records, check where it came f
 
 ## Source, resources and cleanup
 
-[Download the canonical example sources](/assets/guides/integration-patterns/strategic-patterns.zip) and extract them into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/incoming-feedback) explain this pattern; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resource requirements, container images, licensing and supported architectures.
+[Download the example sources](/assets/guides/integration-patterns/strategic-patterns.zip) and extract them into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/incoming-feedback) explain this pattern; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resource requirements, container images, licensing and supported architectures.
 
 The memory and disk requirements above are a starting point; brokers and workflow engines may need more. The examples pin their container images, but haven't been tested on every CPU architecture. You don't need a paid service or cloud account to run them locally. Check each framework's licensing before using it in production.
 

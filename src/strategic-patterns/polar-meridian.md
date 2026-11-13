@@ -43,7 +43,7 @@ Compare `/jobs`, `/attempts` and `/events` after the scenario. Check that the pr
 
 ## The problem
 
-Several applications share a company's sending infrastructure. Login codes, confirmations and campaigns cannot all consume the same resources without coordination.
+Your applications all send through the same mail service. Then Marketing starts a campaign and the login codes get stuck behind it. You need a way to give urgent mail room to go out without letting several instances blow through the shared sending limit.
 
 The [Polar Meridian case study](/case-studies/polar-meridian.html) explains the design. This example uses its [existing Dispatcher helpers](/assets/journal/articles/polar-meridian/examples/README.md) unchanged, adding a database and archive storage so you can run it yourself. It doesn't reproduce the fictional company's throughput or provide a production mail platform.
 
@@ -82,7 +82,7 @@ The Mailers use TLS settings locked by the article's factory configuration. The 
 
 ## Failover and recovery
 
-The scenario disconnects urgent relay A and makes new connections to it fail. Untouched work can then go to the approved backup B. After A's reconsideration interval, later jobs use A again.
+The demo takes relay A offline, so new connections to it fail. Messages that haven't started sending can go through the approved backup B. Once A is available and due for another check, later jobs go back to A.
 
 Waiting for a worker or a sending allowance doesn't trigger failover. Once submission to the provider begins, SJM won't use connection failover to resend that message. If only some recipients were accepted, or the result is uncertain, your application needs to decide what to do.
 

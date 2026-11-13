@@ -90,7 +90,7 @@ For example, when SES accepts a message and later reports a simulated bounce, th
 {"case":"bounce","smtp":"ACCEPTED","feedback":["Bounce","Send"],"archiveHashMatches":true}
 ```
 
-The later bounce does not rewrite the earlier submission result or authorize an automatic resend.
+SES accepted the original submission, even though it later reported a bounce. Keep both facts: a bounce doesn't mean it's safe to resend automatically.
 
 If connection cleanup fails after SMTP acceptance, the inline result observer keeps that acceptance result and holds the operation for inspection. If saving the result itself fails, the job stays `SENDING` so you can check what happened before retrying.
 

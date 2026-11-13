@@ -74,7 +74,7 @@ The scenario checks protection, hidden-envelope recipients, duplicate requests, 
 {"pattern":"custom-handoff","mode":"https","smtpServer":false,"preparedProtectionVerified":true,"duplicateSuppressed":true,"smtpAcceptance":"UNKNOWN"}
 ```
 
-For the broker variation, stop HTTPS first and keep both files on each command. Publication and consumer evidence remain separate.
+To try RabbitMQ, stop the HTTPS stack first. Include both Compose files in each command; you can then check the broker confirmation and the consumer's result separately.
 
 ```text
 docker compose -f tools/integration-patterns/custom-handoff/compose.yaml down --volumes --remove-orphans
@@ -90,7 +90,7 @@ docker compose -f tools/integration-patterns/custom-handoff/compose.yaml -f tool
 docker compose -f tools/integration-patterns/custom-handoff/compose.yaml down --volumes --remove-orphans
 ```
 
-Everything is synthetic and project-scoped. Omit `--volumes` to retain evidence; do not prune unrelated resources.
+This removes the demo's containers and data. Leave out `--volumes` if you'd like to inspect the stored packages later, and avoid pruning other Docker projects.
 
 If you used RabbitMQ, include its file on cleanup:
 

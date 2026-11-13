@@ -1,4 +1,11 @@
 @import "tokens.less";
+@journal-green: var(--green, #087D49);
+@journal-green-tint: var(--green-tint, #E4F3EA);
+@journal-green-line: var(--green-line, #A9D5BA);
+@journal-blue: var(--blue, #1763A6);
+@journal-blue-tint: var(--blue-tint, #EAF3FC);
+@journal-blue-line: var(--blue-line, #A7C7E7);
+@import "../_includes/styles/articles/banners.less";
 @import "../_includes/styles/articles/prose.less";
 @import "../_includes/styles/field-guide/layout.less";
 
@@ -66,4 +73,8 @@ a.pattern-technology:hover { color: @ink; text-decoration: underline; }
   .pattern-start-options { grid-template-columns: 1fr; }
   .strategic-pattern-cards, .pattern-collection-cards { grid-template-columns: 1fr; }
   .pattern-technology-index dl > div { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 480px) {
+  .journal-banner { grid-template-columns: 1fr; }
+  .journal-banner-header { border-right: 0; border-bottom: 1px solid; }
 }

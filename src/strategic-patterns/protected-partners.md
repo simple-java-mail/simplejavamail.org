@@ -37,17 +37,17 @@ The receive step uses captured server bytes because SMTP itself has no “downlo
 
 ## The problem
 
-A partner sends protected instructions that an application will act on. A readable attachment and a valid signature somewhere in the message are insufficient: the required document needs the right signature coverage, an explicitly approved signing key and the protection your application requires. You also want the original input for later evidence, without replacing it with a reconstructed version.
+A partner emails you instructions that your application will act on. Before you use the attachment, you want to know that the right partner signed that document and that it has the protection you expect. You also want to keep the original message, so you can check exactly what arrived later.
 
 ## Where Simple Java Mail helps
 
-SJM opens supported protected content during conversion and keeps useful bodies and resources in the ordinary Email API. Its inspection layer describes the selected value's origin, availability and protection; a reusable requirements value evaluates already captured evidence. The application supplies partner approval, chooses its required document and decides whether to process or hold it.
+SJM opens supported protected content as it converts the message, so you can work with its bodies and attachments through the usual Email API. You can inspect a particular attachment to see where it came from, whether it's available and what protection was found. Then use a reusable set of requirements to check that information. Your application still chooses the document, decides which partner keys it trusts and decides what to do with the result.
 
-Camel connects the steps. The application owns persistence and the security of its retained plaintext, originals and keys. The generated local certificates are synthetic identities, not production partner trust. A From address, successful decryption or a mathematically valid unapproved signature cannot supply that approval.
+Camel connects the steps, and the application stores the documents, originals and keys. The certificates in this demo are made up for local testing. In a real exchange, you'll need to approve your partner's keys yourself: a familiar From address, successful decryption or a valid signature from an unknown key isn't enough.
 
 ## Check the required document
 
-The application expects exactly one attachment named `partner-order.txt`. It keeps the selected occurrence and checks that occurrence's inspection; a missing or duplicate candidate is held. An independent protected child does not sign a plain document next to it.
+The application looks for exactly one attachment named `partner-order.txt` and checks the protection on that particular attachment. If the file is missing or appears twice, it holds the message for review. A signed attachment next to an unsigned document doesn't make the unsigned document signed.
 
 ```java
 ProtectionRequirements requirements = ProtectionRequirements.builder()
@@ -62,13 +62,13 @@ ProtectionCheck decision = requirements.check(
 
 *This application's deliberate strict policy for one required document.*
 
-The base approved-signature requirement needs one same observation with verified status, full coverage and the approved actual signing key. Known partial coverage and unknown evidence cannot become a passing witness. The stricter all-signatures choice additionally holds any relevant invalid or unresolved signature. `MIXED` can satisfy the base rule when one full verified approved signature qualifies; it is this application's choice to hold that case.
+The basic signature requirement needs one verified signature that covers the whole document and was made with an approved signing key. A partial signature or an unknown result won't pass that check. This example also asks for *all* relevant signatures to verify, so it holds the document if any are invalid or unresolved. That means a `MIXED` result can pass the basic check but still be held by the stricter policy here.
 
 The [complete receiving guide](/security.html#section-inspecting-received-protection) explains the outcome/reason codes, approved-key rotation and OpenPGP signing-key fingerprints. A protected plain-text body with native HTML fallback needs a separate HTML decision. Check the value your application will use.
 
 ## Byte-preserving archive
 
-The application retains `received.getInspection().getOriginalMessage()` without rebuilding MIME, and processes the usable bytes from `received.getAttachments()`. An independently opened protected file can have a different selected payload from its retained original; those are deliberate different resources. A complete retained MSG stays MSG, while an unavailable complete original remains unavailable. A captured prefix is diagnostic evidence, not a complete archive.
+The application saves `received.getInspection().getOriginalMessage()` without rebuilding it, and uses `received.getAttachments()` to get the bytes it can process. If an attachment was opened separately, its usable content can differ from the original file you keep. An original MSG remains an MSG; if the complete original wasn't available, a captured prefix won't magically make a complete archive.
 
 Reading an attached Email does not rewrite its parent's resource. `forwarding(received)` deliberately renders the current interpreted view; `forwardingOriginal(received)` carries suitable retained original input. Automatically reusing confidential content in a reply or interpreted forward requires suitable outgoing protection or the explicit operation/conversion permission described in the [reuse guide](/security.html#received-protection-reuse). Incoming keys do not provide outgoing protection, and body encryption does not hide every outer header.
 
@@ -102,13 +102,13 @@ The [submission-receipt walkthrough](/analyzing-send-results.html) and [Reading 
 
 ## Before you adapt this example
 
-Run one application instance against its database. At startup it holds unfinished `SENDING` jobs, assuming the previous process stopped. A second instance could put active work on hold; [Polar Meridian](/patterns/polar-meridian.html) shows owned claims for multiple workers.
+Run one copy of this application against its database. On startup it puts unfinished `SENDING` jobs on hold, assuming the previous copy has stopped. A second copy could put a job the first one is still sending on hold. [Polar Meridian](/patterns/polar-meridian.html) shows how to track which worker claimed a job when you need more than one instance.
 
 The build generates two synthetic identities valid for thirty days with documented demo passwords. The local receiving scenario endpoints use trusted fixtures. Production needs a different key-management, approval, access, retention and receiving-service design. Storage does not become safe merely because the original arrived encrypted. SMTP acceptance still does not establish final delivery, and no database transaction or framework makes SMTP exactly-once.
 
 ## Source, resources and cleanup
 
-[Download the canonical example sources](/assets/guides/integration-patterns/strategic-patterns.zip) into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/protected-partners) explain the scenarios; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resources, licensing and supported architectures. No paid service or cloud account is needed. Resource figures are starting points, and the pinned images do not establish interoperability on every CPU architecture.
+[Download the example sources](/assets/guides/integration-patterns/strategic-patterns.zip) into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/protected-partners) explain the scenarios; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resources, licensing and supported architectures. No paid service or cloud account is needed. Resource figures are starting points, and the pinned images do not establish interoperability on every CPU architecture.
 
 ```text
 docker compose -f tools/integration-patterns/protected-partners/compose.yaml down --volumes --remove-orphans

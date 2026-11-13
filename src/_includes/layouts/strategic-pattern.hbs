@@ -41,6 +41,11 @@ layout: "layouts/marketing.hbs"
       </nav>
       {{> components/pattern-stack stack=stack stackLinks=true}}
     </header>
+    {{> components/journal-banner
+      banner-type="info"
+      banner-header="From the author"
+      banner-body="I developed and fleshed out these strategic patterns with the help of AI. They're bonus content, and I hope you find them useful. If one misses the mark, please let me know. Enjoy!"
+    }}
     {{{content}}}
     {{#with (demonstratedReferences demoSlug)}}
       <section class="pattern-reference-links" aria-labelledby="pattern-reference-title">

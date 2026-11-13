@@ -1,6 +1,6 @@
 ---
 title: "A committed order needs an email"
-description: "Save the work when you commit an order, then send the email in the background without sending it twice on a retry."
+description: "When you save an order, also save a request to send the customer a confirmation email. A background job can then send it without creating duplicates on retry."
 stack: "Spring Boot · PostgreSQL · JobRunr"
 demoSlug: "transaction-outbox"
 tacticalScenarios:
@@ -27,7 +27,7 @@ docker compose -f tools/integration-patterns/transaction-outbox/compose.yaml run
 
 Once the demo is running, open [the job records](http://localhost:8787/jobs) and [the test server's capture summary](http://localhost:8788/stats) to compare what the application recorded with what the server received. The first build downloads images and dependencies, which Docker caches for later runs. If you want to run more than one pattern at once, choose different local ports with `PATTERN_PORT` and `PATTERN_SMTP_PORT`.
 
-Successful submissions should appear as `SUBMITTED`. If only some recipients were accepted, or the server's reply was lost, the job should stay `HELD` for review. The scenario checks those records against the captured messages and repeats the input to check that it doesn't send again.
+A successful send should show up as `SUBMITTED`. If the server accepts only some recipients or its reply goes missing, the job stays `HELD` so you can decide what to do. The demo also checks that asking for the same job again doesn't send another email.
 
 ## Follow one job
 
@@ -37,11 +37,11 @@ Try a lost final reply with `docker compose -f tools/integration-patterns/transa
 
 ## The problem
 
-An HTTP request commits an order, then the application stops before a confirmation can be sent. Moving SMTP onto another thread does not make that work durable.
+Your customer places an order. The database saves it, but your application crashes before sending the confirmation. Moving the email onto another thread won't help if the process stops before that thread gets to run.
 
 ## Where Simple Java Mail helps
 
-The application saves the request to send mail in PostgreSQL, where an outbox poller picks it up and creates a JobRunr job with a stable ID. Before calling SJM, the worker records that it has claimed the send in a separate commit. Afterwards, it saves what the SMTP receipt tells it.
+The example saves a request to send an email in PostgreSQL. An outbox poller finds that request and creates a JobRunr job with a stable ID. Before calling SJM, the worker records its claim in a separate database commit; after the send, it saves the SMTP result.
 
 JobRunr runs the background work and keeps its job history. Your application still needs to manage the outbox and decide what to do when it can't tell whether mail was accepted. SJM handles the SMTP submission, but that submission can't be part of the database transaction.
 
@@ -51,7 +51,7 @@ The [submission-receipt walkthrough](/analyzing-send-results.html) and [Reading 
 
 ## Try a send where the reply goes missing
 
-The scenario tries successful sends, sends accepted for only some recipients, and sends where the final reply goes missing. It also repeats the input and supplies a delayed delivery notification. You can compare the database records with the messages captured by the test server to see what actually happened.
+The demo tries a normal send, a send accepted for only some recipients, and a send whose final reply goes missing. It also submits the same request twice and supplies a delayed delivery notification. Take a look at the job records and the test server's captured messages to see how each case turned out.
 
 ```json
 {"scenario":"unknown","state":"HELD","submission":"UNKNOWN","smtpSubmissions":1,"duplicateSuppressed":true}
@@ -73,7 +73,7 @@ Before using a delivery report to update customer records, check where it came f
 
 ## Source, resources and cleanup
 
-[Download the canonical example sources](/assets/guides/integration-patterns/strategic-patterns.zip) and extract them into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/transaction-outbox) explain this pattern; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resource requirements, container images, licensing and supported architectures.
+[Download the example sources](/assets/guides/integration-patterns/strategic-patterns.zip) and extract them into the matching source checkout. The [source and usage notes](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/transaction-outbox) explain this pattern; the [shared workbench README](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns) covers resource requirements, container images, licensing and supported architectures.
 
 The memory and disk requirements above are a starting point; brokers and workflow engines may need more. The examples pin their container images, but haven't been tested on every CPU architecture. You don't need a paid service or cloud account to run them locally. Check each framework's licensing before using it in production.
 

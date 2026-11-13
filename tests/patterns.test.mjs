@@ -12,7 +12,7 @@ import { patternStack } from "../src/_lib/pattern-technologies.mjs";
 function patternTemplates() {
   const handlebars = Handlebars.create();
   for (const [name, helper] of Object.entries(createTemplateHelpers())) handlebars.registerHelper(name, helper);
-  for (const partial of ["breadcrumbs", "components/pattern-next", "components/pattern-technology", "components/pattern-stack", "components/technology-credits"]) {
+  for (const partial of ["breadcrumbs", "components/journal-banner", "components/pattern-next", "components/pattern-technology", "components/pattern-stack", "components/technology-credits"]) {
     handlebars.registerPartial(partial, readFileSync(new URL(`../src/_includes/${partial}.hbs`, import.meta.url), "utf8"));
   }
   return handlebars;

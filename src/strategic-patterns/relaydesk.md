@@ -29,7 +29,7 @@ docker compose -f tools/integration-patterns/relaydesk/compose.yaml up --build -
 docker compose -f tools/integration-patterns/relaydesk/compose.yaml run --rm scenario
 ```
 
-Tenant evidence at `http://localhost:8787/jobs` needs its demo token. Use the HTTP client already inside the application container to include A's token:
+The jobs endpoint at `http://localhost:8787/jobs` needs a demo token to show a customer's records. Use the HTTP client inside the application container to ask for customer A's jobs:
 
 ```text
 docker compose -f tools/integration-patterns/relaydesk/compose.yaml exec app curl --silent -H "X-Demo-Tenant-Token: tenant-a-local" http://localhost:8080/jobs
@@ -43,7 +43,7 @@ Expect ordinary jobs to reach `SUBMITTED`, with partial or uncertain attempts he
 
 Begin at [`RelayDeskApplication.enqueue`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/relaydesk/src/main/java/RelayDeskApplication.java), then follow `dispatchNext`, `submit` and `recordOutcome` in the same file. Next, read `TenantRoute.replace` to see how it pauses one customer while replacing their Mailer. The application uses the [original article helpers](/assets/journal/articles/relaydesk/examples/RelayDeskMailExamples.java) unchanged, adding a database and separate routes for each customer.
 
-Inspect A's job evidence after the scenario. A bad password replacement should leave only A paused while B still completes; a later valid replacement resumes A. The command uses development tokens, not production authentication.
+Look at A's jobs after the scenario. A bad replacement password should pause A while B keeps sending; a valid password lets A resume. These tokens are just for the demo, so you'll need real authentication in your own service.
 
 ## The problem
 
@@ -74,7 +74,7 @@ You can use the public development tokens to inspect the demo. For a real servic
 
 Each customer gets separate workers and local sending limits, so one can't use up another's workers. If you also need to enforce a provider quota across several application instances, you'll need a shared limit.
 
-When you replace a password, the application pauses that customer's route and lets admitted sends finish. It closes the old Mailer, builds and checks the replacement, then resumes sending if the check succeeds. If it fails, that customer stays paused while the others continue.
+When you replace a password, the application pauses that customer's route and lets sends already in progress finish. It closes the old Mailer, builds and checks the replacement, then resumes sending if the check succeeds. If it fails, that customer stays paused while the others continue.
 
 This demo replaces credentials for a fixed set of customers. If your service continually adds and removes customers, you'll also need to limit registry size and retire routes that are no longer used.
 
