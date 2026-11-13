@@ -1,24 +1,6 @@
 ---
 layout: "layouts/marketing.hbs"
 ---
-<header class="page-hero strategic-pattern-hero">
-  <div class="shell">
-    {{> breadcrumbs}}
-    <h1 id="pattern-title">{{title}}</h1>
-    <p class="hero-lede">{{description}}</p>
-    <nav class="pattern-start-options" aria-label="Choose where to start">
-      <a class="pattern-start-option" href="#start-here">
-        <strong>Run the example <span aria-hidden="true">↓</span></strong>
-        <span>Get it running locally, then follow a job through the code.</span>
-      </a>
-      <a class="pattern-start-option" href="#the-problem">
-        <strong>Understand the problem <span aria-hidden="true">↓</span></strong>
-        <span>See what this pattern solves before you try it.</span>
-      </a>
-    </nav>
-    {{> components/pattern-stack stack=stack stackLinks=true}}
-  </div>
-</header>
 <div class="shell field-guide-grid strategic-pattern-grid">
   <aside class="field-guide-rail strategic-pattern-rail" data-pagefind-ignore>
     <nav class="journal-entry-toc" aria-label="On this page">
@@ -43,6 +25,22 @@ layout: "layouts/marketing.hbs"
     </nav>
   </aside>
   <article class="pattern-reading journal-prose">
+    <header class="page-hero strategic-pattern-hero">
+      {{> breadcrumbs}}
+      <h1 id="pattern-title">{{title}}</h1>
+      <p class="hero-lede">{{description}}</p>
+      <nav class="pattern-start-options" aria-label="Choose where to start">
+        <a class="pattern-start-option" href="#start-here">
+          <strong>Run the example <span aria-hidden="true">↓</span></strong>
+          <span>Get it running locally, then follow a job through the code.</span>
+        </a>
+        <a class="pattern-start-option" href="#the-problem">
+          <strong>Understand the problem <span aria-hidden="true">↓</span></strong>
+          <span>See what this pattern solves before you try it.</span>
+        </a>
+      </nav>
+      {{> components/pattern-stack stack=stack stackLinks=true}}
+    </header>
     {{{content}}}
     {{#with (demonstratedReferences demoSlug)}}
       <section class="pattern-reference-links" aria-labelledby="pattern-reference-title">
