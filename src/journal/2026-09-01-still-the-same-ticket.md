@@ -39,7 +39,7 @@ Nor is this going to cover every release. The [release history](https://github.c
 | January 2022 | [7.0.0](https://github.com/bbottema/simple-java-mail/releases/tag/7.0.0) finally moved to Java 8 and Jakarta Mail 2.0.1, which also meant taking responsibility for abandoned supporting libraries. |
 | 2023–2025 | The late 7.x and 8.x lines kept refining defaults, overrides, OAuth2, Outlook conversion, DKIM, S/MIME and connection-pool behaviour. |
 | July 2026 | [9.0.0](https://github.com/bbottema/simple-java-mail/releases/tag/9.0.0) rolled roughly two years of backlog into one major release. |
-| Work toward 10.0.0 | The focus moved from adding more ways to send towards preparing, observing and reporting each submission, with deliberate places for applications to take control. |
+| Work toward 10.0.0 | The focus widened to preparing, observing and reporting submissions, and making received mail understandable, with deliberate places for applications to take control. |
 
 That table makes the path look much straighter than it was. There were quiet years, bursts in which several releases appeared within days, experiments that were later removed and APIs I cleaned up only after users showed me what I had got wrong.
 
@@ -162,7 +162,9 @@ That burst happened because I changed how I work. I had begun using coding agent
 
 As I write this, 10.0.0 is still being assembled. The work says something about how my priorities changed. Much of it is not about another content type or transport option. It is about making the send process visible: preparing an email before opening a connection, returning structured submission outcomes, making synchronous and asynchronous behaviour obvious, observing the complete send lifecycle and treating the places where applications hook into it as APIs I have to support.
 
-That feels like the work of a library growing up. Early versions tried to make the happy path short. A mature library also has to explain what happened when sending does not go to plan.
+The same effort is making [received mail](/features.html#section-source-inspection) easier to understand. Callers should get the readable content and any retained original, with an explanation of what could not be interpreted and which content a signature actually covers.
+
+That feels like the work of a library growing up. Early versions tried to make the happy path short. A mature library also has to explain what happened when sending or reading a message does not go to plan.
 
 ## Still the same ticket
 

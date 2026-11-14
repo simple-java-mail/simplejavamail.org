@@ -214,6 +214,26 @@ You see, the code had already passed through several hands. JavaMail-Crypto star
 
 I had permission from [two of the three](https://github.com/bbottema/simple-java-mail/issues/295#issuecomment-869926957) by June 2021 and [all three by Christmas Eve](https://github.com/bbottema/simple-java-mail/issues/295#issuecomment-1000912695). The Jakarta Mail migration had been underway for half a year by then, with a break while I caught my breath. On 28 December I finished [migrating and relicensing `java-utils-mail-smime`](https://github.com/simple-java-mail/java-utils-mail-smime/commit/6eac0beb12506b9dbfb345431ab3f1de05ffb5e4). Simple Java Mail 7.0.0 followed days later. What I took home from this is that working in open source and trying to be effective sometimes means you have to track down the people behind three generations of a project before you can move it forward.
 
+The OpenPGP/MIME support added for 10.0.0 uses [PGPainless](https://pgpainless.readthedocs.io/en/stable/) for the cryptography. SJM's part is making that work with MIME messages and the Email API callers already use. PGPainless stays with its own maintainers, just as JMail does. My contribution is in how those pieces fit together and how they feel to the developer using them.
+
+```mermaid
+flowchart LR
+    accTitle: OpenPGP/MIME builds on PGPainless
+    accDescr: Simple Java Mail's Email API uses its optional OpenPGP/MIME module, which integrates PGPainless cryptography. PGPainless remains independently maintained.
+
+    sjm["Simple Java Mail<br/>Email API"]
+    module["org.simplejavamail:<br/>openpgp-module<br/>MIME integration"]
+    pgpainless["PGPainless<br/>OpenPGP cryptography<br/>&lt;independently maintained&gt;"]
+
+    sjm -->|optional module| module
+    module -->|depends on| pgpainless
+
+    classDef integration fill:#E4F2F2,stroke:#087E8B,color:#13212B,stroke-width:2px;
+    classDef upstream fill:#FFFFFF,stroke:#5B6872,color:#13212B,stroke-width:2px;
+    class sjm,module integration;
+    class pgpainless upstream;
+```
+
 ## A tale of two proxies
 
 ```mermaid
@@ -314,22 +334,24 @@ That is why the ecosystem exists. It is not an empire of subjects I mastered. It
 ```mermaid
 flowchart
     accTitle: The dependency and maintenance graphs now agree
-    accDescr: I directly steward Simple Java Mail and its current supporting-library family. Their original sources and upstreams are now provenance rather than release dependencies. Simple Java Mail also depends on JMail, which is actively stewarded by Rohan Nagar.
+    accDescr: I directly steward Simple Java Mail and its current supporting-library family. Their original sources and upstreams are now provenance rather than release dependencies. Simple Java Mail also depends on JMail, actively stewarded by Rohan Nagar, and on independently maintained PGPainless.
 
     me(["Me"])
     sjm["Simple Java Mail"]
     family["Current supporting libraries<br>(3rd party archived, abandoned, deprecated)"]
     jmail["JMail<br/>&lt;stewarded by Rohan Nagar&gt;"]
+    pgpainless["PGPainless<br/>&lt;independently maintained&gt;"]
 
     me -->|stewardship| sjm
     me -->|stewardship| family
     sjm -->|depends on| family
     sjm -->|email-validator dependency| jmail
+    sjm -->|OpenPGP cryptography| pgpainless
 
     classDef person fill:#FFF2D8,stroke:#E49A24,color:#13212B,stroke-width:2px;
     classDef library fill:#E4F2F2,stroke:#087E8B,color:#13212B,stroke-width:2px;
     class me person;
-    class sjm,family,jmail library;
+    class sjm,family,jmail,pgpainless library;
 ```
 
 The uncomfortable parts belong to that story too. Borrowed foundations need credit. Licence assumptions need evidence. A fork becomes a promise to its original authors as well as its users. Inherited code does not become mine because I changed most of it. And sometimes the best stewardship of my own library is to replace it with somebody else's.

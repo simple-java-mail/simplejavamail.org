@@ -48,7 +48,7 @@ These views informed one another: a case study could reveal an awkward task, Ang
 
 ## What actually exploded
 
-The interesting growth is around the life of a send. Once an application depends on email, constructing a valid message is only the beginning of the questions its developers will ask.
+The interesting growth is around the work an application does with email. Constructing a valid message is only the beginning of the questions its developers will ask.
 
 | The application needs to know | What the 10.0.0 work brings together |
 | --- | --- |
@@ -59,8 +59,10 @@ The interesting growth is around the life of a send. Once an application depends
 | What happened to each recipient? | [Submission receipts](/analyzing-send-results.html#section-get-receipt) with recipient evidence, partial acceptance and explicit uncertainty. |
 | When can we try again, or use another server? | [Bounded retries](/mail-send-retries.html) for safely refused temporary submissions and [connection failover](/smtp-connection-failover.html), with different rules for each. |
 | Can we investigate the communication later? | [Send-result observation](/analyzing-send-results.html#section-observer-results), timing diagnostics and [exact EML submission](/features.html#section-exact-eml) for preserving an authoritative message. |
+| What can we use from received mail? | [Readable content and retained originals](/features.html#section-source-inspection), with protection facts for the content we actually use. |
+| What did a later delivery report say? | [Parsed notifications](/delivery-reports.html), with recipient results and identifiers for matching the report to a send. |
 
-*The questions continue after the message is built; version 10 gives the application evidence and controls for the rest of the send.*
+*Version 10 connects message construction, sending controls and received-mail inspection through the same library.*
 
 ### Recovery needs to know what failed
 
@@ -92,7 +94,7 @@ An enterprise already has mail servers, network controls and teams looking after
 
 The application also has decisions the library cannot make for it. Polar Meridian decides how urgent a login code is, stores jobs durably, allocates shared provider capacity and sets its retention policy. SJM's queue and rate controls work within the configured local scope; a fleet of application processes still needs coordination where they share an account-wide quota.
 
-Security follows the same division of work. SJM already had signing and encryption. Version 10 strengthens how message requirements, effective configuration and transport decisions fit together, but the application still has to approve recipients and keys, protect stored copies and choose the appropriate settings. Having a security feature available does not enable it for every send.
+Security follows the same division of work. Version 10 adds [OpenPGP/MIME](/security.html#section-sending-openpgp) and lets callers [inspect the protection of the exact received content they use](/security.html#section-inspecting-received-protection). It also strengthens how message requirements, effective configuration and transport decisions fit together. The application still has to approve recipients and keys, protect stored copies and choose the appropriate settings. Having a security feature available does not enable it for every send.
 
 That's the kind of enterprise framework I want to make: a dependable part of an application, with enough control and information that the surrounding system can do its job well. It remains a client of the mail infrastructure, even when its responsibilities are substantial.
 
@@ -104,17 +106,17 @@ Once I began evaluating SJM at that level, comparing it only with other Java wra
 
 Looking at those projects gave the release a more demanding target. I wanted SJM to be evaluated beside them for the whole experience of constructing, protecting, configuring, operating and investigating application mail. Many individual capabilities already exist elsewhere; the opportunity is in how comfortably they work together here.
 
-There are still gaps. [MailKit's SMTP capabilities](https://mimekit.net/docs/html/T_MailKit_Net_Smtp_SmtpCapabilities.htm) include PIPELINING, CHUNKING and BINARYMIME, which aren't delivered SJM capabilities in the current assessment. An async SJM API also does not turn its transport into an event-loop client. The research is a comparison of documented behavior and implementation evidence; it doesn't establish cross-library throughput leadership.
+There are still gaps. [MailKit's SMTP capabilities](https://mimekit.net/docs/html/T_MailKit_Net_Smtp_SmtpCapabilities.htm) include PIPELINING, CHUNKING and BINARYMIME. SJM 10 supports PIPELINING and CHUNKING as well. An async SJM API also does not turn its transport into an event-loop client. The research is a comparison of documented behavior and implementation evidence; it doesn't establish cross-library throughput leadership.
 
 Even with those differences, I think SJM can now make a serious case for one of the strongest overall application-mail experiences across these ecosystems. The contribution I find most compelling is that a developer can configure a send, control its resources, preserve its message and understand its failure through APIs designed to work together.
 
 ## The growth reaches upstream
 
-The protocol comparison has also taken me into Angus itself. I can now pursue changes in the transport underneath SJM, alongside the work on our own API. That's a rather significant expansion of what I can realistically take on as one maintainer, and it is only practical for me at this pace because of AI assistance.
+The protocol comparison took me beyond exposing what Angus already did and into improving the transport itself. The work led to several changes in Angus itself. One fixes [message lines beginning with a dot when using BDAT](https://github.com/eclipse-ee4j/angus-mail/pull/210); another prevents [SMTP capabilities from carrying over when they no longer apply](https://github.com/eclipse-ee4j/angus-mail/pull/218).
 
-I'm [working with the Angus maintainers on PIPELINING and further SMTP improvements](https://github.com/eclipse-ee4j/angus-mail/issues/213), with the aim of bringing that work through to SJM. PIPELINING lets a client send several SMTP commands before waiting for their replies, reducing repeated network round trips. Angus already supports CHUNKING, which uploads a message in chunks; improving its efficiency is part of the broader direction too.
+Other changes came out of SJM's connection and security work. Angus can now [use separate connection and TLS socket factories](https://github.com/eclipse-ee4j/angus-mail/pull/228), making it possible to combine a custom connection path, such as a proxy, with custom TLS settings. A [hostname-verifier rejection](https://github.com/eclipse-ee4j/angus-mail/pull/236) also retains a distinct exception type, so an application can tell it apart from an ordinary connection failure. SJM 10 brings these upstream improvements along through its updated Angus runtime, and other Angus users benefit too.
 
-The current local prototype concentrates on envelope PIPELINING, leaving chunk scheduling unchanged. It is promising work in progress, with technical questions still to resolve and upstream review ahead. I can't count it among the delivered SJM features yet, but being able to investigate and contribute at this level changes where the project can go next.
+The [PIPELINING work](https://github.com/eclipse-ee4j/angus-mail/issues/213) lets a client send several SMTP commands before waiting for their replies, reducing network round trips. The investigation also led to [hostname-verification fixes in Angus](https://github.com/eclipse-ee4j/angus-mail/pull/242) and [a bug report further upstream in Google's Conscrypt](https://github.com/google/conscrypt/issues/1567). The ability to investigate and contribute at that level changes where the project can go next, and AI assistance has made that practical for me at this pace.
 
 ## Complexity moved; it did not disappear
 
@@ -132,9 +134,7 @@ Making the pieces fit together has a cost for existing users. Version 10 reorgan
 
 Some migration work is mechanical. Other changes deserve a closer look: asynchronous validation happens during execution, clustered sends use the selected Mailer's message configuration, and live Mailers cannot compete to own the same mutable Session. The [migration notes](/migration-notes-10.0.0.html) explain those changes because the new model needs to be dependable for users upgrading from the old one too.
 
-The release also needs evidence beyond a convincing draft. The recorded [retry verification](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/docs/plans/756-safe-mail-send-retries.md#execution-evidence) includes local SMTP fault and interoperability scenarios; the accompanying [API cleanup verification](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/docs/plans/756-api-boundary-cleanup.md#verification-evidence) records a clean reactor run with 2,370 tests. Those checks support particular implementations and environments, and newer work still needs its own review. They give the architecture something firmer to stand on than my enthusiasm.
-
-As I write this, 10.0.0 remains development work. The capabilities discussed here belong to that branch, and the final publication pass needs to reflect what actually ships.
+The release also needs evidence beyond my enthusiasm. Work such as the [retry verification](https://github.com/bbottema/simple-java-mail/blob/45c8182b6f52429424ae08a28490bd708e4a4881/docs/plans/756-safe-mail-send-retries.md#execution-evidence) and [API cleanup review](https://github.com/bbottema/simple-java-mail/blob/45c8182b6f52429424ae08a28490bd708e4a4881/docs/plans/756-api-boundary-cleanup.md#verification-evidence) checks how those decisions hold up in real sending and integration scenarios.
 
 ## After the explosion
 

@@ -107,7 +107,7 @@ None of that says Simple Java Mail should imitate every one of them. It does mea
 
 ## Version 10 takes Simple past the happy path
 
-The 10.0.0 work is meant to close those gaps while keeping the experience coherent. At this writing it is still development work, not the feature set of a published 9.x release.
+Version 10 addresses those gaps while keeping the experience coherent.
 
 Take a reply addressed to three people. The server accepts one recipient and rejects the others. An exception on its own leaves the application with an awkward question: should it send the whole message again? In 10.0.0, [recipient results and retry guidance](/analyzing-send-results.html#section-retry-decisions) let the application inspect the evidence rather than reconstruct it from an exception chain. If acceptance is uncertain, the result preserves that uncertainty instead of giving a reassuring answer it cannot support.
 
@@ -115,7 +115,9 @@ The same idea runs through [configuration snapshots and redacted diagnostics](/d
 
 It applies to receiving protected mail as well. A successfully decrypted document should be an ordinary attachment, while the application still needs to know whether that exact document has full signature coverage from a key it approves. The [received-protection workflow](/security.html#section-inspecting-received-protection) and [partner-document application](/patterns/protected-partners.html#check-the-required-document) keep that decision explicit. They also distinguish usable content from retained original input and make confidential reuse a deliberate reply/forward choice. That improves the experience around existing cryptography; it doesn't add another SMTP protocol capability.
 
-There are still gaps. The October progress assessment keeps MailKit ahead on protocol breadth, and does not count PIPELINING or CHUNKING as implemented SJM capabilities. Nor does it claim that dispatching blocking work makes SJM an event-loop-native client. I don't need the new website to hide those differences; I need it to give people a fair picture of what the library does well and what remains to be done.
+Version 10 supports [PIPELINING](https://github.com/eclipse-ee4j/angus-mail/issues/213) and [CHUNKING](https://github.com/eclipse-ee4j/angus-mail/pull/210). Making that work properly required upstream changes in Angus, which I helped implement. The investigation even led to [hostname-verification fixes in Angus](https://github.com/eclipse-ee4j/angus-mail/pull/242) and [a bug report further upstream in Google's Conscrypt](https://github.com/google/conscrypt/issues/1567).
+
+Protocol coverage is one part of the comparison; the execution model matters too. SJM's asynchronous API still dispatches blocking SMTP work to workers, while an event-loop client takes a different approach. The source-based research also does not establish cross-library throughput leadership. I don't need the new website to hide those differences; I need it to give people a fair picture of what the library does well and what remains to be done.
 
 ## I'm keeping the Simple
 
