@@ -5,10 +5,18 @@ Last synced: 2026-08-17
 Direction: start simple, stay production-ready
 Modernization: full visual and structural redesign on the upgraded static-site stack
 
+## Capabilities discovery
+
+The [implemented discovery structure](capabilities-discovery.md) keeps Capabilities at `/features.html`, extracts two task guides, and shares capability data across the homepage, catalogue and guide navigation. It incorporates the [independent Claude review](capabilities-discovery-claude-review.md) and the subsequent route decisions. Use cases remains a compatibility route.
+
+The [implementation repair and holistic review](capabilities-implementation-review-followup.md) records the Claude findings, structural regression coverage, rendered walkthroughs and the remaining editorial work.
+
+The [documentation copy backlog](docs-copy-backlog.md) tracks the sections flagged for dense prose and the proposed fixes.
+
 ## Workload field guide
 
 `/email-workload-field-guide.html` is a standalone reference,
-authored in `src/guides/email-workloads.md`. It complements Use cases and the API
+authored in `src/guides/email-workloads.md`. It complements Capabilities and the API
 documentation; it is not part of the Engineering Journal or the case studies.
 The first twenty scenarios cover sending shape, contention, connection grouping,
 message preparation and recovery. Each has its own target, design and reference
@@ -56,18 +64,9 @@ The website should make that depth legible without becoming commercial. It does 
 
 **The homepage has one job:** show a small first send immediately, then make clear that the same library still works when the requirements become difficult.
 
-## Canonical narrative
+## Discovery structure
 
-The public story is a lifecycle, not a sales funnel:
-
-> Compose -> Configure -> Protect -> Deliver -> Diagnose -> Extend
-
-1. **Compose:** addresses, text and HTML, attachments, embedded images, calendars, replies, forwards, and MIME without constructing `MimeMessage` trees.
-2. **Configure:** reusable mailers, properties, Spring integration, defaults, overrides, validation, custom sessions, and lower-level escape hatches.
-3. **Protect:** SMTP transport strategies, OAuth2, DKIM, S/MIME, OpenPGP/MIME, CRLF protection, trusted hosts, identity verification, and custom TLS behavior.
-4. **Deliver:** synchronous and asynchronous sends, open-connection batches, connection pools, multiple clusters, load balancing, local bind addresses, and authenticated SOCKS.
-5. **Diagnose:** connection tests, structured failures, Jakarta Mail debug routing, logging-only mode, submission and delivery receipts, inspectable configuration, and validation.
-6. **Extend:** custom sending logic, EML and Outlook conversion, CLI use, optional modules, OSGi/Karaf, and direct Jakarta Mail access when required.
+The [capability registry](../src/_data/capabilities.json) defines the seven discovery families, their named features and canonical destinations. The homepage summarizes them, Capabilities exposes the full catalogue, and guides provide family context. The Docs directory and sidebar share the guide inventory. A send lifecycle can still explain execution within a guide; it is not a competing discovery index.
 
 The short formulation used across the site is:
 
@@ -156,7 +155,10 @@ The **Engineering Journal** is a secondary editorial route linked from the foote
 | `/case-studies.html` | Case studies | Worked designs with fictional companies | maintain |
 | `/case-studies/*.html` | Company case study | Independent Markdown articles using the shared long-form renderer | generate |
 | `/docs.html` | Documentation | Task-oriented wayfinding | add |
-| `/features.html` | Capabilities | Complete capability reference | restructure; preserve anchors |
+| `/features.html` | Capabilities | Whole-library catalogue | retain slug and legacy fragment handling |
+| `/email-composition.html` | Building emails | Message construction guide | extracted detail |
+| `/email-conversion.html` | Converting and inspecting email | Supplied-message guide | extracted detail |
+| `/use-cases.html` | Compatibility | Former overview route | noindex; preserve section destinations |
 | `/configuration.html` | Configuration | Builder, property, Spring, recipient-rule, and pool reference | restructure; preserve anchors |
 | `/security.html` | Security | Transport, signing, encryption, and injection protection | restructure; preserve anchors |
 | `/debugging.html` | Diagnostics | Test, inspect, log, route, and recover | restructure; preserve anchors |

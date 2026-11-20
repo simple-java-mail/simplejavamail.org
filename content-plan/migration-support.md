@@ -27,6 +27,8 @@ Preserve content and anchors, but add consistent chrome:
 
 Migration notes contain only breaking API changes and changes to existing behavior, compared against released versions. Before adding an entry, check:
 
+Group the 10.0.0 contents by upgrade impact, with common changes first and specialized changes discoverable below. Preserve all existing fragment targets.
+
 - Which released call or behavior changes? Verify it against the relevant release tag, not an intermediate API from the unreleased branch.
 - What can fail to compile, behave differently, or invalidate an existing test after upgrading?
 - Does every example explain a necessary replacement or a remedy for that change? Move feature tutorials and optional new settings to current documentation.

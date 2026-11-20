@@ -1,143 +1,31 @@
 ---
-layout: "layouts/marketing.hbs"
+layout: false
 permalink: "/use-cases.html"
-tags:
-  - "publicPage"
-title: "Use cases"
-style: "home"
-description: "Find the Simple Java Mail APIs and settings for correct MIME, secure sending, received-message inspection, high throughput, batches, application integration, and delivery diagnostics."
+eleventyExcludeFromCollections: true
+internal: true
+title: "Explore Simple Java Mail capabilities"
+style: "capabilities"
+description: "The Simple Java Mail use-case overview is now part of Capabilities."
 ---
-    <div id="navigation" class="compatibility-anchor" aria-hidden="true"></div>
-
-    <section class="page-hero use-cases-hero">
-      <div class="shell narrow-shell">
-        <p class="eyebrow">Use cases</p>
-        <h1>Common email jobs.</h1>
-        <p class="hero-lede">Pick the situation closest to yours. Each route links directly to the message API, configuration, security settings, and optional modules involved.</p>
-        <p>If the primary relay is unavailable, use <a href="/smtp-connection-failover.html">connection failover</a> to keep sending through an approved
-          alternative. The walkthrough covers relay-specific headers and maintainer BCCs, mandatory archive copies, expired-certificate handling,
-          and returning a large lazy batch to the primary without replaying completed emails.</p>
-        <p>Explore <a href="/patterns.html">Patterns</a> for focused sending recipes and complete Docker applications using jobs, events and workflows.</p>
-        <nav class="use-case-jump" aria-label="Use cases on this page">
-          <a href="#correct-mime"><span>01</span>Build messages</a>
-          <a href="#secure-sending"><span>02</span>Send securely</a>
-          <a href="#high-throughput"><span>03</span>Handle high throughput</a>
-          <a href="#batch-delivery"><span>04</span>Send batches</a>
-          <a href="#application-integration"><span>05</span>Fit your application</a>
-          <a href="#delivery-diagnostics"><span>06</span>Diagnose a send</a>
-          <a href="#inspect-incoming-mail"><span>07</span>Inspect incoming mail</a>
-        </nav>
-      </div>
-    </section>
-
-    <section class="use-case-directory ruled-section">
-      <div class="shell">
-        <article id="correct-mime" class="use-case">
-          <div class="use-case-copy">
-            <p class="use-case-coordinate">01 · Message structure</p>
-            <h2>Build messages that render correctly.</h2>
-            <p>Declare plain text, HTML, inline images, attachments, or calendar events and Simple Java Mail builds the MIME tree mail clients expect. Your code does not have to assemble multipart nesting, content IDs, transfer encoding, and transport plumbing by hand.</p>
-          </div>
-          <nav class="use-case-links" aria-label="Message structure documentation">
-            {{> components/use-case-link href="/features.html#section-basic-usage" title="Compose messages" description="Bodies, recipients, and headers" core=true}}
-            {{> components/use-case-link href="/features.html#section-attachments" title="Attachments and inline images" description="Files, streams, and embedded content" core=true}}
-            {{> components/use-case-link href="/rfc-compliant.html#section-why" title="Why MIME structure matters" description="Correct nesting across mail clients" core=true}}
-            {{> components/use-case-link href="/configuration.html#section-programmatic-api-common" title="Configure SMTP once" description="Server, credentials, and transport" core=true}}
-          </nav>
-        </article>
-
-        <article id="secure-sending" class="use-case">
-          <div class="use-case-copy">
-            <p class="use-case-coordinate">02 · Security</p>
-            <h2>Send securely.</h2>
-            <p>Protect the SMTP connection with TLS, use a password or refresh-aware OAuth2 token, sign the sending domain with DKIM, or protect message content with S/MIME or OpenPGP/MIME. These are separate layers, so you can apply the ones your mail flow needs.</p>
-          </div>
-          <nav class="use-case-links" aria-label="Secure sending documentation">
-            {{> components/use-case-link href="/security.html#section-authentication-methods" title="TLS and OAuth2" description="Transport and authentication" core=true}}
-            {{> components/use-case-link href="/security.html#section-sending-dkim" title="DKIM signing" description="Domain identity and integrity" dkim=true}}
-            {{> components/use-case-link href="/security.html#section-sending-smime" title="S/MIME" description="Sign and encrypt message content" smime=true}}
-            {{> components/use-case-link href="/security.html#section-sending-openpgp" title="OpenPGP/MIME" description="Sign and encrypt with OpenPGP keys" openpgp=true}}
-            {{> components/use-case-link href="/security.html#section-crlf-scanning" title="Input scanning" description="Catch suspicious header content" core=true}}
-          </nav>
-        </article>
-
-        <article id="high-throughput" class="use-case">
-          <div class="use-case-copy">
-            <p class="use-case-coordinate">03 · Sustained load</p>
-            <h2>Handle high throughput.</h2>
-            <p>When several workers send continuously, use bounded worker threads and reuse physical SMTP connections in a pool. Cluster keys can keep workloads separate or spread one workload over several SMTP servers.</p>
-          </div>
-          <nav class="use-case-links" aria-label="High-throughput documentation">
-            {{> components/use-case-link href="/features.html#section-sending-asynchronously" title="Asynchronous sending" description="Schedule work and handle results" batch=true}}
-            {{> components/use-case-link href="/smtp-connection-pooling.html" title="Pool orchestration" description="Choose the API and lifecycle owner" batch=true}}
-            {{> components/use-case-link href="/configuration.html#section-clustering" title="SMTP clusters" description="Separate and balance workloads" batch=true}}
-            {{> components/use-case-link href="/sending-and-execution.html#section-mailer-lifecycle" title="Mailer lifecycle" description="Finish work and release resources" batch=true}}
-          </nav>
-        </article>
-
-        <article id="batch-delivery" class="use-case">
-          <div class="use-case-copy">
-            <p class="use-case-coordinate">04 · Known workloads</p>
-            <h2>Send a batch without reconnecting.</h2>
-            <p>For a known list or a caller-owned queue, keep one SMTP connection open and send sequentially. This is part of the core API. Move to pooled delivery only when you need concurrency or sustained throughput.</p>
-          </div>
-          <nav class="use-case-links" aria-label="Batch delivery documentation">
-            {{> components/use-case-link href="/features.html#section-sending-asynchronously" title="Simple batches" description="One connection for a known list" core=true}}
-            {{> components/use-case-link href="/features.html#section-sending-asynchronously" title="Scoped open connection" description="Drive a caller-owned queue" core=true}}
-            {{> components/use-case-link href="/features.html#section-handling-async-result" title="Asynchronous results" description="Observe success and failure" core=true}}
-            {{> components/use-case-link href="/features.html#section-submission-receipts" title="SMTP submission receipts" description="Read the server's replies" core=true}}
-          </nav>
-        </article>
-
-        <article id="application-integration" class="use-case">
-          <div class="use-case-copy">
-            <p class="use-case-coordinate">05 · Application fit</p>
-            <h2>Fit an existing application.</h2>
-            <p>Configure a mailer in Java, properties, environment variables, or Spring. You can also supply your own Jakarta Mail Session, work through an authenticated SOCKS proxy, or send and test from the command line.</p>
-          </div>
-          <nav class="use-case-links" aria-label="Application integration documentation">
-            {{> components/use-case-link href="/spring.html" title="Spring support" description="Build and inject a mailer" spring=true}}
-            {{> components/use-case-link href="/configuration.html#section-config-properties" title="Properties and environment" description="Layer external configuration" core=true}}
-            {{> components/use-case-link href="/features.html#section-custom-session" title="Your own Session" description="Use preconfigured Jakarta Mail state" core=true}}
-            {{> components/use-case-link href="/features.html#section-proxy" title="Authenticated SOCKS" description="Bridge proxy authentication" socks=true}}
-            {{> components/use-case-link href="/cli.html#section-how-to-use" title="Command-line use" description="Send, validate, and test" cli=true}}
-            {{> components/use-case-link href="/modules.html#karaf-module" title="Apache Karaf" description="Install Simple Java Mail as a Karaf feature" karaf=true}}
-          </nav>
-        </article>
-
-        <article id="delivery-diagnostics" class="use-case">
-          <div class="use-case-copy">
-            <p class="use-case-coordinate">06 · Troubleshooting</p>
-            <h2>Diagnose a send.</h2>
-            <p>Test the exact mailer configuration without sending a message, inspect the effective settings, route Jakarta Mail's protocol output into your logs, read the SMTP server's submission replies, and see where a slow send spent its time.</p>
-          </div>
-          <nav class="use-case-links" aria-label="Delivery diagnostics documentation">
-            {{> components/use-case-link href="/features.html#section-connection-test" title="Test a connection" description="Exercise the effective mailer setup" core=true}}
-            {{> components/use-case-link href="/debugging.html#section-inspect-mailer-email" title="Inspect mailer and email state" description="See the values in use" core=true}}
-            {{> components/use-case-link href="/debugging.html#section-debug-logging" title="Protocol debug output" description="Trace the SMTP conversation" core=true}}
-            {{> components/use-case-link href="/debugging.html#section-mailexception" title="Handle failures" description="Read synchronous and async errors" core=true}}
-            {{> components/use-case-link href="/analyzing-send-results.html#section-send-timings" title="Explain a slow send" description="Measure preparation, connection and submission time" core=true}}
-          </nav>
-        </article>
-
-        <article id="inspect-incoming-mail" class="use-case">
-          <div class="use-case-copy">
-            <p class="use-case-coordinate">07 · Receiving</p>
-            <h2>Inspect incoming mail before acting on it.</h2>
-            <p>Read supplied EML or MSG through the ordinary Email model, including supported decrypted content. Before processing a partner document,
-              check the exact selected value against your approved signing keys, full signature coverage and decryption requirements. Keep unknown evidence,
-              readable native fallback and actual processing failures distinct, then let your application process or hold the document.</p>
-          </div>
-          <nav class="use-case-links" aria-label="Received mail inspection documentation">
-            {{> components/use-case-link href="/security.html#section-inspecting-received-protection" title="Check received protection" description="Approved keys, selected values and decisions" core=true}}
-            {{> components/use-case-link href="/features.html#section-source-inspection" title="Inspect sources and Problems" description="Read available evidence and retain originals" core=true}}
-            {{> components/use-case-link href="/email-workload-field-guide.html#check-a-partner-document-before-processing-it" title="Partner-document recipe" description="One focused process-or-hold decision" core=true}}
-            {{> components/use-case-link href="/patterns/protected-partners.html#check-the-required-document" title="Protected partners application" description="Run the receiving workflow" smime=true}}
-          </nav>
-        </article>
-      </div>
-    </section>
-
-  <section class="ruled-section"><div class="shell"><h2>A mailbox is temporarily unavailable</h2><p class="wide">Alice's relay refuses her email with a temporary reply, while Bob's mail still succeeds.
-    An opt-in <a href="/mail-send-retries.html">mail-send retry policy</a> waits for Alice without imposing a relay-wide cooldown. Keep attempts and memory bounded;
-    use your job system when work must survive a restart. <a href="/analyzing-send-results.html#section-retry-history">Attempt history</a> explains the final outcome.</p></div></section>
+<!doctype html>
+<html lang="en" data-pagefind-ignore="all">
+<head>{{> head}}<meta name="robots" content="noindex"></head>
+<body class="marketing-page">
+  {{> site-header}}
+  {{> components/legacy-documentation-links config=compatibility.useCases}}
+  <main id="main-content" class="shell capability-intro">
+    <h1>Explore the capabilities</h1>
+    <p>The use-case overview is now part of <a href="/features.html">Capabilities</a>.</p>
+    <ul>
+      <li id="correct-mime"><a href="/features.html#build-messages">Build messages</a></li>
+      <li id="secure-sending"><a href="/features.html#protect-mail">Protect messages and connections</a></li>
+      <li id="high-throughput"><a href="/features.html#send-one-or-many">Send one or many</a></li>
+      <li id="batch-delivery"><a href="/features.html#send-one-or-many">Send batches</a></li>
+      <li id="application-integration"><a href="/features.html#configure-and-integrate">Configure and integrate</a></li>
+      <li id="delivery-diagnostics"><a href="/features.html#observe-and-troubleshoot">Observe and troubleshoot</a></li>
+      <li id="inspect-incoming-mail"><a href="/features.html#convert-and-inspect-mail">Convert and inspect existing mail</a></li>
+    </ul>
+  </main>
+  {{> footer}}
+</body>
+</html>

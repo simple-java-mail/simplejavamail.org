@@ -20,7 +20,7 @@ mermaid: true
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and the services for each demo. The local examples use synthetic data and run without a real mail account.
 
 Run these commands from that directory:
 
@@ -74,19 +74,22 @@ You can use the public development tokens to inspect the demo. For a real servic
 
 Each customer gets separate workers and local sending limits, so one can't use up another's workers. If you also need to enforce a provider quota across several application instances, you'll need a shared limit.
 
-When you replace a password, the application pauses that customer's route and lets sends already in progress finish. It closes the old Mailer, builds and checks the replacement, then resumes sending if the check succeeds. If it fails, that customer stays paused while the others continue.
+1. **Pause that customer’s route.** Let its in-flight sends finish.
+2. **Replace the Mailer.** Close the old Mailer, then build and check the replacement.
+3. **Resume on success.** If the check fails, keep that customer paused while the others continue.
 
 This demo replaces credentials for a fixed set of customers. If your service continually adds and removes customers, you'll also need to limit registry size and retire routes that are no longer used.
 
 ## Inspect the evidence
 
-The scenario checks that customers can't access each other's jobs or delivery reports, and that each can keep sending while the other is stalled. It also tries duplicate input, credential replacement, and partial or uncertain SMTP results. A bad password leaves only that customer's route paused until a valid replacement is supplied. Here's part of the output:
+Look for `failedReplacementPausedOnlyItsTenant` in the scenario output. After a bad password replacement, A stays paused while B’s job reaches `SUBMITTED`. A resumes after a valid replacement is checked.
 
 ```json
-{"pattern":"relaydesk","tenantIsolation":true,"fairTurns":true,"credentialRevision":3,"oldRouteRetired":true,"partialAndUnknownHeld":true}
+{"failedReplacementPausedOnlyItsTenant":true,"partialAndUnknownHeld":true}
 ```
 
-These results show what the application observed, rather than whether mail reached its final destination. It leaves partial or uncertain submissions on hold. If saving a result fails, check what happened before deciding to resend.
+- **Isolation.** Each customer can send while the other is stalled. Cross-customer access to jobs and reports is rejected. The scenario also checks duplicate input.
+- **Submission evidence.** Partial or uncertain SMTP outcomes stay on hold. If saving a result fails, check what the relay accepted before deciding to resend. Final delivery depends on later feedback.
 
 ## Source and cleanup
 

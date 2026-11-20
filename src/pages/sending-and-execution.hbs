@@ -6,50 +6,42 @@ tags:
 title: "Sending and execution"
 navTitle: "Sending and execution"
 section: "Build and configure"
-breadcrumbParent: "/configuration.html"
 description: "Choose send execution, sending rates, queue limits, deadlines, cancellation, observer dispatch, and SMTP resource ownership."
 ---
 <section><p class="wide">Use this page when you need to control how mail work runs. For what a result means, including partial acceptance and
   retry advice, see <a href="/analyzing-send-results.html">Analyzing send results</a>. If another framework owns your Jakarta Mail messages or
   transports, start with <a href="/smtp-connection-pooling.html">Pool orchestration</a>.</p></section>
 <section class="toc"><ul>
-  <li><a href="#section-send-architecture">Inside a mail send</a></li>
-  <li><a href="#section-send-execution">Choose how sends execute</a></li>
-  <li><a href="#section-async-queue">Bound the async queue</a></li>
-  <li><a href="#section-sending-limits">Match your SMTP service's sending limits</a></li>
-  <li><a href="#section-send-deadlines">Deadlines and cancellation</a></li>
-  <li><a href="#section-batch-and-clustering">Connection reuse and clusters</a></li>
-  <li><a href="#section-mail-send-observer">Observer dispatch and completed-email progress</a></li>
-  <li><a href="#section-correlate-application-jobs">Correlate sends with application jobs</a></li>
-  <li><a href="#section-mailer-lifecycle">Resource ownership and shutdown</a></li>
+      <li><a href="#section-send-execution">Choose how sends execute</a></li>
+      <li><a href="#section-international-mail">International mail and SMTP compatibility</a></li>
+      <li><a href="#section-send-architecture">Inside a mail send</a></li>
+      <li><a href="#section-async-queue">Bound the async queue</a></li>
+      <li><a href="#section-sending-limits">Match your SMTP service's sending limits</a></li>
+      <li><a href="#section-send-deadlines">Deadlines and cancellation</a></li>
+      <li><a href="#section-batch-and-clustering">Connection reuse and clusters</a></li>
+      <li><a href="#section-not-reusing-connections" class="indent">Direct sends</a></li>
+      <li><a href="#section-simple-batch" class="indent">Sequential batches</a></li>
+      <li><a href="#section-open-connection" class="indent">Open-connection callbacks</a></li>
+      <li><a href="#section-mail-send-observer">Observer dispatch and completed-email progress</a></li>
+      <li><a href="#section-correlate-application-jobs">Correlate sends with application jobs</a></li>
+      <li><a href="#section-mailer-lifecycle">Resource ownership and shutdown</a></li>
 </ul></section>
-
-<a href="#section-send-architecture" id="section-send-architecture" class="section-link h2">&sect;</a>
-<h2>Inside a mail send</h2>
-<section>
-  <p class="wide">These are the pieces behind the configuration on this page. The executor controls waiting work, the pool manages reusable
-    connections, and the transport talks SMTP. Outcome reporting follows each email across those layers; it is separate from the work of sending it.</p>
-  {{> components/mail-send-architecture}}
-  <p class="wide">This is a responsibility map, not a lock-order diagram. Direct sends, shared batches, custom mailers, and caller-owned Sessions
-    have different paths. Use the sections below for their execution and ownership rules.</p>
-</section>
 
 <a href="#section-send-execution" id="section-send-execution" class="section-link h2">&sect;</a>
 <h2>Choose how sends execute</h2>
 <section>
   <div class="view">
-    <p><code>mailer.sync().sendMail(email)</code> finishes on the calling thread and throws failures directly.
-      It returns a submission receipt; ignore it when only completion matters.
-      <code>mailer.async().sendMail(email)</code> returns <code>MailSend&lt;MailSubmissionReceipt&gt;</code> for background SMTP work.</p>
-    <p>Both views are cached and share one Mailer, its resources and its lifecycle. Obtaining a view starts no work.
-      Choose the mode per operation: there is no builder async default or boolean execution-mode argument.
-      <code>testConnection()</code> and <code>probeConnection()</code> use the same sync/async views.</p>
-    <p><code>getCompletion()</code> returns a detached CompletableFuture for the actual result. Each call creates a fresh view.
-      Completing, cancelling, or applying <code>orTimeout(...)</code> to that view cannot change the send.
-      Use <code>requestCancellation()</code> when you intend to stop the underlying work.</p>
-    <p>Async sends select their destination, apply its Email templates and validate during executor execution. Those failures go onto the returned
-      completion; a null email remains an immediate argument error. Direct or caller-runs executors may execute on the caller itself.
-      Simple batches retain lazy iteration on their execution thread.</p>
+    <p>If the next line of your job depends on the send finishing, call <code>mailer.sync().sendMail(email)</code>. It returns the submission
+      receipt on the calling thread and throws failures there. If an HTTP request can return while SMTP work continues, call
+      <code>mailer.async().sendMail(email)</code> and keep the returned <code>MailSend&lt;MailSubmissionReceipt&gt;</code>.</p>
+    <p>Choose at each call. <code>sync()</code> and <code>async()</code> return cached views of the same Mailer and start no work on their own.
+      Use the same views for <code>testConnection()</code> and <code>probeConnection()</code>.</p>
+    <p>The async example records the outcome when it arrives. Every <code>getCompletion()</code> call gives you a fresh
+      <code>CompletableFuture</code> view. Cancelling, completing, or setting <code>orTimeout(...)</code> on that future changes only
+      that view. To ask the Mailer to stop the send itself, call <code>send.requestCancellation()</code>.</p>
+    <p>An async call rejects a null email immediately. The executor selects the destination, applies its templates, validates the email,
+      and reports those failures on the completion. It also opens a simple batch's iterable lazily. A direct or caller-runs executor can
+      do that work on the caller's thread.</p>
     <p>Ordinary <code>buildEmail()</code> creates the submitted message. The selected destination combines its applicable defaults and overrides
       during preparation, using each field's documented precedence or merge rules. Use
       <code>buildEmailCompletedWithDefaultsAndOverrides(...)</code> when you explicitly need that completion earlier; see
@@ -71,25 +63,120 @@ send.getCompletion().whenComplete((receipt, failure) -&gt; {
 // Or wait, without losing the ability to request cancellation:
 MailSubmissionReceipt receipt = send.getCompletion().join();</code></pre></div>
 </section>
+<a href="#section-international-mail" id="section-international-mail" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}International mail and older SMTP servers{{/components/feature-heading-h2}}
+
+  <section>
+      <div class="wide">
+          <p>
+              You can send <em>Welcome, José</em> to <code>jose@example.org</code> using ordinary MIME encoding. Sending that same
+              message to <code>müller@example.org</code> needs SMTPUTF8 because the mailbox itself contains a non-ASCII character. A finalized
+              message with raw UTF-8 headers or raw 8-bit body bytes can also need SMTP extensions.
+          </p>
+          <p>
+              You can send to both addresses through one Mailer. On library-owned stock Angus Sessions, Simple Java Mail enables UTF-8
+              encoding before preparing MIME or creating transports. It requests SMTPUTF8 only for submissions that need it, so both kinds
+              of email can reuse the same connections.
+          </p>
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("smtp.example.org", 587)
+    .buildMailer();
+
+Email email = mail.emailBuilder().startingBlank()
+    .from("sender@example.org")
+    .withRecipients(mail.recipientBuilder().withName("Müller").withAddress("müller@example.org").withType(Message.RecipientType.TO).build())
+    .withPlainText("Hello!")
+    .buildEmail();
+
+mailer.sync().sendMail(email); // the receipt is optional to inspect</code></pre>
+          <p>
+              By default, the connected server must advertise SMTPUTF8 for internationalized envelope addresses or raw UTF-8 headers, and 8BITMIME for
+              raw 8-bit body bytes. The adapter adds the appropriate parameters when needed. An <code class="inline language-text">8bit</code> label on an
+              entirely ASCII body does not by itself require 8BITMIME. Existing capability-dependent Angus 8-bit conversion remains available.
+          </p>
+          <p>
+              Use the <a href="debugging.html#section-smtp-capabilities">connection probe</a> to inspect a deployment. Sending still checks the actual
+              connection, including its capabilities after STARTTLS. A probe is diagnostic; it does not upgrade a Mailer or certify the onward route.
+          </p>
+          <h3>Send the same message through three routes</h3>
+          <p>Send the message above to <code>müller@example.org</code> through a library-owned Angus Session.</p>
+          <dl class="extension-boundary-map">
+            <div><dt>Relay advertises SMTPUTF8</dt><dd>The Mailer adds SMTPUTF8 when it submits the message.</dd></div>
+            <div><dt>Relay omits SMTPUTF8</dt><dd>With the default policy, the Mailer rejects the send before submission.</dd></div>
+            <div><dt>Verified legacy route</dt><dd>Explicitly allow original content even without the advertisement.
+              The Mailer attempts the same address without adding an unadvertised SMTPUTF8 parameter.</dd></div>
+          </dl>
+          <p>Enable the option only after verifying the legacy relay and the onward route. The relay can still refuse the message.</p>
+<pre><code class="language-java small">Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("legacy-relay.example.org", 587)
+    .withConnectionConfig(ConnectionConfig.builder()
+        .withLegacySmtpContentSupport(true)
+        .build())
+    .buildMailer();</code></pre>
+<pre><code class="language-properties small">simplejavamail.smtp.legacycontentsupport=true</code></pre>
+<details class="doc-disclosure">
+  <summary>What the legacy route still checks</summary>
+<ul>
+            <li><strong>What the Mailer will attempt.</strong> The option covers internationalized addresses, raw UTF-8 headers and raw 8-bit bodies. Advertised extensions are still used normally.
+              For a missing extension, the adapter attempts the original content without automatically adding the unadvertised SMTPUTF8 or
+              <code class="inline language-text">BODY=8BITMIME</code> parameter. Explicit advanced provider parameters remain your responsibility.
+              A genuine server rejection is reported normally; there is no automatic retry with changed content or fewer requirements.</li>
+            <li><strong>What acceptance tells you.</strong> This deliberately operates outside the negotiated guarantees in
+              <a href="https://www.rfc-editor.org/rfc/rfc6531.html#section-3.2">SMTPUTF8</a> and
+              <a href="https://www.rfc-editor.org/rfc/rfc6152.html#section-3">8BITMIME</a>.
+              An accepted <code class="inline language-java">MailSubmissionReceipt</code> confirms SMTP submission, not downstream preservation or final delivery.
+              Enabling the option does not make a server that rejects internationalized addresses accept them.</li>
+            <li><strong>What the Mailer still checks.</strong> No address characters are replaced, and exact or signed content is never rewritten. TLS, REQUIRETLS and explicit DSN requirements remain
+              enforced. Internationalized ORCPT metadata still requires advertised SMTPUTF8 support. Malformed headers, binary transfer encoding,
+              NUL body bytes and body lines longer than 998 bytes (excluding CRLF) remain rejected; encode unsuitable bodies as Base64 or quoted-printable.</li>
+          </ul>
+
+          <p>
+              An explicit <code class="inline language-properties">mail.mime.allowutf8=false</code> is honored. Caller-owned Sessions, CustomMailer and
+              third-party providers keep their existing ownership. For a caller-owned ordinary Angus transport, enable
+              <code class="inline language-properties">mail.mime.allowutf8=true</code> before creating transports if needed; Angus retains its Session-wide
+              SMTPUTF8 declaration behavior there, including on ASCII messages. Custom socket factories on library-owned stock Angus Sessions are preserved
+              and still receive managed per-message negotiation; they do not automatically gain physical-abort support.
+          </p>
+          <p>
+              The compatibility permission belongs to the configuration of the Session actually selected for sending. In a shared cluster, enabling it
+              for one server does not enable it for the others. See <a href="configuration.html#section-legacy-smtp-content">configuration</a>,
+              <a href="spring.html#section-spring-profiles">Spring profiles</a> and <a href="cli.html#section-legacy-smtp-content">CLI usage</a>.
+              Angus may log that SMTPUTF8 is unavailable; that notice alone does not prevent ASCII-compatible mail.
+          </p>
+</details>
+      </div>
+  </section>
+
+<a href="#section-send-architecture" id="section-send-architecture" class="section-link h2">&sect;</a>
+<h2>Inside a mail send</h2>
+<section>
+  <p class="wide">These are the pieces behind the configuration on this page. The executor controls waiting work, the pool manages reusable
+    connections, and the transport talks SMTP. Outcome reporting follows each email across those layers; it is separate from the work of sending it.</p>
+  {{> components/mail-send-architecture}}
+  <p class="wide">This is a responsibility map, not a lock-order diagram. Direct sends, shared batches, custom mailers, and caller-owned Sessions
+    have different paths. Use the sections below for their execution and ownership rules.</p>
+</section>
+
   <a href="#section-async-queue" id="section-async-queue" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 core=true}}Bound asynchronous work and handle a full queue{{/components/feature-heading-h2}}
 
   <section>
     <div class="view">
       <p>
-        A background job can produce emails faster than the SMTP server accepts them. Limiting workers alone leaves the waiting queue free to grow.
-        Set an async queue capacity when you want the application to notice overload and decide whether to pause the producer, retain work in its own
-        durable queue, or skip a notification that is no longer useful.
+        Your nightly report job can create 500 emails long before the SMTP server catches up. A worker limit controls how many tasks are
+        running. Add a queue limit to control how many get to wait. When the queue fills, your job can slow down, put the reports back on
+        its durable queue, or skip a notification that has gone stale.
       </p>
       <p>
-        The default capacity is <code>-1</code> (unbounded). A positive capacity limits waiting tasks; <code>0</code> permits only immediate handoff
-        to a worker. This is one queue per Mailer, not per SMTP connection or cluster. The SMTP work still runs on a worker, never as a full-queue fallback on the caller.
+        The example allows four workers and 100 waiting tasks per Mailer. The default <code>-1</code> leaves that queue unbounded.
+        Set <code>0</code> when a send should be accepted only if a worker can take it immediately. Capacity belongs to the Mailer,
+        regardless of which SMTP connections or clusters its workers use. A full built-in queue never runs SMTP on the caller as a fallback.
       </p>
       <p>
-        The example rejects immediately once workers and waiting slots are occupied. Rejection completes the returned future exceptionally with
-        <code>MailSendRejectedException</code>. An ordinary email attempt also reaches the configured observer once on the submitting thread, with no
-        submission receipt and no started timestamp. No transport or proxy is acquired for the rejected task.
-        This exception extends <code>MailException</code>, with kind <code>CAPACITY</code>; a generic library-failure handler can catch it too.
+        The next task is rejected immediately once all four workers and 100 waiting slots are occupied. Its future fails with
+        <code>MailSendRejectedException</code>, a <code>MailException</code> with kind <code>CAPACITY</code>. An ordinary email's
+        observer is called once on the submitting thread with no receipt or started timestamp. Rejected tasks never acquire a transport or proxy.
       </p>
     </div>
     <div class="side">
@@ -114,7 +201,7 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
 });</code></pre>
       <p>
         Rejection means this attempt was not scheduled. Other send failures can represent an accepted or ambiguous SMTP transaction:
-        inspect the <a href="features.html#section-submission-receipts">submission receipt</a> before deciding to retry.
+        inspect the <a href="/analyzing-send-results.html#section-get-receipt">submission receipt</a> before deciding to retry.
       </p>
     </div>
   </section>
@@ -123,16 +210,15 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
     <div class="view">
       <h4>Let a background producer wait briefly</h4>
       <p>
-        For a producer that can slow down, <code>waitForCapacity(Duration)</code> waits on the submitting thread until a queue slot opens or the positive
-        admission timeout expires. Pass that limit in the same call. Avoid waiting on request or event-loop threads that must return promptly.
-        An observer submitting another async send can also wait; with a full one-worker queue, only the timeout may let that worker continue.
+        If the report job can slow down, let it wait up to 250 ms for a slot. <code>waitForCapacity(Duration)</code> blocks the
+        submitting thread, so keep it off request threads and event loops that need to return promptly. An observer that submits work
+        can wait as well. If that observer is on the only worker and the queue is full, the timeout may be what lets the worker continue.
       </p>
       <p>
-        <code>CAPACITY_WAIT_TIMED_OUT</code>, <code>CAPACITY_WAIT_INTERRUPTED</code>, and <code>EXECUTOR_SHUT_DOWN</code> explain unsuccessful waits;
-        <code>QUEUE_FULL</code> is immediate rejection. An interrupted admission wait preserves the calling thread's interrupt flag.
-        A borrowed executor's <code>RejectedExecutionException</code> becomes <code>MailSendRejectedException</code> with reason
-        <code>EXECUTOR_REJECTED</code> and the original rejection as its cause; it does not invent a built-in queue count.
-        The wait timeout is not a send deadline and does not cancel SMTP.
+        Look for <code>CAPACITY_WAIT_TIMED_OUT</code>, <code>CAPACITY_WAIT_INTERRUPTED</code>, or <code>EXECUTOR_SHUT_DOWN</code>
+        when a wait fails, and <code>QUEUE_FULL</code> for immediate rejection. An interrupted wait preserves the thread's interrupt flag.
+        For a borrowed executor, <code>EXECUTOR_REJECTED</code> retains its original <code>RejectedExecutionException</code> as the cause.
+        The admission timeout applies only while submitting the task.
       </p>
 <pre><code class="language-java small">mailerBuilder.withAsyncExecutionConfig(AsyncExecutionConfig.builder()
     .withQueueCapacity(100)
@@ -141,21 +227,17 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
     </div>
     <div class="side">
       <h4>Know what the bound counts</h4>
-      <p>
-        Worker count, waiting queue capacity, and connection-pool size are independent. A worker waiting for a pool lease still counts as active.
-        Queued tasks are FIFO; concurrent execution and completion need not be. Destination-specific Email preparation runs during execution,
-        so it uses a worker slot too. The bound does not limit memory your application already used to construct the Email or its attachments.
-      </p>
-      <p>
-        An asynchronous simple batch takes one slot and opens its iterable only when execution starts. Rejected batches do not touch the iterator or
-        report outcomes for its emails. Async connection tests share the queue; synchronous and open-connection operations do not use it.
-      </p>
-      <p>
-        A caller-owned executor defines its own queue, policy, and shutdown. Supply it through
-        <code>withAsyncExecutionConfig(AsyncExecutionConfig.builder().withExecutorService(executor).build())</code>.
-        Replacing the group removes previous explicit built-in settings. Do not combine the custom executor with built-in queue customization.
-        The standalone <code>BatchTransportExecutor</code> has a separate executor and is not configured by these settings.
-      </p>
+      <ul>
+        <li><strong>Active workers.</strong> A worker still counts as active while it prepares a destination-specific Email or waits for a connection. Waiting tasks start from a
+          FIFO queue and can finish in any order when workers run together. The queue limit counts tasks after you submit them, so it cannot
+          cap the memory your code has already used to build messages and attachments.</li>
+        <li><strong>Tasks in the queue.</strong> An async simple batch occupies one slot and opens its iterable once it runs. A rejected batch leaves the iterator untouched and
+          reports no per-email outcomes. Asynchronous connection tests join the same queue. Synchronous and open-connection operations bypass it.</li>
+        <li><strong>A supplied executor.</strong> To use your own queue and rejection policy, pass
+          <code>withAsyncExecutionConfig(AsyncExecutionConfig.builder().withExecutorService(executor).build())</code>. A custom executor
+          replaces explicit built-in queue settings and leaves shutdown to you. These settings apply only to the Mailer. A standalone
+          <code>BatchTransportExecutor</code> has its own executor.</li>
+      </ul>
       <p>
         Use <a href="debugging.html#section-async-queue">queue snapshots</a> for counts and rejection reasons, and
         <a href="/analyzing-send-results.html#section-send-timings">actual-send measurements</a> for individual scheduling delay. For lifecycle behavior, see
@@ -170,12 +252,11 @@ mailer.async().sendMail(email).getCompletion().whenComplete((ignored, failure) -
 {{> components/pattern-examples topic="sending-limits"}}
 <section>
   <div class="view">
-    <p>Your SMTP service allows a certain number of messages or recipients per minute, but several workers are sending at once.
-      Configure those limits on the Mailer instead of putting sleeps around each send. They apply to synchronous and asynchronous sends,
-      simple batches, and <code>withOpenConnection(...)</code>.</p>
-    <p>Sending limits are disabled by default. Choose the count and period to match your service; <strong>30 per minute is just an example</strong>.
-      If you configure both message and recipient limits, both must allow the next email. These are rolling windows, not counters that reset
-      at the start of each clock minute.</p>
+    <p>Your relay plan allows 30 messages and 100 recipients per minute, and several invoice workers can send at once.
+      Put the rules on the Mailer so each worker uses the same allowance. They apply to synchronous and asynchronous sends, simple batches,
+      and <code>withOpenConnection(...)</code>.</p>
+    <p>Use the counts and periods from your provider. Sending limits default to off. With both rules enabled, an invoice needs
+      room in both rolling windows, measured from recent attempts instead of the start of the clock minute.</p>
     <p>Connection-pool size still controls concurrent connections, and queue capacity still controls waiting tasks. Neither is a sending rate.
       These limits do not regulate bandwidth or coordinate your service account across applications.</p>
   </div>
@@ -204,8 +285,8 @@ mailer.async().sendMail(email);</code></pre>
 <section>
   <div class="view">
     <h3>Allow a burst, or spread sends out</h3>
-    <p>Bursts are allowed by default: a 30-per-minute limit can submit 30 messages immediately, then wait for earlier attempts to leave
-      the rolling window. Set <code>withRateLimitBurstsAllowed(false)</code> to spread starts out as well.</p>
+    <p>Say 30 invoices are ready at the top of the hour. By default, their message rule can let all 30 start immediately. Further
+      submissions wait for earlier attempts to leave the rolling window. Set <code>withRateLimitBurstsAllowed(false)</code> to spread those starts out.</p>
     <p>With spreading, 30 messages per minute means at least two seconds between local submission starts; 120 per minute means half a second.
       The first can start immediately. A slow submission does not add another full interval after it finishes, and submissions may overlap.
       Idle time does not build up catch-up credit.</p>
@@ -227,117 +308,176 @@ simplejavamail.smtp.ratelimit.allowbursts=false</code></pre>
   </div>
 </section>
 <section>
-  <div class="view">
-    <h3>Share a service account's allowance deliberately</h3>
-    <p>Keep one <code>SimpleJavaMail</code> factory in application scope. Mailers built from that factory with the same rate-limit group share
-      one allowance, even if they use different connections or pools. Their message rule, recipient rule, and burst setting must agree;
-      conflicting declarations fail when building the Mailer.</p>
-    <p>Without a group name, each registered SMTP configuration has its own allowance. A group is not a pool cluster or hostname.
-      In a connection-pool cluster, the <em>selected SMTP configuration's</em> limits apply, which may differ from those of the Mailer you called.</p>
-    <p>Closing and rebuilding a participant does not reset its named group's recent history. A failed build does not establish new group rules.
-      Another factory, JVM, container, or CLI process has independent history, even with identical properties and group names.
-      Keep any daily, persistent, or account-wide quota outside this in-process limiter.</p>
-    <p>Reusing a caller-owned Session does not transfer one Mailer's limits to another. Within one pool cluster, however, the same Session identifies
-      one pool: reuse that Mailer or its factory's rate-limit group, or use a separate Session for a separately configured participant.</p>
+  <div class="wide">
+    <h3>Share one service account's allowance</h3>
+    <p>If Billing and Notifications use the same relay account, build their Mailers from the same application-scoped
+      <code>SimpleJavaMail</code> factory. Give both the same <code>withRateLimitGroup("company-account")</code> and matching message,
+      recipient, and burst settings. They draw from one allowance even with separate connection pools. A mismatch fails the build.</p>
+
+    <h3>What counts against the limit?</h3>
+    <p>Say the two Mailers share a limit of <strong>3 submission attempts and 8 recipients per minute</strong>. Here is what stays
+      available as they send within the same rolling window.</p>
+    <ol>
+      <li><strong>Billing sends an invoice to one customer and BCCs the archive.</strong> That uses one attempt and two recipients.
+        <strong>2 attempts and 6 recipients left.</strong></li>
+      <li><strong>Notifications sends to one person and gets a temporary <code>451</code> refusal for the whole message.</strong> The submission still counts.
+        <strong>1 attempt and 5 recipients left.</strong></li>
+      <li><strong>Notifications retries under its configured <a href="/mail-send-retries.html">retry policy</a>.</strong> This uses one more
+        attempt and recipient. <strong>0 attempts and 4 recipients left.</strong> Another send waits for room in both limits.</li>
+    </ol>
+    <p>In a separate send with allowance available, suppose Billing cannot connect at all. If the send stops before invoking the
+      provider, the Mailer releases its reservation. The connection failure uses no allowance.</p>
+
+    <details class="doc-disclosure">
+      <summary>How the Mailer counts attempts and recipients</summary>
+      <ul>
+        <li><strong>Provider invocation.</strong> Ordinary sends reserve allowance before acquiring a connection or starting a proxy.
+          Cancellation, connection failure, or MIME-preparation failure releases the reservation before the provider call. Once invoked,
+          it counts even if provider preflight fails, the SMTP reply is a refusal, acceptance is unknown, or cleanup fails.
+          The rate measures local invocation starts. Arrival times can differ.</li>
+        <li><strong>SMTP envelope.</strong> The Mailer counts each intended envelope recipient occurrence, including BCC, additional recipient
+          headers, and explicit envelope overrides. Repeated occurrences and rejected recipients count.</li>
+        <li><strong>Other operations.</strong> A <a href="/configuration.html#section-custom-mailer">CustomMailer</a> invocation counts once with its
+          intended envelope. Extra sends or retries inside that callback are your responsibility. Validation, rehearsal, connection tests,
+          probes, and logging-only sends use no allowance.</li>
+      </ul>
+    </details>
+
+    <details class="doc-disclosure">
+      <summary>Groups, clusters, and separate processes</summary>
+      <ul>
+        <li><strong>Private allowance.</strong> Each registered SMTP configuration without a group name has its own allowance.
+          A group name is independent of pool clusters and hostnames. In a cluster, the configuration selected for each send supplies
+          its limits, even when you called a different Mailer.</li>
+        <li><strong>History.</strong> Closing and rebuilding a Mailer keeps its named group's recent history. A failed build leaves group rules
+          unset if they were never established. Other factories, JVMs, containers, and CLI processes keep independent histories. Apply any
+          daily, persistent, or service-account-wide quota outside this in-process limiter.</li>
+        <li><strong>Supplied Sessions.</strong> Reusing a caller-owned Session leaves each Mailer's limits in place. Within a single cluster,
+          that Session identifies one pool. Reuse the Mailer or its factory's group, or supply a separate Session for a separately
+          configured participant.</li>
+      </ul>
+    </details>
+
+    <details class="doc-disclosure">
+      <summary>Rate waits, connections, and shutdown</summary>
+      <ul>
+        <li><strong>Workers.</strong> The caller or worker waits until there is allowance, cancellation, or a send deadline. There is
+          no separate rate-wait timeout. Waiters are FIFO, so an email with many recipients can hold up smaller ones. Bound the async
+          queue if the producers can outrun the rate. More workers still share the same allowance.</li>
+        <li><strong>Connections.</strong> Ordinary sends wait before borrowing a connection. A simple batch or <code>withOpenConnection(...)</code>
+          holds its connection while waiting between emails. That can exceed the server's idle timeout. The Mailer keeps the limit and
+          does not reconnect automatically. Prefer ordinary pooled sends if you expect long waits.</li>
+        <li><strong>Shutdown.</strong> Graceful shutdown waits for accepted rate-limited work. Keep async handles to request cancellation
+          or set a deadline if you need to bound the wait.</li>
+      </ul>
+    </details>
   </div>
-  <div class="side">
-    <h3>Know what counts</h3>
-    <p>Allowance is reserved before ordinary transport acquisition or proxy startup, then charged when Simple Java Mail invokes the provider.
-      Cancellation, connection failure, or MIME-preparation failure before invocation releases the unused reservation.
-      Once invoked, the attempt stays charged, including rejection, uncertain acceptance, provider-side preflight failure, or later cleanup failure.
-      This is attempted submission, not a count of accepted or delivered mail.</p>
-    <p>Recipient cost follows the intended SMTP envelope, including BCC, additional recipient headers, and envelope overrides.
-      Repeated addresses count as repeated occurrences. Rejected recipients are not refunded.
-      <a href="features.html#section-custom-mailer">CustomMailer</a> counts one callback invocation and the intended envelope; retries or extra sends
-      inside that callback are outside the limit. Validation, rehearsal, connection tests, probing, and logging-only mode consume nothing.</p>
-    <p>Waiting uses the existing caller or worker thread. It responds to cancellation and configured send deadlines, but there is no separate
-      rate-wait timeout. Live waiters are served FIFO, so a large email can hold up smaller ones. Bound the async queue if your producer can
-      outrun this rate; adding workers does not increase a shared allowance.</p>
+  <div class="wide full-width-example">
+    <p>Read the resolved rules through <code>mailer.getOperationalConfig()</code> and trace their sources in
+      <a href="debugging.html#section-config-diagnostics">configuration diagnostics</a>. If a billing run takes longer than expected,
+      record how long each send waited for allowance with
+      <a href="analyzing-send-results.html#section-send-timings"><code>MailSendDiagnostics.getRateLimitWait()</code></a>.</p>
+<pre><code class="language-java small">mailerBuilder.withSendHandlers(MailSendHandlers.builder()
+    .withResultObserver(outcome -> outcome.getDiagnostics().ifPresent(diagnostics -> {
+        Duration wait = diagnostics.getRateLimitWait().getElapsed();
+        if (wait != null) {
+            metrics.recordRateWait(wait);
+        }
+    }))
+    .build());</code></pre>
   </div>
-</section>
-<section>
-  <p class="wide">Ordinary sends wait without borrowing a connection. Simple batches and <code>withOpenConnection(...)</code> deliberately keep
-    their shared connection open during per-email waits. A long wait can exceed the server's idle timeout; Simple Java Mail does not reconnect
-    or bypass your limit automatically. Prefer ordinary pooled sends when waits are likely to be long. Graceful shutdown also waits for accepted
-    rate-limited work; retain async handles or configure a deadline if you need to bound that wait.</p>
-  <p class="wide">Read the resolved rules through <code>mailer.getOperationalConfig()</code>, trace their sources through
-    <a href="debugging.html#section-config-diagnostics">configuration diagnostics</a>, and inspect deliberate waiting with
-    <a href="analyzing-send-results.html#section-send-timings"><code>MailSendDiagnostics.getRateLimitWait()</code></a>.
-    The rate is based on local provider invocations, not guaranteed arrival times at the server.</p>
 </section>
 
 <a href="#section-send-deadlines" id="section-send-deadlines" class="section-link h2">&sect;</a>
 <h2>Deadlines and cancellation</h2>
 <section>
-  <div class="view">
-    <p>A notification may stop being useful while it waits: a campaign was paused, a job was cancelled, or a newer status update replaced it.
-      Keep its send handle if you want to request cancellation. For a whole-operation time budget, configure a Mailer deadline.</p>
-    <p><code>requestCancellation()</code> is a void, idempotent request, not an acknowledgement. Always inspect the eventual completion.
-      A send can still succeed if SMTP acceptance was already observed. If the final reply was lost after the terminating DATA command
-      or BDAT LAST could have reached the server, the receipt remains UNKNOWN with DUPLICATE_RISK. Cancellation does not recall accepted mail.</p>
-    <p id="late-stop-cleanup">In the unreleased 10.0.0 line, an unrelated connection cleanup failure remains visible even when cancellation
-      or deadline expiry arrives after SMTP acceptance. The failure retains its original cause and any accepted receipt. Expected socket-close
-      errors caused by a supported physical abort stay handled at the provider boundary; acceptance alone does not hide other cleanup problems.</p>
-    <p><code>MailSendCancelledException</code> and <code>MailSendTimeoutException</code> describe execution control, not new SMTP statuses.
-      Both can contain an optional submission receipt. Before preparation/scheduling or while waiting for a connection, there may be no receipt.
-      <a href="/analyzing-send-results.html#section-control-results">Read those receipts before deciding to retry.</a></p>
-  </div>
-  <div class="side"><pre><code class="language-java">Mailer mailer = mail.mailerBuilder()
+  <div class="wide full-width-example">
+    <p>Suppose a sign-in code is only useful while a customer is at the login screen. Give the send 30 seconds, including any time it
+      spends waiting to run. If the customer requests a new code sooner, use the old send's handle to ask the Mailer to stop it.</p>
+<pre><code class="language-java">Mailer mailer = mailerBuilder
     .withMailSendTimeout(Duration.ofSeconds(30))
     .buildMailer();
 
 MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
+send.getCompletion().whenComplete(this::recordCompletion);
 
-// Called by application code when this notification is obsolete:
-send.requestCancellation();
-
-// It resolves after execution exits and required cleanup finishes,
-// not merely because cancellation was requested.
-send.getCompletion().whenComplete(this::recordCompletion);</code></pre>
-<pre><code class="language-properties"># Optional; omitted means no total send deadline.
-simplejavamail.defaults.mailsend.timeout=PT30S</code></pre>
-<p>The same property works in <a href="/spring.html">Spring</a>. The CLI builder option takes ISO-8601 text too:
-  <code>--mailer:withMailSendTimeout PT30S</code>. <code>resetMailSendTimeout()</code> removes a configured total deadline.</p>
+// Later, if the customer requests a replacement code:
+send.requestCancellation();</code></pre>
   </div>
   <div class="wide">
-    <table>
-      <thead><tr><th>Limit</th><th>What it bounds</th><th>What it does not mean</th></tr></thead>
+    <h3>Check how far the send got</h3>
+    <p><code>requestCancellation()</code> is safe to call again. The completion supplies the result after the work and required cleanup finish.
+      A <code>MailSendCancelledException</code> or <code>MailSendTimeoutException</code> can carry an SMTP receipt.
+      <a href="/analyzing-send-results.html#section-control-results">Check the available submission evidence before retrying.</a></p>
+    <div class="doc-table-wrap" tabindex="0" aria-label="What cancellation means at each stage of a send"><table>
+      <thead><tr><th>When it stops</th><th>What to expect</th></tr></thead>
       <tbody>
-        <tr><td><code>ConnectionConfig.Builder.withSessionTimeout(...)</code>, or individual <code>withConnectTimeout(...)</code>,
-          <code>withReadTimeout(...)</code> and <code>withWriteTimeout(...)</code></td><td>Each socket operation's connect/read/write wait.
-          The common setter selects all three.</td><td>Not a budget for the whole send. See <a href="configuration.html#socket-timeouts">fine-tuning and precedence</a>.</td></tr>
-        <tr><td><code>AsyncExecutionConfig.Builder.waitForCapacity(...)</code></td><td>Caller-side admission wait.</td><td>Does not cancel already admitted SMTP work.</td></tr>
-        <tr><td><code>ConnectionPoolConfig.Builder.withClaimTimeout(...)</code></td><td>Waiting to obtain a pooled transport.</td><td>Not a deadline for using that transport.</td></tr>
-        <tr><td><code>withMailSendTimeout(...)</code></td><td>One budget across preparation, admission, pool acquisition, connection/TLS/authentication,
-          MIME/security work, SMTP, and required cleanup.</td><td>Not proof of non-acceptance, and not an unconditional return-by time.</td></tr>
+        <tr><td>Queued</td><td>A task that stops before it runs never reaches SMTP. The Mailer's own queue frees the slot.
+          A supplied executor may leave the cancelled task queued, where it can no longer send.</td></tr>
+        <tr><td>Connecting</td><td>Supported connections can abort setup, including TLS, authentication, and supported proxies.
+          A send can stop before it has a submission receipt.</td></tr>
+        <tr><td>Uploading</td><td>If the provider can establish the final DATA terminator or BDAT LAST was never sent, the receipt can
+          show that the server could not have accepted the message.</td></tr>
+        <tr><td>Awaiting the final reply</td><td>If the terminator could have reached the server and the reply is lost, expect
+          <code>UNKNOWN</code> with <code>DUPLICATE_RISK</code>. Acceptance may already have happened.</td></tr>
+        <tr><td>After acceptance</td><td>A send can still succeed when acceptance is already known.</td></tr>
       </tbody>
-    </table>
-    <p>The total timeout is disabled by default and must be a positive, nanosecond-representable Duration. Existing shorter socket/acquisition limits
-      still apply. A simple batch has one budget for its whole iteration, excluding observer work between emails.
-      An open-connection operation gives connection establishment and each sender invocation separate budgets;
-      arbitrary application work between sends and final scope cleanup are not charged to a send.</p>
-    <p>Write-timeout scheduling on an owned managed Angus Session uses one lazy daemon worker shared by its physical connections.
-      Returning a healthy connection to the pool or aborting its raw socket does not release that connection's scheduler reference;
-      complete disposal does. The last disposal stops the worker, and a later connection can start a new one.
-      Application-supplied timeout schedulers are not shut down by the Mailer. See <a href="configuration.html#section-programmatic-api-other">configuration options</a>.</p>
-    <p>Supported SJM-owned Angus Sessions capture the socket before connection establishment, including TLS and supported proxy paths.
-      Cancellation closes that socket without waiting for Angus's SMTP monitor. A pooled abort invalidates its lease and waits for disposal;
-      a retired request cannot reach a later borrower. Queued cancellation removes owned queue work and releases its waiting slot.
-      With a caller executor, a retired wrapper cannot send even if the executor cannot remove it.</p>
-    <p>A configured total deadline fails before connecting if a selected provider, custom socket factory, CustomMailer, or caller-owned Session
-      does not expose supported physical-abort capability. SJM does not silently replace caller-owned Session providers or socket factories.
-      Without a total deadline, those integrations keep working, with cancellation at cooperative boundaries only.</p>
-    <p>A shared pool cluster used for timed sends needs that capability on every member, because the pool may select any member.
-      Once a timed send uses a cluster, newly registered members are checked too, until that cluster has no registered Sessions left.</p>
-    <p>DNS, application callbacks, custom data sources, and provider code outside the supported I/O path cannot be forcibly terminated.
-      Completion waits for that code and required cleanup to return. Observer work is excluded from the send budget, but the default inline
-      observer can still delay completion. Deadline signalling itself never runs observers or CompletableFuture continuations.</p>
-    <p>Simple batches stop after the first failure or known cancellation/deadline expiry. Before entering another lazy iterator callback,
-      SJM checks for that stop, including after each email's inline observer. A source callback already running must still return cooperatively.
-      Already successful email outcomes stay successful and untouched emails receive no callbacks.</p>
-    <p>Cancellation from the final email's observer still cancels the batch: SJM does not call <code>hasNext()</code> again just to discover that
-      the source is exhausted. A batch cancelled or rejected before execution does not open its iterable. Validation, rehearsal, connection tests,
-      and standalone BatchTransportExecutor operations are not instrumented by this Mailer deadline or cancellation API.</p>
+    </table></div>
+    <p id="late-stop-cleanup">If unrelated cleanup fails after acceptance, the failure still carries its original cause and any accepted
+      receipt. The provider handles the expected socket-close errors from physically aborting the connection.</p>
+
+    <details class="doc-disclosure">
+      <summary>Configure the deadline and related timeouts</summary>
+      <p>The total deadline is off by default. Set a positive <code>Duration</code> that fits in nanoseconds or use an ISO-8601 value
+        in configuration. <code>resetMailSendTimeout()</code> removes the configured deadline.</p>
+<pre><code class="language-properties">simplejavamail.defaults.mailsend.timeout=PT30S</code></pre>
+      <p>The same property works in <a href="/spring.html">Spring</a>. In the CLI, use <code>--mailer:withMailSendTimeout PT30S</code>.</p>
+      <ul>
+        <li><strong>Whole send.</strong> <code>withMailSendTimeout(...)</code> covers admission, preparation, pool acquisition, connection
+          setup, TLS, authentication, MIME and security work, SMTP, and required cleanup. Completion can take longer when work must return
+          cooperatively.</li>
+        <li><strong>Socket operations.</strong> Shorter connect, read, and write limits still apply.
+          <code>ConnectionConfig.Builder.withSessionTimeout(...)</code> sets all three. Use <code>withConnectTimeout(...)</code>,
+          <code>withReadTimeout(...)</code>, and <code>withWriteTimeout(...)</code> to tune them individually.
+          See <a href="configuration.html#socket-timeouts">fine-tuning and precedence</a>.</li>
+        <li><strong>Waiting for capacity.</strong> <code>AsyncExecutionConfig.Builder.waitForCapacity(...)</code> bounds waiting for
+          admission on the submitting thread. <code>ConnectionPoolConfig.Builder.withClaimTimeout(...)</code> bounds waiting for a lease.</li>
+      </ul>
+    </details>
+
+    <details class="doc-disclosure">
+      <summary>Providers, clusters, and write timers</summary>
+      <ul>
+        <li><strong>Provider support.</strong> A total deadline requires a supported physical abort. The Mailer fails before connecting
+          if the selected provider, socket factory, <code>CustomMailer</code>, or caller-owned Session lacks it. Keep the deadline off
+          there to use cooperative cancellation. Your supplied providers and socket factories stay in place.</li>
+        <li><strong>Cluster support.</strong> Every member must support physical abort for timed sends. After a timed send, the cluster
+          also checks new registrations until its last Session is removed.</li>
+        <li><strong>Aborting a pooled socket.</strong> Managed Angus can close the socket without waiting for the SMTP monitor. Aborting
+          a pooled connection invalidates and disposes of the lease, so a later borrower cannot inherit the cancellation.</li>
+        <li><strong>Write timers.</strong> Physical connections on a managed Angus Session share one lazy daemon timer thread. Returning
+          a lease or aborting its raw socket leaves the connection's timer reference in place until disposal. The last disposal stops the
+          thread. A later connection can start it again. The application owns any scheduler it supplies.
+          See <a href="configuration.html#section-programmatic-api-other">configuration options</a>.</li>
+      </ul>
+    </details>
+
+    <details class="doc-disclosure">
+      <summary>Callbacks, batches, and open connections</summary>
+      <ul>
+        <li><strong>Cooperative cleanup.</strong> DNS, application callbacks, custom data sources, and provider code outside supported
+          I/O must return on their own. Observer work stays outside the budget. An inline observer can delay completion, but deadline
+          signalling runs independently of observers and <code>CompletableFuture</code> continuations.</li>
+        <li><strong>Simple batches.</strong> One budget covers the iteration, excluding observer work between emails. On failure or
+          a known stop, the Mailer stops before its next source callback. A callback already running must return on its own. It checks
+          again after each inline observer, including the final one, before calling <code>hasNext()</code>. Successful outcomes stay
+          successful and untouched emails receive no callbacks. Rejection or cancellation before execution leaves the iterable unopened.</li>
+        <li><strong>Open connections.</strong> <code>withOpenConnection(...)</code> gives connection setup and each send its own budget.
+          Application work between sends and the final scope cleanup are outside those per-send budgets.</li>
+        <li><strong>Other operations.</strong> Validation, rehearsal, connection tests, and standalone <code>BatchTransportExecutor</code>
+          work are outside the Mailer send deadline and cancellation API.</li>
+      </ul>
+    </details>
   </div>
 </section>
 
@@ -346,112 +486,60 @@ simplejavamail.defaults.mailsend.timeout=PT30S</code></pre>
 <section><p class="wide">Queue limits count waiting tasks; pool limits count reusable connections. A worker waiting for a lease is still active.
   Use the direct, simple-batch, open-connection, or pooled path that matches your workload.</p></section>
   <a href="#section-not-reusing-connections" id="section-not-reusing-connections" class="section-link h3">&sect;</a>
-  {{#> components/feature-heading-h3 core=true}}How direct connections work{{/components/feature-heading-h3}}
-
-  <section>
-	<div>
-		<p class="wide">
-			Direct asynchronous sending schedules send tasks on the mailer's configured <code class="inline language-java">ExecutorService</code>. Each send still opens and closes its own Transport
-			connection, managed independently of a connection pool. By default this direct executor is a single-thread executor; provide a custom
-			<code class="inline language-java">ExecutorService</code> if you want different concurrency. Every concurrent send still needs its own SMTP connection,
-			which is less efficient in high-volume scenarios and can reach the SMTP server's connection limit more quickly.
-		</p>
-		<div>
-			<pre><code class="language-java small">Mailer mailer = mailerBuilder.(..).buildMailer();
-
-mailer.sync().sendMail(email); // blocks; failures are thrown here
-CompletableFuture&lt;MailSubmissionReceipt&gt; future = mailer.async().sendMail(email).getCompletion();
-
-// Runtime selection belongs in application code:
-if (backgroundJob) {
-    mailer.async().sendMail(email).getCompletion().whenComplete(this::recordResult);
-} else {
+  {{#> components/feature-heading-h3 core=true}}Send one email on a direct connection{{/components/feature-heading-h3}}
+  <section><div class="wide">
+    <p>For an occasional password reset, let the Mailer open a transport, send the message and close the transport.
+      With your SMTP settings already on <code>mailerBuilder</code>, a one-off job can own the Mailer for the duration of the call.</p>
+<pre><code class="language-java">try (Mailer mailer = mailerBuilder.buildMailer()) {
     mailer.sync().sendMail(email);
-}
-</code></pre>
-		</div><br/>
-		Defining your own thread pool using an ExecutorService (the direct-sending default is
-		<code class="inline language-java">Executors.newSingleThreadExecutor</code>):
-		<div>
-			<pre><code class="language-java small">mailerBuilder.withAsyncExecutionConfig(AsyncExecutionConfig.builder()
-    .withExecutorService(new MyAwesomeCustomThreadPoolExecutor())
-    .build())</code></pre>
-		</div>
-		<p class="wide">
-			Queue, executor, pooling and timeout settings still come from the builder, properties or Spring. They configure resources, not which view an operation uses. If runtime data decides the mode, branch explicitly as above and handle asynchronous failures.
-		</p>
-		<p class="wide">
-			See <a href="#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for who shuts down the default and custom executors.
-		</p>
-	</div>
-  </section>
+}</code></pre>
+    <p>A service can reuse the Mailer for later calls. Direct async sending uses one worker by default. If you
+      <a href="/configuration.html#configure-async-workers">supply more workers</a>, allow one connection per simultaneous send.
+      Choose <code>sync()</code> or <code>async()</code> at the call site and handle the result there.
+      See <a href="#section-mailer-lifecycle">when to close the Mailer and executor</a>.</p>
+  </div></section>
 
-  <section>
-	<div class="view">
-		<p>
-			When reconnecting for every message is the only problem you need to solve, use simple sequential batch sending. It sends all provided emails
-			over one SMTP connection. It consumes the iterable lazily, sends one at a time, stops at the first failure and reuses only that connection. Neither mode collects receipts: the sync call returns void, and the async completion carries Void. Use the configured MailSendResultObserver for per-email outcomes, including attempts before a later failure.
-		</p>
-		<p>Watch both the overall completion and the <a href="#section-mail-send-observer">terminal outcomes for reached emails</a>.
-			Queue rejection, iteration, opening the connection or final shared-connection cleanup can fail outside an individual observed email.
-			Untouched entries have no outcome. Observers retain their existing handoff, timing and delivery limits; lazy-batch factories run on the
-			execution thread. Applications own business correlation, counts, persistence and retry decisions, and a count alone does not establish safe retry.
-			Use <code>withOpenConnection(...)</code> when your application deliberately checkpoints after each returned receipt.</p>
-	</div>
+  <h3 id="section-simple-batch">Send a known set in a simple batch</h3>
+  <section><div class="wide">
+    <p>For an overnight set of reports, let the Mailer read the iterable lazily and send one report at a time on a shared connection.
+      The batch stops at the first failure.</p>
+<pre><code class="language-java">mailer.sync().sendMailsInSimpleBatch(emails);</code></pre>
+    <p>For a background batch use <code>mailer.async().sendMailsInSimpleBatch(emails)</code> and check the returned
+      <code>MailSend&lt;Void&gt;</code> completion. The sync call returns <code>void</code>. For individual results, register a
+      <a href="#section-mail-send-observer">result observer</a>. If you need to checkpoint each receipt yourself, use the callback below.</p>
+<details class="doc-disclosure">
+  <summary>Iteration, cleanup and partial batch results</summary>
+<p>The execution thread opens and reads the iterable. Observer handoff and timing follow the ordinary send rules.
+      Queue admission, iteration, connection setup and final cleanup can fail outside an individual send. Watch the batch completion
+      as well as outcomes for the messages reached. Keep the job ID with each outcome when deciding what is safe to retry.</p>
+      <p>If preparing an acquired connection fails, the transport is closed. A subsequent close failure is suppressed on the original failure.
+      For sustained throughput, see <a href="#section-reusing-connections">pooled connections</a>.</p>
+</details>
+  </div></section>
 
-	<div class="wide full-width-example">
-<pre><code class="language-java small">mailer.sync().sendMailsInSimpleBatch(emails); // blocks until the batch is done
-MailSend&lt;Void&gt; batch = mailer.async().sendMailsInSimpleBatch(emails);
-batch.getCompletion().join(); // optional: wait for the whole sequential batch
-</code></pre>
-		<p>
-			For sustained high-volume sending, prefer <a href="#section-reusing-connections">pooled connections</a>.
-		</p>
-	</div>
-  </section>
-
-  <section>
-	<div class="view">
-		<p>
-			When the caller owns the queue and needs custom work between successful sends, use
-			<code class="inline language-java">withOpenConnection(...)</code>. Simple Java Mail keeps one SMTP connection open while the
-			callback decides what to send next. This is useful for database-backed queues where a message should be marked as sent before the next one is read.
-		</p>
-		<p>Without failover, the connection is separate from the pool and closes when the callback finishes. With
-			<a href="/smtp-connection-failover.html#section-batches">failover</a> and the batch module, Simple Java Mail can borrow it from the selected pool
-			and return it afterward for reuse. It remains occupied while your callback does other work, so don't wait there for another send that needs a connection
-			from the same full pool. Use the callback's sender, or start that independent work after the callback ends.</p>
-		<p>Use the sender only on the thread running this callback, before the callback returns or throws. Don't pass it to another thread or save it
-			for later: those calls are rejected before preparing or sending an email. Use <code>mailer.async().sendMail(...)</code> for independent
-			asynchronous sends.</p>
-		<p>
-			This form uses the Mailer's built-in SMTP connection. It cannot be combined with a
-			<a href="features.html#section-custom-mailer">CustomMailer</a>, which owns its own connection lifecycle. Use
-			<code class="inline language-java">mailer.sync().sendMail(...)</code> or its async equivalent and keep any connection reuse inside that implementation.
-		</p>
-	</div>
-
-	<div class="wide full-width-example">
-<pre><code class="language-java small">mailer.withOpenConnection(sender -> {
+  <h3 id="section-open-connection">Checkpoint each send on an open connection</h3>
+  <section><div class="wide">
+    <p>When the queue belongs to your application, use <code>withOpenConnection(...)</code> to inspect each receipt and checkpoint
+      the job before reading the next item. Use the scoped sender on the callback’s thread while the callback is running.</p>
+<pre><code class="language-java">mailer.withOpenConnection(sender -&gt; {
     while (database.hasPendingMail()) {
         Email next = database.nextPendingMail();
-        sender.sendMail(next);
-        database.markSent(next);
+        MailSubmissionReceipt receipt = sender.sendMail(next);
+        database.recordSubmission(next, receipt);
     }
-});
-</code></pre>
-		<p>
-			The callback sends one email at a time. For asynchronous queueing, concurrent sends or clustered load balancing, use
-			<a href="#section-reusing-connections">pooled connections</a>.
-		</p>
-		<p>
-			Keep the receipt returned by <code class="inline language-java">sender.sendMail(next)</code> when the checkpoint needs provider-neutral submission
-			status, accepted or unsent recipient groups, and any SMTP response exposed by the provider. You can ignore it when completion is enough. A failed or partial submission throws
-			<code class="inline language-java">MailSubmissionException</code> with the same facts, so mark the queue item only after inspecting that outcome.
-		</p>
-	</div>
-  </section>
-
+});</code></pre>
+    <p>A failed or partially accepted submission throws <code>MailSubmissionException</code>. Inspect its receipt when available before deciding
+      what to record or retry. Calls on the scoped sender from another thread or after the callback ends fail before preparing an email.</p>
+<details class="doc-disclosure">
+  <summary>Connection ownership and failover</summary>
+<p>Normally the Mailer opens a dedicated connection and closes it after the callback. With
+      <a href="/smtp-connection-failover.html#section-batches">failover</a> and the batch module, it can return a healthy lease to the selected pool.
+      You hold that lease while checkpointing. If an independent send needs the same full pool, schedule it after the callback returns.</p>
+      <p>For independent background sends use <code>mailer.async().sendMail(...)</code>. For concurrent sending or cluster routing see
+      <a href="#section-reusing-connections">pooled connections</a>. A <a href="/configuration.html#section-custom-mailer">CustomMailer</a>
+      manages its own connections and uses the regular sync and async send APIs.</p>
+</details>
+  </div></section>
 
   <a href="#section-reusing-connections" id="section-reusing-connections" class="section-link h3">&sect;</a>
   {{#> components/feature-heading-h3 batch=true}}Reusing connections with a pool{{/components/feature-heading-h3}}
@@ -459,20 +547,19 @@ batch.getCompletion().join(); // optional: wait for the whole sequential batch
 	<section>
 		<div>
 			<p class="wide">
-				Pooled delivery reuses SMTP connections across worker threads. The default setup provides up to four pooled connections,
-				which automatically close if inactive for five seconds following their last use. This mechanism is optimal for managing bursts of email traffic, keeping
-				up to four connections active as long as needed.
+				If receipts arrive in bursts throughout the day, a connection pool lets the next worker reuse a Transport the last send just
+				returned. The default pool grows to four connections and closes idle connections five seconds after their last use.
 			</p>
 			<p class="wide">
-				The connection pool configuration is flexible, allowing adjustments to core connection pool size, maximum pool size, and connection expiry policy.
+				Start with the number of connections your relay and workers can use. Configure the core and maximum pool size, how long a worker
+				can wait for a connection, and how long to keep it after a send.
 			</p>
 			<p class="wide">
 				This section configures the Simple Java Mail <code>Mailer</code> path. Compare it with the standalone batch facade, direct leases, and
 				provider-owned pooling in the <a href="smtp-connection-pooling.html">pool orchestration guide</a>.
 			</p>
 			<p>
-				Direct sending can use a custom thread pool, while pooled sending also lets those threads reuse Transport connections. This can improve performance even with fewer
-				threads, as it eliminates the need to repeatedly open and close connections for each email.
+				Even a small worker pool can benefit if connection setup takes a significant part of each send.
 			</p>
 		<div>
 		<pre><code class="language-java small">Mailer pooledMailer = mailerBuilder
@@ -509,12 +596,11 @@ simplejavamail.defaults.connectionpool.expireafter.millis=1800000
 		<div>
 			<div class="view">
 				<p>
-					Use a cluster when several SMTP servers handle the same workload, or when different workloads need their own connection pools.
-					Mailers that share a cluster key each register a pool for their configured SMTP server.
+					Suppose two order relays handle the same receipts, while account alerts use a separate relay. Build an order Mailer for each
+					relay with the same cluster key. Each Mailer registers its Session's pool. Give alerts a separate key to keep their pool separate.
 				</p>
 				<p>
-					For each send, the cluster selects one registered pool using its round-robin or random-access strategy.
-					This spreads work across the SMTP servers registered for that cluster.
+					The cluster picks a registered pool for each send using round-robin or random-access selection.
 				</p>
 				<p>
 					For cluster-selected versus exact-Session callbacks outside the full Mailer API, see the
@@ -544,7 +630,7 @@ simplejavamail.defaults.connectionpool.loadbalancing.strategy=ROUND_ROBIN
 			</div>
 
 			<div class="wide full-width-example">
-				<p><strong>Failure behavior in a cluster:</strong></p>
+				<p><strong>Try one send through any registered orders relay.</strong></p>
 				<pre><code class="language-java small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 
 Mailer primary = mail.mailerBuilder()
@@ -577,25 +663,23 @@ try {
 		</div>
 
 		<p class="wide">
-			<strong>Handling a failed send:</strong> Simple Java Mail invalidates the failed transport and reports the failure to your application.
-			The server pool remains registered and participates in normal selection for later sends. With synchronous sending, the call throws
-			<code class="inline language-java">MailException</code>; with asynchronous sending, the returned
-			<a href="features.html#section-handling-async-result"><em>CompletableFuture</em> completes exceptionally</a>.
-			Use that failure signal with your application's retry, health-check, circuit-breaking, or provider-routing policy, including its safeguards for
-			ambiguous SMTP outcomes.
+			If a transport fails, the Mailer invalidates it and reports the failure. The same pool stays registered and can be selected for
+			later sends. A synchronous call throws <code class="inline language-java">MailException</code>. In the async case the
+			<a href="/analyzing-send-results.html#section-async-results"><em>CompletableFuture</em> completes exceptionally</a>.
+			Check the result before retrying, especially if SMTP acceptance is uncertain. Use the per-send failure signal in any health-check,
+			circuit-breaking, or provider-routing policy you own.
 		</p>
 
 	  <p class="wide">
-		  <strong>Note 2:</strong> Connection pool defaults are scoped by cluster key. The first Mailer instance in a cluster sets that cluster's
-		  pool defaults; later Mailer instances in the same cluster cannot change them. Different cluster keys can use different pool defaults.
+		  <strong>Decide pool defaults before registering the first Mailer.</strong> The first registration sets the defaults for the cluster.
+		  Later Mailers with that key inherit them. Separate cluster keys can have different defaults.
 	  </p>
 
 	  <p class="wide">
-		  <strong>Note 3:</strong> Using Java API, you can define any number of clusters. Using
-		  <code class="inline language-properties">simplejavamail.defaults.connectionpool.clusterkey.uuid</code>, you define one default cluster key.
-		  Using <code class="inline language-properties">simplejavamail.defaults.connectionpool.clusters.*</code>, property files and
-		  <a href="/spring.html#section-spring-profiles">Spring</a> can also define
-		  separate pool defaults for multiple cluster keys.
+		  <strong>Configure several clusters when routes need different defaults.</strong> The Java API accepts any number of cluster keys.
+		  <code class="inline language-properties">simplejavamail.defaults.connectionpool.clusterkey.uuid</code> defines one default key.
+		  Use <code class="inline language-properties">simplejavamail.defaults.connectionpool.clusters.*</code> to define different defaults by
+		  key in property files or <a href="/spring.html#section-spring-profiles">Spring</a>.
 	  </p>
 
 		<div class="wide">
@@ -625,20 +709,19 @@ simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-00000000
   <section>
     <div class="view">
       <p>
-        Configure one <code class="inline language-java">MailSendResultObserver</code> when audit or metrics code should see every completed email
-        handled by a reusable Mailer. The builder keeps its usual <code class="inline language-java">with...</code> vocabulary; the
-        <code class="inline language-java">onMailSendCompleted(...)</code> method is the callback Simple Java Mail invokes. Configuring another observer
-        replaces the previous one.
+        Suppose your billing service needs to record how every email finished, whether it was sent directly or in a batch.
+        Register a <code class="inline language-java">MailSendResultObserver</code> on the reusable Mailer. The Mailer calls
+        <code class="inline language-java">onMailSendCompleted(...)</code> for each reached email. A new registration replaces the old one.
       </p>
       <p>
-        The observer receives one terminal <code class="inline language-java">MailSendOutcome</code> for each reached email. It covers the complete Simple
-        Java Mail attempt, including preparation and asynchronous queue time. Its optional <code class="inline language-java">MailSubmissionReceipt</code>
-        is narrower: it contains SMTP submission facts only. Preparation and scheduling failures therefore have no receipt; a
-        <code class="inline language-java">MailSubmissionException</code> outcome contains that exception's exact receipt.
+        Use the <code class="inline language-java">MailSendOutcome</code> for the whole attempt, from preparation and queueing through
+        completion. If you also need SMTP submission facts, read the optional <code class="inline language-java">MailSubmissionReceipt</code>.
+        Preparation or queueing failures may have no receipt. A
+        <code class="inline language-java">MailSubmissionException</code> carries the same receipt you get on the outcome.
       </p>
       <p>
-        This is a stream of completed-email progress, not a stream of queued, connecting, leased, or other transport lifecycle events. It does not expose
-        the Email, rendered content, connection, pool, proxy, or executor.
+        Use this callback to tally finished attempts. For live queueing, connecting, or lease events, see the live-progress observer below.
+        The result callback receives outcome data without access to message content or SMTP resources.
       </p>
     </div>
 
@@ -677,7 +760,8 @@ private void recordMailSendOutcome(
   <section>
     <div class="wide full-width-example">
       <p>
-        A named observer makes the configuration method and callback roles explicit:
+        Use a named observer if several Mailers should record the same metrics. This one counts successes, tracks logging-only runs,
+        and measures elapsed time for attempts that started.
       </p>
   <pre><code class="language-java small">final class MetricsMailSendObserver implements MailSendResultObserver {
 
@@ -697,7 +781,16 @@ private void recordMailSendOutcome(
 Mailer mailer = mail.mailerBuilder()
     .withSendHandlers(MailSendHandlers.builder().withResultObserver(new MetricsMailSendObserver()).build())
     .buildMailer();</code></pre>
-      <p>
+      <h3>Read the timestamps for one send</h3>
+<pre><code class="language-text">requestedAt  → Begin the attempt
+readyAt      → Ready for execution admission
+startedAt    → Start executing
+completedAt  → Record the terminal result</code></pre>
+
+      <p>If scheduling fails, you can have <code>readyAt</code> without <code>startedAt</code>. Record the outcome and leave the duration unmeasured.</p>
+<details class="doc-disclosure">
+  <summary>Timing measurements, receipt fields and the runnable demo</summary>
+<p>
         <code class="inline language-java">requestedAt</code> records when the individual attempt begins,
         <code class="inline language-java">readyAt</code> when it is ready for execution admission,
         <code class="inline language-java">startedAt</code> when execution begins, before destination-specific preparation, and
@@ -707,10 +800,6 @@ Mailer mailer = mail.mailerBuilder()
         A preparation failure reached during execution has ready and started times. A scheduling failure has a ready time but no started time.
         Unavailable ready/start values return <code>null</code>. The application metrics adapter above must treat a null duration as unmeasured,
         while still recording the outcome; it must not record it as a zero-duration sample.
-      </p>
-      <p>
-        With the default registration, synchronous callbacks run before the call returns and async callbacks before the completion resolves.
-        Executor-backed dispatch changes that boundary as described below. Outcomes are frozen before either callback execution or handoff.
       </p>
       <p>
         <code class="inline language-java">isLoggingOnly()</code> reports the Mailer's configured mode, not server acceptance. A successful logging-only
@@ -724,37 +813,22 @@ Mailer mailer = mail.mailerBuilder()
         sends several emails asynchronously and prints each terminal outcome immediately with its Message-ID, individual measurements and total time, completion count,
         status, and callback thread. Enable <code class="inline language-java">DemoAppBase</code> logging-only mode to try the stream without an SMTP server.
       </p>
+</details>
+
     </div>
   </section>
 
-
-
-<section>
-  <div class="wide">
+  <section><div class="wide full-width-example">
     <h3>Choose where the observer runs</h3>
-    <table><thead><tr><th>Registration</th><th>Before send completion</th><th>Application responsibility</th></tr></thead><tbody>
-      <tr><td><code>withResultObserver(observer)</code></td><td>The callback returns before the synchronous call or async completion.</td>
-        <td>Keep it quick and thread-safe; slow work delays that completion and occupies its notifying thread.</td></tr>
-      <tr><td><code>withResultObserver(observer, executor)</code></td><td>SJM attempts one handoff before completing, without waiting for the callback.</td>
-        <td>Own the executor, its queue, rejection policy, and shutdown. Track downstream completion yourself.</td></tr>
-    </tbody></table>
-    <p>Either overload replaces the whole registration; the one-argument overload restores inline dispatch.
-      These methods belong to <code>MailSendHandlers.builder()</code>; install the immutable group with <code>withSendHandlers(...)</code>.
-      These are runtime Java integrations, not properties or CLI values, and they are not exposed through OperationalConfig.</p>
-    <p>Default callback threads are the calling thread for synchronous sends and preparation/admission failures, the send worker for running async
-      work, and a private Mailer completion worker for cancelled/expired work that never started. Different sends can notify concurrently.
-      A slow inline callback or completion continuation can delay other terminal notifications on that private worker, but not their deadline signals.</p>
-    <p>The executor overload uses the application executor's actual policy. A direct executor or CallerRunsPolicy can still execute inline;
-      a blocking execute() can delay handoff. Rejected handoffs are logged as undelivered notifications, without retry or inline fallback.
-      A silent-discard executor cannot report a lost notification. Callback RuntimeExceptions are logged and ignored in both modes.</p>
-    <p>Want updates before the result arrives? Use the separate <a href="/analyzing-send-results.html#section-live-progress">live-progress observer</a>.
-      Its dispatcher keeps callbacks away from send threads, including when your executor runs tasks inline. Progress can be coalesced or dropped;
-      the final result remains the source of truth.</p>
-    <p>There are three distinct completions: the send and its cleanup, result-observer callback/handoff, and whatever downstream processing your observer
-      starts. An observer may publish an event to a durable broker for night processing or separately scaled cloud workers. That downstream work
-      need not limit SMTP throughput; its persistence, capacity and delivery guarantees belong to that application integration.</p>
-  </div>
-  <div class="wide full-width-example"><pre><code class="language-java">ExecutorService observationWorkers = Executors.newFixedThreadPool(2);
+    <p>Increment a local metric inline. The callback finishes before the send returns or its async completion resolves.
+      For example, register the metrics callback above with one argument.</p>
+<pre><code class="language-java">mailerBuilder.withSendHandlers(MailSendHandlers.builder()
+    .withResultObserver(new MetricsMailSendObserver())
+    .build());</code></pre>
+
+    <p>If the callback publishes an audit event to a broker, pass an executor. Simple Java Mail attempts one handoff before the send completes.
+      Track the broker acknowledgement separately.</p>
+<pre><code class="language-java">ExecutorService observationWorkers = Executors.newFixedThreadPool(2);
 Mailer mailer = mail.mailerBuilder()
     .withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -&gt; auditQueue.publish(outcome), observationWorkers).build())
     .buildMailer();
@@ -768,10 +842,25 @@ mailer.close();              // finishes SJM work and handoff attempts
 observationWorkers.shutdown(); // application owns this executor
 // Await its termination if this application needs all callbacks to finish.
 // Await downstream acknowledgements separately if your workflow needs them.</code></pre>
-    <p>The manual <a href="https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/modules/simple-java-mail/src/test/java/demo/MailSendExecutionDemoApp.java">MailSendExecutionDemoApp</a>
+    <p>Your application owns the supplied executor, its queue and shutdown, and the audit event’s persistence and delivery.</p>
+<details class="doc-disclosure">
+  <summary>Callback threads, rejection and executor policies</summary>
+<p>Either overload replaces the whole registration; the one-argument overload restores inline dispatch.
+      These methods belong to <code>MailSendHandlers.builder()</code>; install the immutable group with <code>withSendHandlers(...)</code>.
+      These are runtime Java integrations, not properties or CLI values, and they are not exposed through OperationalConfig.</p>
+    <p>Default callback threads are the calling thread for synchronous sends and preparation/admission failures, the send worker for running async
+      work, and a private Mailer completion worker for cancelled/expired work that never started. Different sends can notify concurrently.
+      A slow inline callback or completion continuation can delay other terminal notifications on that private worker, but not their deadline signals.</p>
+    <p>The executor overload uses the application executor's actual policy. A direct executor or CallerRunsPolicy can still execute inline;
+      a blocking execute() can delay handoff. Rejected handoffs are logged as undelivered notifications, without retry or inline fallback.
+      A silent-discard executor cannot report a lost notification. Callback RuntimeExceptions are logged and ignored in both modes.</p>
+<p>Outcomes are frozen before either callback execution or handoff.
+      For updates during a send, use the separate <a href="/analyzing-send-results.html#section-live-progress">live-progress observer</a>.
+      Its dispatcher keeps callbacks off send threads even with an inline executor. Updates can be coalesced or dropped.</p>    <p>The manual <a href="https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/modules/simple-java-mail/src/test/java/demo/MailSendExecutionDemoApp.java">MailSendExecutionDemoApp</a>
       requests cancellation and uses an executor-backed observer. It awaits send completion and observer aggregation separately.</p>
-  </div>
-</section>
+</details>
+
+  </div></section>
   <section><div class="wide">
     <h3>Choose handlers for each send</h3>
     <p>Use <code>withSendHandlersFactory(sendId -&gt; ...)</code> when each send needs its own application context or callbacks.
@@ -864,124 +953,9 @@ observationWorkers.shutdown(); // application owns this executor
   </section>
   <a href="#section-mailer-lifecycle" id="section-mailer-lifecycle" class="section-link h2">&sect;</a>
   {{#> components/feature-heading-h2 batch=true spring=true}}Mailer lifecycle and resource ownership{{/components/feature-heading-h2}}
-
-  <section>
-    <div>
-      <p class="wide">
-        A <code class="inline language-java">Mailer</code> is designed to be built once and reused. When your application is finished with it, call
-        <code class="inline language-java">mailer.close()</code> directly or let a try-with-resources block call it. Which resources need attention depends
-        on how the Mailer is used and whether its executor came from Simple Java Mail or from your application.
-      </p>
-      <p class="wide">
-        Closing a Mailer stops new sends and drains accepted sending work. It then shuts down and waits for its built-in executor before closing
-        its connection-pool registration.
-        It also tracks sends accepted through a caller-owned executor and its private completion worker, without shutting down the caller's executor.
-        It waits for result-observer handoff attempts, not executor-backed callbacks or external downstream processing.
-        Live-progress reporting is separate: shutdown discards pending updates after sending drains, without waiting for or interrupting progress callbacks.
-      </p>
-      <p class="wide">
-        Once shutdown starts, connection tests and probes cannot open another connection. An asynchronous connection test checks again when its
-        task starts, in case the Mailer closed while it waited. Build a new Mailer if you need to reconnect after closing this one.
-      </p>
-      <p class="wide">
-        <a href="features.html#rehearsal-after-close">Rehearsal and validation remain available</a> during and after closing, using the original
-        Mailer's retained preparation settings. A standalone preview can finish independently of sending cleanup, including when another Mailer
-        reuses the sending Session. Work your application deliberately runs inside an accepted send or on the Mailer's own executor keeps that
-        enclosing shutdown lifetime and its existing blocking-close guard.
-      </p>
-      <p class="wide">
-        Enabled write timeouts also need a background monitoring thread. Connections from each Angus Session created by Simple Java Mail share that thread;
-        it stops when the last connection closes, not when a reusable connection goes back to the pool. You do not need to manage it yourself.
-        If you supplied your own timeout scheduler, it remains yours to close. See the
-        <a href="configuration.html#section-config-mailer">socket-timeout configuration</a> for the details.
-      </p>
-
-      <table>
-        <thead>
-        <tr>
-          <th>How the Mailer is used</th>
-          <th>What it owns</th>
-          <th>What to do at shutdown</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-          <td>Synchronous direct sending</td>
-          <td>Each SMTP connection is closed after the operation. The internal executor starts no worker thread unless an asynchronous operation is scheduled.</td>
-          <td>Call <code class="inline language-java">mailer.close()</code> when its application lifetime ends. There are no send futures to await if it was only used synchronously.</td>
-        </tr>
-        <tr>
-          <td>Asynchronous sending with the default executor</td>
-          <td>The Mailer owns its executor. Direct sending uses a single-thread executor by default.</td>
-          <td>Call <code class="inline language-java">mailer.close()</code> to drain accepted work. Still inspect each returned future for send failures.</td>
-        </tr>
-        <tr>
-          <td>Sending with a custom <code class="inline language-java">ExecutorService</code></td>
-          <td>The Mailer owns its SMTP resources; your application owns the executor it supplied.</td>
-          <td>Wait for the futures and call <code class="inline language-java">mailer.close()</code>. Shut down the executor separately when its owner is finished with it.</td>
-        </tr>
-        <tr>
-          <td>Pooled sending</td>
-          <td>The Mailer registers its SMTP connection pool and owns its default worker executor.</td>
-          <td>Close every Mailer; its accepted sends drain before its pool registration closes. In a cluster, each Mailer has its own pool registration.</td>
-        </tr>
-        <tr>
-          <td>A Spring-managed Mailer</td>
-          <td>The same resources as its underlying configuration.</td>
-          <td>Spring calls <code class="inline language-java">close()</code> on the managed Mailer when the application context stops. A Mailer created outside Spring bean management remains your responsibility.</td>
-        </tr>
-        </tbody>
-      </table>
-
-      <p class="wide">
-        Use <code class="inline language-java">close()</code> for normal application shutdown. It shuts down an executor created by Simple Java Mail and,
-        when pooled delivery is active, closes the connection pool registered for that Mailer. It never shuts down an executor supplied through
-        <code class="inline language-java">withExecutorService(...)</code>.
-      </p>
-      <p class="wide">Blocking <code>close()</code> declares <code>ExecutionException</code> for a cleanup failure and
-        <code>InterruptedException</code> when the calling thread stops waiting. The original cleanup failure is the execution exception's cause.
-        An interrupted wait does not cancel shutdown or prove cleanup finished; you can still observe that cleanup through <code>closeAsync()</code>.
-        Code owning a Mailer's lifetime can declare just those two checked exceptions:</p>
-<pre><code class="language-java small" id="example-mailer-close-exceptions">void runMailWork(MailerRegularBuilder&lt;?&gt; configuredBuilder, Iterable&lt;Email&gt; emails)
-        throws ExecutionException, InterruptedException {
-    try (Mailer mailer = configuredBuilder.buildMailer()) {
-        for (Email email : emails) {
-            mailer.sync().sendMail(email);
-        }
-    }
-}</code></pre>
-      <p class="wide">
-        Use <code class="inline language-java">closeAsync()</code> to start the same cleanup without waiting in that call. Its
-        <code class="inline language-java">CompletableFuture&lt;Void&gt;</code> completes after accepted work and owned resources have finished cleanup,
-        including when there is no connection pool. Repeated calls join the same cleanup operation through independent completion views.
-        Completing or cancelling one of those views does not stop cleanup or affect another caller.
-        A successful cleanup does not mean that every send succeeded; those results remain on the individual send futures.
-      </p>
-      <p class="wide">
-        Graceful shutdown does not request cancellation or add a deadline; configured send deadlines still apply. It can wait for slow I/O or an application callback. Call blocking
-        <code class="inline language-java">close()</code> from the application's owning thread, not within a send operation or inline observer, which would wait for itself.
-        You may start <code class="inline language-java">closeAsync()</code> there, but do not wait for its future from that same send or observer.
-      </p>
-    </div>
-  </section>
-
-  <section>
-    <div class="view">
-      <h4>Synchronous work</h4>
-      <p>
-        A try-with-resources block can close the Mailer as soon as the final synchronous call returns.
-      </p>
-<pre><code class="language-java small">try (Mailer mailer = mailerBuilder
-        .buildMailer()) {
-    mailer.sync().sendMail(email);
-}</code></pre>
-    </div>
-
-    <div class="side">
-      <h4>Asynchronous work</h4>
-      <p>
-        With the built-in executor, try-with-resources drains accepted tasks when leaving the block. Await the futures as well if the caller needs their results.
-      </p>
+  <section><div class="wide">
+    <p>Keep one Mailer for the lifetime of your job or service. For a job that queues two reports, keep the completions so you can see whether
+      the sends succeeded. Let try-with-resources close the Mailer when the job finishes.</p>
 <pre><code class="language-java small">try (Mailer mailer = mailerBuilder.buildMailer()) {
     CompletableFuture&lt;MailSubmissionReceipt&gt; first =
             mailer.async().sendMail(firstEmail).getCompletion();
@@ -991,8 +965,42 @@ observationWorkers.shutdown(); // application owns this executor
     CompletableFuture.allOf(first, second)
             .join();
 }</code></pre>
-    </div>
-  </section>
+    <p><code>close()</code> stops new sends, drains accepted work and releases owned resources. Wait from the thread that owns the Mailer.
+      An inline observer or send callback can start cleanup with <code>closeAsync()</code> and return so the send can finish.</p>
+    <h3>Who closes what?</h3>
+    <ul>
+      <li><strong>Direct or pooled Mailer.</strong> Close each Mailer you build. It drains accepted sends before closing its pool registration
+        and shuts down its built-in executor. A synchronous direct call closes its own transport. The default executor starts workers only for async work.</li>
+      <li><strong>Shared executor.</strong> Leave your executor running while the Mailer drains. Its owner shuts it down when the other users are finished.</li>
+      <li><strong>Spring bean.</strong> Spring closes the managed Mailer when the context stops. Close any Mailers you create outside bean management yourself.</li>
+    </ul>
+<details class="doc-disclosure">
+  <summary>Waiting for cleanup and handling close failures</summary>
+<p><code>closeAsync()</code> returns a <code>CompletableFuture&lt;Void&gt;</code> for the same cleanup, including without a pool.
+      Repeated calls give independent views. Cancelling or completing one view leaves cleanup running. Slow I/O and callbacks can delay shutdown.
+      Each accepted send keeps its deadline and its own result.</p>
+      <p>Blocking <code>close()</code> declares <code>ExecutionException</code> for cleanup failures (inspect its cause), and <code>InterruptedException</code>
+      if the caller stops waiting. After interruption, use <code>closeAsync()</code> to observe completion.</p><pre><code class="language-java small" id="example-mailer-close-exceptions">void runMailWork(MailerRegularBuilder&lt;?&gt; configuredBuilder, Iterable&lt;Email&gt; emails)
+        throws ExecutionException, InterruptedException {
+    try (Mailer mailer = configuredBuilder.buildMailer()) {
+        for (Email email : emails) {
+            mailer.sync().sendMail(email);
+        }
+    }
+}</code></pre>
+</details>
+<details class="doc-disclosure">
+  <summary>Observers, previews and write-timeout workers</summary>
+<ul>
+      <li>Shutdown drains accepted work on supplied executors and the Mailer’s private completion worker, and waits for result-observer handoffs.
+        Track executor-backed callbacks and downstream work in your application. Pending progress updates are dropped after draining and running progress callbacks can finish.</li>
+      <li>Connection tests and probes stop opening connections when shutdown starts. Queued async tests check again before opening one. Use a new Mailer for later connections.
+        <a href="/debugging.html#rehearsal-after-close">Standalone rehearsal and validation</a> use the retained preparation settings even during or after close,
+        independently of a later Mailer reusing the Session. Work inside an accepted send or on the Mailer’s own executor follows the enclosing shutdown and blocking-close rules.</li>
+      <li>Connections from a managed Angus Session share their write-timeout monitor until the last connection closes. Returning a connection to the pool keeps the monitor available.
+        Your application closes any scheduler it supplied. See <a href="configuration.html#socket-timeouts">socket timeouts</a>.</li></ul>
+</details>
+  </div></section>
 
   <a href="#section-mail-send-retries" id="section-mail-send-retries" class="section-link h2">&sect;</a>
   <h2>Retry a temporary refusal without holding a worker</h2>

@@ -12,107 +12,119 @@ migrationNotice:
   linkText: "See how to run the recipe"
   href: "/openrewrite-migration-10.0.0.html"
 ---
-  <section class="introduction">
-    <p class="wide">
-      Upgrading will mostly mean following a few compiler errors. If you used <code class="inline language-java">EmailBuilder</code>,
-      <code class="inline language-java">MailerBuilder</code>, or <code class="inline language-java">ConfigLoader</code> directly, those calls need a
-      rewrite. Create one <code class="inline language-java">SimpleJavaMail</code> object for your application and get builders from there.
-      Sending calls also change: choose <code class="inline language-java">mailer.sync()</code> or
-      <code class="inline language-java">mailer.async()</code> explicitly.
-    </p>
-    <p class="wide">
-      Mail settings are now read once and stay with that <code class="inline language-java">SimpleJavaMail</code> object. Changing a system property
-      later will not change builders you create afterwards. Also review validation, shutdown and SMTP compatibility checks below. The other sections
-      cover specific uses such as Spring injection, authenticated SOCKS proxies, direct Jakarta Mail sends and raw MIME tests.
-    </p>
-    <p class="wide">
-      Your normal dependency remains <code class="inline language-text">org.simplejavamail:simple-java-mail:10.0.0</code>. You do not need to add Angus
-      separately unless your own source code imports Angus classes. This page only covers changes to existing code and behavior. New 10.0.0 features are
-      documented on their regular documentation pages.
-    </p>
-  </section>
+  {{#each collections.journal}}
+    {{#if (eq this.url "/journal/what-simple-java-mail-10-is-for.html")}}
+      <section class="introduction">
+        <p class="wide">If, like me, you're wondering what I was thinking changing everything like this, you can read exactly what I was thinking in
+          <a href="{{this.url}}">{{this.data.title}}</a>.</p>
+      </section>
+    {{/if}}
+  {{/each}}
 
   <section class="toc">
-    <ul>
-      <li><a href="#java-11">Run on Java 11 or newer</a></li>
-      <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
-      <li><a href="#explicit-send-mode">Choose whether each call waits or runs in the background</a></li>
-      <li><a href="#cli-help-values">Keep CLI values ending in --help</a></li>
-      <li><a href="#cli-integer-values">Supply whole numbers for CLI integer options</a></li>
-      <li><a href="#required-mailer-inputs">Use named operations to remove Mailer choices</a></li>
-      <li><a href="#email-construction">Build Email objects through buildEmail()</a></li>
-      <li><a href="#email-body-method-names">Use consistent body method names</a></li>
-      <li><a href="#attachment-resource-builder">Build advanced attachments with named metadata</a></li>
-      <li><a href="#attachment-content-types">Keep attachment Content-Type parameters</a></li>
-      <li><a href="#multipart-attachment-import">Keep explicitly attached multipart containers</a></li>
-      <li><a href="#calendar-method-import">Review calendar method import</a></li>
-      <li><a href="#streamed-text-import">Read provider-returned text body streams</a></li>
-      <li><a href="#imported-sent-dates">Handle unavailable imported sent dates</a></li>
-      <li><a href="#outlook-optional-dates">Handle missing Outlook date metadata</a></li>
-      <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
-      <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
-      <li><a href="#connection-conflicts">Review conflicting connection configuration</a></li>
-      <li><a href="#reused-session-oauth2">Reuse a Session with its current OAuth2 settings</a></li>
-      <li><a href="#pooled-oauth-usernames">Keep the selected OAuth account with connection pooling</a></li>
-      <li><a href="#pooled-oauth-registration">Use the current credentials after Session reuse</a></li>
-      <li><a href="#session-initialization">Configure event executors and supplied Session protocols</a></li>
-      <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
-      <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
-      <li><a href="#config-types">Check types if you read config values yourself</a></li>
-      <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
-      <li><a href="#cli-metadata-build">Build CLI metadata through Maven</a></li>
-      <li><a href="#cli-daemon-startup-configuration">Keep complete configuration when starting a CLI daemon</a></li>
-      <li><a href="#cli-daemon-state-paths">Keep daemon state paths consistent across startup</a></li>
-      <li><a href="#cli-daemon-shutdown">Account for the CLI daemon shutdown deadline</a></li>
-      <li><a href="#submission-results">Check exception reporting and SMTP acceptance checks</a></li>
-      <li><a href="#email-convenience-mailboxes">Check address-list interpretation and display names</a></li>
-      <li><a href="#notification-destination-lists">Read notification destinations as lists</a></li>
-      <li><a href="#smtp-empty-credentials">Review empty SMTP credential strings</a></li>
-      <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
-      <li><a href="#copied-template-suppression">Check copies of emails that skip defaults or overrides</a></li>
-      <li><a href="#calendar-template-values">Keep a template's calendar method and text together</a></li>
-      <li><a href="#repeated-email-completion">Check repeated template collection additions</a></li>
-      <li><a href="#forwarded-templates">Check forwarded messages in Email templates</a></li>
-      <li><a href="#copied-receipt-requests">Check receipt requests on copied emails</a></li>
-      <li><a href="#copied-delivery-overrides">Keep test-inbox routing when copying emails</a></li>
-      <li><a href="#missing-outlook-sender">Handle a missing Outlook sender explicitly</a></li>
-      <li><a href="#attachment-reader-ownership">Let attachment convenience readers close their streams</a></li>
-      <li><a href="#pool-setting-validation">Replace negative pool settings</a></li>
-      <li><a href="#dkim-validation-timing">Handle invalid DKIM header exclusions when signing</a></li>
-      <li><a href="#message-snapshots">Stop changing emails through retained lists or arrays</a></li>
-      <li><a href="#operational-snapshots">Configure Mailers through their builders</a></li>
-      <li><a href="#header-replacement">Check custom headers that differ only in capitalization</a></li>
-      <li><a href="#empty-custom-headers">Null custom headers produce empty fields</a></li>
-      <li><a href="#recipient-equality">Review Email comparisons</a></li>
-      <li><a href="#eml-export-failures">Handle content failures during email conversion</a></li>
-      <li><a href="#address-only-name">Check names when importing only a recipient address</a></li>
-      <li><a href="#received-email-reading">Read one logical Email and inspect selected content</a></li>
-      <li><a href="#received-email-helper-confidentiality">Protect automatically reused confidential content</a></li>
-      <li><a href="#received-header-reuse">Separate received headers from outgoing claims</a></li>
-      <li><a href="#requested-smime-module">Include S/MIME support when requesting decryption</a></li>
-      <li><a href="#existing-mime-smime-protection">Review S/MIME protection of an existing MimeMessage</a></li>
-      <li><a href="#async-preparation">Account for validation running during async execution</a></li>
-      <li><a href="#api-construction">Use public contracts instead of constructing library results</a></li>
-      <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
-      <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
-      <li><a href="#smtp-content-compatibility">Check sends with international addresses or unencoded non-ASCII text</a></li>
-      <li><a href="#smtp-size-check">Account for rejection before sending oversized email</a></li>
-      <li><a href="#opportunistic-tls">Configure optional SMTP encryption on the Mailer builder</a></li>
-      <li><a href="#mandatory-starttls">Remove settings that contradict required SMTP encryption</a></li>
-      <li><a href="#custom-factory-fallback">If you supply your own SMTP connection code</a></li>
-      <li><a href="#proxy-bridge-port">Check fixed local ports when using SOCKS proxy authentication</a></li>
-      <li><a href="#direct-session">If you create Jakarta Mail Sessions yourself</a></li>
-      <li><a href="#spring-context">Review Spring auto-configuration and beans</a></li>
-      <li><a href="#embedded-route-flags">Check two embedded-image settings</a></li>
-      <li><a href="#angus-api-boundary">If your own code imports Angus</a></li>
-      <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
-      <li><a href="#delivery-envelope">If you use bounce addresses or delivery-status notifications</a></li>
-      <li><a href="#async-shutdown">Allow shutdown to wait for sends already in progress</a></li>
-      <li><a href="#mail-send-execution-control">Update stored async results to MailSend</a></li>
-      <li><a href="#eml-bytes">If you parse raw EML streams</a></li>
-      <li><a href="#empty-imported-bodies">Distinguish empty imported bodies from absent alternatives</a></li>
-      <li><a href="#finalized-mime">Check raw MIME tests and size limits</a></li>
-    </ul>
+    <p>Review the common changes first, then open the groups that match your application.</p>
+    <details open>
+      <summary>Start here</summary>
+      <ul>
+        <li><a href="#java-11">Run on Java 11 or newer</a></li>
+        <li><a href="#builder-entry">Move builder calls to SimpleJavaMail</a></li>
+        <li><a href="#explicit-send-mode">Mailer.sendMail() moves to sync() or async()</a></li>
+        <li><a href="#email-construction">Build Email objects through buildEmail()</a></li>
+        <li><a href="#email-body-method-names">Use consistent body method names</a></li>
+        <li><a href="#grouped-configuration">Move advanced builder settings into configuration groups</a></li>
+        <li><a href="#typed-protection-config" class="indent">Update DKIM and S/MIME builder calls</a></li>
+        <li><a href="#duration-settings">Pass Duration values for time settings</a></li>
+        <li><a href="#config-loader">Replace static ConfigLoader calls</a></li>
+        <li><a href="#config-behavior">Check when settings are read and which sources are included</a></li>
+        <li><a href="#submission-results">Check exception reporting and SMTP acceptance checks</a></li>
+        <li><a href="#mailer-validation">Update assumptions about Mailer validation</a></li>
+        <li><a href="#async-shutdown">Mailer.close() drains accepted sends</a></li>
+      </ul>
+    </details>
+    <details>
+      <summary>Configuration, sending and security</summary>
+      <ul>
+        <li><a href="#required-mailer-inputs">Use named operations to remove Mailer choices</a></li>
+        <li><a href="#connection-conflicts">Review conflicting connection configuration</a></li>
+        <li><a href="#config-types">Check types if you read config values yourself</a></li>
+        <li><a href="#config-lifecycle">Swap mail settings without changing objects already in use</a></li>
+        <li><a href="#email-convenience-mailboxes">Check address-list interpretation and display names</a></li>
+        <li><a href="#notification-destination-lists">Read notification destinations as lists</a></li>
+        <li><a href="#smtp-empty-credentials">Review empty SMTP credential strings</a></li>
+        <li><a href="#selected-mailer-templates">Check templates when using several Mailers in a cluster</a></li>
+        <li><a href="#copied-template-suppression">Check copies of emails that skip defaults or overrides</a></li>
+        <li><a href="#calendar-template-values">Keep a template's calendar method and text together</a></li>
+        <li><a href="#repeated-email-completion">Check repeated template collection additions</a></li>
+        <li><a href="#forwarded-templates">Check forwarded messages in Email templates</a></li>
+        <li><a href="#pool-setting-validation">Replace negative pool settings</a></li>
+        <li><a href="#dkim-validation-timing">Handle invalid DKIM header exclusions when signing</a></li>
+        <li><a href="#message-snapshots"><code>Email.getHeaders()</code> returns read-only header values</a></li>
+        <li><a href="#image-settings-at-build"><code>buildEmail()</code> checks automatic image settings</a></li>
+        <li><a href="#serialized-email-compatibility">Review stored Email snapshots</a></li>
+        <li><a href="#operational-snapshots">Configure Mailers through their builders</a></li>
+        <li><a href="#header-replacement">Check custom headers that differ only in capitalization</a></li>
+        <li><a href="#empty-custom-headers">Null custom headers produce empty fields</a></li>
+        <li><a href="#recipient-equality">Review Email comparisons</a></li>
+        <li><a href="#async-preparation">Account for validation running during async execution</a></li>
+        <li><a href="#dkim-defaults">Move DKIM defaults into Email templates</a></li>
+        <li><a href="#smtp-content-compatibility">Check sends with international addresses or unencoded non-ASCII text</a></li>
+        <li><a href="#smtp-size-check">Account for rejection before sending oversized email</a></li>
+        <li><a href="#opportunistic-tls">Configure optional SMTP encryption on the Mailer builder</a></li>
+        <li><a href="#mandatory-starttls">Remove settings that contradict required SMTP encryption</a></li>
+        <li><a href="#embedded-route-flags">Check two embedded-image settings</a></li>
+        <li><a href="#mail-send-execution-control">Update stored async results to MailSend</a></li>
+      </ul>
+    </details>
+    <details>
+      <summary>Messages, received mail and conversion</summary>
+      <ul>
+        <li><a href="#attachment-resource-builder">Build advanced attachments with named metadata</a></li>
+        <li><a href="#attachment-content-types">Keep attachment Content-Type parameters</a></li>
+        <li><a href="#multipart-attachment-import">Keep explicitly attached multipart containers</a></li>
+        <li><a href="#calendar-method-import">Review calendar method import</a></li>
+        <li><a href="#streamed-text-import">Read provider-returned text body streams</a></li>
+        <li><a href="#imported-sent-dates">Handle unavailable imported sent dates</a></li>
+        <li><a href="#outlook-optional-dates">Handle missing Outlook date metadata</a></li>
+        <li><a href="#copied-receipt-requests">Check receipt requests on copied emails</a></li>
+        <li><a href="#copied-delivery-overrides">Keep test-inbox routing when copying emails</a></li>
+        <li><a href="#missing-outlook-sender">Handle a missing Outlook sender explicitly</a></li>
+        <li><a href="#imported-inline-resources">Check imported images and attachments</a></li>
+        <li><a href="#attachment-reader-ownership">Let attachment convenience readers close their streams</a></li>
+        <li><a href="#eml-export-failures">Handle content failures during email conversion</a></li>
+        <li><a href="#address-only-name">Check names when importing only a recipient address</a></li>
+        <li><a href="#received-email-reading">Email.getDecryptedAttachments() and getSmimeSignedEmail() replacements</a></li>
+        <li><a href="#received-email-helper-confidentiality">Protect automatically reused confidential content</a></li>
+        <li><a href="#received-header-reuse">Separate received headers from outgoing claims</a></li>
+        <li><a href="#requested-smime-module">Include S/MIME support when requesting decryption</a></li>
+        <li><a href="#existing-mime-smime-protection">signAndOrEncryptMessageWithSmime() can sign or encrypt independently</a></li>
+        <li><a href="#provider-neutral-mime">If you cast converted messages to SMTPMessage</a></li>
+        <li><a href="#delivery-envelope">Transport.send() after MIME conversion and envelope settings</a></li>
+        <li><a href="#eml-bytes">emlToEmail(InputStream) reads the original bytes</a></li>
+        <li><a href="#empty-imported-bodies">Distinguish empty imported bodies from absent alternatives</a></li>
+        <li><a href="#finalized-mime">Check raw MIME tests and size limits</a></li>
+      </ul>
+    </details>
+    <details>
+      <summary>CLI, Spring and other integrations</summary>
+      <ul>
+        <li><a href="#cli-help-values">Keep CLI values ending in --help</a></li>
+        <li><a href="#cli-integer-values">Supply whole numbers for CLI integer options</a></li>
+        <li><a href="#reused-session-oauth2">Reuse a Session with its current OAuth2 settings</a></li>
+        <li><a href="#pooled-oauth-usernames">Keep the selected OAuth account with connection pooling</a></li>
+        <li><a href="#pooled-oauth-registration">Use the current credentials after Session reuse</a></li>
+        <li><a href="#session-initialization">Configure event executors and supplied Session protocols</a></li>
+        <li><a href="#cli-metadata-build">Build CLI metadata through Maven</a></li>
+        <li><a href="#cli-daemon-startup-configuration">Keep complete configuration when starting a CLI daemon</a></li>
+        <li><a href="#cli-daemon-state-paths">Keep daemon state paths consistent across startup</a></li>
+        <li><a href="#cli-daemon-shutdown">Account for the CLI daemon shutdown deadline</a></li>
+        <li><a href="#api-construction">Use public contracts instead of constructing library results</a></li>
+        <li><a href="#custom-factory-fallback">A custom socket factory error stops the connection attempt</a></li>
+        <li><a href="#proxy-bridge-port">Check fixed local ports when using SOCKS proxy authentication</a></li>
+        <li><a href="#direct-session">mailerBuilder(session) requires an available Session</a></li>
+        <li><a href="#spring-context">Review Spring auto-configuration and beans</a></li>
+        <li><a href="#angus-api-boundary">If your own code imports Angus</a></li>
+      </ul>
+    </details>
   </section>
 
   <a href="#java-11" id="java-11" class="section-link h2">&sect;</a>
@@ -220,67 +232,51 @@ Mailer mailer = mail.mailerBuilder()
   </section>
 
   <a href="#explicit-send-mode" id="explicit-send-mode" class="section-link h2">&sect;</a>
-  <h2>Choose whether each call waits or runs in the background</h2>
+  <h2><code>Mailer.sendMail()</code> moves to <code>sync()</code> or <code>async()</code></h2>
   <section>
-    <p class="wide"><strong>Breaking change:</strong> Replace <code>mailer.sendMail(email)</code> with <code>mailer.sync().sendMail(email)</code> to
-      wait for the result, or <code>mailer.async().sendMail(email)</code> to submit background work. Make the same choice for batches and connection tests.
-      The choice now belongs to each call, not the Mailer builder. Remove builder <code>.async()</code>; builder and OperationalConfig
-      <code>isAsync()</code> are gone too. The direct Mailer methods, including their boolean mode arguments and receipt-specific variants,
-      have been removed without forwarding aliases.
-      Recompile integrations and custom Mailer implementations against 10.0.0 rather than relying on old binary signatures.</p>
-    <p class="wide"><code>sync()</code> and <code>async()</code> use the same Mailer, executor and connections. Neither starts another Mailer or needs separate closing.
-      Configuration getters, validation, <code>withOpenConnection(...)</code> and shutdown remain on Mailer.
-      The scoped <code>MailSender</code> inside <code>withOpenConnection</code> remains synchronous; its <code>sendMail(email)</code> now returns the receipt
-      directly instead of exposing a separate receipt-specific method.</p>
-    <div class="wide table-scroll"><table>
-      <thead><tr><th>Released 9.x call</th><th>10.0.0 call</th><th>Result</th></tr></thead>
-      <tbody>
-        <tr><td><code>sendMail(email, false)</code>, <code>sendMailAndGetReceipt(email, false)</code></td>
-          <td><code>mailer.sync().sendMail(email)</code></td><td>MailSubmissionReceipt</td></tr>
-        <tr><td><code>sendMail(email, true)</code>, <code>sendMailAndGetReceipt(email, true)</code></td>
-          <td><code>mailer.async().sendMail(email)</code></td><td>MailSend&lt;MailSubmissionReceipt&gt;</td></tr>
-        <tr><td><code>sendMail(email)</code>, <code>sendMailAndGetReceipt(email)</code></td>
-          <td>Choose <code>sync().sendMail(email)</code> or <code>async().sendMail(email)</code> explicitly</td><td>Receipt, or receipt-bearing handle</td></tr>
-        <tr><td><code>sendMailsInSimpleBatch(emails, false)</code></td><td><code>mailer.sync().sendMailsInSimpleBatch(emails)</code></td><td>void</td></tr>
-        <tr><td><code>sendMailsInSimpleBatch(emails, true)</code></td><td><code>mailer.async().sendMailsInSimpleBatch(emails)</code></td><td>MailSend&lt;Void&gt;</td></tr>
-        <tr><td><code>sendMailsInSimpleBatch(emails)</code></td><td>Choose the sync or async batch view</td><td>No receipt collection in either mode</td></tr>
-        <tr><td><code>testConnection(false)</code></td><td><code>mailer.sync().testConnection()</code></td><td>void</td></tr>
-        <tr><td><code>testConnection(true)</code></td><td><code>mailer.async().testConnection()</code></td><td>CompletableFuture&lt;Void&gt;</td></tr>
-        <tr><td><code>testConnection()</code></td><td>Choose the sync or async test view</td><td>void, or future</td></tr>
-      </tbody>
-    </table></div>
-    <p class="wide">Every single-email send now produces a receipt. It describes SMTP submission, not final delivery; inspect it only when useful.
-      Ignoring a synchronous receipt does not suppress failures. Replace stored asynchronous send futures with
-      <code>MailSend&lt;MailSubmissionReceipt&gt;</code>, then obtain a <code>CompletableFuture&lt;MailSubmissionReceipt&gt;</code> through
-      <code>getCompletion()</code>. Simple-batch completions still carry <code>Void</code>.</p>
-    <pre class="full-width-example"><code class="language-java">// Only completion matters:
-mailer.sync().sendMail(email);
-
-// Or retain the exact receipt:
-MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
-
-// Background work:
-MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
-CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion();</code></pre>
-    <p class="wide">Synchronous calls throw preparation, connection and send failures directly. Asynchronous calls prepare and validate the email
-      when the executor runs the operation. Admission may still wait for executor capacity on the calling thread before returning.
-      Preparation, sending and scheduling failures are reported through
-      <code>getCompletion()</code>; null arguments still throw immediately.
-      SMTP failures use the exception described in <a href="#submission-results">send failures and receipts</a>.</p>
-    <p class="wide">Simple batches still consume their iterable lazily, send sequentially over one shared connection and stop on the first failure.
-      They return completion only and do not accumulate receipts.</p>
-    <p class="wide">Existing executor, pooling and socket-timeout settings, including Spring support, do not select execution
-      mode. There was no async-mode property to migrate. If application configuration or runtime data decides the mode, make that branch explicit:</p>
-    <pre class="full-width-example"><code class="language-java">if (runInBackground) {
+    <p>Choose at the call site. If the request needs the SMTP result before it returns, use the synchronous view.
+      If a worker will record the result later, use the asynchronous view. Both use the same Mailer, executor and connections.</p>
+    <h3>Wait for the receipt</h3>
+    <p>Replace <code>sendMail(email, false)</code> or <code>sendMailAndGetReceipt(email, false)</code> with this call.
+      You can ignore the returned receipt when successful completion is enough. Failures throw here.</p>
+<pre><code class="language-java">MailSubmissionReceipt receipt = mailer.sync().sendMail(email);</code></pre>
+    <h3>Get the result in the background</h3>
+    <p>For the old <code>true</code> argument, keep the send handle. Its completion reports preparation, scheduling and send failures.
+      The receipt describes SMTP submission. Final delivery can happen later.</p>
+<pre><code class="language-java">MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(email);
+send.getCompletion().whenComplete(this::recordResult);</code></pre>
+    <p>Previously relied on <code>sendMail(email)</code>, <code>sendMailAndGetReceipt(email)</code> or a builder-wide mode?
+      Remove the builder’s <code>.async()</code> and reads of <code>isAsync()</code> on the builder or <code>OperationalConfig</code>.
+      Choose the view at each call, then recompile integrations and custom Mailer implementations.</p>
+<details class="doc-disclosure">
+  <summary>Simple batches and connection tests</summary>
+<ul>
+    <li><strong>Simple batches.</strong> For an old <code>sendMailsInSimpleBatch</code> call, choose
+      <code>mailer.sync().sendMailsInSimpleBatch(emails)</code> (returns <code>void</code>) or the same call on <code>async()</code>
+      (returns <code>MailSend&lt;Void&gt;</code>). The batch reads the iterable lazily, sends sequentially on one shared connection
+      and stops at the first failure. Its completion covers the batch as a whole.</li>
+    <li><strong>Connection tests.</strong> Replace <code>testConnection(false)</code> with <code>mailer.sync().testConnection()</code>
+      and <code>testConnection(true)</code> with <code>mailer.async().testConnection()</code>. The first returns <code>void</code>,
+      the second a <code>CompletableFuture&lt;Void&gt;</code>. For the old no-argument call, choose the view explicitly.</li>
+    <li>Configuration getters, validation, <code>withOpenConnection(...)</code> and shutdown stay on the Mailer. Close it once.
+      The callback’s scoped <code>MailSender.sendMail(email)</code> is synchronous and returns the receipt.</li>
+    </ul>
+</details>
+<details class="doc-disclosure">
+  <summary>A runtime flag, async admission or a CLI script</summary>
+<p>If a request flag decides whether to wait, branch before sending.</p><pre class="full-width-example"><code class="language-java">if (runInBackground) {
     mailer.async().sendMail(email).getCompletion().whenComplete(this::recordResult);
 } else {
     MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
     recordResult(receipt, null);
 }</code></pre>
-    <p class="wide">CLI <code>send</code> and <code>connect</code> use the synchronous view and wait for completion.
-      Remove <code>--mailer:async</code> and <code>--mailer:async--help</code> when used as execution options; both are rejected with an argument error unless an earlier genuine help option has already ended the command.
-      The CLI does not print send receipts, and daemon request concurrency is unchanged.</p>
-    <p class="wide">See <a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> for the current operation contracts.</p>
+    <ul><li>Async preparation and validation run on the executor. A null argument still throws immediately, and admission can wait for capacity.
+      See <a href="#submission-results">send failures and receipts</a>.</li>
+      <li>Executor, pool and timeout settings still come from Java, properties or Spring. Execution mode was a builder or call-site choice.</li>
+      <li>CLI <code>send</code> and <code>connect</code> wait for completion. Remove <code>--mailer:async</code> and <code>--mailer:async--help</code>.
+        They now give an argument error unless a genuine help option ended the command first. The CLI omits receipts and daemon requests retain their concurrency.</li></ul>
+</details>
+    <p><a href="/sending-and-execution.html#section-send-execution">Sending and execution</a> covers the current APIs.</p>
   </section>
 
   <h2 id="cli-metadata-build">Build CLI metadata through Maven</h2>
@@ -302,7 +298,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
     <p>Supply configuration when starting an absent daemon through <code>daemon start</code> or <code>--daemon=acquire</code>. Running instances
       keep their startup defaults; later client JVM properties do not replace them. Supply the complete desired configuration again with
       <code>daemon restart</code> to capture new defaults. Explicit request Mailer options retain the normal conflict policy and lock checks.
-      See the <a href="cli.html#daemon-startup-configuration">CLI startup guide</a>. This concerns the unreleased 10.0.0 daemon.</p>
+      See the <a href="cli.html#daemon-startup-configuration">CLI startup guide</a>. The daemon is new in 10.0.0.</p>
   </div></section>
 
   <h2 id="cli-daemon-state-paths">Keep daemon state paths consistent across startup</h2>
@@ -315,7 +311,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
     <p>Use the same resulting state directory for later commands targeting that instance. If a shortened socket uses a custom JVM temporary
       directory, keep its resolved location the same too.
       An absolute state directory is convenient when commands run from different working directories. No setting or command syntax changes are
-      required. This corrects the unreleased daemon and adds no released 9.x API migration. See
+      required. The daemon is new in 10.0.0, so there is no 9.x daemon API to migrate. See
       <a href="cli.html#daemon-state-paths">daemon state-directory configuration</a>.</p>
   </div></section>
 
@@ -326,8 +322,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completion = send.getCompletion()
       It interrupts workers after the grace period and terminates its process if cleanup or command code still blocks at the deadline.</p>
     <p>Existing stop and restart commands need no syntax changes. Restart waits for actual exit before starting a replacement, and later startup
       handles any stale discovery state left by forced termination. Preserve uncertain send outcomes instead of assuming mail was unsent or
-      automatically submitting it again. Ordinary Java <code>Mailer.close()</code> remains graceful. This corrects the unreleased daemon;
-      it adds no released 9.x API migration. See the <a href="cli.html#daemon-shutdown">CLI shutdown guide</a>.</p>
+      automatically submitting it again. Ordinary Java <code>Mailer.close()</code> remains graceful. The daemon is new in 10.0.0, so there is no 9.x daemon API to migrate. See the <a href="cli.html#daemon-shutdown">CLI shutdown guide</a>.</p>
   </div></section>
 
   <h2 id="cli-integer-values">Supply whole numbers for CLI integer options</h2>
@@ -432,7 +427,7 @@ Email email = builder.buildEmail();</code></pre>
     <p class="wide">Review any workaround that supplies or depends on an empty quote. Originals with both formats keep their independent wording,
       and the HTML quote template applies once to the original or generated HTML. Continue editing both alternatives when adding your answer:
       later setters, clears, prepends and Email defaults/overrides keep their existing behavior. No reply method signature changes for this correction.
-      See <a href="features.html#section-reply-forward">reply priming and body editing</a>.</p>
+      See <a href="/email-composition.html#section-reply-forward">reply priming and body editing</a>.</p>
   </section>
 
   <h2 id="attachment-resource-builder">Build advanced attachments with named metadata</h2>
@@ -495,7 +490,7 @@ emailBuilder.withEmbeddedImage(AttachmentResource.builder()
 boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
     <p>Eager and lazy import retain equivalent type metadata. SJM's selected attachment filename still controls outgoing naming parameters,
       and malformed or injected header content keeps its existing safe fallback. Exact/protected source bytes retain their existing contract.
-      See <a href="features.html#section-attachments">adding attachments</a> for a character-encoding example.</p>
+      See <a href="/email-composition.html#section-attachments">adding attachments</a> for a character-encoding example.</p>
   </div></section>
 
   <h2 id="multipart-attachment-import">Keep explicitly attached multipart containers</h2>
@@ -533,7 +528,7 @@ boolean plainText = "text/plain".equalsIgnoreCase(baseType);</code></pre>
   <h2 id="streamed-text-import">Read provider-returned text body streams</h2>
   <section><div class="wide">
     <p>In released 9.3.9, a plain-text or HTML body returned as an InputStream could become an object identity such as
-      <code>java.io.ByteArrayInputStream@...</code>. This can happen when no text content handler is registered. Unreleased 10.0.0 reads the stream
+      <code>java.io.ByteArrayInputStream@...</code>. This can happen when no text content handler is registered. Version 10.0.0 reads the stream
       using the ordinary handler's MIME charset interpretation and closes the acquired body stream.</p>
 <pre><code class="language-java">Email received = mail.converter().fromMimeMessage(incoming).toEmail();
 String plainText = received.getPlainText();
@@ -542,7 +537,7 @@ String htmlText = received.getHTMLText();</code></pre>
       <code>us-ascii</code> label uses those aliases too, currently selecting ISO-8859-1. Review workarounds that predecoded body streams or
       guessed UTF-8. Already-decoded String content is unchanged. Charset, read and close errors remain conversion failures, retaining original
       and suppressed causes. This does not close the DataSource or a top-level EML stream supplied by your application, make lazy attachments
-      eager, or rewrite exact/protected bytes. See <a href="features.html#streamed-text-bodies">text-body import</a>.</p>
+      eager, or rewrite exact/protected bytes. See <a href="/email-conversion.html#streamed-text-bodies">text-body import</a>.</p>
   </div></section>
 
   <h2 id="imported-sent-dates">Handle unavailable imported sent dates</h2>
@@ -552,7 +547,7 @@ String htmlText = received.getHTMLText();</code></pre>
       Keep a null check when using an imported date; valid dates and unambiguous supported legacy formats retain their meaning.</p>
     <p>The conversion calls stay the same. Ordinary reconstruction still generates a current date when none was fixed, while exact EML keeps
       its original bytes. A useful raw <code>Date</code> header remains readable when typed interpretation is unavailable. See
-      <a href="features.html#interpreted-sent-dates">sent-date interpretation</a>.</p>
+      <a href="/email-conversion.html#interpreted-sent-dates">sent-date interpretation</a>.</p>
   </div></section>
 
   <h2 id="outlook-optional-dates">Handle missing Outlook date metadata</h2>
@@ -565,15 +560,20 @@ String htmlText = received.getHTMLText();</code></pre>
       It no longer adopts a generic reader date that might be creation metadata. An unsent MSG with only creation/modification metadata leaves
       the message sent date unfixed; an ordinary reconstructed MIME message can still generate a
       current date. Present Date values retain their defensive-copy behavior. See
-      <a href="features.html#interpreted-sent-dates">sent-date interpretation</a>.</p>
+      <a href="/email-conversion.html#interpreted-sent-dates">sent-date interpretation</a>.</p>
   </div></section>
 
   <h2 id="grouped-configuration">Move advanced builder settings into configuration groups</h2>
   <section><div class="wide">
-    <p>The advanced scalar methods on Java Mailer and Email builders have moved into immutable configuration values.
-      Their root setter, getter and clear/reset aliases are removed. Common SMTP setup, recipients, content, attachments,
-      Email defaults/overrides and the send calls remain directly available.</p>
-    <p>For settings used in released 9.x code, move the corresponding Java calls as follows:</p>
+    <p>
+      If your old Mailer builder configures a pool, proxy and executor in one chain, build a configuration value for
+      each concern and pass it to the Mailer builder. Advanced scalar setters, getters and clear/reset aliases on
+      both builders are gone. Ordinary SMTP setup, recipients, content, attachments, templates and send calls stay
+      directly available.
+    </p>
+    <p>
+      Use the table to match each released 9.x setting to its 10.0.0 configuration group.
+    </p>
     <table><thead><tr><th>Previous root methods</th><th>Value supplied to the root builder</th></tr></thead><tbody>
       <tr><td><code>withConnectionPoolCoreSize</code>, <code>withConnectionPoolMaxSize</code>, pool expiration/claim settings,
         <code>withClusterKey</code> and load balancing</td><td><code>withConnectionPoolConfig(ConnectionPoolConfig)</code>;
@@ -645,70 +645,80 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       The property <code>simplejavamail.disable.all.clientvalidation</code> and CLI options
       <code>--mailer:disablingAllClientValidation</code> and <code>--mailer:resetDisableAllClientValidations</code> keep their spellings and Boolean polarity.</p>
 
-    <h3>Pass typed signing and encryption configurations</h3>
-    <p>The released positional <code>signWithDomainKey(byte[], String, String, Set&lt;String&gt;)</code>,
-      <code>signWithSmime(File, String, String, String, String)</code> and
-      <code>encryptWithSmime(File, String, String)</code> conveniences are removed. Their existing typed configuration overloads remain direct
-      on the Email builder; use them as follows:</p>
-<pre><code class="language-java">emailBuilder
-    .signWithDomainKey(DkimConfig.builder()
-        .dkimPrivateKeyData(privateKeyBytes)
-        .dkimSigningDomain(signingDomain)
-        .dkimSelector(selector)
-        .excludedHeadersFromDkimDefaultSigningList(excludedHeaders)
-        .build())
-    .signWithSmime(SmimeSigningConfig.builder()
-        .pkcs12Config(keyStoreFile, storePassword, keyAlias, keyPassword)
-        .signatureAlgorithm(signatureAlgorithm)
-        .build())
-    .encryptWithSmime(SmimeEncryptionConfig.builder()
-        .x509Certificate(certificateFile)
-        .keyEncapsulationAlgorithm(keyAlgorithm)
-        .cipherAlgorithm(cipherAlgorithm)
-        .build());</code></pre>
-    <p>The example shows independent DKIM, S/MIME signing and S/MIME encryption choices; retain the ones your message already uses.
-      The config builders accept <code>File</code> or <code>Path</code>. Store/certificate files are still read immediately and the streams opened
-      for them are closed; key bytes are copied. A null algorithm still selects the existing module default. Preserve alias, key/store passwords,
-      header exclusions and failure timing. When arguments have side effects, evaluate them in their original order before constructing the value;
-      do not move file reads earlier than those evaluations. This does not change signing/encryption policy or introduce a fallback.</p>
-    <p>Known I/O failures from these complete key-material reads now use <code>MailException</code> with kind <code>PREPARATION</code>,
-      retaining the original cause and suppressed close errors. Update handlers that expected <code>IllegalStateException</code>.
-      The released <code>Pkcs12ConfigBuilder.pkcs12Store(InputStream)</code> no longer declares checked <code>IOException</code>.
-      An I/O-only catch around that call can become unreachable; retain checked handling for application-owned stream opening, reading or closing.
-      Supplied streams remain open, and invalid arguments or malformed cryptographic input retain their separate contracts.</p>
-    <p>Managed key-file replacements now keep the builder's previous choices until reading, preparation and closing all succeed.
-      A failed close after reading no longer leaves a reused DKIM builder with replacement bytes and the earlier selector.
-      The same guarantee applies to S/MIME and PKCS12 file readers. Handle the failure and either keep the previous configuration
-      or retry explicitly; no API call needs to be renamed for this behavior change.</p>
-    <p><code>DkimConfigBuilder.dkimSigningDomain(null)</code> and <code>dkimSelector(null)</code> now throw
-      <code>NullPointerException</code> before changing an earlier choice. Released versions stored null instead. Handle missing lookup
-      results before calling these setters; skip a replacement only when keeping the current domain or selector is intended.
-      Neither field has a clear operation. This does not add a requirement to <code>DkimConfigBuilder.build()</code> or change optional
-      algorithm defaults, non-null values or cryptographic validation at signing.</p>
-    <p><code>Pkcs12Config.build()</code> now requires store bytes, both passwords and a key alias. Earlier incomplete values could be built,
-      then fail in their getters or during use. Supply every choice before building; <code>""</code> or an empty <code>char[]</code> explicitly
-      selects an empty password. Required null setter arguments now throw <code>IllegalArgumentException</code> without replacing an earlier choice.
-      If you only need to inspect the store bytes, use <code>Pkcs12Config.builder().pkcs12Store(path).getPkcs12StoreData()</code> without building
-      an unfinished configuration. Actual store and key validation remains at S/MIME use; passwords and aliases are never inferred.</p>
-    <p>Passing null to <code>signWithSmime(SmimeSigningConfig)</code> or <code>encryptWithSmime(SmimeEncryptionConfig)</code> now throws
-      <code>IllegalArgumentException</code> before changing an earlier choice. Released callers that deliberately used null to clear one choice
-      should use <code>clearSmimeSigning()</code> or <code>clearSmimeEncryption()</code>, respectively; <code>clearSmime()</code> removes both.
-      A possibly missing configuration needs an explicit application decision rather than silent removal. Optional algorithm nulls still
-      select their documented module defaults.</p>
-    <p>The nested configuration setters <code>SmimeSigningConfigBuilder.pkcs12Config(Pkcs12Config)</code> and
-      <code>SmimeEncryptionConfigBuilder.x509Certificate(X509Certificate)</code> also reject null immediately with
-      <code>IllegalArgumentException</code>, keeping earlier material and algorithm preferences. Previously they stored null and
-      <code>build()</code> rejected the missing material later. Handle missing key or certificate lookups before calling these setters;
-      there is no required-material clear operation. Optional algorithm nulls retain their module-default meaning.</p>
-    <p>The recipient setters <code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code> and
-      <code>withFixedSmimeCertificate(...)</code> likewise reject null before changing the certificate or group policy.
-      Use <code>clearingSmimeCertificate()</code> to remove an individual recipient's certificate. For group calls, choose
-      <code>clearingSmimeCertificates()</code> to strip all certificates, or <code>resetSmimeCertificatePolicy()</code> to stop applying the group rule
-      while preserving the original recipients' certificates. A possibly missing certificate now needs an explicit application decision.
-      See the <a href="features.html#section-recipient-builders">recipient builder guide</a>.</p>
+    <h3 id="typed-protection-config"><code>signWithDomainKey()</code>, <code>signWithSmime()</code> and <code>encryptWithSmime()</code> take a config</h3>
+    <p>10.0.0 removes the overloads that took a key or certificate followed by several arguments. Put those same choices into the
+      matching config builder. Use the example for each protection you already apply.</p>
 
-    <p>Java Mailer builders now take <code>SessionDebugConfig</code>, <code>MailSendTelemetryConfig</code> and <code>MailSendHandlers</code>.
-      The old flat setters and observer registrations have been removed. Configure related choices together, then supply the immutable group:</p>
+    <h4>DKIM signing</h4>
+    <p>In 9.3.10, you called <code>signWithDomainKey(privateKeyBytes, signingDomain, selector, excludedHeaders)</code>.</p>
+<pre><code class="language-java">// 10.0.0
+emailBuilder.signWithDomainKey(DkimConfig.builder()
+    .dkimPrivateKeyData(privateKeyBytes)
+    .dkimSigningDomain(signingDomain)
+    .dkimSelector(selector)
+    .excludedHeadersFromDkimDefaultSigningList(excludedHeaders)
+    .build());</code></pre>
+
+    <h4>S/MIME signing</h4>
+    <p>In 9.3.10, you called <code>signWithSmime(keyStoreFile, storePassword, keyAlias, keyPassword, signatureAlgorithm)</code>.</p>
+<pre><code class="language-java">// 10.0.0
+emailBuilder.signWithSmime(SmimeSigningConfig.builder()
+    .pkcs12Config(keyStoreFile, storePassword, keyAlias, keyPassword)
+    .signatureAlgorithm(signatureAlgorithm)
+    .build());</code></pre>
+
+    <h4>S/MIME encryption</h4>
+    <p>In 9.3.10, you called <code>encryptWithSmime(certificateFile, keyAlgorithm, cipherAlgorithm)</code>.</p>
+<pre><code class="language-java">// 10.0.0
+emailBuilder.encryptWithSmime(SmimeEncryptionConfig.builder()
+    .x509Certificate(certificateFile)
+    .keyEncapsulationAlgorithm(keyAlgorithm)
+    .cipherAlgorithm(cipherAlgorithm)
+    .build());</code></pre>
+    <ul>
+      <li><strong>Clear an existing choice explicitly.</strong> Replace a null signing or encryption config with
+        <code>clearSmimeSigning()</code> or <code>clearSmimeEncryption()</code>. Use <code>clearSmime()</code> to clear both.
+        A null config now throws <code>IllegalArgumentException</code>. A null optional algorithm still selects the module default.</li>
+      <li><strong>Check your I/O handlers.</strong> Key-material I/O failures now throw <code>MailException</code> with kind
+        <code>PREPARATION</code>. Update catches for the former <code>IllegalStateException</code>.</li>
+    </ul>
+
+    <details class="doc-disclosure">
+      <summary>Key files, streams and evaluation order</summary>
+      <ul>
+        <li>Key-store and certificate file setters accept <code>File</code> or <code>Path</code>. They read immediately and close the
+          streams they open. Key bytes are copied. If old argument expressions had side effects, evaluate them in their original order
+          before starting the config builder so the file is read after those evaluations.</li>
+        <li><code>MailException</code> retains the underlying I/O cause and any suppressed close error. Managed DKIM, S/MIME and PKCS12
+          replacements keep the previous builder choices until reading, preparation and closing all succeed.</li>
+        <li><code>Pkcs12ConfigBuilder.pkcs12Store(InputStream)</code> leaves the supplied stream open. Remove a catch for checked
+          <code>IOException</code> that covered only that call. Keep checked handling around stream operations you perform yourself.
+          Invalid arguments and malformed cryptographic input have their own failure contracts.</li>
+      </ul>
+    </details>
+    <details class="doc-disclosure">
+      <summary>Required values and recipient certificate changes</summary>
+      <ul>
+        <li><strong>DKIM domain and selector.</strong> <code>dkimSigningDomain(null)</code> and <code>dkimSelector(null)</code> now throw
+          <code>NullPointerException</code> before changing a previous value. Handle missing lookups before calling the setters.
+          Both choices lack a clear operation. Signing still performs cryptographic validation.</li>
+        <li><strong>PKCS12 store.</strong> <code>Pkcs12Config.build()</code> requires store bytes, both passwords and the alias. Use
+          <code>""</code> or an empty <code>char[]</code> for an explicitly empty password. Required null arguments throw
+          <code>IllegalArgumentException</code> and preserve earlier choices. For byte inspection alone, call
+          <code>Pkcs12Config.builder().pkcs12Store(path).getPkcs12StoreData()</code>. Store and key validation still happens at S/MIME use.</li>
+        <li><strong>S/MIME key material.</strong> <code>pkcs12Config(Pkcs12Config)</code> and <code>x509Certificate(X509Certificate)</code>
+          reject null at the setter with <code>IllegalArgumentException</code>. Earlier versions rejected missing material at build time.
+          Handle missing lookups before calling the setters. A rejected replacement leaves previous material and algorithm choices intact.</li>
+        <li><strong>Recipient certificates.</strong> <code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code>
+          and <code>withFixedSmimeCertificate(...)</code> reject null. Use <code>clearingSmimeCertificate()</code> for one recipient,
+          <code>clearingSmimeCertificates()</code> to strip every certificate in a group, or <code>resetSmimeCertificatePolicy()</code>
+          to remove the group rule and keep the original recipient certificates.
+          See the <a href="/email-composition.html#section-recipient-builders">recipient builder guide</a>.</li>
+      </ul>
+    </details>
+
+    <h3><code>withDebugConfig()</code>, <code>withTelemetryConfig()</code> and <code>withSendHandlers()</code> replace flat Mailer setters</h3>
+    <p>Replace the old flat debug and telemetry setters and observer registrations with their matching configuration groups.</p>
     <pre><code class="language-java">mailerBuilder
     .withDebugConfig(SessionDebugConfig.builder()
         .withEnabled(true)
@@ -722,23 +732,30 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
         .withResultObserver(resultObserver, observationExecutor)
         .withProgressObserver(progressObserver)
         .build());</code></pre>
-    <p>For debug and telemetry, omitted choices inherit the factory's captured configuration. Replacing a group replaces supplied choices;
-      omitted fields do not retain values from the previous group. Edit a group through <code>toBuilder()</code> when retaining those values matters.
-      Group getters inspect supplied choices; the groups on <code>OperationalConfig</code> contain resolved choices.
-      <code>useConfiguredDebugConfig()</code> and <code>useConfiguredTelemetryConfig()</code> restore whole-group inheritance.</p>
-    <p>Telemetry activation is independent of its integration: <code>withIntegration(...)</code> and <code>clearIntegration()</code> do not
-      turn it on or off. Set <code>withEnabled(true)</code> explicitly or inherit an enabled property. Enabled telemetry without an explicit
-      integration uses the application's global OpenTelemetry instance. Streams, callbacks and executors remain application-owned.</p>
-    <p>Move independent observer clears to <code>MailSendHandlers.Builder.clearResultObserver()</code> and <code>clearProgressObserver()</code>,
-      or remove the whole fixed group with <code>clearSendHandlers()</code>. Per-send context belongs in
-      <a href="/sending-and-execution.html#section-mail-send-observer"><code>withSendHandlersFactory(...)</code></a>.
-      Existing scalar property keys and CLI debug/telemetry options retain their names and meanings.</p>
+    <details class="doc-disclosure">
+      <summary>Inheritance, activation and clearing handlers</summary>
+      <ul>
+        <li>Omitted debug and telemetry fields inherit the factory's captured configuration. Use <code>toBuilder()</code> to carry fields
+          forward from the previous group. Group getters show supplied choices. Read <code>OperationalConfig</code> for resolved choices.
+          <code>useConfiguredDebugConfig()</code> and <code>useConfiguredTelemetryConfig()</code> restore whole-group inheritance.</li>
+        <li>Set telemetry activation with <code>withEnabled(true)</code> or an enabled property. Integration selection and clearing
+          are independent. Enabled telemetry uses global OpenTelemetry when you omit the integration. Your application manages
+          supplied streams, callbacks and executors.</li>
+        <li>Use <code>MailSendHandlers.Builder.clearResultObserver()</code> or <code>clearProgressObserver()</code> for one observer,
+          and <code>clearSendHandlers()</code> for the whole fixed group. Pass per-send context through
+          <a href="/sending-and-execution.html#section-mail-send-observer"><code>withSendHandlersFactory(...)</code></a>.
+          Keep your existing scalar properties and CLI debug and telemetry options.</li>
+      </ul>
+    </details>
   </div></section>
 
   <h2 id="duration-settings">Pass Duration values for time settings</h2>
   <section><div class="wide">
-    <p>Java time settings, their getters, configuration constructors and published constants now use <code>Duration</code>.
-      Methods whose names ended in <code>Millis</code> drop that suffix:</p>
+    <p>
+      If you set a one-second timeout with <code>withSessionTimeout(1000)</code>, pass
+      <code>Duration.ofSeconds(1)</code> to the new group builder. Java setters, getters, configuration constructors
+      and constants use <code>Duration</code> now. Method names that ended in <code>Millis</code> drop the suffix.
+    </p>
     <table><thead><tr><th>Previous root call</th><th>Group builder</th><th>10.0.0 group call</th></tr></thead><tbody>
       <tr><td><code>withSessionTimeout(1000)</code></td><td><code>ConnectionConfig.Builder</code></td><td><code>withSessionTimeout(Duration.ofSeconds(1))</code></td></tr>
       <tr><td><code>withThreadPoolKeepAliveTime(5000)</code></td><td><code>AsyncExecutionConfig.Builder</code></td><td><code>withKeepAliveTime(Duration.ofSeconds(5))</code></td></tr>
@@ -746,10 +763,14 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
       <tr><td><code>withConnectionPoolExpireAfterMillis(30000)</code></td><td><code>ConnectionPoolConfig.Builder</code></td><td><code>withExpireAfter(Duration.ofSeconds(30))</code></td></tr>
       <tr><td><code>withConnectionPoolExpireAfterCreationMillis(300000)</code></td><td><code>ConnectionPoolConfig.Builder</code></td><td><code>withExpireAfterCreation(Duration.ofMinutes(5))</code></td></tr>
     </tbody></table>
-    <p>Defaults, supported zero values and optional settings retain their meanings. Fractional milliseconds and overflow are rejected rather than
-      truncated or wrapped. Property files and existing CLI options still use numeric milliseconds; do not change those to ISO duration strings.</p>
-    <p>Explicit worker count and keep-alive settings now apply even without the batch module. Previously that configuration could be ignored.
-      Unspecified worker defaults remain one without batch and ten with batch, and caller-supplied executors remain application-owned.</p>
+    <ul>
+      <li><strong>Leave property and CLI numbers in milliseconds.</strong> Defaults, supported zero values and
+      optional settings keep their meanings. Fractional milliseconds and overflow now fail. Existing property and
+      CLI time options still expect numeric milliseconds, so keep those values in that format.</li>
+      <li><strong>Check worker settings without the batch module.</strong> A worker count and keep-alive you set
+      explicitly now take effect even without the module. The defaults stay one worker without batch and ten with
+      batch. Your application still owns any executor it supplies.</li>
+    </ul>
     <h3 id="socket-timeout-precedence">Review raw socket timeout properties</h3>
     <p>Earlier releases could replace additional Jakarta Mail timeout properties with the common SJM timeout when creating a Session.
       Explicit raw <code>mail.smtp.connectiontimeout</code>, <code>mail.smtp.timeout</code> and <code>mail.smtp.writetimeout</code>
@@ -772,16 +793,23 @@ emailBuilder.withTemplateOptions(EmailTemplateOptions.builder()
   <h2>Review conflicting connection configuration</h2>
   <section>
     <div class="wide">
-      <p>The unreleased 10.0.0 line defaults to <code>ConnectionConflictPolicy.REJECT_CONFLICTS</code>. Earlier releases could silently select
-        one of several different connection declarations. For example, raw SOCKS properties could replace a proxy chosen through SJM,
-        leaving proxy inspection and the actual connection using different endpoints.</p>
-      <p>Different explicit factory, Session, recognized raw-property and Java declarations for the same supported connection setting now fail construction.
-        Review deployment settings alongside application code before upgrading. Normal source precedence, equivalent values and ordinary builder editing remain valid;
-        see <a href="/understanding-configuration.html#connection-conflicts">the complete connection rules</a> for comparison and Session behavior.</p>
-      <p>Review failures with the owners of both application code and deployment configuration. Remove obsolete declarations or align their values.
-        If replacement is intentional, explicitly select <code>ALLOW_EXPLICIT_OVERRIDES</code> on the Mailer builder or through
-        <code>simplejavamail.connection.conflictpolicy</code>. Do not add that mode automatically during migration: it chooses which declaration
-        controls the connection.</p>
+      <p>
+        If a deployment configures a SOCKS proxy and the builder selects a different one, the Mailer now fails to
+        build by default. Earlier releases could silently choose the raw SOCKS properties, which meant the
+        connection could use a different proxy from the one reported in inspection.
+      </p>
+      <ul>
+        <li><strong>Find both declarations.</strong> Check factory configuration, the supplied Session, recognized
+        raw properties and typed Java settings. <code>ConnectionConflictPolicy.REJECT_CONFLICTS</code> rejects
+        different explicit values for the same supported connection setting. Ordinary source precedence, equivalent
+        values and builder editing still work. See <a
+        href="/understanding-configuration.html#connection-conflicts">the complete connection rules</a>.</li>
+        <li><strong>Choose the intended value.</strong> Remove a stale setting or align the two values with the
+        application and deployment owners. If one explicit setting should replace another, select
+        <code>ALLOW_EXPLICIT_OVERRIDES</code> on the Mailer builder or with
+        <code>simplejavamail.connection.conflictpolicy</code>. Review the choice first so the connection uses the
+        endpoint and settings you intended.</li>
+      </ul>
 <pre><code class="language-java">// After reviewing the intended route:
 Mailer mailer = mail.mailerBuilder()
     .withConnectionConflictPolicy(
@@ -791,10 +819,13 @@ Mailer mailer = mail.mailerBuilder()
         .withHost("chosen-proxy.example.org")
         .build())
     .buildMailer();</code></pre>
-      <p>The override policy gives explicit typed Java members precedence over raw counterparts. Review any deliberate removal as well as replacement;
-        <a href="/understanding-configuration.html#explicit-connection-clears">clearing an imported setting</a> is a conflict in strict mode.
-        Existing value locks and mandatory TLS rules apply in both modes. A deployment can require strict mode with
-        <code>simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code>.</p>
+      <p>
+        Under the override policy, explicit typed Java values win over raw counterparts. Review intentional removal
+        too. In strict mode, <a href="/understanding-configuration.html#explicit-connection-clears">clearing an
+        imported setting</a> is a conflict. Existing value locks and mandatory TLS rules still apply. Use
+        <code>simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code> to require strict mode for a
+        deployment.
+      </p>
       <p>The conflict check does not compare custom provider properties or credentials supplied by an Authenticator. See the
         <a href="understanding-configuration.html#connection-conflicts">advanced configuration guide</a> for policy inspection, reset and restore operations,
         CLI syntax and supplied-Session behavior.</p>
@@ -823,7 +854,7 @@ Mailer next = mail.mailerBuilder(session)
   <h2>Keep the selected OAuth account when pooling connections</h2>
   <section><div class="wide">
     <p>In 9.3.9, an SMTPS OAuth connection can use an inactive <code>mail.smtp.user</code> value when the batch module is present.
-      Unreleased 10.0.0 includes SMTP Connection Pool's 4.4.1 correction, so the selected provider resolves its username normally for both fixed tokens
+      Version 10.0.0 includes SMTP Connection Pool's 4.4.1 correction, so the selected provider resolves its username normally for both fixed tokens
       and connection-time providers. SMTP and STARTTLS use <code>mail.smtp.user</code>; SMTPS uses <code>mail.smtps.user</code>.</p>
 <pre><code class="language-java">properties.setProperty("mail.transport.protocol", "smtps");
 properties.setProperty("mail.smtps.user", "current@example.org");
@@ -1013,19 +1044,21 @@ String portText = configuredPort == null ? null : configuredPort.toString();</co
     </p>
     <pre class="full-width-example"><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();</code></pre>
     <p class="wide">
-      What changed is how long those settings live. In 9.x, <code class="inline language-java">ConfigLoader</code> held one process-wide set of settings,
-      and another <code class="inline language-java">loadProperties(...)</code> call could change what builders created later would see. In 10.0.0,
-      <code class="inline language-java">fromDefaults()</code> reads the three conventional sources on its first call and keeps that result. Changing the
-      file, an environment variable, or a system property later will not affect it. If your application reloads mail settings, create a new config and a
-      new <code class="inline language-java">SimpleJavaMail</code> object explicitly. Also note that
-      <code class="inline language-java">fromDefaults()</code> never reads Spring's Environment. The Spring module has its own setup, covered below.
+      Check for code that calls <code class="inline language-java">loadProperties(...)</code> a second time to
+      switch SMTP accounts. In 9.x, this could replace the process-wide settings that later builders saw. In 10.0.0,
+      <code class="inline language-java">fromDefaults()</code> reads the three conventional sources on its first
+      call and keeps that result. Later changes to the file, environment or system properties leave it unchanged.
+      For a reload, create a new config and a new <code class="inline language-java">SimpleJavaMail</code> object.
+      Spring's Environment is read by the Spring module, separately from <code class="inline
+      language-java">fromDefaults()</code>.
     </p>
 
     <h3>If you previously called loadProperties</h3>
     <p class="wide">
-      In 9.x, every <code class="inline language-java">loadProperties(...)</code> call also read environment variables and system properties, even when
-      you only passed a Properties object, file, or stream. In 10.0.0, <code class="inline language-java">ConfigLoader.builder()</code> starts empty and
-      only uses the sources you add. The explicit version of the usual setup is:
+      If your 9.x code passed a custom Properties object, file or stream to <code class="inline
+      language-java">loadProperties(...)</code>, the loader also read environment variables and system properties.
+      In 10.0.0, <code class="inline language-java">ConfigLoader.builder()</code> starts empty. Add these sources
+      explicitly if you expect the same layering.
     </p>
     <pre class="full-width-example"><code class="language-java">SimpleJavaMailConfig config = ConfigLoader.builder()
         .withClasspathResource("simplejavamail.properties")
@@ -1035,11 +1068,11 @@ String portText = configuredPort == null ? null : configuredPort.toString();</co
 
 SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
     <p class="wide">
-      Add those sources from lowest to highest priority. This is the direct replacement for repeated calls with
-      <code class="inline language-java">addProperties=true</code>. Input streams are still read and closed as soon as you pass them in. Properties,
-      maps, and custom sources are read when you call <code class="inline language-java">load()</code>. See the
-      <a href="configuration.html#section-config-properties">configuration guide</a> for the complete ordering, blank-value, validation, and parsing
-      rules.
+      Add sources from lowest to highest priority. This replaces repeated calls with <code class="inline
+      language-java">addProperties=true</code>. The loader still reads and closes input streams as soon as you pass
+      them in. It reads Properties, maps and custom sources at <code class="inline language-java">load()</code>. See
+      the <a href="configuration.html#section-config-properties">configuration guide</a> for source ordering, blank
+      values, validation and parsing.
     </p>
   </section>
 
@@ -1080,8 +1113,9 @@ SimpleJavaMail mail = SimpleJavaMail.withConfig(config);</code></pre>
 
   <section>
     <p class="wide" style="font-size:smaller">
-      <strong>The rule is simple:</strong> new settings create new objects. They never rewrite a
-      <code class="inline language-java">SimpleJavaMail</code> object, builder, Mailer, or Jakarta Mail Session that you already have.
+      Say you keep one SMTP account for transactional messages and another for bulk mail. Build one <code
+      class="inline language-java">SimpleJavaMail</code> factory per config. Loading one config leaves the other
+      factory, its builders, Mailers and Jakarta Mail Sessions as they were.
     </p>
     <pre class="full-width-example"><code class="language-java">SimpleJavaMailConfig mainConfig = ConfigLoader.builder()
         .withClasspathResource("main-mail.properties")
@@ -1092,16 +1126,19 @@ SimpleJavaMailConfig backupConfig = ConfigLoader.builder()
         .withClasspathResource("backup-mail.properties")
         .load();
 SimpleJavaMail backupMail = SimpleJavaMail.withConfig(backupConfig);</code></pre>
+    <p class="wide">If an account's settings change while sends are in flight, switch its Mailer in this order.</p>
+    <ol>
+      <li>Load the replacement config and use it to create a <code class="inline
+      language-java">SimpleJavaMail</code> factory and Mailer. A builder you already created keeps the settings it
+      started with.</li>
+      <li>Route new work to the replacement Mailer and let in-flight work finish on the old one.</li>
+      <li>Close the old Mailer once the handover is complete.</li>
+    </ol>
     <p class="wide">
-      Both mail setups can now live in the same application without changing each other. This is also how to switch settings safely: create the new config,
-      <code class="inline language-java">SimpleJavaMail</code> object, and Mailer first. Send new work through the replacement, let current work finish on
-      the old Mailer, then close the old one. A builder you already created keeps the settings it started with.
-    </p>
-    <p class="wide">
-      There is one conversion detail worth knowing. Static <code class="inline language-java">EmailConverter</code> methods that create an email builder
-      use the settings from <code class="inline language-java">SimpleJavaMail.fromDefaults()</code>. That includes MIME, EML, and Outlook conversion. If
-      the converted email should use one of your explicitly loaded mail setups, start the conversion with
-      <code class="inline language-java">mail.converter()</code> instead.
+      For an import that should use a particular account's configuration, start with that factory's <code
+      class="inline language-java">mail.converter()</code>. Static <code class="inline
+      language-java">EmailConverter</code> methods that create builders for MIME, EML or Outlook input use <code
+      class="inline language-java">SimpleJavaMail.fromDefaults()</code>.
     </p>
     <div class="wide full-width-example">
 <pre><code class="language-java">// Uses the shared settings from SimpleJavaMail.fromDefaults()
@@ -1119,29 +1156,31 @@ Email convertedWithMainMail = mainMail.converter()
   <h2>Check exception reporting and SMTP acceptance checks</h2>
 
   <section>
-    <p class="wide" style="font-size:smaller">
-      <strong>What changes:</strong> SMTP submission failures now use the public
-      <code class="inline language-java">MailSubmissionException</code> instead of an internal exception wrapper. Existing handlers that catch
-      <code class="inline language-java">org.simplejavamail.MailException</code> still catch these failures. Update tests or reporting that depend on
-      the concrete exception class. The original Jakarta Mail failure remains the direct cause, including for partially accepted submissions;
-      those still fail the overall call.
-    </p>
+    <ul>
+      <li><strong>SMTP rejection.</strong> The public <code class="inline
+      language-java">MailSubmissionException</code> replaces the internal wrapper. Catching <code class="inline
+      language-java">org.simplejavamail.MailException</code> still works. Update tests and reporting that use the
+      former class. The original Jakarta Mail failure is the direct cause. This includes partial acceptance, which
+      still fails the overall call.</li>
+      <li><strong>Size and batch failures.</strong> <code>EmailTooBigException</code> now reaches the caller
+      directly as a <code>MailException</code> subtype. Catch it first if you need a size-specific handler.
+      <code>BatchTransportException</code> also joins that root. Change a multi-catch that combines either subtype
+      with <code>MailException</code> to separate ordered catches or a catch of the common root. Check any code
+      relying on the former cause chain.</li>
+      <li><strong>Rejection before execution.</strong> Move your library scheduling-error handler from
+      <code>RejectedExecutionException</code> to <code>MailSendRejectedException</code>, a
+      <code>MailException</code> subtype. A borrowed executor's original rejection is still the cause. Ordinary
+      executor errors elsewhere in your application keep their existing handling.</li>
+      <li><strong>Failures in your code.</strong> A RuntimeException from your <code>CustomMailer</code> or lazy
+      batch iterable reaches you directly now. Review <code>catch (MailException ...)</code> blocks that also
+      handled those failures. Invalid arguments, programming errors and JVM Errors still need their own
+      handling.</li>
+    </ul>
     <p class="wide">
-      <code>EmailTooBigException</code> now extends <code>MailException</code> and reaches the caller directly instead of being hidden as a wrapper's
-      cause. Catch it before <code>MailException</code> when size needs special handling. The released batch exception
-      <code>BatchTransportException</code> also joins that root. A multi-catch combining either subtype with <code>MailException</code> is now invalid;
-      use separate ordered catches or catch the common root. Review handlers that depended on the former wrapper or cause chain.
-    </p>
-    <p class="wide">Execution admission rejection is now <code>MailSendRejectedException</code>, also in the <code>MailException</code> family,
-      including rejection by a borrowed executor. Move any special scheduling handler from <code>RejectedExecutionException</code> to that type;
-      its cause retains the borrowed executor's original rejection. Keep ordinary application-executor errors outside this SJM-specific migration.</p>
-    <p class="wide">Application exceptions are also more visible: RuntimeExceptions from your <code>CustomMailer</code> or lazy batch iterable
-      propagate as those original exceptions, rather than being hidden inside the released sending wrapper. Review <code>catch (MailException ...)</code>
-      blocks that previously doubled as handlers for your integration's own failures. Handle those application exceptions explicitly; invalid arguments,
-      programming errors and JVM Errors are outside the common library-failure promise.</p>
-    <p class="wide">
-      <code class="inline language-java">MailSubmissionReceipt.isAcceptedByServer()</code> has been removed. In released 9.x it tested the captured
-      SMTP response for a positive completion reply. The new predicates express submission status, so choose according to the caller's intent:
+      Check what you used <code class="inline language-java">MailSubmissionReceipt.isAcceptedByServer()</code> to
+      decide. A job that requires every recipient to be accepted uses the full predicate. A job that tracks partial
+      progress can check for any accepted recipient. The removed 9.x method tested the captured reply instead. The
+      last example preserves that behavior.
     </p>
     <pre class="full-width-example"><code class="language-java" id="example-acceptance-migration">boolean anyRecipientAccepted = receipt.isAcceptedForAtLeastOneRecipient();
 boolean allRecipientsAccepted = receipt.isFullyAcceptedForSubmission();
@@ -1150,14 +1189,17 @@ boolean allRecipientsAccepted = receipt.isFullyAcceptedForSubmission();
 boolean positiveReply = receipt.getSmtpResponse()
     .map(SmtpServerResponse::isPositiveCompletionReply)
     .orElse(false);</code></pre>
-    <p class="wide">The any-recipient predicate is true for partial acceptance even though that send fails. The full predicate is true only for
-      <code>ACCEPTED</code>. Both are false for <code>UNKNOWN</code>, which is not proof of rejection. Full submission acceptance can remain true
-      when later cleanup fails, and it does not establish final delivery. Do not mechanically rename a released 9.x reply test into either predicate.</p>
     <p class="wide">
-      With Angus, <code class="inline language-properties">mail.smtp.reportsuccess=true</code> no longer makes a fully accepted transaction fail.
-      Simple Java Mail collects success-reporting exceptions internally and returns an accepted receipt. Genuine failures still retain their original
-      provider exception. Missing SMTP replies are absent rather than represented by code zero or an EOF sentinel; the original failure remains
-      available for provider-specific inspection.
+      A partially accepted send can fail overall and still report that at least one recipient was accepted. Full
+      acceptance is true only for <code>ACCEPTED</code> and can stay true when cleanup later fails. Both predicates
+      return false for <code>UNKNOWN</code>. Treat that outcome as unresolved SMTP acceptance. Final delivery is a
+      separate event.
+    </p>
+    <p class="wide">
+      If you enabled <code class="inline language-properties">mail.smtp.reportsuccess=true</code> with Angus, a
+      fully accepted transaction now returns an accepted receipt even when the provider reports success by throwing.
+      Genuine failures retain the original provider exception. A missing SMTP reply is absent instead of code zero
+      or an EOF sentinel. For provider-specific facts, inspect the original failure.
     </p>
     <p class="wide">
       See <a href="/analyzing-send-results.html">Analyzing send results</a> for the full receipt API and retry guidance.
@@ -1170,7 +1212,7 @@ boolean positiveReply = receipt.getSmtpResponse()
       than silently selecting their first mailbox. Nonempty malformed text remains available to your configured send-time validator.</p>
     <p>Reply-To and notification conveniences now parse every mailbox in a supplied list. Existing 9.x String calls could keep only the first
       parsed mailbox, so review list-valued and dynamic inputs. Repeated Reply-To calls remain additive; notification setters replace their whole
-      local destination choice. The normal To/Cc/Bcc conveniences also accept lists; see <a href="features.html#section-recipient-builders">recipient examples</a>.</p>
+      local destination choice. The normal To/Cc/Bcc conveniences also accept lists; see <a href="/email-composition.html#section-recipient-builders">recipient examples</a>.</p>
     <pre><code class="language-java">Email email = mail.emailBuilder().startingBlank()
     .from("sender@example.org")
     .to("customer@example.org")
@@ -1246,7 +1288,7 @@ boolean positiveReply = receipt.getSmtpResponse()
       Review routing addresses and configured validators when upgrading; recipient order, duplicate occurrences and metadata remain unchanged.</p>
     <p>Raw custom <code>To</code>, <code>Cc</code> and <code>Bcc</code> headers retain their advanced mailbox-validation escape, with general
       injection checks and mandatory locks. Warnings-only mode and exact EML's separate envelope contract keep their existing behavior.
-      See <a href="features.html#section-email-validation">validation and rehearsal</a> and
+      See <a href="/debugging.html#section-email-validation">validation and rehearsal</a> and
       <a href="debugging.html#section-override-receivers">test-inbox routing</a>.</p>
   </div></section>
 
@@ -1291,7 +1333,7 @@ boolean positiveReply = receipt.getSmtpResponse()
       the Email. Subject selection remains independent, and exact EML submission still bypasses ordinary templates.</p>
     <p>Copies still retain the original message being forwarded. The optional new <code>clearEmailToForward()</code> operation removes that local
       choice without changing other content or settings; ordinary template fallback remains eligible. Existing code needs no change. See
-      <a href="features.html#clearing-forwarded-message">editing a forwarded draft</a>.</p>
+      <a href="/email-composition.html#clearing-forwarded-message">editing a forwarded draft</a>.</p>
   </div></section>
 
   <h2 id="copied-receipt-requests">Check receipt requests on copied emails</h2>
@@ -1345,46 +1387,52 @@ try (Mailer mailer = mail.mailerBuilder()
 }</code></pre>
     <p>Ordinary validation rejects outgoing mail whose From is still missing. Explicit overrides keep their existing authority.
       The original imported Email and its source evidence stay available. See
-      <a href="features.html#outlook-missing-sender">Outlook sender inspection</a>.</p>
+      <a href="/email-conversion.html#outlook-missing-sender">Outlook sender inspection</a>.</p>
   </div></section>
 
-  <h2 id="imported-inline-resources">Check imported image lists</h2>
+  <h2 id="imported-inline-resources"><code>getEmbeddedImages()</code> and <code>getAttachments()</code> change for imported mail</h2>
   <section><div class="wide">
-    <p>Ordinary MIME/EML import now retains readable neighboring content when a recognized attachment or inline disposition has malformed optional
-      parameters. It uses independent naming metadata or the existing missing-name fallback. Review workarounds that discarded the entire message;
-      unknown or competing malformed dispositions and actual content failures retain their existing failure behavior.</p>
-    <p>A single-part plain-text, HTML or calendar root now supplies message content even when its own disposition says attachment. Earlier imports
-      classified that root as a resource and left its body getter empty. Review code that depends on that attachment entry or fills the missing body;
-      explicit attachment dispositions on child entities retain their meaning.</p>
-    <p>MSG import now retains readable binary attachments that have neither a MIME type nor a usable filename, using
-      <code>application/octet-stream</code> when no type can be inferred. Earlier versions could fail the complete import with
-      <code>mimetype is required</code>. No call needs changing; review any workaround that discarded these attachments. Supplied/inferred
-      types, resource content and existing naming rules remain unchanged.</p>
-    <p>A referenced image without a disposition inside <code>multipart/related</code> now appears once in <code>Email.getEmbeddedImages()</code>.
-      Earlier imports also placed that same resource in <code>getAttachments()</code>, so re-export could emit it twice. Remove any workaround
-      that depends on that duplicate attachment entry. Explicitly attached, referenced images keep their downloadable and embedded views,
-      and intentional resource occurrences remain unchanged.</p>
-    <p>Valid external comments and folding whitespace on a received Content-ID no longer prevent the HTML CID URL from selecting its image.
-      For example, <code>Content-ID: &lt;logo@example.org&gt; (company logo)</code> still identifies <code>cid:logo@example.org</code>.
-      Earlier imports could expose that image as an ordinary attachment. Original HTML, image content and exact-source bytes remain unchanged.</p>
-      <p>Imported attachment and embedded-image filenames now preserve literal angle brackets: <code>&lt;draft&gt;.txt</code> stays <code>&lt;draft&gt;.txt</code>. A supplied filename of <code>UnknownAttachment</code> also stays literal instead of being replaced by its Content-ID. Earlier versions could silently alter these names. Applications that matched the altered names should use the decoded source filename. Content-ID parsing and missing-filename fallbacks retain their existing behavior.</p>
-    <p>Unreferenced inline parts with a repeated Content-ID now all survive as attachments in source order. Earlier imports retained only the
-      last such part. Keep each returned occurrence when processing imported attachments; equal Content-IDs alone do not establish equal content.
-      This correction preserves the existing selection when HTML references a duplicated ID.</p>
-    <p>Percent-escaped CID references now identify their original image, for example <code>cid:logo%2F1@example.org</code> and
-      <code>Content-ID: &lt;logo/1@example.org&gt;</code>. Such an image remains embedded rather than being treated as unreferenced.
-      HTML attribute character references are recognized too: <code>src="cid:logo&amp;#64;example.org"</code> identifies
-      <code>Content-ID: &lt;logo@example.org&gt;</code>. In <code>srcset</code>, each URL is interpreted separately from its descriptor, so
-      <code>srcset="cid:logo&amp;#64;example.org 1x"</code> retains that image as embedded. Existing HTML, Content-IDs and bytes need no edits.
-      See <a href="features.html#imported-inline-resources">conversion and inline resources</a>.</p>
-    <p>MSG conversion now applies the same HTML and CID URL interpretation as MIME/EML conversion. Encoded references can therefore move an
-      image from <code>getAttachments()</code> into <code>getEmbeddedImages()</code>; a resource sharing only an ID prefix no longer becomes an image.
-      Scheme capitalization is ignored, while ID case and literal plus signs are retained. HTML character references and CID percent escapes
-      are each decoded once. Review workarounds that reassigned these resources; no Java call needs changing. Literal filename text, including
-      <code>a&amp;amp;b.png</code>, is preserved. See <a href="features.html#resource-representation-boundaries">resource representations</a>.</p>
-    <p>Automatic image resolution now skips existing <code>cid:</code> schemes regardless of capitalization. An existing
-      <code>CID:logo</code> reference no longer fails required external resolution; the Content-ID and HTML spelling remain unchanged.
-      See <a href="features.html#automatic-image-cid-schemes">existing CID references</a>.</p>
+    <p>Say you import a receipt whose HTML references its logo in <code>multipart/related</code>. The part has no <code>Content-Disposition</code>
+      header. Earlier imports returned it in both lists. 10.0.0 returns it as an embedded image, so you can remove any workaround
+      that expects a second attachment entry.</p>
+    <pre><code class="language-java">Email receipt = mail.converter().fromEml(receiptBytes).toEmail();
+receipt.getEmbeddedImages(); // Includes the logo in both versions.
+receipt.getAttachments();    // Included that same logo before 10.0.0.</code></pre>
+    <ul>
+      <li><strong>Downloadable images.</strong> An explicitly attached image referenced by HTML still appears in both views.</li>
+      <li><strong>Repeated Content-IDs.</strong> Keep each returned occurrence. Unreferenced parts with the same ID now all survive as
+        attachments in source order. HTML references to a repeated ID keep their previous selection.</li>
+    </ul>
+    <h3>Body, filenames and Outlook</h3>
+    <ul>
+      <li><strong>Body getters.</strong> A single-part text, HTML or calendar message now supplies its body even if its root says
+        attachment. Remove any fallback that pulled that body out of the attachment list. Attachment dispositions on child parts still apply.</li>
+      <li><strong>Filename matching.</strong> Match the decoded source filename. Literal <code>&lt;draft&gt;.txt</code> and
+        <code>UnknownAttachment</code> now survive import as written. Missing-name fallbacks still apply.</li>
+      <li><strong>Outlook attachments.</strong> A readable binary attachment with no usable name or MIME type now survives with
+        <code>application/octet-stream</code> when the type cannot be inferred. Review any workaround for the former
+        <code>mimetype is required</code> error.</li>
+    </ul>
+    <details class="doc-disclosure">
+      <summary>Malformed dispositions and Content-ID matching</summary>
+      <ul>
+        <li><strong>Malformed disposition parameters.</strong> For a recognized attachment or inline disposition, MIME/EML import can
+          use independent naming metadata or the existing missing-name fallback and keep neighboring readable parts. Unknown or competing
+          malformed dispositions and content-read failures follow their existing rules.</li>
+        <li><strong>Comments and escaped IDs.</strong> <code>Content-ID: &lt;logo@example.org&gt; (company logo)</code> still matches
+          <code>cid:logo@example.org</code>. Folding whitespace is allowed. A reference like <code>cid:logo%2F1@example.org</code>
+          matches <code>Content-ID: &lt;logo/1@example.org&gt;</code>. HTML references such as <code>src="cid:logo&amp;#64;example.org"</code>
+          also match, including individual URLs like <code>srcset="cid:logo&amp;#64;example.org 1x"</code>.
+          See <a href="/email-conversion.html#imported-inline-resources">conversion and inline resources</a>.</li>
+        <li><strong>MSG follows MIME/EML matching.</strong> Encoded references can move an Outlook resource from attachments into images.
+          Matching uses the full ID, with its case and literal plus signs intact. Scheme case is ignored. HTML character references and
+          CID percent escapes each decode once. Literal filenames such as <code>a&amp;amp;b.png</code> keep their spelling.
+          See <a href="/email-conversion.html#resource-representation-boundaries">resource representations</a>.</li>
+        <li><strong>Automatic image lookup.</strong> An existing <code>CID:logo</code> now skips external resolution even with a
+          capitalized scheme. The HTML and Content-ID keep their original spelling.
+          See <a href="/email-composition.html#automatic-image-cid-schemes">existing CID references</a>.</li>
+      </ul>
+    </details>
   </div></section>
 
   <h2 id="attachment-reader-ownership">Handle attachment reads and stream ownership explicitly</h2>
@@ -1409,7 +1457,7 @@ try (Mailer mailer = mail.mailerBuilder()
     input.transferTo(destination);
 }</code></pre>
     <p>Handle or declare <code>IOException</code> for this streaming code. The attachment's DataSource itself is not closed, and construction
-      remains lazy. See <a href="features.html#section-reading-attachments">reading attachment content</a> for the two ownership choices.</p>
+      remains lazy. See <a href="/email-composition.html#section-reading-attachments">reading attachment content</a> for the two ownership choices.</p>
     <p>Eager MIME import also closes the attachment and calendar streams it acquires, including on read failure. This corrects the released
       static conversion routes as well as the current fluent route. Return a fresh stream from each DataSource read; a closing failure can now
       fail conversion. Lazy extraction and the existing ownership of caller-supplied top-level EML streams are unchanged.</p>
@@ -1443,56 +1491,90 @@ try (Mailer mailer = mail.mailerBuilder()
       configuration; their spelling is preserved, and unrelated domains and the usual DNS key requirements remain unchanged.</p>
   </div></section>
 
-  <h2 id="message-snapshots">Stop changing emails through retained lists or arrays</h2>
+  <h2 id="message-snapshots"><code>Email.getHeaders()</code> returns read-only header values</h2>
   <section><div class="wide">
-    <p>Building an Email now keeps its recipients, headers and other message metadata separate from the builder. Changing that builder later no
-      longer changes an Email you already built. Stored message collections, including nested header values, cannot be changed; filtered To/Cc/Bcc
-      lists and collection getters on builders return separate, editable copies. Recipient groups also copy their input list, and byte-array
-      attachment/image input is copied.</p>
-    <p>If your code used a returned collection or retained input array to change an existing message, make the change through a builder and build
-      a replacement instead. A collection change can now throw <code>UnsupportedOperationException</code>, or affect only your detached copy.</p>
-    <p>Released 9.3.10 exposes retained signed content and a constructor-level merge choice. In 10.0.0, copying supplies the selected logical
-      values and subsequent body, header, resource and encoding edits take precedence. An untouched copy keeps its current field/resource evidence;
-      an explicit setter replaces that field's incoming evidence with caller-supplied/unknown facts, even when the supplied text is equal.
-      Captured originals and historical observations remain available. The old merge controls are removed; see
-      <a href="#received-email-reading">the received Email migration</a>. Ordinary clears remove current components without deleting captured history.</p>
-    <p>This also applies to DKIM header exclusions restored from supported older snapshots, including 9.1.8. Their existing entries are retained
-      in a detached immutable Set. Code that changed <code>getExcludedHeadersFromDkimDefaultSigningList()</code> must instead build a replacement
-      <code>DkimConfig</code> and supply it to a new Email. No signing-key, exclusion-policy or serialized-format migration is required.</p>
-    <p>This does not freeze arbitrary attachment sources or forwarded <code>MimeMessage</code> objects. Keep those borrowed resources available
-      and stable while sending, converting or serializing the Email.</p>
-    <p>A failed required automatic-image resolution pass also leaves the builder's previous HTML and images intact. You can correct the HTML
-      or supply the missing source and build again without keeping unused images from the failed pass. Explicit images and intentional duplicates
-      remain unchanged. See the <a href="features.html#automatic-image-resolution-failure">automatic-image failure boundary</a>;
-      this does not promise rollback for external reads or failures after resolution.</p>
-    <p id="optional-malformed-image-sources">Released 9.3.9 can reject a malformed HTML image URL such as <code>src="http://["</code>
-      even during optional resolution when a valid URL base is configured. In 10.0.0, optional resolution leaves that reference in the HTML,
-      just as it does without a base, and continues resolving other images. Required resolution still rejects the unresolved source.
-      Existing calls need no edits. This does not relax selected-base validation, containment or locks; see
-      <a href="features.html#automatic-image-resolution-failure">automatic-image resolution failures</a>.</p>
-    <p id="automatic-image-interruption">In released 9.3.9, optional URL image resolution can continue after an interrupted read, and required
-      image-read errors can discard their cause. In 10.0.0, interrupted image I/O cancels composition or conversion with a
-      <code>CancellationException</code> retaining the original cause. Let that cancellation stop the owning operation rather than treating
-      it as a missing image or retrying it automatically. Required read failures retain their causes; ordinary optional URL misses and
-      socket timeouts keep their existing behavior. See <a href="features.html#automatic-image-interruption">image read failures</a>.</p>
-    <p>Released 9.3.9 parses an ordinary configured image-base URL while creating the Email builder, even when URL resolution is disabled.
-      In 10.0.0, final automatic-image settings are checked at <code>buildEmail()</code>, before reading images. An inactive, replaced or
-      explicitly cleared ordinary base is not parsed; an active selected malformed base still fails, and mandatory locks remain enforced.
-      If you catch inherited image-configuration errors around builder creation, handle them around <code>buildEmail()</code> instead.
-      Explicit String-to-URL conversion keeps its immediate checks. See <a href="features.html#automatic-image-configuration-timing">image configuration timing</a>.</p>
-    <p>Automatic image resolution also retains the opposite quote inside a quoted source: <code>&lt;img src="it's.png"&gt;</code>
-      resolves <code>it's.png</code> rather than the prefix <code>it</code>. Existing templates need no edits. Code that accidentally relied on a
-      truncated location now selects the full requested resource or follows the configured missing-image behavior. See
-      <a href="features.html#automatic-image-source-quotes">quoted image sources</a>.</p>
-    <p>Automatic resolution selects the actual quoted <code>src</code> attribute even when an earlier quoted attribute contains
-      source-like text or <code>&gt;</code>. For example, <code>&lt;img alt="example src='decoy.png'" src="real.png"&gt;</code>
-      resolves <code>real.png</code> while preserving the alt text. Existing templates need no edits; a decoy location is no longer
-      looked up or embedded. See <a href="features.html#automatic-image-source-attributes">image source attributes</a>.</p>
-    <p>Automatic file, classpath and URL image lookup now interprets HTML character references once. For example,
-      <code>src="a&amp;amp;b.png"</code> selects <code>a&amp;b.png</code>, while a literal filename <code>a&amp;amp;b.png</code> needs
-      <code>src="a&amp;amp;amp;b.png"</code>. Review templates that relied on the earlier literal entity lookup. Base restrictions apply to the
-      interpreted location, and the required/optional failure and failed-pass rules remain unchanged. See
-      <a href="features.html#automatic-image-character-references">HTML image locations</a>.</p>
+    <p>Say your draft already has an <code>X-Review</code> header. In 9.3.10, adding to the header's value list could change the built
+      message and the builder that created it.</p>
+    <pre><code class="language-java">// 9.3.10
+email.getHeaders().get("X-Review").add("approved");</code></pre>
+    <p>In 10.0.0, that edit throws <code>UnsupportedOperationException</code>. Add the value on a builder and use the new <code>Email</code>.</p>
+    <pre><code class="language-java">// 10.0.0
+Email approved = mail.emailBuilder().copying(email)
+    .withHeader("X-Review", "approved")
+    .buildEmail();</code></pre>
+
+    <ul>
+      <li><strong>Recipients and headers.</strong> A built Email keeps its own read-only collections. Filtered To, Cc and Bcc lists and ordinary
+        builder collection getters give you editable copies. Apply changes with builder methods and build again.</li>
+      <li><strong>Groups and byte arrays.</strong> Recipient groups copy their input list. Attachments and images added from byte arrays copy the bytes.
+        Supply the new list or bytes when you build a replacement.</li>
+      <li><strong>Borrowed content.</strong> Keep supplied <code>DataSource</code> objects and forwarded <code>MimeMessage</code> contents available
+        and stable through sending, conversion or serialization.</li>
+    </ul>
+
+    <details class="doc-disclosure">
+      <summary>Copies of received mail and stored DKIM exclusions</summary>
+      <ul>
+        <li><strong>Copying received mail.</strong> <code>copying(email)</code> starts from the selected message. Later edits to the body, headers,
+          resources and encodings take precedence. Source information for edited fields follows the new value, even when you pass the same text
+          to a setter. Clearing removes the current value. Untouched fields keep their source information, and captured originals and observations stay in the history.
+          See <a href="#received-email-reading">the received Email migration</a> for the old S/MIME merge controls.</li>
+        <li><strong>Restoring DKIM settings.</strong> Supported older snapshots, including 9.1.8, restore the same exclusions in a read-only set.
+          If you edited the set from <code>getExcludedHeadersFromDkimDefaultSigningList()</code>, build a replacement <code>DkimConfig</code>
+          and apply it to a new Email.</li>
+      </ul>
+    </details>
+  </div></section>
+
+  <h2 id="image-settings-at-build"><code>buildEmail()</code> checks automatic image settings</h2>
+  <section><div class="wide">
+    <p>9.3.9 could parse an inherited image-base URL as soon as you created the builder. In 10.0.0, <code>buildEmail()</code> checks the final
+      settings before reading images. Move error handling for inherited image settings to the build call.</p>
+
+    <ul>
+      <li><strong>Retry a failed required lookup.</strong> Fix the HTML or supply the missing image, then call <code>buildEmail()</code> again.
+        Failed resolution leaves the builder's previous HTML and images intact, including explicit duplicates. This recovery applies to the
+        builder's image state. See <a href="/email-composition.html#automatic-image-resolution-failure">what a failed lookup preserves</a>.</li>
+      <li id="optional-malformed-image-sources"><strong>Check optional URL lookups.</strong> 9.3.9 could fail on <code>src="http://["</code>
+        when a URL base was configured. Optional resolution now leaves that reference in the HTML and continues with the other images.
+        Required resolution rejects the unresolved source.</li>
+      <li id="automatic-image-interruption"><strong>Let interrupted reads cancel the operation.</strong> Image I/O now raises
+        <code>CancellationException</code> with the original cause when interrupted. Let it propagate through composition or conversion.
+        Required read failures also keep their causes. Ordinary optional misses and socket timeouts follow the usual
+        <a href="/email-composition.html#automatic-image-interruption">image read rules</a>.</li>
+    </ul>
+
+    <details class="doc-disclosure">
+      <summary>Base URL validation and HTML source examples</summary>
+      <ul>
+        <li><strong>Base URLs.</strong> Validation uses the selected, enabled base. An inactive, replaced or cleared ordinary base is skipped.
+          Explicit String-to-URL conversion still validates immediately. Selected-base checks, containment and locks apply as described in
+          <a href="/email-composition.html#automatic-image-configuration-timing">image configuration timing</a>.</li>
+        <li><strong>Quotes.</strong> <code>&lt;img src="it's.png"&gt;</code> looks up the full filename <code>it's.png</code>. Review templates that
+          relied on the truncated name. See <a href="/email-composition.html#automatic-image-source-quotes">quoted image sources</a>.</li>
+        <li><strong>Attributes.</strong> <code>&lt;img alt="example src='decoy.png'" src="real.png"&gt;</code> looks up <code>real.png</code> and
+          preserves the alt text. See <a href="/email-composition.html#automatic-image-source-attributes">image source attributes</a>.</li>
+        <li><strong>Character references.</strong> File, classpath and URL lookup interpret HTML character references once.
+          <code>src="a&amp;amp;b.png"</code> selects <code>a&amp;b.png</code>. To match a file literally named <code>a&amp;amp;b.png</code>, use
+          <code>src="a&amp;amp;amp;b.png"</code>. Base restrictions apply to the interpreted location. See
+          <a href="/email-composition.html#automatic-image-character-references">HTML image locations</a>.</li>
+      </ul>
+    </details>
+  </div></section>
+
+  <h2 id="serialized-email-compatibility">Review stored Email snapshots</h2>
+  <section><div class="wide">
+    <p>Serialization in 10.0.0 stores selected attachment/image bytes, forwarded RFC 822 content, and S/MIME and OpenPGP configuration.
+      Some older serialized Email forms lack attachment bytes, forwarded MIME content or S/MIME signing configuration.
+      That missing data cannot be recovered from the stored form. Reading or sending an unavailable attachment fails;
+      recreate the message from its original inputs when those values are required.</p>
+    <p>Earlier 10.0.0 development snapshots also omitted OpenPGP configuration. Restoring one leaves that configuration absent:
+      it cannot recover keys or passphrases that were never written. Reapply the intended protection from your original configuration
+      before relying on the restored message for signing or encryption.</p>
+    <p>Uncaptured source or protection history remains unknown. Deserialization does not fetch original input, verify signatures or establish
+      that content was unsigned or unencrypted. Restoration also needs the classes and optional modules in the stored object graph;
+      preserve original EML separately when byte-preserving relay must be independent of those classes.
+      See <a href="email-conversion.html#section-serializing-emails">current serialization guidance</a> for stream ownership and stored secrets.</p>
   </div></section>
 
   <h2 id="operational-snapshots">Configure Mailers through their builders</h2>
@@ -1563,16 +1645,36 @@ try (Mailer mailer = mail.mailerBuilder()
       validation path; retaining the input does not allow it to pass sending validation.</p>
     <p>Rejected recipient shortcuts and address/name helpers now retain the earlier complete identity instead of combining a replacement name with
       the old address or dropping an inferred name. No calls need renaming. Separately accepted setters retain their effects when a later setter
-      fails; see <a href="features.html#rejected-recipient-updates">recipient update failures</a>.</p>
+      fails; see <a href="/email-composition.html#rejected-recipient-updates">recipient update failures</a>.</p>
   </div></section>
 
-  <h2 id="received-email-reading">Read one logical Email and inspect the selected content</h2>
+  <h2 id="received-email-reading"><code>Email.getDecryptedAttachments()</code> and <code>getSmimeSignedEmail()</code> were removed</h2>
   <section><div class="wide">
-    <p>Released 9.3.10 exposes <code>Email.getDecryptedAttachments()</code>, <code>getSmimeSignedEmail()</code> and
-      <code>getOriginalSmimeDetails()</code>, with matching builder getters and merge controls. 10.0.0 removes those surfaces and the
-      flattened <code>OriginalSmimeDetails</code> type. Conversion now selects one readable logical message and makes successfully opened
-      resources usable through ordinary getters. An independent file or attached message remains an attachment, including when it is the only one.</p>
-    <pre><code class="language-java">// Released 9.3.10: these calls require an intent review, not a mechanical rename.
+    <p>Suppose your importer opens a partner’s signed invoice. Conversion now returns one readable <code>Email</code>.
+      What you do with the invoice determines which API replaces the old getter.</p>
+    <ul>
+      <li><strong>Read the PDF.</strong> Get the chosen occurrence from <code>received.getAttachments().get(documentIndex)</code>.
+        Independent files and attached messages stay in that list, even when there is only one.
+        For a materialized attached Email, call <code>getEmail()</code> on the resource and handle a possible <code>null</code>.</li>
+      <li><strong>Archive or forward the original.</strong> Ask <code>received.getInspection()</code> for <code>getOriginalAttachment(documentIndex)</code>
+        or <code>getOriginalMessage()</code>. A complete capture retains its original format and survives edits. Handle <code>null</code> when it was unavailable.
+        Use <code>forwardingOriginal(received)</code> to forward retained bytes.</li>
+      <li><strong>Decide whether to process it.</strong> Check the exact attachment and your approved signing key before acting.
+        A parsed PDF or a valid signature elsewhere in the message cannot establish who signed that PDF.</li>
+    </ul>
+<pre><code class="language-java">ApprovedSigners partner = ApprovedSigners.builder()
+    .addSmimeCertificate(explicitlyApprovedPartnerCertificate)
+    .build();
+ProtectionCheck check = ProtectionRequirements.builder()
+    .requireVerifiedSignatureFrom(partner)
+    .build()
+    .check(received.getInspection().getAttachment(documentIndex));</code></pre>
+    <p>Process the attachment only if <code>check.isSatisfied()</code>. Your application chooses the document and approved key.
+      Review ambiguous old calls manually. See the <a href="email-workload-field-guide.html#check-a-partner-document-before-processing-it">partner-document recipe</a>.</p>
+<details class="doc-disclosure">
+  <summary>Removed S/MIME getters and merge controls</summary>
+<p>10.0.0 removes the 9.3.10 accessors below, their builder equivalents, and the flattened <code>OriginalSmimeDetails</code> type.
+      For logging, use <code>getInspection().getSmime()</code> or inspect the specific field. A mode, a global signature flag or the first certificate’s common name was insufficient to approve a particular document.</p><pre><code class="language-java">// Released 9.3.10: these calls require an intent review, not a mechanical rename.
 email.getDecryptedAttachments();
 email.getSmimeSignedEmail();
 email.getOriginalSmimeDetails().getSmimeSignatureValid();
@@ -1580,55 +1682,33 @@ builder.notMergingSingleSMIMESignedAttachment();
 builder.clearSMIMESignedAttachmentMergingBehavior();
 builder.isMergeSingleSMIMESignedAttachment();
 </code></pre>
-    <p>There is no generally safe replacement of the decrypted list with the ordinary list, of the retained inner Email with the parent itself,
-      or of a nullable global validity Boolean with another global success flag. Determine whether each old call meant a usable document, a
-      separately attached message, original protected input or a protection decision. Keep source code for manual review when that intent is unknown.</p>
-    <pre><code class="language-java">AttachmentResource usableDocument = received.getAttachments().get(documentIndex);
-Email attachedMessage = usableDocument.getEmail(); // Already materialized, or null.
-AttachmentResource originalDocument = received.getInspection().getOriginalAttachment(documentIndex);
-AttachmentResource originalMessage = received.getInspection().getOriginalMessage();
-
-ApprovedSigners partner = ApprovedSigners.builder()
-    .addSmimeCertificate(explicitlyApprovedPartnerCertificate)
-    .build();
-ProtectionCheck check = ProtectionRequirements.builder()
-    .requireVerifiedSignatureFrom(partner)
-    .build()
-    .check(received.getInspection().getAttachment(documentIndex));
-</code></pre>
-    <p>The application chooses the required occurrence and approved key; migration tooling cannot infer either. A selected resource's read bytes
-      are also the payload used when sending that resource. Complete retained originals are historical input in their actual EML/MSG format;
-      they do not change when an interpreted Email is edited. Null means no suitable complete capture. A prefix or a newly serialized MimeMessage
-      is not an original file. Use <code>forwardingOriginal(received)</code> deliberately when original-preserving forwarding was the old intent.</p>
-    <p>Protected plain text, HTML and calendar alternatives take precedence when present, including an empty string. An absent or unavailable
-      alternative can use an already materialized native fallback with its own evidence. Real protected authored headers supply the logical
-      address/identity/date/threading view and its omissions; generated adapter headers do not. Inspect exactly the value your application uses:
-      <code>getInspection().getHTMLText()</code>, <code>getSubject()</code> or <code>getAttachment(index)</code>. A partial signature cannot satisfy
-      full coverage, native fallback is not automatically verified, and a child signature does not verify the parent's attachment by implication.</p>
-    <p>Released 9.3.10 MIME/EML import used <code>""</code> for a missing Subject. A missing or unavailable imported Subject now remains
-      <code>null</code>, unless an available earlier/native subject supplies the selected fallback. A received explicitly empty Subject is still present
-      and prevents fallback. Review imported-message calls such as <code>getSubject().isEmpty()</code> for the null case; composed Email subjects
-      were already nullable. This does not fill absent address, identity, date or threading fields from another authored view.</p>
-    <p>The released flat <code>getSmimeMode()</code>, MIME/type/name/protocol/micalg/signed-by getters and nullable
-      <code>getSmimeSignatureValid()</code> move from a flattened summary to captured family/signature observations under
-      <code>getInspection().getSmime()</code> and contextual field inspection. Preserve signer/algorithm diagnostics where needed, while replacing
-      acceptance decisions with explicit requirements. The former mode or first certificate common name was not a trusted sender identity.</p>
-    <p>Wrong matching keys or corrupt individual input can now keep readable neighbors and a located processing Problem rather than aborting
-      automatic incoming conversion. An unusable configured keystore/password, requested missing module, cancellation or unrelated application defect
-      still fails the operation. Check required content and its protection before acting; an empty Problems list is not an acceptance policy.</p>
-    <p>The two native Outlook source-body accessors released in 9.3.10, <code>OutlookMessageData.getBodyHTML()</code> and <code>getBodyRTF()</code>,
-      remain available. Selected HTML additionally has its own origin/derivation metadata; no second MSG parse is needed. See the
-      <a href="security.html#section-inspecting-received-protection">complete workflow</a> and
-      <a href="email-workload-field-guide.html#check-a-partner-document-before-processing-it">partner-document recipe</a>.</p>
+</details>
+<details class="doc-disclosure">
+  <summary>Body selection, missing fields and partial imports</summary>
+<ul>
+    <li>Protected plain text, HTML and calendar alternatives take precedence when present, including empty values. An unavailable or absent alternative may use an already materialized native fallback with its own evidence.
+      Check the value you consume for full signature coverage, including HTML or subject. A signature inside a child message alone cannot approve the parent attachment.</li>
+    <li>Protected authored headers determine addresses, identity, date and thread, including omissions. Generated adapter headers and other authored views cannot fill those gaps.
+      MIME/EML imports in 9.3.10 used <code>""</code> for a missing Subject. Now check for <code>null</code> before <code>getSubject().isEmpty()</code>.
+      An available earlier or native Subject may be selected. An explicitly empty received Subject prevents fallback.</li>
+    <li>Wrong matching keys or corrupt content can leave readable neighbors and a processing Problem on the affected part.
+      An unusable configured keystore or password, a requested missing module, cancellation or an application defect still fails conversion.
+      Check the required content and protection even when the Problems list is empty.</li>
+    <li>Readable attachment bytes are its payload when sent. A diagnostic prefix or a freshly serialized MimeMessage cannot stand in for complete captured EML or MSG.
+      For native Outlook bodies, use <code>OutlookMessageData.getBodyHTML()</code> or <code>getBodyRTF()</code>. Selected HTML also carries its origin and derivation without another parse.
+      See the <a href="security.html#section-inspecting-received-protection">received protection guide</a>.</li></ul>
+</details>
   </div></section>
 
   <h2 id="received-email-helper-confidentiality">Protect automatically reused confidential content</h2>
   <section><div class="wide">
-    <p>Replies and interpreted forwards that automatically include content recovered from encryption now require suitable outgoing protection
-      at final MIME/EML output and send boundaries. Previously this reuse could be rendered or sent without that safeguard. Preparing, reading,
-      copying and editing the draft remains available. Supply outgoing encryption, explicitly remove reused confidential components, or permit
-      cleartext disclosure for that helper operation using <code>ReplyOptions.allowUnencryptedContent()</code> or
-      <code>ForwardOptions.allowUnencryptedContent()</code>.</p>
+    <p>
+      Say your support tool quotes a decrypted customer message in its reply. In earlier releases, it could send the
+      quote in cleartext. In 10.0.0, building and editing the draft still works. When you generate final MIME or EML
+      or send the message, give it outgoing encryption, explicitly remove the confidential parts or authorize
+      cleartext for that operation. To permit cleartext in the helper, use
+      <code>ReplyOptions.allowUnencryptedContent()</code> or <code>ForwardOptions.allowUnencryptedContent()</code>.
+    </p>
     <pre><code class="language-java">Email reply = mail.emailBuilder()
     .replyingTo(received, ReplyOptions.allowUnencryptedContent())
     .from("operator@example.org")
@@ -1639,13 +1719,19 @@ byte[] handoff = mail.converter().fromEmail(confidentialDraft)
     .toEmlBytes();
 // The conversion permission does not change confidentialDraft or authorize its later send.
 </code></pre>
-    <p>Copies/snapshots preserve a draft's requirement and its own permission. A new reply/forward uses its own options. Editing just plain text
-      does not waive a remaining HTML quote, and replacing text does not prove confidential fragments are gone. Explicit clears remove their
-      components; configured/mandatory encryption remains binding even with permission. Diagnostic output refusal has no successful unprotected artifact.</p>
-    <p>A confidential received Subject is no longer automatically repeated in a new public Subject. Helpers use a positively known public
-      counterpart, otherwise <code>Re: Your message</code> or <code>Fwd: Message</code>. Body permission leaves this safe default in place.
-      Reply destinations/threading use the selected logical authored view without importing outer recipients or unrelated carrier identity.
-      Body encryption does not hide every outer header. Review applications that relied on the old helper-generated subject, destination or thread values.</p>
+    <ul>
+      <li><strong>Review every quoted part.</strong> Editing just plain text can leave a confidential HTML quote.
+      Replacing text alone cannot establish that the fragments are gone. Clear the components you mean to remove.
+      Configured or mandatory encryption still applies even if your helper permits cleartext.</li>
+      <li><strong>Keep permission scoped to the operation.</strong> A copy or snapshot preserves the draft's
+      requirement and its own permission. A new reply or forward uses its own options. If diagnostic output refuses
+      confidential content, it produces no unprotected artifact.</li>
+      <li><strong>Check Subject, recipients and threading.</strong> Helpers use a positively known public Subject or
+      fall back to <code>Re: Your message</code> or <code>Fwd: Message</code>. Cleartext body permission leaves the
+      safe Subject choice in place. Destinations and threads come from the selected logical authored view, excluding
+      outer recipients and unrelated carrier identity. Body encryption can still leave outer headers readable. Check
+      any application logic that relied on the old helper defaults.</li>
+    </ul>
   </div></section>
 
   <h2 id="received-header-reuse">Separate readable received headers from outgoing claims</h2>
@@ -1685,29 +1771,48 @@ byte[] handoff = mail.converter().fromEmail(confidentialDraft)
 
   <h2 id="email-source-inspection">Inspect source information through Email</h2>
   <section><div class="wide">
-    <p>10.0.0 makes Email the common inspection result for imperfect MIME, EML and Outlook input. The existing conversion calls still return
-      Email directly. Usable bodies and resources remain in the normal getters; <code>getSourceData()</code> exposes received headers,
-      native properties, source parts and derived views, while <code>getProblems()</code> explains actual processing issues.
-      Existing specialized Outlook conversion-result methods remain supported.</p>
-    <p>Accepted header, body and resource interpretation failures preserve available evidence and readable neighbors instead of necessarily
-      aborting the whole import. If your application previously used a thrown interpretation failure to reject a message, inspect its
-      Problems and the normal content your application requires. Unsupported or unreadable content does not become an invalid normal
-      attachment or an invented empty body. Invalid use and unrelated application failures retain their exceptions.</p>
-    <p>Complete supplied raw EML and MSG are now retained automatically under the selected import contract, alongside genuinely different decoded
-      content. Copies can share safely owned capture, but keeping originals can extend their lifetime and increase retained memory. Other evidence
-      remains selective: original RTF stays beside converted HTML, while an equivalent decoded attachment needs no extra payload. Captured source
-      prefixes are still partial; check <code>isFullyCaptured()</code>. Only complete suitable input appears in the original-resource getters.
-      Getters never fetch deferred content or retry interpretation.</p>
-    <p>For EML bytes/text and MimeMessage targets, optional <code>toEmlBytesResult()</code>, <code>toEmlResult()</code> and
-      <code>toMimeMessageResult()</code> terminals return a usable artifact or recognized failure alongside newly observed Problems and
-      retained sources. Email itself needs no result wrapper. The direct terminals remain available and use the same conversion behavior.</p>
-    <p>Problem origins keep the input Message-ID and diagnostic reference through copies and serialization, even when a copy selects another ID.
-      Later setters do not rewrite captured sources or observations. Outgoing completion retains the submitted draft's historical input and unchanged
-      field associations; actual template replacements are caller-supplied with unknown incoming protection. Source data is not
-      automatically rendered into composed output, and historical Problems do not determine current send validity. Whole-Email Java
-      restoration can still require existing optional producer classes; removing that dependency is separate future work under
-      <a href="https://github.com/bbottema/simple-java-mail/issues/965">#965</a>.
-      See <a href="features.html#section-source-inspection">source inspection and processing problems</a>.</p>
+    <p>A customer writes “The replacement part arrived” and attaches a malformed signed file. With S/MIME processing available,
+      10.0.0 can return an <code>Email</code> with the customer’s note and a <code>PROTECTION_FAILED</code> problem for that attachment.
+      If your importer used an exception to reject the ticket, check the returned content and its problems before deciding what to do.</p>
+<pre><code class="language-java">Email ticket = mail.converter().fromEml(emlBytes).toEmail();
+String customerNote = ticket.getPlainText();
+
+for (EmailProblem problem : ticket.getProblems()) {
+    for (EmailSourceElement source : problem.getSources()) {
+        System.out.println(problem.getCode() + " at " + source.getLocation());
+    }
+}
+
+AttachmentResource original = ticket.getInspection().getOriginalMessage();
+if (original != null) {
+    archive(original.readAllBytes());
+}</code></pre>
+    <ul>
+      <li><strong>Show the note.</strong> Use the ordinary body and attachment getters for the readable content.</li>
+      <li><strong>Find the failed occurrence.</strong> Follow <code>problem.getSources()</code> to the affected part, even if another attachment shares its filename.
+        Use <code>getSourceData()</code> for the rest of the captured input.</li>
+      <li><strong>Archive complete input.</strong> When an acquisition failure leaves a captured prefix, its <code>EmailSourceContent.isFullyCaptured()</code>
+        is false. The complete-original getter supplies no file for that prefix. Keep the diagnostic bytes separate from a complete archive.</li>
+    </ul>
+    <p>Inspect the content your application requires before processing it. Invalid API use and unrelated application failures still throw.
+      See <a href="/email-conversion.html#section-source-inspection">source inspection and processing problems</a>.</p>
+    <details class="doc-disclosure">
+      <summary>Which source bytes and conversion results are available?</summary>
+      <p>Complete raw EML and MSG input is retained under the selected import contract. Changed content can have both representations, such as native
+        RTF alongside derived HTML. Equivalent decoded attachments need no second payload. Retaining originals can extend their lifetime and use more
+        memory, even when copies share a capture. Inspecting them performs no deferred reads or retries. Required content that could not be read or
+        decoded can be unavailable.</p>
+      <p>The Email itself carries its problems and sources. Specialized Outlook result methods remain available. For other outputs,
+        <code>toEmlBytesResult()</code>, <code>toEmlResult()</code> and <code>toMimeMessageResult()</code> expose the artifact or recognized failure
+        alongside new problems and retained sources. Direct terminals use the same conversion behavior.</p>
+    </details>
+    <details class="doc-disclosure">
+      <summary>What happens when you copy or serialize the Email?</summary>
+      <p>Problems keep their input Message-ID and diagnostic reference across copies and serialization. Later setters leave recorded evidence intact.
+        Completion keeps the submitted draft’s historical input and unchanged field associations. A template replacement has caller-supplied provenance
+        with unknown incoming protection. Composed output uses current values, and preparation validates them for the current send.
+        Restoring a whole serialized Email can still require its producer’s optional classes. See <a href="https://github.com/bbottema/simple-java-mail/issues/965">issue #965</a>.</p>
+    </details>
   </div></section>
 
   <h2 id="smime-calendar-merging">Keep calendars from retained S/MIME content</h2>
@@ -1730,22 +1835,36 @@ byte[] handoff = mail.converter().fromEmail(confidentialDraft)
       and <code>ENVELOPED-DATA</code> reports encrypted content. Missing and unknown parameter values retain their existing interpretation.</p>
   </div></section>
 
-  <h2 id="existing-mime-smime-protection">Review S/MIME protection of an existing MimeMessage</h2>
+  <h2 id="existing-mime-smime-protection"><code>signAndOrEncryptMessageWithSmime()</code> can sign or encrypt independently</h2>
   <section><div class="wide">
-    <p><code>MailerHelper.signAndOrEncryptMessageWithSmime(session, message, email)</code> keeps its signature and now honors independently
-      selected signing and encryption, including recipient certificates with the Email-level fallback and algorithm choices. Earlier versions
-      unconditionally required both configurations: encryption-only failed before encryption, while signing-only signed and then failed.</p>
-    <p>Pass the MIME message you want protected and an Email containing your already selected S/MIME settings. Caller changes to the MIME content
-      and applicable headers remain the input; Message-ID follows the Email's configured choice. The helper does not rebuild the message, apply Mailer templates, or apply DKIM/OpenPGP. When both operations
-      are selected, signing precedes encryption and each transformed stage is finalized. With neither selected, the same message is returned
-      without reading its content or loading <code>smime-module</code>; requested protection still requires the module.</p>
-    <p>No source change is required. Remove workarounds that supplied an unwanted second operation only if that matches your intended policy.
-      See <a href="features.html#section-protect-existing-mime">protecting existing MIME content</a> for an encryption-only example.</p>
-    <p>The existing Message-ID rule remains: active protection uses a nonempty ID on the Email argument, or generates a new one if absent or empty.
-      A MIME header alone does not request reuse. Conversion/copying can already carry an ID, so use <code>clearId()</code> on a copied builder for
-      a new identity or deliberately choose <code>fixingMessageId(message.getMessageID())</code> to retain one. No-op requests retain the original
-      message unchanged. This is a contract clarification, not a change to runtime ID generation or copy/import defaults. See
-      <a href="features.html#smime-helper-message-id">the helper identity rules</a>.</p>
+    <p>Say your application adds its own headers to a <code>MimeMessage</code> and needs only encryption.
+      Earlier releases required settings for both operations. In 10.0.0, supply an encryption config and keep the returned message.</p>
+<pre><code class="language-java">Email protection = mail.emailBuilder().startingBlank()
+    .encryptWithSmime(SmimeEncryptionConfig.builder()
+        .x509Certificate(readerCertificate)
+        .build())
+    .buildEmail();
+MimeMessage encrypted = MailerHelper.signAndOrEncryptMessageWithSmime(
+    session, existingMimeMessage, protection);</code></pre>
+
+    <dl class="extension-boundary-map">
+      <div><dt>Sign only</dt><dd>The helper finalizes the signed message.</dd></div>
+      <div><dt>Encrypt only</dt><dd>It encrypts the supplied MIME using the recipient certificates and Email-level fallback.</dd></div>
+      <div><dt>Both</dt><dd>It signs first, then encrypts, finalizing each transformed stage.</dd></div>
+    </dl>
+    <p>The helper takes the supplied MIME content and applicable headers, and uses the Email’s S/MIME settings and algorithms. It applies
+      no Mailer templates, DKIM or OpenPGP. If you request neither operation, it returns the input without reading it or loading
+      <code>smime-module</code>. Requested protection requires that module.</p>
+<details class="doc-disclosure">
+  <summary>Keep or generate a Message-ID</summary>
+<p>With protection requested, a nonempty ID on the Email supplies the result’s Message-ID.
+      If it has no ID, a new one is generated, even when the supplied MIME message already has one. A copied or imported Email can carry an ID.
+      Call <code>clearId()</code> to get a new one or <code>fixingMessageId(message.getMessageID())</code> to reuse the MIME ID deliberately.
+      With neither operation requested the original ID stays intact.</p>
+      <p>See the <a href="/security.html#section-protect-existing-mime">existing MIME helper example</a> and
+        <a href="/security.html#smime-helper-message-id">Message-ID choices</a>.</p>
+</details>
+
   </div></section>
 
   <h2 id="async-preparation">Account for validation running during async execution</h2>
@@ -1758,38 +1877,45 @@ byte[] handoff = mail.converter().fromEmail(confidentialDraft)
   </div></section>
   <h2 id="api-construction">Use public contracts instead of constructing library results</h2>
   <section><div class="wide">
-    <p>If you created recipient builders directly, get them from your <code>SimpleJavaMail</code> factory instead.
-      The concrete <code>org.simplejavamail.recipient.RecipientBuilder</code> and <code>RecipientsBuilder</code> classes are no longer application entry points.</p>
-    <p>A prepared Recipient with no role now defaults to To when added as a visible message recipient. It is retained through copying and completion
-      instead of being silently omitted. Supply Cc/Bcc explicitly when intended. The supplied value is unchanged, and From/Reply-To roles remain optional.</p>
+    <h3>Get recipient builders from the factory</h3>
+    <p>Replace direct construction of <code>org.simplejavamail.recipient.RecipientBuilder</code> or <code>RecipientsBuilder</code>
+      with the factory calls. Import the interfaces from <code>org.simplejavamail.api.email</code>. Move template suppression’s
+      <code>EmailProperty</code> import from <code>org.simplejavamail.internal.config</code> to that same API package.</p>
 <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
 IRecipientBuilder recipient = mail.recipientBuilder();
 IRecipientsBuilder recipients = mail.recipientsBuilder();
 
 Recipient alice = recipient.to("Alice", "alice@example.org");</code></pre>
-    <p>The plural builder's <code>IRecipientsBuilder.buildRecipients()</code> now returns <code>List&lt;Recipient&gt;</code>, making its
-      ordered result usable directly with Reply-To and delivery-override setters. Released 9.x declared <code>Collection&lt;Recipient&gt;</code>.
-      Recompile callers because the JVM return descriptor changes; existing source that stores the result as a Collection remains valid.
-      Declare a List when passing the result to List-based setters. Insertion order, duplicates and detached unmodifiable snapshots remain
-      unchanged; ordinary To/Cc/Bcc envelope grouping is unchanged too.</p>
-    <p>Import the builder interfaces from <code>org.simplejavamail.api.email</code>. Also update imports of the template-suppression selector
-      from <code>org.simplejavamail.internal.config.EmailProperty</code> to <code>org.simplejavamail.api.email.EmailProperty</code>;
-      the selected fields and suppression behavior are unchanged.</p>
-    <p><code>MailSubmissionReceipt</code>, <code>OutlookMessageData</code> and <code>OutlookEmailConversionResult</code> are now read interfaces.
-      Keep receiving and inspecting them through sending or conversion calls; remove direct constructor calls.
-      Recompile integrations compiled against the old concrete classes. Adapter implementations return
-      <code>MailTransportResult</code> rather than constructing an application receipt.</p>
-    <p>Inside <code>withOpenConnection(...)</code>, use <code>sender.sendMail(email)</code> whether or not you need a receipt. It now returns
-      <code>MailSubmissionReceipt</code>, just like the synchronous Mailer view. Replace calls to the removed
-      <code>sender.sendMailAndGetReceipt(email)</code> with <code>sender.sendMail(email)</code>. Calls that ignore the result need no source change,
-      but recompile existing integrations because the return type changed. Update wrappers or test doubles to return the real sender's receipt.</p>
-    <p>Previously serialized Java objects containing <code>MailSubmissionReceipt</code> or <code>OutlookMessageData</code> cannot be read by
-      the new implementations. Before upgrading, read those stored reports with the old library and export the observations your application needs.
-      This does not remove compatibility for serialized <code>Email</code>, <code>Recipient</code> or attachment data.</p>
-    <p>The two deprecated <code>EmailConverter.outlookMsgToEmailBuilder(InputStream, ...)</code> overloads now return
-      <code>OutlookEmailConversionResult</code>, not the internal <code>EmailFromOutlookMessage</code> wrapper. Use
-      <code>getEmailBuilder()</code> for the editable email and <code>getOutlookMessageData()</code> for the source metadata.
-      New calls should use <code>outlookMsgToEmailBuilderWithOutlookData(...)</code>.</p>
+    <p>A prepared recipient without a role now acts as To when added as a visible recipient, including through copying and completion.
+      Set Cc or Bcc explicitly when intended. The supplied value stays intact. From and Reply-To can still omit the role.</p>
+    <h3>Pass the ordered recipient list directly</h3>
+<pre><code class="language-java">List&lt;Recipient&gt; replyTo = recipients.withRecipient(alice).buildRecipients();
+emailBuilder.withReplyTo(replyTo);</code></pre>
+
+    <p><code>buildRecipients()</code> returns a <code>List</code> in 10.0.0. It fits Reply-To and delivery-override setters without a copy.
+      Recompile callers of the 9.x <code>Collection</code> signature. Insertion order and duplicates are preserved in the detached, unmodifiable result.</p>
+
+    <h3>Read receipts and Outlook results from the caller</h3>
+    <p>Remove direct construction of <code>MailSubmissionReceipt</code>, <code>OutlookMessageData</code> and <code>OutlookEmailConversionResult</code>.
+      These are read interfaces. Receive them from a send or conversion. Provider adapters return <code>MailTransportResult</code>.</p>
+    <p>In an open connection callback, <code>sender.sendMail(email)</code> replaces <code>sender.sendMailAndGetReceipt(email)</code>.</p>
+<pre><code class="language-java">MailSubmissionReceipt receipt = sender.sendMail(email);</code></pre>
+
+    <p>You can ignore the receipt as before. Recompile existing <code>sendMail(email)</code> callers for the return type change, and
+      have wrappers or test doubles return the receipt.</p>
+    <p>The deprecated Outlook InputStream builder overloads return <code>OutlookEmailConversionResult</code> in place of
+      <code>EmailFromOutlookMessage</code>. Use the explicitly named method for new code.</p>
+<pre><code class="language-java">OutlookEmailConversionResult result =
+    EmailConverter.outlookMsgToEmailBuilderWithOutlookData(msgInputStream);
+EmailPopulatingBuilder draft = result.getEmailBuilder();
+OutlookMessageData source = result.getOutlookMessageData();</code></pre>
+<details class="doc-disclosure">
+  <summary>Before upgrading stored Java receipts or Outlook metadata</summary>
+<p>Read serialized objects containing <code>MailSubmissionReceipt</code> or <code>OutlookMessageData</code> with the old library.
+      Export the fields your application needs before upgrading. Serialized Email, Recipient and attachment compatibility is separate.
+      Recompile integrations that depended on the old concrete classes.</p>
+</details>
+
   </div></section>
 
   <a href="#dkim-defaults" id="dkim-defaults" class="section-link h2">&sect;</a>
@@ -1892,12 +2018,12 @@ mailer.validate(email);</code></pre>
     <p class="wide">
       Full Mailer validation now needs Angus Mail or another compatible Jakarta Mail implementation to build MIME. The CLI
       <code class="inline language-text">validate</code> command also performs complete preparation without connecting to SMTP.
-      See <a href="features.html#section-email-validation">validation and rehearsal</a> for the current preparation APIs.
+      See <a href="/debugging.html#section-email-validation">validation and rehearsal</a> for the current preparation APIs.
     </p>
     <p class="wide">Both preparation APIs remain available while sending is closing and after it has closed. They retain the original Mailer's
       rules and the preparation settings captured at shutdown, independently of another Mailer reusing the sending Session. Standalone preparation
       does not add work to send draining. Keep borrowed files and data sources stable until their preparation finishes; the deeper 10.0.0
-      validation can still consume them after sending has closed. See <a href="features.html#rehearsal-after-close">preparation after close</a>.</p>
+      validation can still consume them after sending has closed. See <a href="/debugging.html#rehearsal-after-close">preparation after close</a>.</p>
   </section>
 
   <a href="#smtp-content-compatibility" id="smtp-content-compatibility" class="section-link h2">&sect;</a>
@@ -1941,7 +2067,7 @@ mailer.validate(email);</code></pre>
     <p class="wide">
       Malformed UTF-8 headers, binary transfer encoding, NUL body bytes and body lines exceeding 998 bytes (excluding CRLF) now fail locally.
       Regenerate invalid source headers and use Base64 or quoted-printable for unsuitable bodies before signing or loading final bytes.
-      The legacy setting does not bypass these checks. See the <a href="features.html#section-international-mail">international-mail workflow</a>.
+      The legacy setting does not bypass these checks. See the <a href="/sending-and-execution.html#section-international-mail">international-mail workflow</a>.
     </p>
   </section>
 
@@ -2044,26 +2170,33 @@ Mailer mailer = mail.mailerBuilder()
   </section>
 
   <a href="#custom-factory-fallback" id="custom-factory-fallback" class="section-link h2">&sect;</a>
-  <h2>If you supply your own SMTP connection code</h2>
-
+  <h2>A custom socket factory error stops the connection attempt</h2>
   <section>
-    <p class="wide"><strong>What changes:</strong> If your application supplies its own code for opening SMTP connections (a custom socket or SSL
-      factory), a failure in that code now stops the connection attempt. Previously, Angus could try Java's built-in connection code instead,
-      bypassing settings you chose, such as a client certificate or custom certificate checks. This changes the default for Sessions created by
-      Simple Java Mail; an explicit fallback setting still takes precedence. If you haven't supplied a custom factory, no change is needed.</p>
-    <p class="wide">If your deployment intentionally depended on that retry, retain it with the existing advanced property:
-      <code>mailerBuilder.withProperty("mail.smtp.socketFactory.fallback", "true")</code>, or
-      <code>simplejavamail.extraproperties.mail.smtp.socketFactory.fallback=true</code> in your properties file or Spring configuration.
-      For SMTPS, replace <code>mail.smtp</code> with <code>mail.smtps</code> in either form.
-      Only enable this if a connection made without your custom factory's settings is acceptable for your deployment.
-      STARTTLS failure still does not fall back to plaintext. Caller-owned Sessions keep their existing behavior.</p>
-    <p class="wide">Simple Java Mail puts a cleanup wrapper around SSL factories used by Sessions it creates. If you read the factory back from
-      the Session properties, you therefore get that wrapper, not your original object. Keep your original reference if you need methods specific
-      to your factory implementation.</p>
-    <p class="wide">For a class-based SSL factory in a modular application, export its implementation package to
-      <code>org.simplejavamail.mailprovider.angus</code>, or use <code>TlsConfig.Builder.withCustomSSLFactoryInstance(...)</code>.
-      The cleanup wrapper calls its public static <code>getDefault()</code> method and follows the normal Java module-access rules.
-      See <a href="security.html#section-custom-ssl-factory">custom SSL factory guidance</a>.</p>
+    <p>Your custom factory supplies a client certificate and fails to open a connection. For a Session created by Simple Java Mail,
+      the default now reports the failure. Earlier Angus behavior could switch to the built-in connection code.</p>
+<pre><code class="language-text">Custom factory fails
+    9.x default   → try the built-in socket
+    10.0.0 default → report the connection failure</code></pre>
+
+    <p>Check this change if your deployment relies on a custom socket or SSL factory. An explicit fallback setting
+      takes precedence. Sessions you supply retain their provider behavior.</p>
+<details class="doc-disclosure">
+  <summary>Opt in when the built-in socket is acceptable</summary>
+<p>If the route can use a connection without your custom factory’s settings, explicitly enable fallback.</p><pre><code class="language-java">mailerBuilder.withProperty("mail.smtp.socketFactory.fallback", "true");</code></pre>
+<pre><code class="language-properties">simplejavamail.extraproperties.mail.smtp.socketFactory.fallback=true</code></pre>
+
+      <p>For SMTPS, use <code>mail.smtps</code> instead. The fallback concerns socket creation. STARTTLS failure still stops the
+        required upgrade without a plaintext retry.</p>
+</details>
+<details class="doc-disclosure">
+  <summary>Inspect a factory or expose it in a Java module</summary>
+<p>Keep a reference to your original SSL factory for implementation-specific methods. A Simple Java Mail Session exposes
+        its cleanup wrapper in the properties. If a modular application supplies the factory by class name, export its
+        implementation package to <code>org.simplejavamail.mailprovider.angus</code> so the wrapper can call public static
+        <code>getDefault()</code>. You can also use <code>TlsConfig.Builder.withCustomSSLFactoryInstance(...)</code>.
+        See <a href="security.html#section-custom-ssl-factory">custom SSL factory guidance</a>.</p>
+</details>
+
   </section>
 
   <a href="#proxy-bridge-port" id="proxy-bridge-port" class="section-link h2">&sect;</a>
@@ -2116,7 +2249,7 @@ Mailer mailer = mail.mailerBuilder()
     </p>
     <h3>Keep established tunnels open while new connections start</h3>
     <p class="wide">
-      Earlier bridge implementations kept setup workers occupied for the lifetime of established tunnels. In the unreleased 10.0.0 line,
+      Earlier bridge implementations kept setup workers occupied for the lifetime of established tunnels. In 10.0.0,
       forwarding releases that setup capacity, so pooled or retained connections can stay open while new connections start proxy setup.
     </p>
     <p class="wide">
@@ -2126,27 +2259,25 @@ Mailer mailer = mail.mailerBuilder()
   </section>
 
   <a href="#direct-session" id="direct-session" class="section-link h2">&sect;</a>
-  <h2>If you create Jakarta Mail Sessions yourself</h2>
+  <h2><code>mailerBuilder(session)</code> requires an available Session</h2>
 
   <section>
     <h3>Use one Mailer per Session</h3>
-    <p class="wide">
-      Earlier releases allowed two Mailers to use the same Jakarta Mail Session. Building the second could silently replace the first Mailer's
-      email defaults, overrides, and connection configuration. In 10.0.0, the second build throws an exception before changing that configuration.
-      This also applies to two different Sessions using the same <code class="inline language-java">Properties</code> object, and to a Session
-      obtained from another Mailer's <code class="inline language-java">getSession()</code>.
-    </p>
-    <p class="wide">
-      Reuse one Mailer when both callers should use the same configuration. It already supports concurrent sending:
-    </p>
+    <p>Orders and billing both call <code>mailerBuilder(session)</code>. In 9.x the second build could replace the first
+      Mailer’s defaults, overrides and connection settings. In 10.0.0 it throws before changing them. The same check applies
+      to a Session from <code>getSession()</code> or two Sessions backed by one <code>Properties</code> instance.</p>
+    <p><strong>Build one Mailer &rarr; share it across callers &rarr; close it successfully &rarr; reuse the Session.</strong></p>
+    <p>When both workers use the same settings, let them send concurrently through that Mailer.</p>
     <pre class="full-width-example"><code class="language-java">try (Mailer mailer = mail.mailerBuilder(session).buildMailer()) {
-    mailer.sync().sendMail(firstEmail);
-    mailer.async().sendMail(secondEmail).getCompletion().join();
+    var ordersSend = mailer.async().sendMail(firstEmail);
+    mailer.sync().sendMail(secondEmail);
+    ordersSend.getCompletion().join();
 }</code></pre>
-    <p class="wide">
-      If the callers need different Mailer configurations, create separate Sessions with separate Properties. Copy your original SMTP settings,
-      not the properties of a Session already configured by a Mailer:
-    </p>
+    <details class="doc-disclosure">
+      <summary>Build separate Mailers for different settings</summary>
+    <p>Give each worker its own Session and Properties. Start from the original SMTP settings, since a Mailer may
+      have changed the properties of the Session it uses. Use <code>Session.getInstance(...)</code> to create each one.
+      A call to <code>getDefaultInstance(...)</code> can return an existing Session.</p>
     <pre class="full-width-example"><code class="language-java">Properties firstProperties = new Properties();
 firstProperties.putAll(smtpProperties);
 Properties secondProperties = new Properties();
@@ -2160,32 +2291,32 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
     first.sync().sendMail(firstEmail);
     second.sync().sendMail(secondEmail);
 }</code></pre>
-    <p class="wide">
-      Use <code class="inline language-java">Session.getInstance(...)</code> rather than
-      <code class="inline language-java">Session.getDefaultInstance(...)</code> when creating independent Sessions; the latter can return an
-      existing Session. You can reuse a Session after its previous Mailer has shut down successfully. Wait for
-      <code class="inline language-java">close()</code> or the shutdown future to complete; starting shutdown does not release ownership.
-      If cleanup fails, create a fresh Session instead.
-    </p>
-    <h3>Keep your Session's connection settings unless you explicitly replace them</h3>
-    <p class="wide">
-      Earlier releases treated supplied Sessions inconsistently. A Session originating from Simple Java Mail could have its timeouts and
-      certificate-trust choices replaced by builder defaults, while another Session could silently ignore an explicit timeout setter.
-      Both now use the supplied settings as the starting point. Ordinary factory connection defaults no longer replace them or fill omitted
-      values. Deliberate builder customization and applicable locks can add settings; different explicit declarations fail under the default
-      <a href="#connection-conflicts">connection conflict policy</a>.
-    </p>
-    <p class="wide">
-      If you relied on those automatic replacements, call the relevant builder setters explicitly or put the intended values on your Session.
-      To deliberately replace existing values, select <code>ALLOW_EXPLICIT_OVERRIDES</code>. With that policy,
-      <code class="inline language-java">ConnectionConfig.Builder.withSessionTimeout(Duration.ofSeconds(1))</code> replaces all three socket timeouts with one second.
-      Selecting only <code>withReadTimeout(Duration.ofSeconds(5))</code> changes the read value and retains the Session's original connect and write values or absence.
-      Standard SMTP/SMTPS Sessions support these choices directly. A custom protocol now rejects a convenience setting it cannot map rather
-      than silently ignoring it; use its provider-specific names through <code>withProperty(...)</code> instead.
-      Clearing a setting inherited through <code>Properties</code> defaults is also rejected when removal would simply reactivate that default.
-      Supply a replacement value or a fresh Session with independent Properties containing only the intended settings.
-    </p>
-    <h3 id="inherited-oauth2-token">Use fixed OAuth2 tokens inherited by a supplied Session</h3>
+    </details>
+    <p>Wait for <code>close()</code> or the shutdown future before reusing a Session. If cleanup fails, start with a fresh Session.</p>
+    <h3>Change the Session’s read timeout</h3>
+    <p>Suppose the supplied SMTP Session waits 30 seconds for a reply and 10 seconds to connect. In 9.x a builder default
+      could replace those settings on a Session created by Simple Java Mail, and other Sessions could ignore your timeout setter.
+      In 10.0.0 the supplied settings and omissions carry through ordinary defaults. To use 5 seconds for reads, allow that
+      explicit override and change only the read timeout.</p>
+<pre><code class="language-java">Mailer mailer = mail.mailerBuilder(session)
+    .withConnectionConflictPolicy(ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES)
+    .withConnectionConfig(ConnectionConfig.builder()
+        .withReadTimeout(Duration.ofSeconds(5))
+        .build())
+    .buildMailer();</code></pre>
+<pre><code class="language-text">Supplied Session     Connect 10s   Read 30s
+10.0.0 with override Connect 10s   Read  5s</code></pre>
+    <p>Leave the Session’s write-timeout choice in place by leaving it unset on the builder. Use <code>withSessionTimeout(...)</code>
+      to set all three operations. Explicit conflicts fail by default, and locks still apply. See the
+      <a href="#connection-conflicts">connection conflict policy</a>.</p>
+    <details class="doc-disclosure">
+      <summary>Custom protocols and inherited Properties</summary>
+      <p>Standard SMTP and SMTPS Sessions support the convenience settings. For a custom protocol, use provider-specific names
+        with <code>withProperty(...)</code> when the builder cannot map a setting. Clearing an inherited property fails when
+        it would reactivate its default. Supply a replacement or build a new Session with independent Properties.</p>
+    </details>
+    <details class="doc-disclosure">
+      <summary id="inherited-oauth2-token">Use fixed OAuth2 tokens inherited by a supplied Session</summary>
     <p class="wide">A fixed String token under <code>simplejavamail.oauth2.token</code> can now come from a supplied Session's
       <code>Properties</code> defaults as well as its direct entries. In 9.3.9, a Session configured for XOAUTH2 could reject an inherited-only
       token as missing during Mailer construction. The corrected path recognizes the token and passes it when connecting, without adding or replacing
@@ -2194,7 +2325,9 @@ try (Mailer first = mail.mailerBuilder(firstSession).buildMailer();
       providers remain application-owned and lazy. If your code duplicates an inherited token into direct properties as a workaround, that
       duplication is no longer required for this lookup. Keep your protocol, username and XOAUTH2 settings. See
       <a href="security.html#supplied-session-oauth2-token">OAuth2 with a supplied Session</a>.</p>
-    <h3 id="tls-identity-inspection">Handle an unspecified TLS identity setting</h3>
+    </details>
+    <details class="doc-disclosure">
+      <summary id="tls-identity-inspection">Handle an unspecified TLS identity setting</summary>
     <p class="wide">Replace <code>OperationalConfig.isVerifyingServerIdentity()</code>, which returned primitive <code>boolean</code>, with
       <code>OperationalConfig.getVerifyingServerIdentity()</code>, which returns nullable <code>Boolean</code>. Recompile integrations and update
       method references as well as direct calls. True and false mean known configured values; null means unspecified or unrecognized,
@@ -2212,6 +2345,7 @@ if (verification == null) {
       can throw when Java unboxes null. Using <code>Boolean.TRUE.equals(...)</code> also combines unspecified and false; use it only when that
       is your intended application policy. The getter captures construction settings without opening a connection or following later Session
       edits. It does not prove runtime TLS security. <code>TlsConfig.getVerifyingServerIdentity()</code> keeps its existing stored-choice role.</p>
+    </details>
     <h3>Allow for a missing common timeout when inspecting configuration</h3>
     <p class="wide">
       <code class="inline language-java">OperationalConfig.getSessionTimeout()</code> now returns nullable <code>Duration</code> instead of
@@ -2269,20 +2403,19 @@ Session configuredSession = configuredMailer.getSession();</code></pre>
   <h2>Review Spring auto-configuration and beans</h2>
 
   <section>
-    <p class="wide" style="font-size:smaller">
-      <strong>What breaks:</strong> If you inject the Spring bean named <code class="inline language-java">defaultMailerBuilder</code>, that injection no
-      longer works. Inject <code class="inline language-java">SimpleJavaMail</code> and ask it for a fresh builder instead. If you only inject the default
-      <code class="inline language-java">Mailer</code>, your code can stay as it is.
-    </p>
-    <p class="wide">
-      Spring Boot now discovers Simple Java Mail automatically whenever <code class="inline language-text">spring-module</code> is present.
-      If you previously kept the module on the classpath without importing its configuration, Boot may now create mail beans automatically.
-      Use the exclusion below if that application should not configure mail.
-    </p>
-    <p class="wide">
-      An existing <code class="inline language-java">@Import(SimpleJavaMailSpringSupport.class)</code> is still safe and produces one bean of each type.
-      Keep that import in plain Spring; Boot applications may remove it.
-    </p>
+    <ul>
+      <li><strong>Change builder injection.</strong> Replace <code class="inline
+      language-java">defaultMailerBuilder</code> with <code class="inline language-java">SimpleJavaMail</code> and
+      ask it for a fresh builder at the point of use. Existing injection of the default <code class="inline
+      language-java">Mailer</code> still works.</li>
+      <li><strong>Check what Boot discovers.</strong> Boot now auto-configures mail whenever <code class="inline
+      language-text">spring-module</code> is present. If you kept the module on the classpath without importing the
+      configuration, check whether the application should create those beans. Use the exclusion below when it should
+      skip them.</li>
+      <li><strong>Keep the import in plain Spring.</strong> An existing <code class="inline
+      language-java">@Import(SimpleJavaMailSpringSupport.class)</code> still produces one bean of each type. Boot
+      applications can remove it.</li>
+    </ul>
     <table>
       <thead>
       <tr><th>Bean</th><th>9.x</th><th>10.0.0</th></tr>
@@ -2312,27 +2445,26 @@ Mailer customMailer() {
             .buildMailer();
 }</code></pre>
     </div>
-    <p class="wide">
-      Spring still starts with <code class="inline language-text">simplejavamail.properties</code> and lets Spring's Environment override it. Profiles,
-      placeholders, environment variables, system properties, and their order are all handled by Spring. In 9.x, Simple Java Mail then read raw
-      environment variables and JVM properties a second time, which could unexpectedly override Spring's result. That second pass is gone. If you relied
-      on it, move the value into Spring's normal property sources.
-    </p>
-    <p class="wide">
-      Each application context now keeps its own config, <code class="inline language-java">SimpleJavaMail</code> object, and default Mailer. Starting a
-      second context no longer changes the settings used by the first one.
-    </p>
-    <p class="wide">
-      If you define your own <code class="inline language-java">SimpleJavaMailConfig</code>,
-      <code class="inline language-java">SimpleJavaMail</code>, or <code class="inline language-java">Mailer</code> bean, Boot uses it instead of creating
-      another bean of that type. Boot closes the Mailer it creates when the context closes; for your own Mailer bean, Spring follows that bean's shutdown settings. Use
-      <code class="inline language-java">@Bean(destroyMethod = "")</code> only when the application deliberately owns shutdown elsewhere.
-    </p>
-    <p class="wide">
-      Automatic discovery can create these beans even when no SMTP host is configured; the default host is
-      <code class="inline language-text">localhost</code>. Set <code class="inline language-properties">simplejavamail.smtp.host</code> when sending
-      elsewhere. To keep a Boot application from creating mail beans automatically, use the normal exclusion:
-    </p>
+    <ul>
+      <li><strong>Put overrides in Spring's property sources.</strong> Spring's Environment still overrides values
+      from <code class="inline language-text">simplejavamail.properties</code> and controls profiles, placeholders,
+      environment variables and system properties. In 9.x a second library pass over raw environment variables and
+      JVM properties could override Spring's result. Move any value that relied on that pass into a normal Spring
+      source.</li>
+      <li><strong>Review each application context.</strong> Each context owns its config, <code class="inline
+      language-java">SimpleJavaMail</code> factory and default Mailer. A second context leaves the first one's
+      settings alone.</li>
+      <li><strong>Check ownership of custom beans.</strong> Boot uses a <code class="inline
+      language-java">SimpleJavaMailConfig</code>, <code class="inline language-java">SimpleJavaMail</code> or <code
+      class="inline language-java">Mailer</code> bean you define in place of the auto-configured bean of that type.
+      Boot closes its own Mailer when the context closes. For your bean, Spring follows its shutdown settings. Use
+      <code class="inline language-java">@Bean(destroyMethod = "")</code> only if your application owns shutdown
+      somewhere else.</li>
+      <li><strong>Check the SMTP host or opt out.</strong> Discovery can create the beans without an explicit SMTP
+      host. That uses <code class="inline language-text">localhost</code>, so set <code class="inline
+      language-properties">simplejavamail.smtp.host</code> if you send elsewhere. Use this exclusion to skip
+      automatic mail beans.</li>
+    </ul>
     <pre class="full-width-example"><code class="language-properties">spring.autoconfigure.exclude=org.simplejavamail.springsupport.SimpleJavaMailAutoConfiguration</code></pre>
     <p class="wide">
       For the current dependency choices, compatibility matrix, bean examples, and profile behavior, continue with the
@@ -2407,39 +2539,31 @@ simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath=true</cod
   </section>
 
   <a href="#delivery-envelope" id="delivery-envelope" class="section-link h2">&sect;</a>
-  <h2>If you use bounce addresses or delivery-status notifications</h2>
-
+  <h2><code>Transport.send()</code> after MIME conversion loses the Email’s bounce and DSN settings</h2>
   <section>
-    <p class="wide" style="font-size:smaller">
-      <strong>What to check:</strong> If you set a bounce address or request delivery-status notifications, send the original
-      <code class="inline language-java">Email</code> through a Simple Java Mail Mailer. That path still applies those options when submitting the email.
-    </p>
-    <p class="wide">
-      A bounce address and delivery-status notification (DSN) options are instructions to the SMTP server. They are not part of the message body or
-      headers. Version 10.0.0 keeps them on the <code class="inline language-java">Email</code> until it is sent. If you need to inspect them beforehand, use
-      <code class="inline language-java">email.getBounceToRecipient()</code> and
-      <code class="inline language-java">email.getDeliveryStatusNotification()</code>.
-    </p>
-    <p class="wide">
-      You only need to change code that converted the <code class="inline language-java">Email</code> first and then sent the resulting
-      <code class="inline language-java">MimeMessage</code> through Jakarta Mail. Keep the original <code class="inline language-java">Email</code> and
-      send that through your Simple Java Mail Mailer instead:
-    </p>
-    <div class="wide full-width-example">
-<pre><code class="language-java">// 9.x pattern that needs changing
-MimeMessage message =
-        EmailConverter.emailToMimeMessage(email, session);
+    <p>If your invoices use a bounce mailbox or request a delivery-status notification (DSN), check who submits the message.
+      Sending the original <code>Email</code> through the Simple Java Mail Mailer applies those settings to the SMTP envelope.
+      The migration affects code that converts to MIME first and submits through Jakarta Mail.</p>
+    <pre><code class="language-java">// 9.x path to look for
+MimeMessage message = EmailConverter.emailToMimeMessage(email, session);
 Transport.send(message);</code></pre>
-<pre><code class="language-java">// 10.0.0: keep the Email until send time
+    <pre><code class="language-java">// 10.0.0
 mailer.sync().sendMail(email);</code></pre>
-    </div>
-    <p class="wide">
-      If you keep your own Jakarta Mail sending code, read the bounce and DSN options from the <code class="inline language-java">Email</code> and apply
-      them through your mail provider's API yourself. The following example maps the existing bounce address and NOTIFY/RET options, not ENVID.
-      For Angus, that means
-      <a href="#angus-api-boundary">declaring Angus as a compile dependency</a> and doing the following:
-    </p>
-    <pre class="full-width-example"><code class="language-java">MimeMessage converted =
+    <p>The Mailer checks that the active provider can honor the requested envelope before sending. In 9.x a provider could silently ignore those options.</p>
+    <h3>Replace Java DSN strings with enum values</h3>
+    <p>For the removed <code>EmailPopulatingBuilder</code> string overloads, replace <code>"FAILURE,DELAY"</code> and <code>"HDRS"</code>
+      with the corresponding event and return values, then recompile.</p>
+<pre><code class="language-java">emailBuilder.withSmtpDeliveryOptions(emailBuilder.getSmtpDeliveryOptions().toBuilder()
+    .withDeliveryStatusNotificationNotifyOptions(
+        DeliveryStatusNotification.NotifyOption.FAILURE, DeliveryStatusNotification.NotifyOption.DELAY)
+    .withDeliveryStatusNotificationReturnOption(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY)
+    .build());</code></pre>
+    <p>Property files, Spring and CLI options keep their text formats, including comma or semicolon event lists and <code>FULL</code>/<code>HDRS</code>.</p>
+<details class="doc-disclosure">
+  <summary>When your application submits through Jakarta Mail</summary>
+<p>Read <code>email.getBounceToRecipient()</code> and <code>email.getDeliveryStatusNotification()</code> and map the requested options
+    onto the sending provider. This Angus example handles the envelope sender and shared NOTIFY and RET. Handle ENVID separately if your application needs it.
+    <a href="#angus-api-boundary">Declare Angus as a compile dependency</a> to use <code>SMTPMessage</code>.</p><pre class="full-width-example"><code class="language-java">MimeMessage converted =
         EmailConverter.emailToMimeMessage(email, session);
 SMTPMessage message = new SMTPMessage(converted);
 
@@ -2481,91 +2605,67 @@ if (dsn != null) {
 }
 
 Transport.send(message);</code></pre>
-    <p class="wide">
-      Other mail providers need their own equivalent. This is the provider-specific work that Simple Java Mail normally handles for you. When you send
-      through a Simple Java Mail Mailer, it now stops before sending if the active provider cannot honor those options. In 9.x they could be silently
-      ignored.
-    </p>
-  </section>
-
-  <section>
-    <p class="wide">
-      <strong>If your tests compare SMTP commands:</strong> When the server supports delivery-status notifications (DSNs), the bundled Angus adapter
-      now includes a new identifier for each send so a later notification can refer to that attempt. SMTP calls it <code>ENVID</code>; its generated
-      value is a UUID. Allow for that changing identifier in tests that compare the complete <code>MAIL FROM</code> command, even if you did not request notifications.
-      Message-ID and MIME bytes are unaffected. Servers without usable DSN support still receive the email without ENVID.
-    </p>
-    <p class="wide">
-      Existing raw ENVID configuration suppresses automatic generation. Direct Jakarta Mail sends and CustomMailer keep their existing envelope
-      handling. See the <a href="/features.html#section-dsn-envelope-id">ENVID provider boundaries</a>.
-    </p>
-    <p class="wide">
-      Those connections also send the actual delivery address alongside each recipient command, so a later notification can identify the original
-      recipient even if the address changes on the way. SMTP calls this parameter <code>ORCPT</code>. It includes BCC and override receivers, even when
-      you have not requested notifications, without changing message bytes or adding round trips.
-      Update SMTP fixtures that compare complete <code>RCPT TO</code> commands. Optional ORCPT is omitted when an address cannot be represented safely
-      or exceeds the encoded parameter limit. Ordinary Angus transports obtained from caller-owned Sessions do not gain this behavior;
-      custom socket factories on library-owned stock Angus Sessions retain the managed hook.
-    </p>
-    <p class="wide">
-      <strong>Breaking Java API change:</strong> the <code>EmailPopulatingBuilder</code> String overloads of
-      <code>withDeliveryStatusNotificationNotifyOptions</code> and <code>withDeliveryStatusNotificationReturnOption</code>, available since 9.0.0,
-      are removed in 10.0.0. Use the existing enum overloads instead: replace <code>"FAILURE,DELAY"</code> with <code>NotifyOption.FAILURE, NotifyOption.DELAY</code>, and
-      <code>"HDRS"</code> with <code>DeliveryStatusNotification.ReturnOption.HEADERS_ONLY</code>, then recompile.
-      Property and Spring values are unchanged. CLI option names and text input also stay the same, including comma/semicolon-separated notification
-      events and the <code>FULL</code>/<code>HDRS</code> return aliases. No configuration or CLI migration is needed for this change.
-    </p>
+</details>
+<details class="doc-disclosure">
+  <summary>When your SMTP tests compare complete commands</summary>
+<ul>
+    <li><strong>MAIL FROM.</strong> With usable DSN, the bundled Angus adapter adds a fresh UUID as ENVID for each send unless raw ENVID configuration takes precedence.
+      Allow for the changing identifier even when no notifications were requested. Without usable DSN, an ordinary send proceeds without the generated ENVID.
+      Direct Jakarta Mail and CustomMailer control their own envelopes. See <a href="/email-composition.html#section-dsn-envelope-id">ENVID and the submission receipt</a>.</li>
+    <li><strong>RCPT TO.</strong> Managed Angus can add ORCPT for each actual delivery address, including BCC and override recipients.
+      It travels on the existing command, independently of NOTIFY, and is omitted for unrepresentable or over-limit encoded addresses.
+      Library-owned stock Angus Sessions retain that hook with custom socket factories. Ordinary transports from caller-owned Sessions lack it.</li>
+    </ul><p>These envelope additions preserve the Message-ID and message bytes.</p>
+</details>
   </section>
 
   <a href="#async-shutdown" id="async-shutdown" class="section-link h2">&sect;</a>
-  <h2>Allow shutdown to wait for sends already in progress</h2>
+  <h2><code>Mailer.close()</code> drains accepted sends</h2>
   <section>
-    <p class="wide">
-      <strong>What changes:</strong> Calling <code>Mailer.close()</code> can now wait while sends you already started finish. With the built-in executor,
-      it waits for asynchronous work accepted for execution before closing the connection pool, rather than closing connections that work may still need.
-      If you want to start shutdown without waiting in that call, use <code>closeAsync()</code>; its future completes after the work and
-      connection cleanup finish. New async tasks are rejected once shutdown starts. Check each send's own completion result to see whether it succeeded.
-    </p>
-    <p class="wide">
-      Replace the removed <code>shutdownConnectionPool()</code> method with <code>closeAsync()</code>. The name now reflects that it closes the
-      whole Mailer, even without pooling. The return type is <code>CompletableFuture&lt;Void&gt;</code>, so existing <code>Future&lt;Void&gt;</code>
-      variables can still hold it. Recompile integrations. Repeated calls return independent views of the same cleanup operation; completing or
-      cancelling a view cannot interrupt cleanup or falsely complete another caller's view.
-    </p>
-    <p class="wide">
-      Call <code>close()</code> from application shutdown code, not from a send worker or a callback running as part of that send: that would wait for
-      the same send to finish and is rejected. Waiting for sends to finish does not cancel slow sends or add a timeout.
-      It also waits for this Mailer's synchronous sends and sends on an executor you supplied, without shutting that executor down.
-    </p>
-    <p class="wide">
-      Connection tests now reject work after shutdown begins, including a queued asynchronous test that starts after closing. Previously a closed
-      Mailer could still perform a test, especially with a caller-owned executor. Build a new Mailer rather than testing through a closed one.
-    </p>
-    <p class="wide">
-      See <a href="sending-and-execution.html#section-mailer-lifecycle">lifecycle guidance</a> for the complete shutdown contract.
-    </p>
-    <p class="wide"><code>Mailer.close()</code> now declares <code>ExecutionException</code> and <code>InterruptedException</code>, replacing the broader
-      released <code>throws Exception</code> contract (inherited from <code>AutoCloseable</code> in earlier 9.x).
-      If you implement Mailer yourself, narrow an override that declares broader checked exceptions. Review catches for other checked exception types
-      when closing the Mailer was their only throwing call; those catches may no longer compile. The JVM method descriptor and cleanup behavior are
-      unchanged by this declaration refinement. Interrupted waiting still does not cancel cleanup.</p>
-    <p class="wide">
-      <strong>Standalone batch-module:</strong> <code>BatchTransportExecutor.shutdown()</code> and <code>shutdownNow()</code> keep their names and
-      return types, but now return a fresh completion view on each call. Released 9.3.6 returned the same mutable future. Remove assumptions about
-      future identity: cancellation, manual completion, <code>orTimeout(...)</code> and <code>completeOnTimeout(...)</code> now affect only the
-      view you changed. They cannot cancel or falsely finish cleanup, and a later <code>close()</code> still waits for actual cleanup.
-      If worker startup throws an <code>Error</code> before submitted work starts, the same error still propagates; that unstarted operation no longer
-      leaves graceful shutdown waiting for phantom accepted work.
-      Use <code>shutdownNow()</code> when you intend to request forced shutdown.
-    </p>
-    <p class="wide">
-      The standalone executor also rejects blocking <code>close()</code> from its own callbacks and inline completion handlers with
-      <code>IllegalStateException</code>, before starting shutdown. This replaces a possible indefinite wait. Move the blocking wait to the owning
-      application thread; callbacks can initiate <code>shutdown()</code> or <code>shutdownNow()</code> and return. Review
-      <code>thenRun(batch::close)</code> and similar continuations because they may run on the completing worker. Waiting on the shutdown future
-      within that callback is still unsupported, and supplied executors remain application-owned. See
-      <a href="smtp-connection-pooling.html#option-batch-facade">standalone pooling usage</a>.
-    </p>
+    <p>A worker has accepted an invoice email just as the application starts shutting down. Call <code>mailer.close()</code>
+      on the shutdown thread to wait for queued and active sends. To start cleanup and wait later, replace
+      <code>shutdownConnectionPool()</code> with <code>closeAsync()</code>. It closes the whole Mailer, including when pooling is disabled.</p>
+    <p><strong>Reject new sends &rarr; finish accepted sends &rarr; release owned resources.</strong></p>
+<pre><code class="language-java">MailSend&lt;MailSubmissionReceipt&gt; send = mailer.async().sendMail(invoice);
+
+// On the application shutdown thread
+CompletableFuture&lt;Void&gt; cleanup = mailer.closeAsync();
+// Run independent shutdown work here if needed.
+cleanup.get();
+MailSubmissionReceipt receipt = send.getCompletion().get();</code></pre>
+    <p>Keep both futures if you need both answers. <code>cleanup</code> reports whether shutdown finished successfully.
+      The send’s completion gives you its receipt or failure. An existing <code>Future&lt;Void&gt;</code> variable can still hold
+      the cleanup future. Recompile integrations against the new API.</p>
+
+    <details class="doc-disclosure">
+      <summary>Callbacks, supplied executors and connection tests</summary>
+      <p>Wait on your application’s shutdown thread. Blocking <code>close()</code> in a send worker or inline callback
+        is rejected because it would wait for its own work. From that callback, call <code>closeAsync()</code> and return.</p>
+      <p>Shutdown also drains synchronous sends and this Mailer’s work on a supplied executor. Your application closes that
+        executor separately after its users finish. Accepted sends keep their existing deadlines. Run connection tests before
+        shutdown. A queued async test that starts after closing is rejected, so use a new Mailer for future tests.</p>
+    </details>
+    <details class="doc-disclosure">
+      <summary>Checked exceptions and cleanup futures</summary>
+      <p><code>Mailer.close()</code> declares <code>ExecutionException</code> and <code>InterruptedException</code>.
+        In 9.x it inherited <code>throws Exception</code> from <code>AutoCloseable</code>. If you implement Mailer,
+        narrow any override that declares broader checked exceptions. Review catches for checked exceptions when closing was
+        the only throwing call. The JVM method descriptor stays the same.</p>
+      <p>Each <code>closeAsync()</code> call gives you a separate future for the same cleanup. Cancelling or completing
+        one future affects only that view. If the caller is interrupted while waiting, cleanup continues.</p>
+    </details>
+    <details class="doc-disclosure">
+      <summary>Shutdown for a standalone BatchTransportExecutor</summary>
+      <p>Use <code>shutdown()</code> to drain work and <code>shutdownNow()</code> to request forced shutdown. Both keep
+        their names and types. In 9.3.6 they shared a mutable future. Each call now returns an independent view.
+        Cancellation, manual completion, <code>orTimeout(...)</code> and <code>completeOnTimeout(...)</code> leave actual cleanup running,
+        and a later <code>close()</code> waits for it. A worker startup <code>Error</code> propagates. Graceful shutdown can then skip the operation that never started.</p>
+      <p>Wait for shutdown on the application thread. A blocking close from an executor callback or inline continuation throws
+        <code>IllegalStateException</code> before shutdown begins. In particular, <code>thenRun(batch::close)</code> can execute on the
+        worker that completes the task. Use <code>shutdown()</code> or <code>shutdownNow()</code> in the callback and return.
+        The owner of a supplied executor closes it separately. See <a href="smtp-connection-pooling.html#option-batch-facade">standalone pooling</a>.</p>
+    </details>
+    <p>See <a href="sending-and-execution.html#section-mailer-lifecycle">Mailer lifecycle and resource ownership</a> for the full shutdown contract.</p>
   </section>
 
   <a href="#mail-send-execution-control" id="mail-send-execution-control" class="section-link h2">&sect;</a>
@@ -2583,40 +2683,43 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
   </div></section>
 
   <a href="#eml-bytes" id="eml-bytes" class="section-link h2">&sect;</a>
-  <h2>If you parse raw EML streams</h2>
+  <h2><code>emlToEmail(InputStream)</code> reads the original bytes</h2>
 
   <section>
-    <p class="wide" style="font-size:smaller">
-      <strong>Most applications have nothing to change.</strong> The InputStream overloads of
-      <code class="inline language-java">EmailConverter.emlToEmail(...)</code> and
-      <code class="inline language-java">emlToEmailBuilder(...)</code> now parse the bytes you supplied instead of first turning the whole file into a
-      UTF-8 String and back again.
-    </p>
-    <p class="wide">
-      Normal EML should produce the same Email. Check this only if you feed it raw non-UTF-8 data, malformed EML, or have tests that expect UTF-8
-      replacement characters. Keeping the original bytes also prevents signed MIME from changing before a security module checks it. Overloads that
-      accept a Java String still treat that String as UTF-8.
-    </p>
-    <p class="wide">
-      MIME, EML and Outlook import now leave the bounce recipient absent when a <code>Return-Path</code> cannot be parsed, including a comment-only
-      value. The original header remains in <code>Email.getHeaders()</code> and readable content is retained. Check
-      <code>getBounceToRecipient()</code> for null instead of expecting malformed source text in its address. Successfully parsed values keep their
-      existing interpretation; caller-built recipient behavior is unchanged.
-    </p>
-    <p class="wide">
-      MIME and EML import take message-level headers, bounce addresses and receipt destinations only from the effective root message after
-      protection processing. Headers on attachments, body parts or nested multipart containers no longer change those parent fields or appear
-      in the parent's <code>Email.getHeaders()</code>. Attachments keep their existing resource metadata and content. If your application relied
-      on child headers appearing at the message level, read the correct owning message instead; no method names or arguments change.
-    </p>
-    <p class="wide">
-      MIME/EML and Outlook import now recognize <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> regardless of capitalization.
-      If you read lowercase or mixed-case versions from <code>Email.getHeaders()</code>, use
-      <code>getDispositionNotificationToRecipients()</code> or <code>getReturnReceiptToRecipients()</code> and the corresponding request flag
-      instead. Recognized usable receipt fields follow those typed destinations, preserving mailbox spelling, order and duplicates.
-      Repeated Outlook receipt fields retain their raw source order across interleaved capitalization.
-      Importing sends no receipt; value parsing and exact/protected source bytes retain their existing contracts.
-    </p>
+    <p>A saved EML has an 8-bit ISO-8859-1 body. The <code>é</code> in “café” is byte <code>E9</code>.
+      This byte used to pass through a UTF-8 String before the MIME parser saw the body’s charset.</p>
+<pre><code class="language-text">9.3.10   E9 → UTF-8 replacement
+         EF BF BD → MIME parser
+10.0.0   E9 → MIME parser → é</code></pre>
+    <p>Keep passing the original stream to <code>emlToEmail(...)</code> or <code>emlToEmailBuilder(...)</code>.
+      This also keeps signed MIME intact before verification. Overloads that take a Java String still use UTF-8.
+      Review tests that expected replacement characters or relied on malformed input being transformed.</p>
+    <h3>Check the address and receipt fields you read</h3>
+    <p>A comment-only bounce header in MIME, EML or Outlook stays readable in the header view. Its typed recipient is now null.</p>
+<pre><code class="language-text">Return-Path: (comment only)
+
+email.getHeaders()           retains the original header
+email.getBounceToRecipient() null</code></pre>
+    <p>Handle null before reading that recipient’s address. Valid bounce addresses and recipients you build yourself
+      follow their usual parsing rules.</p>
+    <p>If the customer forwarded another email as an attachment, read that child’s receipt request from the child.</p>
+<pre><code class="language-text">Customer’s message
+└─ attached email
+   Return-Receipt-To: archive@example.org
+
+Parent receipt destinations: empty
+Attached email: archive@example.org</code></pre>
+    <details class="doc-disclosure">
+      <summary>Header ownership and typed receipt destinations</summary>
+      <p>MIME and EML use the effective root after protection processing for message-level headers, bounce addresses
+        and receipt destinations. Headers on attachments, body parts and nested multipart containers stay with their owners.
+        Attachments keep their content and resource metadata. Import an attached email to read its own fields.</p>
+      <p>MIME, EML and Outlook recognize <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code>
+        across capitalization. Read <code>getDispositionNotificationToRecipients()</code> or <code>getReturnReceiptToRecipients()</code>
+        with the corresponding request flag. Typed destinations preserve address spelling, order and duplicates.
+        Outlook keeps the raw order across repeated headers with different capitalization. Actual receipt sending is separate
+        from import. Exact and protected source bytes retain their preservation rules.</p>
+    </details>
   </section>
 
   <a href="#empty-imported-bodies" id="empty-imported-bodies" class="section-link h2">&sect;</a>
@@ -2630,7 +2733,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
       empty imported body. Ordinary defaults now leave that empty value intact, consistently with a caller-built empty body. Ordinary export retains
       its plain-text or HTML type. If your application treats empty and absent content alike, make that choice explicitly.</p>
     <p>No conversion method changes. Whitespace, concatenation of repeated body parts and authoritative exact/protected bytes keep their contracts.
-      See <a href="features.html#empty-imported-bodies">body presence during conversion</a>.</p>
+      See <a href="/email-conversion.html#empty-imported-bodies">body presence during conversion</a>.</p>
   </section>
 
   <a href="#finalized-mime" id="finalized-mime" class="section-link h2">&sect;</a>
@@ -2662,7 +2765,7 @@ CompletableFuture&lt;MailSubmissionReceipt&gt; completed = send.getCompletion();
     <p>Successful parsing, existing non-strict To/Cc/Bcc interpretation, names, missing-field fallbacks and singular/list behavior remain unchanged.
       This recovery does not replace malformed Reply-To with From, hide content/codec/protection failures, change Return-Path recovery or weaken
       exact EML's byte and explicit-envelope boundaries. No Java method migration is needed. See
-      <a href="features.html#unparseable-imported-addresses">incoming address interpretation</a>.</p>
+      <a href="/email-conversion.html#unparseable-imported-addresses">incoming address interpretation</a>.</p>
   </div></section>
 
   <section aria-label="Migration sequence">

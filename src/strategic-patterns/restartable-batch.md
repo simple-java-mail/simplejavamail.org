@@ -16,7 +16,7 @@ permalink: "/patterns/restartable-batch.html"
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and the services for each demo. The local examples use synthetic data and run without a real mail account.
 
 Run these commands from that directory:
 
@@ -27,13 +27,13 @@ docker compose -f tools/integration-patterns/restartable-batch/compose.yaml run 
 
 Once the demo is running, open [the job records](http://localhost:8787/jobs) and [the test server's capture summary](http://localhost:8788/stats) to compare what the application recorded with what the server received. The first build downloads images and dependencies, which Docker caches for later runs. If you want to run more than one pattern at once, choose different local ports with `PATTERN_PORT` and `PATTERN_SMTP_PORT`.
 
-Expect two submissions before interruption and five after resumption, not seven. The scenario checks both stored jobs and the SMTP capture count.
+Expect two submissions before interruption and three more after resumption. The scenario checks both the stored jobs and the five total messages captured by the test SMTP server.
 
 ## Follow one job
 
 Start with [`NightlyMailJob.NightlyEndpoint.run`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/restartable-batch/src/main/java/org/simplejavamail/examples/patterns/NightlyMailJob.java). Follow the ready-item reader into its `submitMail` writer and [`MailWork.deliver`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/common/src/main/java/org/simplejavamail/examples/patterns/MailWork.java). Finally inspect [`JobStore.claim`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/common/src/main/java/org/simplejavamail/examples/patterns/JobStore.java): its guard is committed separately from the batch chunk because SMTP cannot roll back with a database transaction.
 
-The restart experiment should report two submissions before interruption and five after resumption, not seven. Next run the ordinary scenario with `unknown` to see why ambiguous acceptance must stay held even when a framework can restart work.
+Check that the restart picked up the three jobs that were still ready. Then run the ordinary scenario with `unknown` to see why a job with uncertain SMTP acceptance stays on hold even when the batch can restart.
 
 ## The problem
 
@@ -71,11 +71,9 @@ docker compose -f tools/integration-patterns/restartable-batch/compose.yaml run 
 
 ## Before you adapt this example
 
-Run just one copy of this application against its database. At startup, it puts unfinished `SENDING` jobs on hold, assuming the previous process has stopped. Running a second copy could put the first copy's active jobs on hold too. If you need two instances, [Polar Meridian](/patterns/polar-meridian.html) shows how to track which instance claimed each job.
-
-All mail stays in the local test server, and the delivery notifications are synthetic DSNs supplied by the scenario. Even with a real server, SMTP acceptance wouldn't tell you whether the message reached its final destination. A database transaction, broker or workflow can't make SMTP exactly-once, so leave partial or uncertain submissions on hold until you can decide whether a retry is safe.
-
-Before using a delivery report to update customer records, check where it came from and which send it belongs to. You'll also need to handle duplicates and reports that arrive out of order. When passing data to a broker or workflow, use your own small DTOs rather than serializing Email, Mailer or private-key objects.
+- **Run one instance per database.** At startup, this demo holds unfinished `SENDING` jobs on the assumption the previous instance has stopped. For a shared database, track which instance claimed each job. See [Polar Meridian](/patterns/polar-meridian.html).
+- **Review partial or uncertain sends before retrying.** The local scenario uses a test mail server and synthetic DSNs. In production, SMTP acceptance records submission. Transactions, brokers and workflows leave that SMTP outcome separate from application state.
+- **Verify and match reports.** Check where the report came from, match it to the send, and handle duplicates and late arrivals. Pass small application DTOs to brokers or workflows and keep Email, Mailer and private-key objects inside the application.
 
 ## Source, resources and cleanup
 

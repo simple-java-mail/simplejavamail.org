@@ -27,9 +27,9 @@ SJM had already grown considerably before this release. It could construct the a
 
 With coding agents, I could pursue several of those things at once. A question about configuration became work on immutable snapshots and value provenance. A question about failed sends led into recipient results, uncertainty and safe retries. Once those pieces existed, failover had to respect them too. Each addition made another improvement possible, while raising the expectations for how all of them should work together.
 
-The scale became rather hard to miss. In the development checkout on **14 October 2026**, the [version 10 release history](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/RELEASE_HISTORY.md) referred to **32 distinct GitHub issues**, while the [architecture directory](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/docs/adr) contained **33 decision records**. Some records explain longstanding design choices; some release work is still under review. These are a snapshot of the work around the release, rather than 32 new features or 33 improvements invented by AI.
+The scale became rather hard to miss. On **13 November 2026**, the [version 10 release history](https://github.com/bbottema/simple-java-mail/blob/218f2f78669f934f45852d342ff66d31af8e84d2/RELEASE_HISTORY.md) referred to **153 distinct GitHub issues**, while the [architecture directory](https://github.com/bbottema/simple-java-mail/tree/218f2f78669f934f45852d342ff66d31af8e84d2/docs/adr) contained **42 decision records**. Those numbers include fixes and longstanding design decisions, not just new features; they do give some idea of how much there is to keep straight.
 
-<!-- Source snapshot: 2026-10-14 working tree. Count unique issues/<number> references in RELEASE_HISTORY.md before the v9.3.0 section and numbered docs/adr/*.md files. Includes pending #760/#761 progress work and ADRs 0032/0033; not a released-feature count. -->
+<!-- Source snapshot: 2026-11-13, SJM commit 218f2f78669f934f45852d342ff66d31af8e84d2. Count distinct bbottema/simple-java-mail issues/<number> references in the v10.0.0 section of RELEASE_HISTORY.md and numbered docs/adr/*.md files. These are issue references and project-wide decision records, not counts of released features. -->
 
 For a more personal measure, the failover review alone was divided into thirty batches. Even the architectural summary became a lot to absorb. I was getting the kind of implementation breadth I'd normally associate with a team, with my own intentions still supplying the direction.
 
@@ -40,7 +40,7 @@ The existing discipline made that possible. The modules, established patterns an
 Having agents that could implement changes quickly gave me more room to investigate what would be worth adding. I approached that question from four directions:
 
 1. **Start with SJM's existing API.** Given the objects and operations we already have, what useful next step could a developer take? Preparing an email, inspecting it and sending it should fit together comfortably, so a capability can grow out of something the caller already understands.
-2. **Look at what Angus already offers.** [Angus supplies the SMTP transport](https://eclipse-ee4j.github.io/angus-mail/docs/api/org.eclipse.angus.mail/org/eclipse/angus/mail/smtp/package-summary.html), and it has controls and protocol behavior that SJM hasn't always made easy to reach. Which of those would help our users if they were available through our usual typed, fluent API, with the necessary configuration and result handling around them?
+2. **Look at Angus.** [Angus supplies the SMTP transport](https://eclipse-ee4j.github.io/angus-mail/docs/api/org.eclipse.angus.mail/org/eclipse/angus/mail/smtp/package-summary.html), and it has controls and protocol behavior that SJM hasn't always made easy to reach. Which would help our users through our usual API, and where could the transport itself improve?
 3. **Look outside Java.** The [wider SMTP-library comparison](#standing-beside-the-serious-smtp-frameworks) challenged my assumptions about what a mature client should offer. It gave me useful gaps to investigate, as well as examples of how other projects make demanding mail workloads easier to manage.
 4. **Ask what our case-study developers still need.** Building the [case studies](/case-studies.html) gave me concrete jobs and constraints to work through, and another way to notice where the library left developers with unnecessary work. What would make a performance investigation easier, or give a SaaS developer a clearer explanation of a failed customer send? The companies are fictional, but the difficulties their developers encounter are quite recognizable.
 
@@ -58,8 +58,8 @@ The interesting growth is around the work an application does with email. Constr
 | Can this server handle the message? | [Connection probes](/debugging.html#section-smtp-capabilities) and submission checks for requirements such as internationalized addresses, message size and [onward TLS](/security.html#section-requiretls). |
 | What happened to each recipient? | [Submission receipts](/analyzing-send-results.html#section-get-receipt) with recipient evidence, partial acceptance and explicit uncertainty. |
 | When can we try again, or use another server? | [Bounded retries](/mail-send-retries.html) for safely refused temporary submissions and [connection failover](/smtp-connection-failover.html), with different rules for each. |
-| Can we investigate the communication later? | [Send-result observation](/analyzing-send-results.html#section-observer-results), timing diagnostics and [exact EML submission](/features.html#section-exact-eml) for preserving an authoritative message. |
-| What can we use from received mail? | [Readable content and retained originals](/features.html#section-source-inspection), with protection facts for the content we actually use. |
+| Can we investigate the communication later? | [Send-result observation](/analyzing-send-results.html#section-observer-results), timing diagnostics and [exact EML submission](/email-conversion.html#section-exact-eml) for preserving an authoritative message. |
+| What can we use from received mail? | [Readable content and retained originals](/email-conversion.html#section-source-inspection), with protection facts for the content we actually use. |
 | What did a later delivery report say? | [Parsed notifications](/delivery-reports.html), with recipient results and identifiers for matching the report to a send. |
 
 *Version 10 connects message construction, sending controls and received-mail inspection through the same library.*
@@ -72,9 +72,9 @@ The recent [connection-failover work](/smtp-connection-failover.html) handles an
 
 The separately configured [retry policy](/mail-send-retries.html) deals with a relay that clearly refused the whole submission temporarily. It can schedule bounded attempts with backoff, reusing the prepared message and staying with the selected relay. Partial or uncertain acceptance stops automatic replay. That gives the application useful recovery without turning an exception into permission to send the invoice twice.
 
-Both capabilities now belong to the accepted development implementation. They preserve one logical send and its final result, so the application can investigate the recovery as part of the same operation. The invoice with a lost acceptance reply still requires an application decision; neither mechanism pretends to resolve missing evidence.
+Both capabilities preserve one logical send and its final result, so the application can investigate the recovery as part of the same operation. If the server's reply goes missing, the application still has to decide what to do, since the invoice may already have been accepted.
 
-The newest development work also asks [what a send is doing right now](/analyzing-send-results.html#section-live-progress), including available upload progress and connection stages. As I write this, that implementation is awaiting review. It extends the same direction: the application should have useful information while work is happening, as well as when it finishes.
+[Live progress](/analyzing-send-results.html#section-live-progress) also shows what a send is doing now, including available upload progress and connection stages. It extends the same direction: the application should have useful information while work is happening, as well as when it finishes.
 
 ## From convenience library to application-mail framework
 
@@ -100,7 +100,7 @@ That's the kind of enterprise framework I want to make: a dependable part of an 
 
 ## Standing beside the serious SMTP frameworks
 
-Once I began evaluating SJM at that level, comparing it only with other Java wrappers stopped being enough. The [cross-language research from August](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/docs/research/simple-java-mail-world-class-smtp-research.pdf) gave me a broader set of expectations. It predates the failover and retry implementations; the [October progress companion](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/docs/research/simple-java-mail-world-class-smtp-progress-report.md) follows those additions and records the remaining gaps.
+Once I began evaluating SJM at that level, comparing it only with other Java wrappers stopped being enough. The [cross-language research from August](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/docs/research/simple-java-mail-world-class-smtp-research.pdf) gave me a broader set of expectations. It predates the failover and retry implementations; the [progress companion](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/docs/research/simple-java-mail-world-class-smtp-progress-report.md) follows those additions and records the remaining gaps.
 
 [MailKit and MimeKit](https://mimekit.net/) set a serious standard for SMTP protocol coverage and message handling. [Nodemailer's pooling and capacity notifications](https://nodemailer.com/smtp/pooled) make operating a workload part of the normal API experience, while [Symfony Mailer](https://symfony.com/doc/current/mailer.html#high-availability) combines transport failover with the surrounding framework's job-processing facilities. In Java, [Vert.x Mail Client](https://vertx.io/docs/vertx-mail-client/java/) offers asynchronous I/O and negotiated PIPELINING, a different approach from running blocking SMTP work on SJM's workers.
 

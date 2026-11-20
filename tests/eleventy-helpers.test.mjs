@@ -6,6 +6,7 @@ import { runInNewContext } from "node:vm";
 import Handlebars from "handlebars";
 import less from "less";
 import ts from "typescript";
+import { createTemplateHelpers } from "../src/_lib/template-helpers.mjs";
 
 import journalData from "../src/journal/journal.11tydata.mjs";
 import { journalCodeExample } from "../src/_lib/journal-code-example.mjs";
@@ -591,9 +592,12 @@ test("case studies require a company, label, index description and positive disp
 
 test("case-study spotlights reuse their article metadata on the index and homepage", () => {
   const handlebars = Handlebars.create();
+  for (const [name, helper] of Object.entries(createTemplateHelpers())) handlebars.registerHelper(name, helper);
   handlebars.registerHelper("url", () => { throw new Error("A URL field must not invoke Eleventy's url helper"); });
   handlebars.registerHelper("eq", (left, right) => left === right);
-  handlebars.registerPartial("components/case-study-spotlight", readFileSync(new URL("../src/_includes/components/case-study-spotlight.hbs", import.meta.url), "utf8"));
+  for (const partial of ["case-study-spotlight", "captain-journey-panel", "dependency-picker"]) {
+    handlebars.registerPartial(`components/${partial}`, readFileSync(new URL(`../src/_includes/components/${partial}.hbs`, import.meta.url), "utf8"));
+  }
   handlebars.registerPartial("components/module-badges", "");
   const ordinary = (company, order) => ({ url: `/case-studies/company-${order}.html`, data: { title: `Case study: ${company}`, caseStudy: { company, order, label: "SMTP integration", description: "An ordinary case study" } } });
   const featured = ordinary("RelayDesk", 3);

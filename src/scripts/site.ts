@@ -91,6 +91,41 @@ window.addEventListener('load', () => {
   docsSidebar.scrollTop = Math.max(0, docsSidebar.scrollTop + centeredOffset);
 }, { once: true });
 
+const dependencyTablist = document.querySelector<HTMLElement>('[data-dependency-tabs]');
+if (dependencyTablist) {
+  const tabs = Array.from(dependencyTablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  const selectTab = (selected: HTMLButtonElement): void => {
+    for (const tab of tabs) {
+      const active = tab === selected;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      const panel = document.getElementById(tab.getAttribute('aria-controls') ?? '');
+      if (panel) panel.hidden = !active;
+    }
+  };
+
+  for (const [index, tab] of tabs.entries()) {
+    tab.addEventListener('click', () => selectTab(tab));
+    tab.addEventListener('keydown', event => {
+      let next: number;
+      switch (event.key) {
+        case 'ArrowRight': next = (index + 1) % tabs.length; break;
+        case 'ArrowLeft': next = (index + tabs.length - 1) % tabs.length; break;
+        case 'Home': next = 0; break;
+        case 'End': next = tabs.length - 1; break;
+        default: return;
+      }
+      event.preventDefault();
+      selectTab(tabs[next]);
+      tabs[next].focus();
+    });
+  }
+  if (tabs[0]) {
+    selectTab(tabs[0]);
+    dependencyTablist.hidden = false;
+  }
+}
+
 const copyLabel = (button: HTMLButtonElement, value: string): void => {
   button.textContent = value;
   button.setAttribute('aria-label', value === 'Copied' ? 'Code copied to clipboard' : 'Copy code');
@@ -108,16 +143,26 @@ for (const pre of root.querySelectorAll<HTMLPreElement>('pre')) {
   button.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(code.textContent ?? '');
-      copyLabel(button, 'Copied');
-      window.setTimeout(() => copyLabel(button, 'Copy'), 1600);
     } catch {
-      copyLabel(button, 'Select code');
       const selection = window.getSelection();
       const range = document.createRange();
       range.selectNodeContents(code);
       selection?.removeAllRanges();
       selection?.addRange(range);
+      let copied = false;
+      try {
+        copied = !!selection && document.execCommand('copy');
+      } catch {
+        // Keep the selected code available for manual copying.
+      }
+      if (!copied) {
+        copyLabel(button, 'Select code');
+        return;
+      }
+      selection?.removeAllRanges();
     }
+    copyLabel(button, 'Copied');
+    window.setTimeout(() => copyLabel(button, 'Copy'), 1600);
   });
   pre.append(button);
   pre.classList.add('code-copy-enabled');

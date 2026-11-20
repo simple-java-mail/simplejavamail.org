@@ -73,7 +73,7 @@ block-beta
     style recipientBuilders fill:#E4F2F2,stroke:#087E8B,color:#13212B,stroke-width:2px
 ```
 
-2015 was a pivotal year: Jared Stewart contributed a [fluent interface for building emails](https://github.com/bbottema/simple-java-mail/pull/12). A builder feels inevitable when looking at the API today, but it changed the library's direction. The original API was mostly a friendlier way to operate JavaMail, but it had become a nightmare to maintain; every new option multiplied the Cartesian product of methods. A builder on the other hand could describe an email in the language of an application, offer only compatible choices and use single-purpose methods without losing flexibility. Once that became the public API, every new capability had to answer two questions: how should a user express this, and how much should Simple Java Mail handle for them? After that, it was [builders all the way down](/features.html#section-builder-api).
+2015 was a pivotal year: Jared Stewart contributed a [fluent interface for building emails](https://github.com/bbottema/simple-java-mail/pull/12). A builder feels inevitable when looking at the API today, but it changed the library's direction. The original API was mostly a friendlier way to operate JavaMail, but it had become a nightmare to maintain; every new option multiplied the Cartesian product of methods. A builder on the other hand could describe an email in the language of an application, offer only compatible choices and use single-purpose methods without losing flexibility. Once that became the public API, every new capability had to answer two questions: how should a user express this, and how much should Simple Java Mail handle for them? After that, it was [builders all the way down](/email-composition.html#section-builder-api).
 
 The issue tracker became the place where those answers were negotiated. It was never quite a roadmap. It was closer to a long-running argument with reality.
 
@@ -152,7 +152,7 @@ Security made these trade-offs less optional. CRLF-injection checks, timeouts, T
 
 A [2012 testing proposal](/sources/google-code/simple-java-mail/issue-5.html#comment-2) sounds surprisingly familiar now. The suggested `SmtpReceiver` would sit at the end of the sending chain so a test could inspect the high-level email and simulate failure. I cannot draw a straight historical line from that suggestion to today's custom sending APIs. I can say that the same need kept resurfacing: sometimes a caller needs the library to do everything except the last step.
 
-That is the idea behind the library's [extension points](/features.html#section-extension-points): handle what can be solved consistently, make the common path safe, and give callers deliberate ways to take over when the library cannot predict their needs. I have not always got that balance right, but I now consider it part of the feature rather than an inconvenience around it.
+That is the idea behind the library's [extension points](/configuration.html#section-extension-points): handle what can be solved consistently, make the common path safe, and give callers deliberate ways to take over when the library cannot predict their needs. I have not always got that balance right, but I now consider it part of the feature rather than an inconvenience around it.
 
 ## The 2026 return
 
@@ -162,7 +162,7 @@ That burst happened because I changed how I work. I had begun using coding agent
 
 As I write this, 10.0.0 is still being assembled. The work says something about how my priorities changed. Much of it is not about another content type or transport option. It is about making the send process visible: preparing an email before opening a connection, returning structured submission outcomes, making synchronous and asynchronous behaviour obvious, observing the complete send lifecycle and treating the places where applications hook into it as APIs I have to support.
 
-The same effort is making [received mail](/features.html#section-source-inspection) easier to understand. Callers should get the readable content and any retained original, with an explanation of what could not be interpreted and which content a signature actually covers.
+The same effort is making [received mail](/email-conversion.html#section-source-inspection) easier to understand. Callers should get the readable content and any retained original, with an explanation of what could not be interpreted and which content a signature actually covers.
 
 That feels like the work of a library growing up. Early versions tried to make the happy path short. A mature library also has to explain what happened when sending or reading a message does not go to plan.
 

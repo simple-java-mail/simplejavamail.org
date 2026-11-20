@@ -1,0 +1,31 @@
+{{!-- Trim leading whitespace at the call site so Handlebars preserves the snippet indentation. --}}
+<div class="code-window dependency-picker{{#if className}} {{className}}{{/if}}">
+  <div class="dependency-tabs" data-dependency-tabs role="tablist" aria-label="Build tool" hidden>
+    <button id="dependency-tab-maven" type="button" role="tab" aria-controls="dependency-maven" aria-selected="true">Maven</button>
+    <button id="dependency-tab-gradle" type="button" role="tab" aria-controls="dependency-gradle" aria-selected="false" tabindex="-1">Gradle</button>
+    <button id="dependency-tab-ivy" type="button" role="tab" aria-controls="dependency-ivy" aria-selected="false" tabindex="-1">Ivy</button>
+    <button id="dependency-tab-sbt" type="button" role="tab" aria-controls="dependency-sbt" aria-selected="false" tabindex="-1">sbt</button>
+  </div>
+  <div id="dependency-maven" class="dependency-panel" role="tabpanel" aria-labelledby="dependency-tab-maven" tabindex="0">
+    <span class="dependency-file">pom.xml</span>
+    <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;simple-java-mail&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+  </div>
+  <div id="dependency-gradle" class="dependency-panel" role="tabpanel" aria-labelledby="dependency-tab-gradle" tabindex="0">
+    <span class="dependency-file">build.gradle or build.gradle.kts</span>
+    <pre><code class="language-groovy">implementation("org.simplejavamail:simple-java-mail:{{site.version}}")</code></pre>
+  </div>
+  <div id="dependency-ivy" class="dependency-panel" role="tabpanel" aria-labelledby="dependency-tab-ivy" tabindex="0">
+    <span class="dependency-file">ivy.xml</span>
+    <pre><code class="language-xml">&lt;dependency org="org.simplejavamail"
+            name="simple-java-mail"
+            rev="{{site.version}}" /&gt;</code></pre>
+  </div>
+  <div id="dependency-sbt" class="dependency-panel" role="tabpanel" aria-labelledby="dependency-tab-sbt" tabindex="0">
+    <span class="dependency-file">build.sbt</span>
+    <pre><code class="language-scala">libraryDependencies += "org.simplejavamail" % "simple-java-mail" % "{{site.version}}"</code></pre>
+  </div>
+</div>

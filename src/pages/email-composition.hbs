@@ -1,0 +1,1514 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/email-composition.html"
+tags: ["publicPage"]
+title: "Building emails"
+description: "Build messages with text and HTML, recipients, attachments, images, calendars, replies, headers and delivery-notification options."
+---
+<p>Describe the message with an Email builder. Start with the example below, or jump to the content you need.</p>
+<nav class="guide-contents" aria-label="On this page">
+<section><h2>Start building</h2><ul>
+<li><a href="#section-basic-usage">Basic usage</a></li>
+<li><a href="#section-builder-api">Use the email builder</a></li>
+<li><a href="#section-add-recipients">Add recipients</a></li>
+<li><a href="#section-recipient-builders">Recipient builders</a></li>
+</ul></section>
+<section><h2>Bodies and calendars</h2><ul>
+<li><a href="#section-content-transfer-encoding">Changing the content encoding</a></li>
+<li><a href="#section-icalendar-vevent">Sending a Calendar event (iCalendar vEvent)</a></li>
+</ul></section>
+<section><h2>Attachments and images</h2><ul>
+<li><a href="#section-attachments">Adding attachments</a></li>
+<li><a href="#section-reading-attachments">Reading attachment content</a></li>
+<li><a href="#section-embedding">Embedding images</a></li>
+</ul></section>
+<section><h2>Headers and message identity</h2><ul>
+<li><a href="#section-custom-headers">Setting custom headers</a></li>
+<li><a href="#section-custom-id">Setting a custom message ID on sent email</a></li>
+<li><a href="#section-custom-sentdate">Setting a custom sent date on sent email</a></li>
+</ul></section>
+<section><h2>Replies, forwards and copies</h2><ul>
+<li><a href="#section-reply-forward">Replying to and forwarding emails</a></li>
+<li><a href="#section-builder-details">Copying and message details</a></li>
+</ul></section>
+<section><h2>Envelope and notification options</h2><ul>
+<li><a href="#section-bouncing-emails">Setting a bounce address</a></li>
+<li><a href="#section-return-receipt">Configure delivery / read receipt</a></li>
+<li><a href="#section-delivery-status-notification">Configure Delivery Status Notification</a></li>
+<li><a href="#section-dsn-envelope-id">Match a later notification to a send</a></li>
+<li><a href="#section-dsn-recipients">Notification preferences per recipient</a></li>
+</ul></section>
+<section><h2>Application-rendered templates</h2><ul>
+<li><a href="#section-rendered-templates">Use content rendered by your template system</a></li>
+</ul></section>
+</nav>
+
+<a href="#section-basic-usage" id="section-basic-usage" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Basic usage{{/components/feature-heading-h2}}
+
+  <section>
+	  <div class="view">
+      <p>Say a customer just placed a bakery preorder. Build an <code>Email</code> for the confirmation and hand it to a
+        <code>Mailer</code> that knows how to reach your SMTP server. Reuse the same Mailer for the next order.</p>
+	  </div>
+
+	  <div class="wide full-width-example">
+<pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+
+Email email = mail.emailBuilder().startingBlank()
+    .from("Oak Street Bakery", "orders@example.org")
+    .to("Jordan", "jordan@example.net")
+    .withSubject("Your preorder is confirmed")
+    .withPlainText("Thanks! Your sourdough will be ready Saturday at 9.")
+    .withHTMLText("&lt;p&gt;Thanks! Your sourdough will be ready &lt;strong&gt;Saturday at 9&lt;/strong&gt;.&lt;/p&gt;")
+    .buildEmail();
+
+try (Mailer mailer = mail.mailerBuilder()
+    .withSMTPServer("server", 587, "username", "password")
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .buildMailer()) {
+    mailer.sync().sendMail(email);
+}
+</code></pre>
+	  </div>
+  </section>
+
+<a href="#section-builder-api" id="section-builder-api" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Use the email builder{{/components/feature-heading-h3}}
+
+  <section>
+    <p class="wide">Pick the message you're starting with. A preorder confirmation starts blank. If you already have a draft and need a second version,
+      start from that draft. Each call to <code>mail.emailBuilder()</code> gives you a fresh builder using the factory's configuration.</p>
+    <p class="wide">Use <code>startingBlank()</code> for a new message, <code>copying(original)</code> for a separate editable draft, or a
+      <a href="#section-reply-forward">reply or forward starter</a> to carry over the original message. After that, add your subject, body and other settings.</p>
+	<div class="wide full-width-example">
+<pre><code class="language-java">Email email = mail.emailBuilder().copying(original)
+    .withSubject("A separate copy")
+    .buildEmail();
+</code></pre>
+	</div>
+	<p class="wide"><code>buildEmail()</code> builds the draft you've described. The Mailer applies its defaults and overrides during send preparation.
+      To see the completed message earlier, call <code>buildEmailCompletedWithDefaultsAndOverrides()</code> or pass your chosen
+      <code>EmailGovernance</code> to its overload.</p>
+    <p class="wide">Use <code>mail.mailerBuilder()</code> to configure the SMTP connection. If your app already has a Jakarta Mail
+      <code>Session</code>, pass it to <code>mail.mailerBuilder(session)</code>. That builder expects the Session to supply settings
+      such as the server address. See <a href="/configuration.html#section-custom-session">using your own Session</a>
+      and <a href="/sending-and-execution.html#section-clustering">clustering Mailers</a>.</p>
+  </section>
+
+<a href="#section-add-recipients" id="section-add-recipients" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Add recipients{{/components/feature-heading-h3}}
+
+  <section>
+    <div>
+      <p class="wide">For one order confirmation, add the customer, a colleague and an archive with <code>to</code>, <code>cc</code> and <code>bcc</code>.
+        A list from your address book can go through <code>mail.recipientsBuilder()</code> first.</p>
+      <p class="wide">If your application already has <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/src/main/java/org/simplejavamail/api/email/Recipient.java" target="_blank">Recipient</a>
+        values, pass them directly to <code>withRecipients(...)</code>. Use <code>mail.recipientBuilder()</code> for one named mailbox
+        with its own settings. The group builder handles mailbox lists, mixed roles and shared rules.</p>
+    </div>
+
+    <div>
+      <pre><code class="language-java">mail.emailBuilder().startingBlank()
+    .to("alice@example.org")
+    .cc("bob@example.org")
+    .bcc("archive@example.org");</code></pre>
+
+      <pre><code>// Add your own Recipient instances
+currentEmailBuilder.withRecipients(yourRecipient1, yourRecipient2);</code></pre>
+
+      <pre><code>// Or build comma / semicolon separated recipient lists first
+String list = "twister@sweets.com,blue.tongue@sweets.com;honey@sweets.com";
+List&lt;Recipient&gt; archive = SimpleJavaMail.fromDefaults().recipientsBuilder()
+    .withRecipientsWithDefaultName("maintenance group", Message.RecipientType.BCC, list)
+    .buildRecipients();
+currentEmailBuilder.withRecipients(archive);</code></pre>
+
+      <h3>Recipient groups and advanced options</h3>
+      <p class="wide">Say every message to your legal team should use the team's certificate. A fixed group certificate replaces each recipient's choice.
+        A default only fills gaps. You can also keep original certificates or clear them so the Email or Mailer can supply its fallback.</p>
+      <p class="wide"><code>buildRecipients()</code> returns an unmodifiable list in insertion order, including duplicates. Pass it to
+        <code>withReplyTo(...)</code> or <code>withOverrideReceivers(...)</code> as-is. Explicit delivery overrides keep their order into
+        Angus. Visible recipients go out in To, Cc and Bcc order, with the original order within each group.</p>
+      <pre><code>// what about a group with one deviating name?
+String list = "bob@sweets.com, gene@sweets.com; Security Group &lt;security@sweets.com&gt;";
+List&lt;Recipient&gt; stakeholders = SimpleJavaMail.fromDefaults().recipientsBuilder()
+    .withRecipientsWithDefaultName("stakeholders", Message.RecipientType.TO, list)
+    .buildRecipients();
+currentEmailBuilder.withRecipients(stakeholders);
+// bob and gene are named "stakeholders", "Security Group" keeps its own name</code></pre>
+      <pre><code>// or force both display name and certificate for a controlled group
+List&lt;Recipient&gt; legal = SimpleJavaMail.fromDefaults().recipientsBuilder()
+    .withFixedSmimeCertificate(legalDepartmentCertificate)
+    .withRecipientsWithFixedName("Legal Department", Message.RecipientType.CC,
+            "reviewer@example.com", "Counsel &lt;counsel@example.com&gt;")
+    .buildRecipients();
+currentEmailBuilder.withRecipients(legal);
+// all recipients are shown as "Legal Department" and use the same group certificate</code></pre>
+      <pre><code>// or strip certificate state from reused recipients
+List&lt;Recipient&gt; reusedWithoutCertificates = SimpleJavaMail.fromDefaults().recipientsBuilder()
+    .clearingSmimeCertificates()
+    .withRecipients(reusedRecipients)
+    .buildRecipients();
+currentEmailBuilder
+    .withRecipients(reusedWithoutCertificates)
+    .encryptWithSmime(SmimeEncryptionConfig.builder()
+        .x509Certificate(emailLevelFallbackCertificate)
+        .build());</code></pre>
+      <p>Through properties:</p>
+      <pre><code class="language-properties">simplejavamail.defaults.bcc.name=
+simplejavamail.defaults.bcc.address=twister@sweets.com,blue.tongue@sweets.com;honey@sweets.com
+</code></pre>
+    </div>
+
+    <div>
+      <div class="view">
+        <p>The email builder only needs a small set of recipient methods:</p>
+      </div>
+      <div class="side">
+      <pre><code class="small">// Builder contracts obtained from your SimpleJavaMail factory
+IRecipientBuilder recipient = mail.recipientBuilder();
+IRecipientsBuilder recipients = mail.recipientsBuilder();
+
+recipient.withName("Alice").withAddress("alice@example.org")
+    .withType(Message.RecipientType.TO).build();
+
+// EmailPopulatingBuilder
+.withRecipients(Recipient... recipients)
+.withRecipients(Collection&lt;Recipient&gt; recipients)
+
+// IRecipientsBuilder
+.withRecipientsWithDefaultName(String name, RecipientType recipientType, String... oneOrMoreAddressesEach)
+.withRecipientsWithFixedName(String name, RecipientType recipientType, String... oneOrMoreAddressesEach)
+.withRecipientsFromAddressesWithDefaultName(String name, Collection&lt;InternetAddress&gt; addresses, RecipientType recipientType)
+.withRecipientsFromAddressesWithFixedName(String name, Collection&lt;InternetAddress&gt; addresses, RecipientType recipientType)
+.withDefaultSmimeCertificate(X509Certificate smimeCertificate)
+.withFixedSmimeCertificate(X509Certificate smimeCertificate)
+.clearingSmimeCertificates()
+.resetSmimeCertificatePolicy()
+.resetDeliveryStatusNotificationNotifyPolicy()
+.withRecipients(Collection&lt;Recipient&gt; recipients)
+.withRecipients(Recipient... recipients)
+.buildRecipients()</code></pre>
+      </div>
+    </div>
+  </section>
+
+<a href="#section-recipient-builders" id="section-recipient-builders" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Recipient builders{{/components/feature-heading-h3}}
+
+  <section>
+    <div class="wide full-width-example">
+      <p>Send an order confirmation to Alice and copy two service desk addresses from configuration. Build Alice as one
+        <code>Recipient</code> and let <code>recipientsBuilder()</code> parse the Cc list.</p>
+<pre><code class="language-java">Recipient alice = mail.recipientBuilder().to("Alice", "alice@example.org");
+
+String serviceDesk = "\"Support @ Acme, Europe\" &lt;support@example.org&gt;;audit@example.org";
+List&lt;Recipient&gt; copies = mail.recipientsBuilder()
+    .withRecipientsWithDefaultName("Service desk", Message.RecipientType.CC, serviceDesk)
+    .buildRecipients();
+
+Email confirmation = mail.emailBuilder().startingBlank()
+    .from("orders@example.org")
+    .withRecipients(alice)
+    .withRecipients(copies)
+    .withSubject("Your order is confirmed")
+    .withPlainText("Your order will be ready Saturday at 9.")
+    .buildEmail();</code></pre>
+      <ul>
+        <li><strong>To</strong> Alice &lt;alice@example.org&gt;</li>
+        <li><strong>Cc</strong> Support @ Acme, Europe &lt;support@example.org&gt;</li>
+        <li><strong>Cc</strong> Service desk &lt;audit@example.org&gt;</li>
+      </ul>
+      <p>The quotes keep the comma inside the Support display name. Only the unnamed mailbox gets the default name.</p>
+
+      <h4>Add one more Cc</h4>
+      <p>Copy the confirmation to include the dispatch team on a revised message. The existing recipients and their options carry over.</p>
+<pre><code class="language-java">Email withDispatch = mail.emailBuilder().copying(confirmation)
+    .cc("Dispatch", "dispatch@example.org")
+    .buildEmail();</code></pre>
+
+      <h4>Give both Cc addresses the same name</h4>
+      <p>Use a fixed name when you want both entries displayed as <code>Service desk</code>. Build the confirmation with this list in
+        place of <code>copies</code>.</p>
+<pre><code class="language-java">List&lt;Recipient&gt; deskWithFixedNames = mail.recipientsBuilder()
+    .withRecipientsWithFixedName("Service desk", Message.RecipientType.CC, serviceDesk)
+    .buildRecipients();</code></pre>
+
+      <h4>Attach a recipient certificate</h4>
+      <p>For a confidential message to Alice, give her recipient builder her X.509 certificate. The <code>to(...)</code> shortcut returns
+        a <code>Recipient</code> with that certificate. Supply certificates for any other recipients who also need access.</p>
+<pre><code class="language-java">Recipient aliceWithCertificate = mail.recipientBuilder()
+    .withSmimeCertificate(aliceCertificate)
+    .to("Alice", "alice@example.org");</code></pre>
+      <p>Use <code>aliceWithCertificate</code> in place of <code>alice</code> when building the confidential message.
+        See <a href="security.html#section-sending-smime">S/MIME configuration</a> for encryption setup and fallback certificates.</p>
+
+      <details class="doc-disclosure">
+        <summary>Address lists, names and recipient roles</summary>
+        <ul>
+          <li><strong>Build one recipient.</strong> <code>recipientBuilder()</code> returns an <code>IRecipientBuilder</code>.
+            Set the name, address, role and options, then call <code>build()</code>. Its <code>to</code>, <code>cc</code> and
+            <code>bcc</code> shortcuts build immediately and retain certificate and notification options.</li>
+          <li><strong>Parse a list.</strong> The Email conveniences parse lists for To, Cc, Bcc, Reply-To and notification destinations.
+            Each string passed to the group builder can also contain a whole list. Commas and semicolons separate addresses outside
+            quotes and comments. String and <code>InternetAddress</code> groups expand in order. Empty groups add nothing. From and
+            bounce each require a single mailbox.</li>
+          <li><strong>Choose a name.</strong> In the Email conveniences, a nonblank explicit name replaces parsed names. A null or
+            blank name keeps them. The group builder offers a default for missing names or a fixed name for the entire list.</li>
+          <li><strong>Append or replace.</strong> <code>to</code>, <code>cc</code>, <code>bcc</code> and <code>withRecipients</code> append, including
+            on a copied draft. Order and duplicates are retained and an empty prepared list adds nothing.
+            <code>from</code> and <code>withBounceTo</code> replace their single address. Prepared recipients keep their options. A
+            recipient with no role is treated as To in the visible recipient list. From and Reply-To can have no role.</li>
+        </ul>
+      </details>
+
+      <h4 id="rejected-recipient-updates">When an address update fails</h4>
+      <p>Trying to set Bob's name and address together with an empty address throws <code>IllegalArgumentException</code>.
+        The same builder still has Alice's details.</p>
+<pre><code class="language-java">IRecipientBuilder recipient = mail.recipientBuilder();
+recipient.to("Alice", "alice@example.org");
+try {
+    recipient.to("Bob", "");
+} catch (IllegalArgumentException missingAddress) {
+    Recipient stillAlice = recipient.build(); // Alice &lt;alice@example.org&gt;
+}</code></pre>
+      <ul>
+        <li><strong>Separate setters.</strong> A successful <code>withName("Bob")</code> still applies if a later
+          <code>withAddress("")</code> fails.</li>
+        <li><strong>Lenient parsing.</strong> <code>withAddressOnlyFrom("(comment only)")</code> keeps the supplied text and the current
+          name when it finds no mailbox. Single-recipient import helpers keep a supplied list or group as one value. Use the
+          plural builder to expand it. Your send-time validator handles malformed addresses. Address parsing performs no DNS or
+          delivery check.</li>
+      </ul>
+
+      <details class="doc-disclosure">
+        <summary>Certificate defaults, clearing and OpenPGP</summary>
+        <ul>
+          <li><code>withDefaultSmimeCertificate(...)</code> fills missing certificates and <code>withFixedSmimeCertificate(...)</code>
+            replaces source certificates. Use <code>resetSmimeCertificatePolicy()</code> to restore original preferences or
+            <code>clearingSmimeCertificates()</code> to remove them and allow Email or Mailer fallback.</li>
+          <li>A certificate on a To, Cc or Bcc recipient requests S/MIME encryption. The builder rejects combining it with OpenPGP,
+            and send preparation checks again after applying templates and locks. <code>clearSmime()</code> keeps recipient certificates.
+            To reuse the addresses for OpenPGP, copy the recipients, clear their certificates and replace the draft's recipient list.
+            See the <a href="security.html#section-sending-openpgp">OpenPGP copy-and-replace example</a>.</li>
+          <li><code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code> and
+            <code>withFixedSmimeCertificate(...)</code> reject null with <code>IllegalArgumentException</code> before changing the
+            current choice. Use <code>clearingSmimeCertificate()</code> on an individual recipient.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+<a href="#section-content-transfer-encoding" id="section-content-transfer-encoding" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Changing the content encoding{{/components/feature-heading-h2}}
+
+  <section>
+	  <div class="view">
+		  <p>If an integration expects Base64 for an HTML body, set its transfer encoding before building the message.
+        The default is <a href="https://learn.microsoft.com/en-us/previous-versions/office/developer/exchange-server-2010/aa579632(v=exchg.140)" target="_blank">quoted-printable</a>.
+        Base64 makes the bytes safe for MIME transport and keeps the content directly decodable, so use separate message protection for confidentiality.</p>
+		  <p id="smime-body-transfer-encoding">When you sign or encrypt with S/MIME, the protected message keeps the transfer encoding you chose for its enclosed body parts.
+        The protection wrapper carries its own MIME headers.</p>
+		  <p>
+			  The email header that governs this feature is <a href="https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html" target="_blank">Content-Transfer-Encoding</a> and Simple Java Mail takes care of inserting this header in the right places, which varies depending on the
+			  <a href="https://www.simplejavamail.org/rfc-compliant.html#section-explore-multipart">necessary email structure</a>.
+		  </p>
+	  </div>
+
+	  <div class="side">
+		  <strong>quoted-printable</strong> (the default) results in the following EML subsection:
+		  <pre><code class="language-text small">------=_Part_2_1226020905.1657715639009
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+We should meet up!
+</code></pre>
+	  </div>
+
+	  <div class="wide full-width-example">
+		  <p><strong>Base64</strong>, on the other hand, produces the following:</p>
+		  <pre><code class="small">currentEmailBuilder.withContentEncodingConfig(ContentEncodingConfig.builder()
+    .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+    .build());
+</code></pre>
+		  <pre><code class="language-text small">------=_Part_2_1226020905.1657715871203
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
+
+V2Ugc2hvdWxkIG1lZXQgdXAh
+</code></pre>
+	  </div>
+  </section>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  <strong>Encoding attachments</strong>
+		  </p>
+		  <p>A PDF flyer can use Base64 while the invitation text keeps the default encoding.
+        Set the attachment's choice when you build its <code>AttachmentResource</code>.</p>
+	  </div>
+
+	  <div class="side">
+		  <pre><code class="language-java">.withAttachment(AttachmentResource.builder()
+    .withName("invitation.pdf")
+    .withDataSource(yourDataSource)
+    .withDescription("Invitation flyer")
+    .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+    .build())
+</code></pre>
+	  </div>
+  </section>
+
+  <section>
+	  <p class="wide">
+		  <strong>Available encoders</strong>
+	  </p>
+
+	  <div class="wide">
+<pre><code>ContentEncodingConfig.Builder encoding = ContentEncodingConfig.builder();
+encoding.withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.BASE_64);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.BINARY);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.B);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.Q);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.BIT7);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.BIT8);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.UU);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.X_UU);
+// or:
+encoding.withContentTransferEncoding(ContentTransferEncoding.X_UUE);
+
+// Or clear the local choice to use the configured/default encoding:
+encoding.clearContentTransferEncoding();
+currentEmailBuilder.withContentEncodingConfig(encoding.build());
+</code></pre>
+	  </div>
+	  </section>
+
+  <section>
+	  <div class="view">
+		  <p>
+			  <strong>Encoding body parts separately</strong>
+		  </p>
+		  <p>
+			  The global content-transfer encoding is still the fallback, but plain text, HTML and calendar body parts can override it individually.
+			  The same defaults can be supplied through <a href="configuration.html#section-available-properties">properties</a>.
+		  </p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">currentEmailBuilder
+    .withContentEncodingConfig(ContentEncodingConfig.builder()
+        .withContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+        .withPlainTextContentTransferEncoding(ContentTransferEncoding.BIT7)
+        .withHTMLTextContentTransferEncoding(ContentTransferEncoding.BASE_64)
+        .withCalendarTextContentTransferEncoding(ContentTransferEncoding.QUOTED_PRINTABLE)
+        .build());
+</code></pre>
+<pre><code class="language-properties small">simplejavamail.defaults.content.transfer.encoding=QUOTED_PRINTABLE
+simplejavamail.defaults.body.text.content.transfer.encoding=BIT7
+simplejavamail.defaults.body.html.content.transfer.encoding=BASE_64
+simplejavamail.defaults.body.calendar.content.transfer.encoding=QUOTED_PRINTABLE
+</code></pre>
+	  </div>
+  </section>
+
+<a href="#section-icalendar-vevent" id="section-icalendar-vevent" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Sending a Calendar event (iCalendar vEvent){{/components/feature-heading-h2}}
+
+  <section>
+    <div class="view">
+      <p>Say a customer books an appointment and you want them to be able to accept it from their calendar.
+        Render the event as iCalendar text and give it to the Email builder with <code>CalendarMethod.REQUEST</code>.</p>
+      <p>Build the iCalendar string yourself or use a library such as <a href="https://github.com/ical4j/ical4j">ical4j</a>.
+        Supply the organizer, attendees and timing when you create the event.</p>
+      <p>When used in Email defaults or overrides, the calendar's method and text are selected together: override, your Email, then default.
+        Excluding either <code>CALENDAR_METHOD</code> or <code>CALENDAR_TEXT</code> skips that template's whole calendar while retaining your
+        Email's own calendar. Transfer encoding stays separate. See <a href="configuration.html#section-config-mailer">template exclusions</a>.</p>
+      <p>Both <code>withCalendarText(method, text)</code> arguments are required. A null replacement leaves the earlier pair intact;
+        use <code>clearCalendarText()</code> to remove both and allow template fallback. Non-null calendar text, including an empty string,
+        is retained without parsing its contents.</p>
+      <p>
+        See the <a href="https://github.com/bbottema/simple-java-mail/blob/master/modules/simple-java-mail/src/test/java/demo/FullEmailDemoApp.java#L69">test demo app</a> included in the
+        Simple Java Mail source for a working example.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="small">// Create a Calendar with something like ical4j
+Calendar icsCalendar = new Calendar();
+icsCalendar.getProperties().add(new ProdId("-//Events Calendar//iCal4j 1.0//EN"));
+icsCalendar.getProperties().add(Version.VERSION_2_0);
+
+(..) // add attendees, organizer, end/start date and whatever else you need
+
+// Produce calendar string
+ByteArrayOutputStream bOutStream = new ByteArrayOutputStream();
+new CalendarOutputter().output(icsCalendar, bOutStream);
+String yourICalEventString = bOutStream.toString("UTF-8");
+
+// Let Simple Java Mail handle the rest
+currentEmailBuilder
+    .withCalendarText(CalendarMethod.REQUEST, yourICalEventString);
+</code></pre>
+    </div>
+  </section>
+
+<a href="#section-attachments" id="section-attachments" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Adding attachments{{/components/feature-heading-h2}}
+
+  <section>
+	  <div class="view">
+		  <p>For an invitation, attach the PDF from disk and write the short dress-code note from memory.
+        Use a <code>Path</code> for the file, and bytes or a <code>DataSource</code> for content you already have.</p>
+	  </div>
+
+	  <div class="wide full-width-example">
+<pre><code class="small">currentEmailBuilder
+    .withAttachment("dresscode.txt", new ByteArrayDataSource("Black Tie Optional", "text/plain"))
+    .withAttachment("location.txt", "On the moon!".getBytes(Charset.defaultCharset()), "text/plain")
+    // of course it can be anything: a pdf, doc, image, csv or anything else
+    .withAttachment("invitation.pdf", Path.of("invitation_v8.3.pdf"))
+	// you can provide your own list of attachments as well
+    .withAttachments(yourAttachmentResourceCollection);
+</code></pre>
+        <ul>
+          <li><strong>File on disk.</strong> <code>withAttachment(path)</code> uses the source filename for display and MIME type.
+            Set a separate display name with <code>withAttachment(name, path)</code>. Keep the file and its filesystem stable until sending
+            or rendering. Each read opens a fresh read-only stream. Missing files fail when read, and non-default filesystem paths work directly.</li>
+          <li><strong>Bytes in memory.</strong> Supply the Content-Type parameters needed to read them, such as the charset.
+            The attachment name determines the displayed filename. This note retains its ISO-8859-1 bytes and charset.</li>
+        </ul>
+<pre><code class="language-java small">currentEmailBuilder.withAttachment("notes.txt",
+    "café".getBytes(StandardCharsets.ISO_8859_1),
+    "text/plain; charset=ISO-8859-1");</code></pre>
+		<p>The outgoing attachment retains <code>charset=ISO-8859-1</code> alongside <code>name=notes.txt</code>. The bytes are not converted
+			to another character encoding.</p>
+	  </div>
+  </section>
+
+  <section>
+	  <div class="view">
+		  <p>Give a file a <code>Content-Description</code> when a client or downstream tool uses a human-readable label for the attachment.</p>
+	  </div>
+
+	  <div class="wide full-width-example">
+<pre><code class="language-java small">currentEmailBuilder.withAttachment(AttachmentResource.builder()
+    .withName("dresscode.txt")
+    .withData("Black Tie Optional".getBytes(StandardCharsets.UTF_8), "text/plain")
+    .withDescription("The dresscode for the party")
+    .build())
+</code></pre>
+		  Which results in something like this; the UUID is only an example:
+		  <pre><code class="language-text">Content-Type: text/plain; name="dresscode.txt"
+Content-Disposition: attachment; filename="dresscode.txt"
+Content-ID: &lt;sjm-550e8400-e29b-41d4-a716-446655440000@simplejavamail.generated&gt;
+Content-Description: The dresscode for the party
+
+Black Tie Optional
+</code></pre>
+		  <p>
+			  Because no <code class="inline language-text">Content-ID</code> was supplied, Simple Java Mail generates a fresh opaque value when it produces the
+			  <code class="inline language-java">MimeMessage</code>. Use the named Content-ID choice shown below when another system needs a stable value.
+		  </p>
+	  </div>
+  </section>
+
+  <section>
+	  <p class="wide">Choose a <a href="#section-content-transfer-encoding">transfer encoding</a> for an attachment when the receiving integration
+        requires a specific MIME representation.</p>
+  </section>
+
+  <section>
+	  <div class="view">
+		  <p>If an upstream service hands you a PDF that's already Base64-encoded, use <code>withPreEncodedAttachment(...)</code> with that
+        encoding. The attachment carries the supplied payload directly. When signing with S/MIME, Simple Java Mail safely encodes raw binary
+        attachments so MIME line handling preserves their decoded content. It leaves your source bytes intact.</p>
+		  <p>Use <code>AttachmentResource.builder()</code> when the displayed filename and <code>Content-ID</code> need separate values.
+        <code>withDataSource(source)</code> and <code>withPath(path)</code> read borrowed content on demand. <code>withData(bytes, mimetype)</code>
+        copies bytes up front. Choose either <code>withPreEncodedContentTransferEncoding(encoding)</code> or
+        <code>withContentTransferEncoding(encoding)</code> for one resource. Use <code>resource.toBuilder()</code> to edit metadata and keep its source.</p>
+	  </div>
+
+	  <div class="side">
+<pre><code class="language-java small">currentEmailBuilder
+    .withPreEncodedAttachment(
+        "report.pdf",
+        alreadyBase64EncodedData,
+        "application/pdf",
+        ContentTransferEncoding.BASE_64)
+    .withAttachment(AttachmentResource.builder()
+        .withName("report-display-name.pdf")
+        .withDataSource(reportDataSource)
+        .withDescription("Monthly report")
+        .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+        .withContentId("stable-report-content-id")
+        .build())
+</code></pre>
+	  </div>
+  </section>
+
+<a href="#section-reading-attachments" id="section-reading-attachments" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Reading attachment content{{/components/feature-heading-h3}}
+  <section><div class="wide full-width-example">
+    <p>Use an <code>AttachmentResource</code> convenience reader when you want the complete content. It opens and closes its own stream;
+      opening, reading and closing I/O failures use <code>MailException</code> with kind <code>PREPARATION</code>. The original
+      <code>IOException</code> remains the cause, including any suppressed closing failure.</p>
+    <pre><code class="language-java">AttachmentResource attachment = email.getAttachments().get(0);
+byte[] bytes = attachment.readAllBytes();
+// For a text attachment, choose its charset explicitly:
+String text = attachment.readAllData(StandardCharsets.UTF_8);</code></pre>
+    <p>For streaming, <code>openStream()</code> returns an ordinary <code>InputStream</code> for your code to consume and close.
+      Opening, reading and closing follow Java's checked <code>IOException</code> contract:</p>
+    <pre><code class="language-java">try (InputStream input = attachment.openStream()) {
+    input.transferTo(destination);
+}</code></pre>
+    <p>Handle or declare <code>IOException</code> around the streaming example. Both forms leave the DataSource itself under its existing
+      ownership. Construction and copying remain lazy; keep borrowed content available and stable while it is read.</p>
+  </div></section>
+
+  <section><p class="wide">Received attachment access exposes selected usable payloads after successful supported decryption. An independently attached
+    email can expose its already parsed <code>AttachmentResource.getEmail()</code>; the getter performs no work and does not rewrite the resource bytes.
+    Use indexed <code>getInspection().getAttachment(index)</code> for its current evidence and <code>getOriginalAttachment(index)</code> for retained
+    original input. See <a href="security.html#section-inspecting-received-protection">checking a received document</a>.</p></section>
+
+<a href="#section-embedding" id="section-embedding" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Embedding images{{/components/feature-heading-h2}}
+
+	<section>
+		<div class="view">
+			<p>Your order confirmation needs to show a logo even if the customer is offline. Embed the logo in the message and point
+        the HTML at its Content-ID.</p>
+			<ol class="indent">
+          <li><strong>Known images.</strong> Give the image a Content-ID and use a matching <code>cid:</code> reference in your HTML.</li>
+          <li><strong>Existing HTML.</strong> Let the builder resolve image paths to files, classpath resources or URLs.</li>
+			</ol>
+		</div>
+
+		<div class="side">
+			<p>For a logo you control, match the HTML's <code>cid:brand-logo-cid</code> to the image's <code>Content-ID</code>.</p>
+			<pre><code class="small">currentEmailBuilder.withEmbeddedImage("smiley", new FileDataSource("smiley.jpg"));
+currentEmailBuilder.withEmbeddedImage("thumbsup", parseBase64Binary(base64String), "image/png");
+currentEmailBuilder.withEmbeddedImage(AttachmentResource.builder()
+    .withName("brand-logo.png")
+    .withDataSource(logoDataSource)
+    .withContentId("brand-logo-cid")
+    .withDescription("Company logo")
+    .withContentTransferEncoding(ContentTransferEncoding.BASE_64)
+    .build());
+// above example is included in the demo package in MailTestApp.java
+
+// the corresponding HTML should contain the placeholders
+&lt;p&gt;Let&#39;s go!&lt;/p&gt;&lt;img src=&#39;cid:thumbsup&#39;&gt;&lt;br/&gt;
+&lt;p&gt;Smile!&lt;/p&gt;&lt;img src=&#39;cid:smiley&#39;&gt;
+&lt;p&gt;Logo&lt;/p&gt;&lt;img src=&#39;cid:brand-logo-cid&#39;&gt;
+</code></pre>
+		</div>
+	</section>
+
+	<section><div class="wide full-width-example">
+		<p>If you need to extract the logo from an imported newsletter, read its decoded bytes from the embedded resource. Its name,
+        Content-ID, <code>Content-Description</code> and recognized <a href="#section-content-transfer-encoding">transfer encoding</a>
+        are available with eager or lazy extraction. Missing metadata stays absent, and copies and serialized Emails retain what was read.</p>
+		<pre><code class="language-java">Email imported = mail.converter().fromEml(eml).toEmail();
+AttachmentResource logo = imported.getEmbeddedImages().get(0);
+String description = logo.getDescription();
+ContentTransferEncoding encoding = logo.getContentTransferEncoding();
+byte[] content = logo.readAllBytes();</code></pre>
+		<p>Use that resource directly if you export the Email again. The stored encoding is a preference for export and the bytes
+        you've read are already decoded. Inline images use the same stream rules as <a href="#section-reading-attachments">attachment readers</a>.</p>
+	</div></section>
+
+	<section>
+		<div class="view">
+			<p>
+				Pre-encoded embedded images work the same way as pre-encoded attachments: provide the already-encoded data and the encoding that is
+				already present.
+			</p>
+		</div>
+
+		<div class="side">
+<pre><code class="language-java small">currentEmailBuilder
+    .withPreEncodedEmbeddedImage(
+        "logo.png",
+        alreadyBase64EncodedLogo,
+        "image/png",
+        ContentTransferEncoding.BASE_64)
+    .withPreEncodedEmbeddedImage(
+        "logo.png",
+        logoDataSource,
+        ContentTransferEncoding.BASE_64,
+        "stable-logo-content-id")
+</code></pre>
+		</div>
+	</section>
+
+  <section>
+    <div class="wide full-width-example">
+      <h3>Look up images from a template</h3>
+      <p>Say your order confirmation template uses a logo from <code>mail/images</code>, an icon you already embed,
+        and a badge that has gone missing. You can run image lookup on that HTML when building the Email.</p>
+<pre><code class="language-html">&lt;img src="logo.png" alt="Shop logo"&gt;
+&lt;img src="CID:brand-icon" alt="Brand icon"&gt;
+&lt;img src="badge.png" alt="Order badge"&gt;</code></pre>
+      <p>Pass that rendered HTML as <code>html</code>. Enable file lookup and limit it to the template's image directory.</p>
+<pre><code class="language-java">ImageResolutionConfig lookup = ImageResolutionConfig.builder()
+    .withEmbeddedImageAutoResolutionForFiles(true)
+    .withEmbeddedImageBaseDir("mail/images")
+    .embeddedImageAutoResolutionMustBeSuccesful(false)
+    .build();
+
+EmailPopulatingBuilder draft = mail.emailBuilder().startingBlank()
+    .withHTMLText(html)
+    .withEmbeddedImage("brand-icon", iconBytes, "image/png")
+    .withImageResolutionConfig(lookup);
+
+Email email = draft.buildEmail();</code></pre>
+      <ul>
+        <li><code>logo.png</code> becomes a <code>cid:</code> reference to the newly embedded logo.</li>
+        <li id="automatic-image-cid-schemes"><code>CID:brand-icon</code> stays as written. Lookup skips existing CID references
+          regardless of scheme capitalization. The identifier itself remains case-sensitive.</li>
+        <li><code>badge.png</code> stays as written. Optional lookup keeps unresolved references and embeds the images it can read.</li>
+      </ul>
+
+      <h4 id="automatic-image-resolution-failure">Require the artwork, then retry a failed build</h4>
+      <p>If the badge must be present, change the success setting on a fresh draft before the first build.</p>
+<pre><code class="language-java">draft.withImageResolutionConfig(lookup.toBuilder()
+    .embeddedImageAutoResolutionMustBeSuccesful(true)
+    .build());
+
+draft.buildEmail(); // MailException identifies the missing badge.png.</code></pre>
+      <p>The failed lookup leaves the draft's original HTML and embedded images, including any explicit duplicates, in place.
+        Put <code>badge.png</code> in the image directory or correct the HTML on that draft, then build again.</p>
+<pre><code class="language-java">Email repaired = draft.buildEmail();</code></pre>
+      <p>The rollback covers the lookup pass's changes. Reads already made and later build failures have their own effects.</p>
+      <ul>
+        <li><strong>Blocked or malformed locations.</strong> A path blocked by the base and a malformed URL in the HTML both count
+          as unresolved, even when the configured URL base is valid.</li>
+        <li id="automatic-image-mime-types"><strong>Content type.</strong> A URL's reported type wins. If it reports none, the filename
+          supplies the type, as it does for classpath resources. <code>.GIF</code> matches <code>image/gif</code> even in a Turkish locale.</li>
+        <li id="automatic-image-interruption"><strong>Interrupted or failed reads.</strong> An interrupt throws <code>CancellationException</code>
+          during builds or conversions in either mode, retains the cause and any suppressed cleanup errors, and leaves the interrupt
+          flag and draft intact. A URL socket timeout counts as unresolved. Required reads retain their failure causes, and an actual
+          classpath read failure is an error in either mode.</li>
+      </ul>
+
+      <h4>How the resolver reads HTML</h4>
+      <ul>
+        <li id="automatic-image-source-quotes"><code>&lt;img src="it's.png"&gt;</code> resolves <code>it's.png</code>. Use a matching
+          closing quote for the attribute.</li>
+        <li id="automatic-image-source-attributes"><code>&lt;img alt="example src='decoy.png'" src="real.png"&gt;</code> resolves
+          <code>real.png</code> and keeps the alt text. A preceding quoted attribute can contain source-like text or <code>&gt;</code>.</li>
+        <li id="automatic-image-character-references"><code>src="a&amp;amp;b.png"</code> selects <code>a&amp;b.png</code>.
+          Use <code>src="a&amp;amp;amp;b.png"</code> for a literal <code>a&amp;amp;b.png</code> filename. The resolver decodes
+          character references once before checking the base. Successful embedding changes only the source value. CID recognition
+          uses the same HTML interpretation.</li>
+      </ul>
+
+      <h4 id="automatic-image-configuration-timing">Choose where the builder can read</h4>
+      <p>Enable the sources the template uses and set a base for each. A lookup without a base is unrestricted.
+        Leave <code>allowingEmbeddedImageOutsideBase...</code> disabled to keep reads inside the base, especially for editable HTML.</p>
+      <p><code>buildEmail()</code> checks the effective settings and locks before looking up images. URL lookup parses the selected base.
+        On a draft that uses only packaged artwork, set <code>withEmbeddedImageAutoResolutionForURLs(false)</code> so an inherited
+        malformed URL base goes unused.
+        Replacing or explicitly clearing the base also skips that inherited value. A setter that converts a string to a URL validates it immediately.</p>
+      <details class="doc-disclosure">
+        <summary>Configure files, classpath resources and URLs</summary>
+        <p>Each resolver is disabled by default. Enable just the sources you need. This configuration shows all three with bounded bases.</p>
+<pre><code class="language-java">draft.withImageResolutionConfig(ImageResolutionConfig.builder()
+    .withEmbeddedImageAutoResolutionForFiles(true)
+    .withEmbeddedImageBaseDir("mail/images")
+    .withEmbeddedImageAutoResolutionForClassPathResources(true)
+    .withEmbeddedImageBaseClassPath("/images")
+    .withEmbeddedImageAutoResolutionForURLs(true)
+    .withEmbeddedImageBaseUrl("https://www.simplejavamail.org/static/")
+    .embeddedImageAutoResolutionMustBeSuccesful(true)
+    .build());</code></pre>
+        <p>The same settings are available as properties.</p>
+<pre><code class="language-properties">simplejavamail.embeddedimages.dynamicresolution.enable.dir=true
+simplejavamail.embeddedimages.dynamicresolution.enable.classpath=true
+simplejavamail.embeddedimages.dynamicresolution.enable.url=true
+simplejavamail.embeddedimages.dynamicresolution.base.dir=mail/images
+simplejavamail.embeddedimages.dynamicresolution.base.classpath=/images
+simplejavamail.embeddedimages.dynamicresolution.base.url=https://www.simplejavamail.org/static/
+simplejavamail.embeddedimages.dynamicresolution.outside.base.dir=false
+simplejavamail.embeddedimages.dynamicresolution.outside.base.classpath=false
+simplejavamail.embeddedimages.dynamicresolution.outside.base.url=false
+simplejavamail.embeddedimages.dynamicresolution.mustbesuccesful=true</code></pre>
+      </details>
+    </div>
+  </section>
+
+<a href="#section-custom-headers" id="section-custom-headers" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Setting custom headers{{/components/feature-heading-h2}}
+
+  <section>
+    <div class="view">
+      <p>If your relay routes messages using a custom header, set it on the Email. For example, add <code>X-Tenant</code>
+        from a map your application already uses.</p>
+      <p>Header names are case-insensitive. <code>withHeader("x-route", "new route", true)</code> replaces every earlier
+        <code>X-Route</code> value. Omit <code>true</code> to add values. Email templates use the same name matching.</p>
+      <p>Pass a map of lists or sets to <code>withHeaders(...)</code>. Values are copied in iteration order and identical values
+        are deduplicated. Use a list when value order matters.</p>
+      <p>MIME and EML import keep the first spelling and the distinct values in source order, even for a sequence of
+        <code>X-Step: first</code>, <code>x-step: second</code> and <code>X-Step: third</code>. Copying or exporting keeps that order.
+        <a href="/email-conversion.html#section-exact-eml">Exact EML</a> and retained protected content preserve their source bytes.</p>
+      <p>If you supply <code>To</code>, <code>Cc</code> or <code>Bcc</code> through <code>withHeader(...)</code>, those values
+        populate the recipient fields. Address groups expand into mailboxes. Those recipients and <code>withOverrideReceivers(...)</code> go
+        through your address validator, injection checks and mandatory locks.</p>
+      <p>For an ordinary custom header, pass an empty String or <code>null</code> to emit a present empty field, such as <code>X-MS-TNEF-Correlator:</code>.
+        Null does not omit the header or write the text <code>null</code>. Stored null values remain visible in <code>Email.getHeaders()</code>
+        and survive copying and serialization. Stored whitespace is retained; non-null values keep the usual MIME encoding and folding.</p>
+    </div>
+
+    <div class="side">
+<pre><code>currentEmailBuilder
+    .withHeader("X-Priority", 2)
+    .withHeader("X-MC-GoogleAnalyticsCampaign", "halloween_sale")
+    .withHeader("X-MEETUP-RECIP-ID", "71415272")
+    .withHeader("X-my-custom-header", "foo")
+    .withHeader("X-MS-TNEF-Correlator", "")
+    .withHeader("X-Empty", null); // also emits a present empty field
+// or
+Map&lt;String, List&lt;String&gt;&gt; headers = Map.of("X-Tenant", List.of("acme"));
+currentEmailBuilder.withHeaders(headers);
+</code></pre>
+    </div>
+  </section>
+
+
+  <section><p class="wide">For received mail, <code>Email.getHeaders()</code> is an immutable case-insensitive read view of the represented logical
+    message. Typed getters and their header values use one selected authority; editing a typed field does not leave a conflicting old active header.
+    Reconstructed output writes typed fields once, generates MIME structure and omits received trace/authentication history and obsolete DKIM/ARC
+    signatures as current claims. The parsed Bounce-To still supplies the ordinary SMTP envelope choice. Exact relay and retained originals keep
+    their authoritative bytes. See <a href="security.html#section-reading-smime-merging">logical content and originals</a>.</p></section>
+
+<a href="#section-custom-id" id="section-custom-id" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Setting a custom message ID on sent email{{/components/feature-heading-h2}}
+
+  <section>
+    <div class="view">
+      <p>Message id's are normally generated by the underlying Jakarta Mail framework, but you can provide your own if required.</p>
+      <p>Just make sure your own id's conform to the <a href="https://datatracker.ietf.org/doc/html/rfc5322#section-3.6.4">rfc5322</a> msg-id format standard</p>
+    </div>
+
+    <div class="side">
+<pre><code>currentEmailBuilder.fixingMessageId("<123@456>");
+</code></pre>
+    </div>
+  </section>
+
+<a href="#section-custom-sentdate" id="section-custom-sentdate" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Setting a custom sent date on sent email{{/components/feature-heading-h2}}
+
+  <section>
+    <div class="view">
+      <p>
+        Message sent date is normally filled with the current time, but you can provide your own <code class="inline language-java">Instant</code> when
+        importing or reproducing a message. <code class="inline language-java">Date</code> remains supported. Email stores the value with millisecond
+        precision, matching Jakarta Mail.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java small">currentEmailBuilder.fixingSentDate(
+    Instant.parse("2011-04-01T03:51:00Z"));
+
+Instant sentAt = email.getSentDateAsInstant();</code></pre>
+    </div>
+  </section>
+
+<a href="#section-reply-forward" id="section-reply-forward" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Replying to and forwarding emails{{/components/feature-heading-h2}}
+
+  <section>
+    <div>
+      <p class="wide">A support ticket just arrived. Start from the received <code>Email</code> or <code>MimeMessage</code> to quote it in your reply,
+        or forward it to someone who can help. Each starter gives you the same builder for adding your own content.</p>
+
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable reply and forward reference">
+        <table class="method-family-table">
+          <thead>
+          <tr>
+            <th>Start with</th>
+            <th>What it prepares</th>
+            <th>Recipients</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td><code>replyingTo(...)</code></td>
+            <td>A reply subject, reply headers, quoted plain and HTML bodies, and the original embedded images</td>
+            <td>The selected authored view's Reply-To, otherwise its From; an unreadable protected destination view stays unresolved</td>
+          </tr>
+          <tr>
+            <td><code>replyingToAll(...)</code></td>
+            <td>The same quoted reply using the selected logical message's reply destinations and To/Cc roles</td>
+            <td>The reply address and the other recipients calculated from the original message</td>
+          </tr>
+          <tr>
+            <td><code>forwarding(...)</code></td>
+            <td>A safe forward subject and the current interpreted Email rendered as a <code>message/rfc822</code> body part; selected attachment bytes are used</td>
+            <td>None; add the forward's recipients yourself</td>
+          </tr>
+          <tr>
+            <td><code>forwardingOriginal(email)</code></td>
+            <td>Retained complete original input in its actual EML or MSG format; unavailable originals fail clearly</td>
+            <td>None; add the new outer message's recipients yourself</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  {{#> components/feature-heading-h3 core=true}}Keep the quoted message when adding your reply{{/components/feature-heading-h3}}
+
+  <section>
+    <div>
+      <p>When a customer asks when their order will be ready, start from their message and put your answer above the quote.
+        Update both bodies so the customer sees the answer whether their mail client shows plain text or HTML.</p>
+      <pre><code class="language-java">Email reply = mail.emailBuilder().replyingTo(receivedEmail)
+    .from("orders@example.com")
+    .prependPlainText("Your order will be ready at 9 on Saturday.\n\n")
+    .prependHTMLText("&lt;p&gt;Your order will be ready at 9 on Saturday.&lt;/p&gt;")
+    .buildEmail();</code></pre>
+
+      <h4 id="reply-recipient-protection-checks">Check the recipients and protection on a reply</h4>
+      <p>Check the draft before sending. It uses the original's Reply-To when supplied, otherwise its From. Reply-all also considers the
+        original's visible To and Cc recipients. The draft gets its own Message-ID and links to the parent through
+        <code>In-Reply-To</code> and <code>References</code>. Quoted inline images carry over, including their encoding when pre-encoded.</p>
+
+      <h4 id="readable-reply-protection">Quote an encrypted original</h4>
+      <p>If a partner sends an S/MIME-encrypted invoice with a question, open it with your
+        <a href="security.html#section-reading-smime-decryption">receive keys</a>. Once you can read it and have confirmed the destination,
+        build the reply with the partner's certificate. Reading the original and encrypting the reply require separate settings.</p>
+      <pre><code class="language-java">Email invoice = mail.converter().fromEml(Path.of("partner-invoice.eml"))
+    .withSmimeDecryption(recipientKeys)
+    .toEmail();
+
+Email encryptedReply = mail.emailBuilder().replyingTo(invoice)
+    .from("accounts@example.com")
+    .prependPlainText("Thanks, we have approved the invoice.\n\n")
+    .prependHTMLText("&lt;p&gt;Thanks, we have approved the invoice.&lt;/p&gt;")
+    .encryptWithSmime(partnerEncryption)
+    .buildEmail();</code></pre>
+      <p>You can inspect or edit the draft before sending. A send or export checks that the outgoing message protects the
+        confidential content it reuses. When protected addressing is identified but unreadable, choose the recipients yourself.
+        The original still exposes any outer addresses for inspection.</p>
+
+      <details class="doc-disclosure">
+        <summary>How thread headers, subjects and quotes are chosen</summary>
+        <ul>
+          <li><strong>Addresses and threading.</strong> The reply uses the selected authored headers, including omissions in
+            protected headers. Reply-all excludes hidden Bcc recipients.</li>
+          <li><strong>Private subjects.</strong> The original retains its private subject. The draft uses a known public subject if available,
+            or <code>Re: Your message</code> or <code>Fwd: Message</code>. Allowing body reuse keeps that subject rule in place.</li>
+          <li><strong>Body alternatives.</strong> When the original has a single format, the reply builder generates the other once.
+            Plain text becomes escaped HTML with line breaks. HTML becomes readable text with paragraph and list breaks, link
+            destinations and image descriptions. Generation skips scripts, styles and external fetches. With both original
+            alternatives, the quote preserves each one's wording.</li>
+          <li><strong>Customize a quote.</strong> Pass a template such as <code>&lt;blockquote&gt;%s&lt;/blockquote&gt;</code> as the second
+            argument to <code>replyingTo(...)</code> or <code>replyingToAll(...)</code>. The template inserts the HTML quote at <code>%s</code>
+            once. Plain text keeps the usual <code>&gt; </code> prefix. Use <code>withPlainText(...)</code> or <code>withHTMLText(...)</code>
+            to replace a whole body, including its quote.</li>
+        </ul>
+        <p>See the <a href="https://javadoc.io/doc/org.simplejavamail/core-module/latest/org/simplejavamail/api/email/EmailStartingBuilder.html" target="_blank">reply starter overloads</a>
+          for the <code>Email</code> and <code>MimeMessage</code> forms.</p>
+      </details>
+
+      <details class="doc-disclosure">
+        <summary>One-time exports and forwarding protected content</summary>
+        <p>For a handoff that can expose the confidential content, set permission on that conversion.</p>
+        <pre><code class="language-java">byte[] handoff = mail.converter().fromEmail(confidentialReply)
+    .allowUnencryptedContent()
+    .toEmlBytes();</code></pre>
+        <ul>
+          <li><strong>Conversion permission.</strong> This choice covers MIME, EML or diagnostic output for that conversion.
+            It leaves the draft unchanged. A fresh conversion or later send still needs protection or its own permission.
+            If output requires protection and the check fails, the operation stops before producing unprotected output.</li>
+          <li><strong>Draft permission.</strong> <code>ReplyOptions.allowUnencryptedContent()</code> and
+            <code>ForwardOptions.allowUnencryptedContent()</code> apply to the draft, its copies and supported snapshots.
+            Make a fresh choice for each new reply or forward. Removing one body leaves any quote in the other. Configured and mandatory
+            encryption still apply.</li>
+          <li><strong>Interpreted forwards.</strong> The enclosing message's final protection is checked before the quoted content is rebuilt.
+            <code>MimeMessage</code> and exact EML inputs retain their source authority. Open received ciphertext with explicit receive keys
+            before using its readable content.</li>
+          <li><strong>Retained originals.</strong> An intact encrypted original can travel in an unencrypted message when the rest of that
+            message reveals no confidential content. A child attachment's extracted EML has its own bytes, without the parent's encryption
+            envelope. It may expose confidential values, including clear headers around an encrypted body. In that case keep the forward
+            encrypted or allow disclosure explicitly for that conversion. Known confidential originals use neutral metadata on the new
+            attachment and keep the original resource intact.</li>
+        </ul>
+        <p>See the <a href="security.html#received-protection-reuse">protected-content reuse workflow</a>.</p>
+      </details>
+    </div>
+
+  </section>
+
+  {{#> components/feature-heading-h3 core=true}}Replace, extend, or remove body alternatives{{/components/feature-heading-h3}}
+
+  <section>
+    <div>
+      <p class="wide">When the wording of a saved notice changes, you can update both bodies without re-entering its recipients.
+        The same editing methods work on a new draft or reply. Pair the edits when the message contains plain text and HTML.</p>
+
+      <pre><code class="language-java">Email revised = mail.emailBuilder().copying(draft)
+    .withPlainText(Path.of("mail", "body.txt"))
+    .withHTMLText(Path.of("mail", "body.html"))
+    .prependPlainText("Reference: 42\n\n")
+    .prependHTMLText("&lt;p&gt;Reference: 42&lt;/p&gt;")
+    .appendPlainText("\n\nContact support@example.com")
+    .appendHTMLText("&lt;p&gt;Contact support@example.com&lt;/p&gt;")
+    .buildEmail();</code></pre>
+
+      <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable body-editing reference">
+        <table>
+          <thead>
+          <tr>
+            <th>Change</th>
+            <th>Paired methods</th>
+            <th>Effect</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>Replace</td>
+            <td><code>withPlainText(String | File | Path)</code><br><code>withHTMLText(String | File | Path)</code></td>
+            <td>Replaces the current alternative</td>
+          </tr>
+          <tr>
+            <td>Prepend</td>
+            <td><code>prependPlainText(String | File | Path)</code><br><code>prependHTMLText(String | File | Path)</code></td>
+            <td>Adds content before the current alternative</td>
+          </tr>
+          <tr>
+            <td>Append</td>
+            <td><code>appendPlainText(String | File | Path)</code><br><code>appendHTMLText(String | File | Path)</code></td>
+            <td>Adds content after the current alternative</td>
+          </tr>
+          <tr>
+            <td>Remove</td>
+            <td><code>clearPlainText()</code><br><code>clearHTMLText()</code></td>
+            <td>Removes that alternative from the email</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="wide">Supply a non-null fragment when appending or prepending. A rejected null fragment leaves the draft unchanged.
+        To remove a body, call its clear method or use <code>withPlainText((String) null)</code> or <code>withHTMLText((String) null)</code>.</p>
+
+      <p class="wide">Copying keeps the draft's delivery-recipient overrides as well as its visible To/Cc/Bcc fields. If a draft routes to a test inbox,
+        changing its subject or body on a copy still routes to that inbox. Call <code>clearOverrideReceivers()</code> explicitly to remove the copied
+        routing choice; configured defaults, overrides and locks still apply. See <a href="debugging.html#section-override-receivers">test-inbox routing</a>.</p>
+      <p class="wide">Copied collections, including Reply-To and attachments, are already populated. Later additive calls retain their entries unless
+        cleared; the original Email stays unchanged. A copy is editable composition: copying an <a href="/email-conversion.html#section-exact-eml">exact Email</a> gives up
+        original byte identity and any guarantee about already applied signatures. It does not automatically remove or re-sign those signatures.
+        Reuse the original exact Email or build another exact envelope from the authoritative input when preservation is required.</p>
+
+      <p class="wide">
+        See <a href="https://javadoc.io/doc/org.simplejavamail/core-module/latest/org/simplejavamail/api/email/EmailPopulatingBuilder.html" target="_blank"><code class="inline language-java">EmailPopulatingBuilder</code></a>
+        for every overload and the other fields that can be cleared when copying or rebuilding an email.
+      </p>
+    </div>
+  </section>
+
+  {{#> components/feature-heading-h3 core=true}}<code>Reply-To</code> is not an outgoing recipient{{/components/feature-heading-h3}}
+
+  <section>
+    <div>
+      <p>
+        <code class="inline language-text">Reply-To</code> tells a recipient's mail client where a future reply should go. It does not add anyone to the
+        current message's To, CC, or BCC recipients.
+      </p>
+      <p>
+        Each <code class="inline language-java">withReplyTo(...)</code> call appends to the existing reply destinations. Repeated calls and the
+        <code class="inline language-java">List&lt;Recipient&gt;</code> overload retain order and duplicate occurrences; an empty list does nothing.
+        Copying an Email starts with its Reply-To list already populated. Clear that list first when replacing it; edits leave the original Email unchanged.
+      </p>
+    </div>
+
+    <div>
+      <pre><code class="language-java">Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
+    .from("notices@example.com")
+    .withRecipients(customer)
+    .withReplyTo("Support", "support@example.com")
+    .withReplyTo("Escalations", "escalations@example.com")
+    .withSubject("Service notice")
+    .withPlainText("Planned maintenance starts at 22:00.")
+    .buildEmail();</code></pre>
+      <pre><code class="language-java">Email revised = SimpleJavaMail.fromDefaults().emailBuilder().copying(email)
+    .clearReplyTo()
+    .withReplyTo("Support &lt;support@example.com&gt;")
+    .buildEmail();</code></pre>
+      <p>Clearing edits this copy's local collection. Configured defaults, overrides and mandatory locks still apply when sending.</p>
+    </div>
+  </section>
+
+<a href="#section-builder-details" id="section-builder-details" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Copying and message details{{/components/feature-heading-h2}}
+
+  <section>
+    <p class="wide">Say a support agent prepared a forward with the customer's original message attached, then decided to send a
+      standalone update. Start with <code>mail.emailBuilder().copying(forwardedEmail)</code> and rebuild only the parts that need to change.</p>
+    <p class="wide" id="clearing-forwarded-message">Use <code>clearEmailToForward()</code> to drop the original message from the draft.
+      The copy keeps its body and ordinary attachments, and the operation leaves the original <code>MimeMessage</code> untouched and unread.</p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">Email edited = mail.emailBuilder().copying(forwardedEmail)
+    .clearEmailToForward()
+    .withSubject("Updated note")
+    .buildEmail();</code></pre>
+    </div>
+    <ul class="wide">
+      <li><strong>Keep earlier messages.</strong> Built Emails own their metadata and supplied byte arrays. Builder edits and changes to a
+        collection it returns leave the earlier Email unchanged.</li>
+      <li><strong>Keep borrowed content available.</strong> Attachment <code>DataSource</code> and forwarded <code>MimeMessage</code> content
+        must stay stable and available while an operation reads it. Exact EML owns its supplied bytes, and retry-enabled sends create a repeatable
+        content snapshot.</li>
+      <li><strong>Check what configuration can fill in.</strong> Clearing a local forward lets defaults or overrides supply one.
+        Exclude <code>EmailProperty.MAIL_TO_FORWARD</code> with a
+        <a href="understanding-configuration.html#configuration-operations">template exclusion</a> to skip that fallback.
+        <a href="configuration.html#section-locked-configuration">Locked configuration</a> still applies, including required envelope
+        recipients when a message excludes ordinary templates. Conflicting customization fails.</li>
+      <li><strong>Review any reused content.</strong> Completion carries the draft's captured sources, Problems, originals and unchanged
+        field evidence. A replacement from a template is a new value with unknown incoming protection. See
+        <a href="understanding-configuration.html#repeated-email-completion">completion and source history</a> if you need to trace a field
+        or decide whether you can share it.</li>
+    </ul>
+    <p class="wide" id="email-equality">Use <code>Email.equals()</code> to assert selected message values in a test. It ignores list order
+      while counting occurrences for recipients, Reply-To, delivery overrides, attachments and images. It normalizes HTML line endings and
+      includes selected message facts and signing choices. Attachment comparisons use metadata, and template-exclusion choices are outside
+      the comparison. Use your application's job key or equivalent business identifier for queue deduplication. Equal messages can produce
+      different MIME bytes or send differently under different Mailer defaults and overrides.</p>
+  </section>
+
+<a href="#section-bouncing-emails" id="section-bouncing-emails" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Setting a bounce address{{/components/feature-heading-h2}}
+
+  <section>
+    <div class="view">
+      <p>Send service notices from one shared address while routing delivery failures to the job that can act on them.
+        Set <code>withBounceTo(...)</code> on each Email to choose its SMTP envelope sender (<code>MAIL FROM</code>). Different jobs can use
+        different bounce inboxes through the same Mailer and Session.</p>
+      <p>Replies still go to your <code>Reply-To</code> address. The bounce address travels in the SMTP envelope, and a receiving mail system
+        may record it in <code>Return-Path</code>. SMTP uses the address without its display name.</p>
+    </div>
+
+    <div class="side">
+<pre><code class="language-java">currentEmailBuilder
+    .withBounceTo("bounces@candyshop.com");</code></pre>
+    </div>
+  </section>
+
+<a href="#section-return-receipt" id="section-return-receipt" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Configure delivery / read receipt{{/components/feature-heading-h2}}
+
+  <section>
+    <p class="wide">If you send an internal policy update and want the reader's mail client to offer a read receipt, add a receipt
+      request with <code>withDispositionNotificationTo(...)</code>. For clients or servers that support <code>Return-Receipt-To</code>, add
+      <code>withReturnReceiptTo(...)</code>. Those implementations decide whether it asks about delivery or reading.</p>
+    <div class="wide full-width-example">
+<pre><code class="language-java small">Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
+    .from("sender@example.com")
+    .withRecipients(mail.recipientBuilder()
+        .withAddress("recipient@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withPlainText("Hello")
+    .withDispositionNotificationTo("Mail receipts", "receipts@example.com")
+    .withReturnReceiptTo("Mail receipts", "receipts@example.com")
+    .buildEmail();
+</code></pre>
+    </div>
+    <ul class="wide">
+      <li><strong>Choose where receipts go.</strong> Pass an explicit destination or call the no-argument methods to use the resolved
+        Reply-To list, falling back to From. Passing a destination list replaces the previous local choice. Inspect the immutable
+        lists with <code>getDispositionNotificationToRecipients()</code> and <code>getReturnReceiptToRecipients()</code>.</li>
+      <li><strong>Allow for no reply.</strong> The receiving server, mail client or user can decline. For SMTP-level delivery status,
+        use <a href="#section-delivery-status-notification">Delivery Status Notification</a>.</li>
+      <li><strong>Read existing requests.</strong> Importing MIME or EML reads receipt destinations and request flags from the owning
+        message, regardless of header capitalization. Attached messages have their own headers, and import alone sends no receipt.</li>
+    </ul>
+  </section>
+
+<a href="#section-delivery-status-notification" id="section-delivery-status-notification" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Configure Delivery Status Notification{{/components/feature-heading-h2}}
+
+  <section>
+    <p class="wide">Suppose customers miss their order confirmations and you need to know which addresses were delayed or failed.
+      Ask the SMTP server for a Delivery Status Notification (DSN). The following request asks for failure and delay reports and requests
+      the original message's headers in the report.</p>
+    <div class="wide full-width-example">
+<pre><code class="language-java small">Email email = SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
+    .from("sender@example.com")
+    .withRecipients(mail.recipientBuilder()
+        .withAddress("receiver@example.com")
+        .withType(Message.RecipientType.TO)
+        .build())
+    .withPlainText("Hello")
+    .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+        .withDeliveryStatusNotification(
+            DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+            DeliveryStatusNotification.NotifyOption.FAILURE,
+            DeliveryStatusNotification.NotifyOption.DELAY)
+        .build())
+    .buildEmail();
+</code></pre>
+<pre><code class="language-properties small">simplejavamail.defaults.delivery.status.notification.notify=FAILURE,DELAY
+simplejavamail.defaults.delivery.status.notification.return.option=HEADERS_ONLY
+</code></pre>
+    </div>
+    <ul class="wide">
+      <li><strong>Set a shared request.</strong> Configure events and the return option on an Email, in Mailer Email defaults, or
+        through properties. The shared request is best effort when the server lacks DSN. A fixed identifier and
+        <a href="#section-dsn-recipients">explicit recipient preferences</a> require support on the sending connection.</li>
+      <li><strong>Read the report when it arrives.</strong> Convert the incoming message to <code>Email</code> and read
+        <code>getDeliveryStatusReport()</code> for recipient actions, status codes and identifiers. Your application receives the mail
+        and decides which reports to trust and how to act on them. See <a href="/delivery-reports.html">Reading delivery reports</a>
+        for examples and output.</li>
+    </ul>
+  </section>
+
+<a href="#section-dsn-envelope-id" id="section-dsn-envelope-id" class="section-link h3">&sect;</a>
+  <h3>Match a later notification to a send</h3>
+
+  <section>
+    <p class="wide">You send an order confirmation twice. Both copies have the same MIME Message-ID, so a later failure report needs
+      another way to tell you which submission it describes. Save the SMTP envelope identifier (<code>ENVID</code>) from each
+      <a href="/analyzing-send-results.html">submission receipt</a> alongside your job record. The bundled Angus adapter generates
+      a fresh UUID for each submission over a connection with usable DSN support.</p>
+    <div class="wide full-width-example">
+<pre><code class="language-java small">// Send the confirmation with the DSN request configured above.
+MailSubmissionReceipt receipt = mailer.sync().sendMail(email);
+String envelopeId = receipt.getEnvelopeId();
+if (envelopeId != null) {
+    saveSendRecord(jobId, envelopeId, receipt.getEmailId());
+}</code></pre>
+      <p>Suppose the relay accepts the message, then the destination mailbox turns out to be invalid. The later DSN can
+        return the same identifier in <code>Original-Envelope-ID</code>.</p>
+<pre><code class="language-text small">MAIL FROM:&lt;sender@example.com&gt; RET=HDRS ENVID=9aed6f37-0f12-4dd7-9835-82a87c83a596
+
+Original-Envelope-ID: 9aed6f37-0f12-4dd7-9835-82a87c83a596
+Final-Recipient: rfc822; receiver@example.com
+Action: failed
+Status: 5.1.1</code></pre>
+      <p><a href="/delivery-reports.html">Read the structured delivery report</a> to match that identifier to the send and
+        take action on the reported status. Here <code>5.1.1</code> means a bad destination mailbox address. The Java send
+        receipt described only what happened during submission.</p>
+      <h4>Use your own attempt ID</h4>
+      <p>If the application already assigns each submission an identifier, fix it on the message.
+        Copy the current delivery options to keep its requested events and return preference.</p>
+<pre><code class="language-java small">emailBuilder.withSmtpDeliveryOptions(emailBuilder.getSmtpDeliveryOptions().toBuilder()
+    .fixingEnvelopeId("order-42-attempt-1")
+    .build());</code></pre>
+      <ul>
+        <li><strong>Automatic ID.</strong> Without usable DSN after TLS and authentication, an ordinary send can proceed and the receipt’s ID is null.</li>
+        <li><strong>Fixed ID.</strong> The connection must support DSN. Otherwise sending fails with <code>MailSubmissionException</code> before
+          <code>MAIL FROM</code>. Use a nonempty, unencoded printable ASCII identifier without secrets or personal data. It must fit in
+          94 characters after xtext encoding (100 with <code>ENVID=</code>). Spaces, <code>+</code> and <code>=</code> each take three. Whitespace is preserved.</li>
+      </ul>
+      <p>A failed submission can also carry an ID. Read the receipt for acceptance and match later feedback separately. A report may never arrive.</p>
+      <details class="doc-disclosure">
+      <summary>Edit or clear an existing DSN request</summary>
+      <p>For a message with a failure notification you still want to keep, clear only the choice about whether to return headers or
+        the full message. The events and any fixed identifier carry through.</p>
+<pre><code class="language-java small">DeliveryStatusNotification request = DeliveryStatusNotification.builder()
+    .returnOption(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY)
+    .notifyOptions(DeliveryStatusNotification.NotifyOption.FAILURE)
+    .build();
+
+DeliveryStatusNotification withoutReturnPreference = request.toBuilder()
+    .clearReturnOption()
+    .build();</code></pre>
+      <p>The request builder also has <code>clearNotifyOptions()</code> and <code>clearEnvelopeId()</code>; each removes only its own choice.
+        Inspect its stored choices with <code>getReturnOption()</code>, <code>getNotifyOptions()</code> and <code>getEnvelopeId()</code> before building.
+        The returned event set is an editable copy. Inspection also works while you are changing an incomplete request, but
+        <code>build()</code> still requires at least one valid DSN option.</p>
+      <p>On <code>SmtpDeliveryOptions.Builder</code>, use <code>clearDeliveryStatusNotificationReturnOption()</code>,
+        <code>clearDeliveryStatusNotificationNotifyOptions()</code> or <code>clearEnvelopeId()</code> to remove just that part of the request.
+        Supply the edited value through <code>withSmtpDeliveryOptions(...)</code> on the composed or exact Email builder.
+        Other choices stay in place; when no request components remain, the group has no shared DSN request.
+        Composed emails can then receive configured defaults again, whereas exact emails continue to bypass ordinary templates.
+        Clearing does not remove locks or recipient-specific notification preferences.</p>
+      <p>Clearing the ID or passing null to <code>fixingEnvelopeId(...)</code> restores automatic selection. Editing NOTIFY or RET keeps a fixed ID.
+        Replacing the whole request replaces its ID.</p>
+      </details>
+      <details class="doc-disclosure">
+      <summary>Inspect unfinished choices before building</summary>
+      <p>SMTP group setters collect your choices, and its component getters inspect them without requiring a complete request.
+        Use <code>getDeliveryStatusNotificationNotifyOptions()</code>, <code>getDeliveryStatusNotificationReturnOption()</code> and
+        <code>getEnvelopeId()</code> on the builder; the event set is an editable copy. The group's <code>build()</code> validates the complete
+        request, including event combinations and any fixed identifier. You can correct the same builder after a failed build:</p>
+<pre><code class="language-java small">// Inspect supplied SMTP choices before building them.
+SmtpDeliveryOptions.Builder delivery = SmtpDeliveryOptions.builder()
+    .fixingEnvelopeId("");
+String suppliedId = delivery.getEnvelopeId(); // ""; inspection is safe
+// delivery.build() would reject this empty identifier.
+
+SmtpDeliveryOptions ready = delivery.fixingEnvelopeId("order-42-attempt-1").build();
+DeliveryStatusNotification request = ready.getDeliveryStatusNotification();</code></pre>
+      <p>The completed group exposes its validated request through <code>getDeliveryStatusNotification()</code>.
+        An explicitly empty event array still requests a DSN and needs another component at build time; use the named clear methods when
+        you want the shared request to become absent. Constructing a standalone <code>DeliveryStatusNotification</code> with
+        <code>build()</code> or <code>of(...)</code> also validates that value.</p>
+      </details>
+    </div>
+    <div class="wide full-width-example">
+      <details class="doc-disclosure">
+      <summary>Other sending paths, raw settings and CLI flags</summary>
+      <p>Async sends, batches and open connections expose the ID through their available receipts, including result-observer outcomes.
+        <a href="/email-conversion.html#section-exact-eml">Exact EML</a> accepts ENVID with or without NOTIFY and RET while preserving its bytes.
+        Properties and Spring have no per-send identifier. A fixed ID on a whole-request defaults or overrides template is reused across sends.</p>
+      <ul>
+        <li>Other <a href="/modules.html#mail-transport-adapter-spi">transport adapters</a> must opt in to fixed ENVID support and report any effective
+          identifier. <code>CustomMailer</code> receives a fixed value on the Email and owns its envelope handling; Simple Java Mail does not generate
+          or report an effective identifier for CustomMailer. Logging-only sends also report none. Validation and rehearsal do not submit ENVID.</li>
+        <li>Unrelated raw MAIL parameters are retained. Existing ENVID in <code>mail.smtp.mailextension</code> or <code>mail.smtps.mailextension</code>
+          suppresses automatic generation; that unvalidated raw value is not reported on the receipt. Combining raw ENVID with <code>SmtpDeliveryOptions.Builder.fixingEnvelopeId(...)</code>
+          is rejected. Use the typed API for validation and receipt correlation.</li>
+      </ul>
+      <p>To set a fixed identifier from the CLI, add the option for your message type to <code>sjm send</code>.</p>
+<pre><code class="language-shell small"># Composed email
+--email:fixingEnvelopeId "order-42-attempt-1"
+
+# Exact EML
+--email:fixingExactEnvelopeId "order-42-attempt-1"</code></pre>
+      <p>For recipient-specific notification preferences and automatic original-recipient metadata, see the next section.
+        See <a href="https://www.rfc-editor.org/rfc/rfc3461.html#section-4.4">RFC 3461</a> for the SMTP envelope-identifier contract.</p>
+      </details>
+    </div>
+  </section>
+
+<a href="#section-dsn-recipients" id="section-dsn-recipients" class="section-link h3">&sect;</a>
+  <h3>Notification preferences per recipient</h3>
+  <section>
+    <div class="wide full-width-example">
+      <p>Your order confirmation goes to the customer and a copy goes to support. Ask for failure reports by default, and
+        request a success report for the customer's address. Put the default on the group and the exception on that recipient.</p>
+<pre><code class="language-java">import org.simplejavamail.api.email.config.DeliveryStatusNotification.NotifyOption;
+
+Recipient customer = mail.recipientBuilder()
+    .withAddress("customer@example.com")
+    .withType(Message.RecipientType.TO)
+    .withDeliveryStatusNotificationNotifyOptions(NotifyOption.SUCCESS)
+    .build();
+
+IRecipientsBuilder group = mail.recipientsBuilder()
+    .withDefaultDeliveryStatusNotificationNotifyOptions(NotifyOption.FAILURE)
+    .withRecipient(customer)
+    .withRecipient("support@example.com", Message.RecipientType.CC);
+List&lt;Recipient&gt; recipients = group.buildRecipients();
+
+Email email = mail.emailBuilder().startingBlank()
+    .from("orders@example.com")
+    .withRecipients(recipients)
+    .withPlainText("Your order is confirmed.")
+    .buildEmail();
+
+mailer.sync().sendMail(email);</code></pre>
+      <p>Managed Angus sends <code>NOTIFY=SUCCESS</code> on the customer's <code>RCPT TO</code> command and
+        <code>NOTIFY=FAILURE</code> on the support address's command. <code>RET</code> and <code>ENVID</code> apply to the whole SMTP transaction.</p>
+
+      <ul>
+        <li><strong>One recipient.</strong> <code>withDeliveryStatusNotificationNotifyOptions(...)</code> sets that recipient’s complete event set.
+          It takes precedence over the Email fallback, including a fallback supplied with <code>withEmailOverrides(...)</code>.</li>
+        <li><strong>Group default.</strong> <code>withDefaultDeliveryStatusNotificationNotifyOptions(...)</code> fills in missing preferences, as it does for support above.</li>
+        <li><strong>Fixed group rule.</strong> <code>withFixedDeliveryStatusNotificationNotifyOptions(...)</code> replaces every recipient’s choice in the group output.</li>
+      </ul>
+      <h4>Clear preferences or reset the group rule?</h4>
+      <p>To use the Email fallback for everyone, clear the preferences when building the group. This strips the customer’s explicit SUCCESS request too.</p>
+<pre><code class="language-java">List&lt;Recipient&gt; useEmailFallback = group
+    .clearingDeliveryStatusNotificationNotifyOptions()
+    .buildRecipients();</code></pre>
+      <p>To recover the choices on the original recipients, reset the group rule. The customer keeps SUCCESS and support falls back to the Email.
+        To clear just one recipient’s preference, use <code>clearingDeliveryStatusNotificationNotifyOptions()</code> on its individual builder.</p>
+<pre><code class="language-java">List&lt;Recipient&gt; useOriginalChoices = group
+    .resetDeliveryStatusNotificationNotifyPolicy()
+    .buildRecipients();</code></pre>
+      <p>Use <code>NEVER</code> on its own to suppress reports. Recipient-specific preferences require a supporting transport and
+        usable DSN on the actual connection. Without support, sending fails with <code>MailSubmissionException</code> before <code>MAIL FROM</code>.
+        Clear the preference if a best-effort shared Email request is enough.</p>
+
+      <details class="doc-disclosure">
+        <summary>Empty preferences, group rules and configuration locks</summary>
+        <ul>
+          <li><strong>Empty arrays.</strong> An empty typed array restores fallback on a recipient or for a fixed group rule. With a group
+            default, it leaves the existing recipient choices intact.</li>
+          <li><strong>Working with a group.</strong> The last default, fixed or clear group rule wins. The notification and certificate rules
+            reset independently. Source recipients and previously built lists retain their preferences. A group produces ordinary recipients
+            for one transaction.</li>
+          <li><strong>Email configuration.</strong> Set shared policy in <a href="/configuration.html#section-config-mailer">Email defaults or overrides</a>.
+            When a factory <a href="configuration.html#section-locked-configuration">locks notification settings</a>, Email and recipient preferences
+            must agree with the locked events. Even a shared request then requires usable DSN support. Reports still depend on the receiving system.</li>
+          <li><strong>Connection reuse.</strong> Rejection for missing recipient-specific DSN support leaves a healthy connection reusable.</li>
+        </ul>
+      </details>
+      <details class="doc-disclosure">
+        <summary>Automatic original-recipient metadata</summary>
+        <p>Managed Angus adds <code>ORCPT</code> to the SMTP recipient command whenever the connection supports DSN, even without
+          a <code>NOTIFY</code> setting. It uses the actual envelope destination, including BCC and override recipients, and keeps
+          duplicate occurrences separate. The option travels on the existing command and leaves MIME bytes and notification choices intact.</p>
+<pre><code class="language-text">RCPT TO:&lt;customer@example.com&gt; NOTIFY=SUCCESS ORCPT=rfc822;customer@example.com</code></pre>
+        <p>If that address forwards to another mailbox, a report can still identify the first destination with
+          <code>Original-Recipient: rfc822; customer@example.com</code>. Use it to find the right record when
+          <code>Final-Recipient</code> shows another address.</p>
+        <ul>
+          <li><strong>ASCII.</strong> Addresses use <a href="https://www.rfc-editor.org/rfc/rfc3461.html#section-4.2">RFC 3461 xtext</a>,
+            so a <code>+</code> becomes <code>+2B</code>.</li>
+          <li><strong>International addresses.</strong> With UTF-8 output enabled and SMTPUTF8 advertised, the transport uses
+            <a href="https://datatracker.ietf.org/doc/html/rfc6533#section-3">RFC 6533's UTF-8 address type</a>.
+            Library-owned stock Angus Sessions enable UTF-8 output by default. Without SMTPUTF8 the send fails by default.
+            The <a href="/sending-and-execution.html#section-international-mail">legacy-content opt-in</a> can allow the send while
+            internationalized ORCPT is omitted.</li>
+          <li><strong>Parameter limits.</strong> ORCPT is omitted above 500 encoded bytes. Its value comes from the actual envelope even
+            in a forwarding or gateway workflow.</li>
+        </ul>
+      </details>
+
+      <details class="doc-disclosure">
+        <summary>Exact EML, other sending paths and CLI options</summary>
+        <p>For <a href="/email-conversion.html#section-exact-eml">exact EML</a>, pass the same recipients using the envelope builder.
+          Their preferences travel with the envelope while the supplied message bytes stay intact.</p>
+<pre><code class="language-java">Email exact = mail.emailBuilder().startingFromExactEml(emlBytes)
+    .withEnvelopeRecipients(recipients.toArray(new Recipient[0]))
+    .withSmtpDeliveryOptions(SmtpDeliveryOptions.builder()
+        .withDeliveryStatusNotificationReturnOption(DeliveryStatusNotification.ReturnOption.HEADERS_ONLY)
+        .build())
+    .buildEmail();</code></pre>
+        <ul>
+          <li><strong>Send methods.</strong> Synchronous and asynchronous sends, simple batches, and open connections follow the same rules.
+            Logging-only mode and rehearsal skip the connection and capability check.</li>
+          <li><strong>Sessions and providers.</strong> A caller-owned Session using ordinary Angus supports shared Email NOTIFY, RET and ENVID.
+            It omits ORCPT and rejects explicit recipient preferences. Custom socket factories on library-owned stock Angus Sessions keep
+            the managed hook. Other <a href="/modules.html#mail-transport-adapter-spi">provider adapters</a> must opt in.
+            <code>CustomMailer</code> receives the recipients and maps their preferences to its own transport.</li>
+          <li><strong>CLI and Spring.</strong> Use the Java recipient builders for per-recipient choices.
+            <a href="/configuration.html#section-available-properties">Properties</a>, Spring configuration, and CLI Email options configure the
+            shared fallback. The CLI accepts notification lists such as <code>failure,delay</code> and return aliases such as <code>HDRS</code>.
+            For exact EML, use <code>--email:withEnvelopeDsnNotifyOptions</code> and <code>--email:withEnvelopeDsnReturnOption</code>.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+<a href="#section-rendered-templates" id="section-rendered-templates" class="section-link h2">&sect;</a>
+	{{#> components/feature-heading-h2 core=true}}Use content rendered by your template system{{/components/feature-heading-h2}}
+
+  <section>
+    <p class="wide">
+      Your store needs to send the same order confirmation in several languages. Choose the customer's locale, render the plain-text
+      and HTML versions with your template engine, then pass both strings to the email builder. Handle rendering failures before building
+      the Email or contacting the mail server.
+    </p>
+
+    <h4>The handoff to Simple Java Mail</h4>
+    <div class="wide full-width-example">
+<pre><code class="language-java">// Application code: render with the template system you already use
+String plainText = renderTextBody(model, locale);
+String html = renderHtmlBody(model, locale);
+
+Email email = currentEmailBuilder
+    .withPlainText(plainText)
+    .withHTMLText(html)
+    .buildEmail();</code></pre>
+    </div>
+    <p class="wide">
+      The built <code>Email</code> stores the rendered bodies. The application chooses and caches the templates, validates the model and
+      handles locale selection.
+    </p>
+
+    <h4>Thymeleaf</h4>
+    <p class="wide">
+      With an application-configured Thymeleaf <code class="inline language-java">TemplateEngine</code>, create a non-web context and render both
+      alternatives:
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">Context context = new Context(locale, model);
+
+String plainText =
+    templateEngine.process("text/order-confirmation", context);
+String html =
+    templateEngine.process("html/order-confirmation", context);</code></pre>
+    </div>
+    <p class="wide">
+      The template resolvers determine where those names are loaded from and whether they use text or HTML template mode. See
+      <a href="https://www.thymeleaf.org/doc/articles/springmail.html" target="_blank">Thymeleaf's email template configuration</a>.
+    </p>
+
+    <h4>FreeMarker</h4>
+    <p class="wide">
+      FreeMarker writes rendered output to a <code class="inline language-java">Writer</code>, so a small application helper can return it as a string:
+    </p>
+    <div class="wide full-width-example">
+<pre><code class="language-java">String plainText = render(
+    freeMarkerConfiguration,
+    "order-confirmation.ftl",
+    model,
+    locale);
+
+String html = render(
+    freeMarkerConfiguration,
+    "order-confirmation.ftlh",
+    model,
+    locale);
+
+private static String render(
+        Configuration configuration,
+        String templateName,
+        Map&lt;String, Object&gt; model,
+        Locale locale) throws IOException, TemplateException {
+
+    StringWriter output = new StringWriter();
+    configuration
+        .getTemplate(templateName, locale)
+        .process(model, output);
+    return output.toString();
+}</code></pre>
+    </div>
+    <p class="wide">
+      Template lookup and caching are configured on FreeMarker's <code class="inline language-java">Configuration</code>. See the
+      <a href="https://freemarker.apache.org/docs/pgui_config_templateloading.html" target="_blank">FreeMarker template-loading guide</a>.
+    </p>
+
+    <h4>Escaping and editable templates</h4>
+    <p class="wide">A customer name can contain characters such as <code>&amp;</code> or <code>&lt;</code>. Let the template engine escape
+      them for their HTML context. Simple Java Mail uses the HTML you hand it as message content.</p>
+    <ul class="wide">
+      <li><strong>Thymeleaf.</strong> Use <code>th:text</code> and <code>[[...]]</code> to escape values.
+        <code>th:utext</code> and <code>[(...)]</code> insert unescaped content.
+        See the <a href="https://www.thymeleaf.org/doc/tutorials/3.1/usingthymeleaf.html" target="_blank">Thymeleaf escaping guide</a>.</li>
+      <li><strong>FreeMarker.</strong> Use the <code>.ftlh</code> extension for HTML output and automatic escaping.
+        See the <a href="https://freemarker.apache.org/docs/dgui_misc_autoescaping.html" target="_blank">FreeMarker auto-escaping guide</a>.</li>
+      <li><strong>Template editors.</strong> Apply the engine's security model to who can edit templates. Escaping values only protects
+        where the template inserts those values.</li>
+    </ul>
+    <p class="wide">
+      If the rendered HTML contains images that should travel with the message, continue with <a href="#section-embedding">embedding images</a>.
+      Image auto-resolution remains opt-in and is constrained by its configured file, classpath, or URL bases.
+    </p>
+    <p class="wide">
+      Using Spring? Inject the application-configured renderer and Simple Java Mail's <code class="inline language-java">Mailer</code> into the service
+      that composes the message. <a href="/spring.html">Simple Java Mail's Spring integration</a> can supply the
+      <code class="inline language-java">Mailer</code>; it does not discover or
+      configure template engines.
+    </p>
+    <p class="wide">
+      Thymeleaf and FreeMarker are examples, not Simple Java Mail dependencies or engine-specific integrations.
+    </p>
+    <p class="wide">
+      The <code class="inline language-text">%s</code> template accepted by reply starters only controls how the original HTML is quoted. It is not a
+      general body-template API. See <a href="#section-reply-forward">replying to and forwarding emails</a>.
+    </p>
+  </section>

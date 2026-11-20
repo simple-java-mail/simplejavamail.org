@@ -5,6 +5,8 @@ Role: provide task-oriented wayfinding and a consistent long-form reading system
 Primary audience: implementers and operators
 Primary action: reach the exact reference section needed
 
+The [implemented discovery structure](capabilities-discovery.md) defines the shared families, guide context, directory generation and compatibility behavior.
+
 ## Docs hub: `/docs.html`
 
 ### Hero: Documentation
@@ -19,20 +21,9 @@ The hub, Get started, and Why Simple Java Mail use the same grouped left navigat
 - Why the library exists -> `/why-simple-java-mail.html`
 - Upgrade to 10.0 -> `/migration-notes-10.0.0.html`
 
-### Browse by task
+### Explore and locate
 
-Use the six canonical stages:
-
-- Compose -> features: content, recipients, replies/forwards, conversion
-- Configure -> configuration: builders, properties, Spring, shared defaults and overrides
-- Protect -> security: TLS, OAuth2, DKIM, S/MIME, OpenPGP/MIME, CRLF
-- Deliver -> features/configuration: async, open connection, batch, pools, clusters, proxies
-- Diagnose -> debugging: tests, logs, receipts, validation, inspection
-- Extend -> modules, CLI, RFC/MIME, custom sending
-
-### Browse every reference
-
-Flat list with a short description and content length/complexity hint where helpful. Avoid a grid of vague cards.
+Provide one clear Capabilities link for discovery. Generate the complete guide directory from navigation data and group it under Start, the seven capability families, and Maintain. Guide labels, URLs and descriptions have one source; the directory must not omit guides present in the sidebar.
 
 ### Need help or found a bug?
 
@@ -51,38 +42,11 @@ All long reference routes share:
 - previous/next task links;
 - “Edit / report a docs issue” source link where a stable repository URL is available.
 
-### Sidebar groups
+### Sidebar groups and guide context
 
-The global **Docs** item opens a compact flyout on hover or keyboard focus. It mirrors the first page of **Start**, **Build and configure**, **Protect and operate**, and **Integrate and understand**, followed by **Help and contribute**. **Modules** is the final item so the artifact map is directly available from the main navigation. Keep the rest of **Maintain** in the full docs navigation rather than the flyout.
+Use Start, the seven shared families, and Maintain. Resolve family names from the capability registry and guide items from navigation data. Patterns keeps its Tactical and Strategic child links. The Docs flyout links each family to its real directory section; it does not turn a group label into an arbitrary guide link.
 
-**Start**
-
-- Documentation
-- Get started
-- Why Simple Java Mail
-
-**Build and configure**
-
-- Capabilities
-- Configuration
-- Modules
-
-**Protect and operate**
-
-- Security
-- Diagnostics
-  - Analyzing send results
-
-**Integrate and understand**
-
-- CLI
-- MIME and interoperability
-- Compare approaches
-
-**Maintain**
-
-- Migration notes
-- Help and contribute
+Mapped guides show their family as a link in the heading and offer “More in this group” after the content. This provides neighbouring capabilities to readers arriving from search without opening the sidebar.
 
 ## Content conventions
 

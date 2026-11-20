@@ -26,13 +26,13 @@ export const patternDemonstrations = z.array(topic).parse([
   { id: "received-protection", title: "Received document requirements", reference: "/security.html#section-inspecting-received-protection", demonstrations: [
     { pattern: "protected-partners", section: "check-the-required-document", label: "Process or hold the exact partner document", scenario: "protection" },
   ] },
-  { id: "exact-content", title: "Exact-message submission", reference: "/features.html#section-exact-eml", demonstrations: [
+  { id: "exact-content", title: "Exact-message submission", reference: "/email-conversion.html#section-exact-eml", demonstrations: [
     { pattern: "polar-meridian", section: "protected-archive", label: "Compare archived and submitted bytes", scenario: "polar-meridian" },
   ] },
-  { id: "custom-mailer", title: "CustomMailer", reference: "/features.html#section-custom-mailer", demonstrations: [
+  { id: "custom-mailer", title: "CustomMailer", reference: "/configuration.html#section-custom-mailer", demonstrations: [
     { pattern: "custom-handoff", section: "non-smtp-handoff", label: "Hand prepared mail to an HTTPS gateway", scenario: "custom-handoff" },
   ] },
-  { id: "smtp-client-identity", title: "SMTP client hostname", reference: "/features.html#section-smtp-client-hostname", demonstrations: [
+  { id: "smtp-client-identity", title: "SMTP client hostname", reference: "/configuration.html#section-smtp-client-hostname", demonstrations: [
     { pattern: "aws-correspondence", section: "identify-the-application-to-ses", label: "Give a container a stable SMTP identity", scenario: "aws-correspondence-cloud" },
   ] },
   { id: "send-results", title: "Submission results and observation", reference: "/analyzing-send-results.html", demonstrations: [

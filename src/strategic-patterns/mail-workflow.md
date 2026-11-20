@@ -14,7 +14,7 @@ permalink: "/patterns/mail-workflow.html"
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and the services for each demo. The local examples use synthetic data and run without a real mail account.
 
 Run these commands from that directory:
 
@@ -66,19 +66,21 @@ The demo tries a normal send, a send accepted for only some recipients, and a se
 
 *Part of the result after the test server accepted the message but deliberately dropped its final SMTP reply.*
 
-The scenario supplies the delivery notification itself, so waiting for it doesn't open another SMTP connection or demonstrate real delivery. If the application can't match a report to a job, it records it for review. In production, you'll also need to decide which reports to trust, how to handle duplicates and late arrivals, and how long the workflow should wait.
+## When the report is saved and the workflow signal fails
 
-The report is stored before the workflow is notified. If that signal fails, you'll see `FEEDBACK_HANDOFF_FAILED` and a `RECORDED_HANDOFF_FAILED` response. Repeating the report won't retry the signal because it's already recorded as a duplicate. Use an outbox or a similar durable handoff if the workflow notification must survive that failure.
+The scenario supplies a synthetic notification. An unmatched report goes to review. When a report matches, the application saves it before signaling the workflow.
+
+If the signal fails, look for the `FEEDBACK_HANDOFF_FAILED` event and the `RECORDED_HANDOFF_FAILED` response. The report stays saved. Submit it again and the application recognizes it as a duplicate. Use an outbox or similar durable handoff to retry the signal separately.
+
+Before adapting the example, decide which reports to trust, which duplicates and late arrivals should affect state, and how long the workflow can wait.
 
 <span id="keep-the-boundary-honest" aria-hidden="true"></span>
 
 ## Before you adapt this example
 
-Run just one copy of this application against its database. At startup, it puts unfinished `SENDING` jobs on hold, assuming the previous process has stopped. Running a second copy could put the first copy's active jobs on hold too. If you need two instances, [Polar Meridian](/patterns/polar-meridian.html) shows how to track which instance claimed each job.
-
-All mail stays in the local test server, and the delivery notifications are synthetic DSNs supplied by the scenario. Even with a real server, SMTP acceptance wouldn't tell you whether the message reached its final destination. A database transaction, broker or workflow can't make SMTP exactly-once, so leave partial or uncertain submissions on hold until you can decide whether a retry is safe.
-
-Before using a delivery report to update customer records, check where it came from and which send it belongs to. You'll also need to handle duplicates and reports that arrive out of order. When passing data to a broker or workflow, use your own small DTOs rather than serializing Email, Mailer or private-key objects.
+- **Run one instance per database.** At startup, this demo holds unfinished `SENDING` jobs on the assumption the previous instance has stopped. For a shared database, track which instance claimed each job. See [Polar Meridian](/patterns/polar-meridian.html).
+- **Review partial or uncertain sends before retrying.** The local scenario uses a test mail server and synthetic DSNs. In production, SMTP acceptance records submission. Transactions, brokers and workflows leave that SMTP outcome separate from application state.
+- **Verify and match reports.** Check where the report came from, match it to the send, and handle duplicates and late arrivals. Pass small application DTOs to brokers or workflows and keep Email, Mailer and private-key objects inside the application.
 
 ## Source, resources and cleanup
 

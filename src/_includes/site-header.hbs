@@ -27,14 +27,8 @@
                     <li><a href="{{href}}">{{label}}</a></li>
                   {{/each}}
                 {{else}}
-                  {{#each @root.nav.docsGroups}}
-                    {{#unless (eq label "Maintain")}}
-                      {{#each items}}
-                        {{#if @first}}
-                          <li><a href="{{this.url}}" class="{{activeClass this.url @root.page.url}}">{{../label}}</a></li>
-                        {{/if}}
-                      {{/each}}
-                    {{/unless}}
+                  {{#each (capabilityGroups @root.capabilities)}}
+                    <li><a href="{{directoryHref}}">{{label}}</a></li>
                   {{/each}}
                 {{/if}}
                 {{#each submenu.trailingItems}}

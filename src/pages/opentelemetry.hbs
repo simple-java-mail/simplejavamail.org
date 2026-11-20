@@ -11,8 +11,9 @@ description: "Connect real mail sends to your application's traces and metrics, 
   <section>
     <div class="wide">
       {{> components/pattern-examples topic="telemetry"}}
-      <p>Your request trace can follow an email from admission through connection acquisition, submission, retries and cleanup.
-        The optional OpenTelemetry integration records that work directly; it does not depend on a progress callback arriving or a result observer running.</p>
+      <p>A customer requests a password reset. The API returns quickly, but the email takes a few seconds to submit. Open the request trace and
+        follow the mail send through admission, connection acquisition, submission, retries and cleanup. The optional OpenTelemetry integration
+        records that work even when a progress callback is dropped or a result observer is absent.</p>
       <p>Use <a href="/analyzing-send-results.html">receipts and result observers</a> for individual submission decisions,
         <a href="/analyzing-send-results.html#section-live-progress">progress</a> for a best-effort current state, and telemetry for traces and aggregated measurements.
         None of them proves final mailbox delivery.</p>
@@ -60,11 +61,13 @@ Mailer mailer = mail.mailerBuilder()
 
 mailer.async().sendMail(email);</code></pre></div></section>
   <section><div class="wide">
-    <p>The adapter retains your exact OpenTelemetry instance in an immutable handle that is safe to reuse. Wrapping it starts no telemetry work
-      and does not install a global instance. Configure sending preferences through the Mailer builder or properties.
-      <code>withIntegration(...)</code> selects the handle without changing activation; choose <code>withEnabled(true)</code> to enable it.
-      <code>mailerBuilder.getTelemetryConfig().getIntegration()</code> returns the supplied handle. Each Mailer resolves its own configuration.
-      Progress and result observers remain independently configurable.</p>
+    <ul>
+      <li>Wrap your configured OpenTelemetry instance once and reuse the immutable handle. Wrapping starts no work and leaves global registration
+        with your application.</li>
+      <li><code>withIntegration(...)</code> picks the instance. <code>withEnabled(true)</code> turns instrumentation on for this Mailer.</li>
+      <li><code>mailerBuilder.getTelemetryConfig().getIntegration()</code> shows the supplied handle. Each Mailer makes its own choice, and you
+        can configure progress and result observers separately.</li>
+    </ul>
     <p>For property-driven applications, configure this once in the factory's captured sources:</p>
     <pre><code class="language-properties">simplejavamail.telemetry.enabled=true
 simplejavamail.telemetry.smtp.endpointattributes=false</code></pre>
@@ -94,11 +97,11 @@ Mailer quiet = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587)
   <a href="#section-traces" id="section-traces" class="section-link h2">&sect;</a>
   <h2>Read a send trace</h2>
   <section><div class="wide">
-    <p>Each reached email produces one <code>mail.send</code> INTERNAL span, parented to the context at the initiating call.
-      Async work and resumed retries keep that parent even when they run on another thread. Each actual provider invocation creates a
-      <code>mail.submit</code> CLIENT child. Its duration includes provider processing, not just network time.
-      The logical span starts at attempt entry, including per-send handler-factory work and a factory failure; total diagnostics and live elapsed
-      progress use that same origin. Result-observer delivery stays outside the measured send.</p>
+    <p>Open the password-reset request's <code>mail.send</code> INTERNAL span to see the whole send. Each reached email has one, with the
+      calling context as its parent even across async work and resumed retries. Follow its <code>mail.submit</code> CLIENT children to see each
+      real provider invocation. Those children measure provider processing time as well as network time.</p>
+    <p>The logical span, total diagnostics and live elapsed progress start at attempt entry. They include the per-send handler factory,
+      even when it fails. Result-observer delivery happens outside that measurement.</p>
     <p>A temporary refusal followed by a successful retry can look like this. Durations and formatting are illustrative:</p>
     <pre><code class="language-text">application request
   mail.send        2.4 s   outcome=success  submission.status=accepted
@@ -107,9 +110,10 @@ Mailer quiet = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587)
     mail.submit    0.1 s   ERROR            submission.status=rejected   attempt=1
     [retry wait]
     mail.submit    0.2 s                    submission.status=accepted   attempt=2</code></pre>
-    <p>The first child failed; the recovered logical send did not. A connection failover before provider invocation creates no submission child for the failed connection.
-      <a href="/mail-send-retries.html">Retry safety</a> and <a href="/smtp-connection-failover.html">connection failover</a> still decide whether any further work is allowed.</p>
-    <p>SMTP acceptance and successful local completion can differ:</p>
+    <p>In this trace, the first provider invocation fails and the retry completes the send. If the Mailer switches from a failed connection
+      before invoking the provider, expect no submission child for that connection. See <a href="/mail-send-retries.html">retry safety</a>
+      and <a href="/smtp-connection-failover.html">connection failover</a> for when the Mailer can continue.</p>
+    <p>Suppose the relay accepts the reset message and connection cleanup then fails. Look at the submission and logical spans separately.</p>
     <pre><code class="language-text">mail.send          ERROR  outcome=failure  submission.status=accepted
   failure.phase=cleanup
   phase.submission.duration=0.14
@@ -134,7 +138,9 @@ Mailer quiet = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587)
   <a href="#section-metrics" id="section-metrics" class="section-link h2">&sect;</a>
   <h2>Use the metrics</h2>
   <section><div class="wide">
-    <p>All instruments use the <code>org.simplejavamail.mail</code> instrumentation scope. Metrics are recorded even when the SDK does not sample traces.</p>
+    <p>Count completed sends to see how many password-reset emails finished. Watch completed submissions separately when you need to spot
+      extra provider invocations from retries. All instruments use the <code>org.simplejavamail.mail</code> scope. Metrics are recorded even
+      when your SDK samples out the traces.</p>
     <div class="doc-table-wrap" tabindex="0" aria-label="Mail telemetry instruments"><table>
       <thead><tr><th>Instrument</th><th>Type / unit</th><th>Meaning</th></tr></thead>
       <tbody>
@@ -154,10 +160,12 @@ Mailer quiet = mail.mailerBuilder().withSMTPServer("relay-a.example.org", 587)
       and extends through five minutes for connection setup and rate/retry waits. This distinguishes short submissions without putting every
       positive duration below five seconds into the same generic SDK bucket. Longer durations remain recorded in the overflow bucket;
       these boundaries are not timeouts or rounding rules.</p>
-    <p>The boundaries are advice, not an imposed SDK configuration. Your application's
-      <a href="https://opentelemetry.io/docs/languages/java/sdk/#views">SDK Views</a> can replace them or choose a different aggregation.
-      Your SDK also controls collection and export intervals. A longer interval delays visibility, not timing precision;
-      short sends still contribute their completion counts and durations even if they begin and end between exports.</p>
+    <ul>
+      <li>Adjust the suggested buckets or choose another aggregation with your application's
+        <a href="https://opentelemetry.io/docs/languages/java/sdk/#views">SDK Views</a>.</li>
+      <li>Adjust the collection and export intervals to choose how quickly you see new data. Short sends count even if they begin and end
+        between exports, and the interval leaves their measured durations intact.</li>
+    </ul>
     <p>Bounded metric labels describe outcomes, submission status, failure category and, for phase measurements, the phase name.
       Observation IDs, trace IDs, hosts, ports and mailbox identities never become metric labels.</p>
     <p>Your SDK and monitoring backend may also offer exemplars: links from individual metric samples to the send or submission trace.
@@ -173,7 +181,8 @@ simplejavamail.mail.send.active             0</code></pre>
   <a href="#section-privacy" id="section-privacy" class="section-link h2">&sect;</a>
   <h2>Choose endpoint visibility</h2>
   <section><div class="wide">
-    <p>SMTP host and port are excluded by default. Allow them when your trace backend should identify the selected relay:</p>
+    <p>If you are tracing a mail incident across several relays, enable SMTP host and port to see which relay handled the submission.
+      Those values are off by default.</p>
     <pre><code class="language-java">mailerBuilder
     .withTelemetryConfig(MailSendTelemetryConfig.builder()
         .withEnabled(true)
@@ -244,8 +253,11 @@ class MailTelemetryConfiguration {
   <a href="#section-boundaries" id="section-boundaries" class="section-link h2">&sect;</a>
   <h2>Ownership and reporting limits</h2>
   <section><div class="wide">
-    <p>The initiating Mailer owns the integration across failover and retries. Each lazy batch email gets its own observation only when reached;
-      later emails do not become children of earlier completed emails. Open-connection sends retain their per-email boundaries.</p>
+    <p>To decide which instrumentation setting to inspect, start with the Mailer that received the original send call.</p>
+    <ul>
+      <li>That Mailer owns the integration through retries and failover.</li>
+      <li>Each lazy batch email gets its own observation when reached. Open-connection sends also keep per-email measurements.</li>
+    </ul>
     <p>A CustomMailer creates an INTERNAL <code>mail.custom_submit</code> child for its opaque callback, with no invented SMTP endpoint or acceptance facts.
       Logging-only sends record actual preparation and a <code>logged_only</code> outcome, without a submission child.
       Standalone validation, rehearsal, probing, connection tests and shutdown do not create mail-send spans.</p>

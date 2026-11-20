@@ -1,0 +1,11 @@
+<script id="legacy-documentation-links" type="application/json">{{{json config}}}</script>
+<script type="module" src="/scripts/legacy-documentation-links.js"></script>
+{{#if config.links}}
+<noscript>
+  <section class="shell legacy-link-fallback" data-pagefind-ignore>
+    <h2>Documentation sections have moved</h2>
+    <p>Follow the link to the guide for your topic.</p>
+    <ul>{{#each config.links}}<li id="{{id}}"><a href="{{href}}">{{label}}</a></li>{{/each}}</ul>
+  </section>
+</noscript>
+{{/if}}

@@ -1,0 +1,30 @@
+{{#each (capabilityGroups @root.capabilities)}}
+<section class="capability-family" id="{{id}}" aria-labelledby="{{id}}-title">
+  <header>
+    <h2 id="{{id}}-title">{{label}}</h2>
+    <p>{{summary}}</p>
+    <a class="capability-guide" href="{{guide}}" aria-label="Full guide: {{label}}">Full guide <span aria-hidden="true">→</span></a>
+  </header>
+  <div class="capability-family-content">
+    {{#each sections}}
+      {{#if label}}<h3>{{label}}</h3>{{/if}}
+      <ul class="capability-features">
+        {{#each features}}
+          <li>
+            <a href="{{href}}">{{label}}</a>
+            <span class="capability-description">{{summary}}</span>
+            {{#each modules}}<a class="module-badge" href="{{href}}">{{label}}</a>{{/each}}
+          </li>
+        {{/each}}
+      </ul>
+    {{/each}}
+    {{#if related}}<p class="capability-related">Related: {{#each related}}<a href="{{href}}">{{label}}</a>{{#unless @last}} · {{/unless}}{{/each}}</p>{{/if}}
+    {{#if demonstrations}}
+      <nav class="capability-demonstrations" aria-label="{{label}} examples">
+        <span>See it working</span>
+        {{#each demonstrations}}<a href="{{href}}">{{label}} <span aria-hidden="true">→</span></a>{{/each}}
+      </nav>
+    {{/if}}
+  </div>
+</section>
+{{/each}}

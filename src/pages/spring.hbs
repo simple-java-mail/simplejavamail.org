@@ -10,9 +10,6 @@ breadcrumbParent: "/configuration.html"
 description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x, or with plain Spring. Your application supplies the Spring and SLF4J versions."
 ---
   <section class="toc">
-    <p class="wide">The shared Environment loader also supports <a href="/smtp-connection-failover.html#section-named">named failover Mailers</a>,
-      their policies and <code>simplejavamail.locked.*</code> counterparts. Use the same property names in properties files or nested YAML.
-      Each named definition keeps its own sources and settings; it does not inherit the default Mailer's ordinary properties.</p>
     <ul>
       <li><a href="#section-spring-paths">Choose an integration path</a></li>
       <li><a href="#section-spring-versions">Match the application's Spring Boot line</a></li>
@@ -23,10 +20,10 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
       <li><a href="#section-spring-import-limits">Configure received-mail import limits</a></li>
       <li><a href="#section-spring-smime-cache">Choose S/MIME key reuse capacity</a></li>
       <li><a href="#section-spring-recipient-rejection">Choose how recipient rejections are handled</a></li>
-      <li><a href="#section-spring-profiles">Configure profiles and dynamic properties</a></li>
       <li><a href="#section-spring-locked-configuration">Keep selected settings fixed</a></li>
+      <li><a href="#section-spring-profiles">Configure profiles and dynamic properties</a></li>
       <li><a href="#section-spring-telemetry">Enable mail telemetry</a></li>
-    </ul>
+</ul>
   </section>
 
   <a href="#section-spring-paths" id="section-spring-paths" class="section-link h2">&sect;</a>
@@ -35,7 +32,8 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
   <section>
     <div class="wide">
       <p>
-		Spring can supply the same Simple Java Mail settings, so each profile can use its own SMTP server, credentials, transport strategy, and defaults.
+        The same checkout service can send test receipts to a local SMTP inbox and use an authenticated relay in production.
+        Put the SMTP server, credentials, transport strategy, and defaults in Spring configuration, then inject the same Mailer in both profiles.
       </p>
       <p>
 		Spring integration lives in <code class="inline language-text">spring-module</code>. The Spring Boot starter adds that module. It declares Boot,
@@ -81,26 +79,19 @@ description: "Configure and inject Simple Java Mail with Spring Boot 2.7 or 3.x,
     </div>
 
     <div class="view">
-      <p>
-        All three routes load the conventional
-        <code class="inline language-text">simplejavamail.properties</code> resource as a low-priority source, then resolve all matching values through
-        Spring's <code class="inline language-java">Environment</code>. Spring remains responsible for profiles, placeholders, environment variables,
-        system properties, and their precedence. Simple Java Mail does not read the raw process values again afterwards.
-      </p>
-      <p>In the unreleased 10.0.0 line, the advanced <a href="/understanding-configuration.html#connection-conflicts">connection conflict policy</a> checks the
-        resulting connection declarations, including later Java customization. It does not reject an environment value merely because Spring
-        chose it over a file value for the same property. Different explicit declarations for the same connection setting fail by default;
-        equivalent parsed values are accepted. See <a href="/understanding-configuration.html#configuration-resolution-timing">when choices take effect</a>
-        for the later combination of captured Spring values, Java choices and Email templates.</p>
-      <p>
-        Separate Spring application contexts keep separate snapshots and factories. Building or closing a Mailer in one context does not change the
-        configuration used by another context in the same JVM.
-      </p>
-      <p>
-        The context also starts when no SMTP settings are present. In that case the fallback host is <code class="inline language-text">localhost</code>;
-        sending still requires an SMTP server there. Set <code class="inline language-properties">simplejavamail.smtp.host</code> before sending anywhere
-        without a local development SMTP service.
-      </p>
+      <ul>
+        <li><strong>Which profile wins?</strong> Spring resolves profiles, placeholders, environment variables, and system properties using its own
+          precedence. All three paths load <code class="inline language-text">simplejavamail.properties</code> as a low-priority source. The factory
+          captures the resolved values from Spring's <code class="inline language-java">Environment</code> without rereading the process environment.</li>
+        <li><strong>What if Java also sets the relay?</strong> The <a href="/understanding-configuration.html#connection-conflicts">connection conflict policy</a>
+          checks explicit connection declarations after Spring has settled on a value for each property. Two distinct values for the same connection
+          setting fail by default. Equivalent parsed values are fine. See <a href="/understanding-configuration.html#configuration-resolution-timing">when choices take effect</a>
+          for how captured values, Java choices, and Email templates fit together.</li>
+        <li><strong>What if a test starts another context?</strong> Each context has its own snapshot and factory. Building or closing a Mailer in one
+          context leaves the other context's settings alone.</li>
+        <li><strong>What if you omit the relay?</strong> Spring still starts. Sending then uses <code class="inline language-text">localhost</code> by default,
+          so set <code class="inline language-properties">simplejavamail.smtp.host</code> wherever you send without a local SMTP server.</li>
+      </ul>
     </div>
   </section>
 
@@ -196,7 +187,8 @@ public class YourEmailService {
 
   <section>
     <div class="wide full-width-example">
-      Replace the default <code class="inline language-java">Mailer</code> with one built from a fresh builder:
+      <p>Say your notification worker needs a shorter idle timeout for its async threads and a specific port for its SOCKS bridge.
+        Declare a <code class="inline language-java">Mailer</code> bean and build it from the injected factory so it still uses your Spring settings.</p>
       <pre><code class="small">@Configuration
 public class MailConfiguration {
 
@@ -214,21 +206,22 @@ public class MailConfiguration {
     }
 }
 </code></pre>
-      <p>Java connection choices must agree with explicit imported settings by default. If this bean deliberately replaces deployment setup,
-        select <code>withConnectionConflictPolicy(ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES)</code>. Unspecified members still retain
-        applicable imported values. The equivalent property is available through Spring's normal sources:</p>
+      <p>If Spring also declares the bridge port, the two values must agree by default. When you mean for the bean to override an explicit deployment
+        value, use <code>withConnectionConflictPolicy(ConnectionConflictPolicy.ALLOW_EXPLICIT_OVERRIDES)</code> or the property below.
+        Settings the bean leaves alone still come from the applicable imported values.</p>
       <pre><code class="language-yaml small">simplejavamail:
   connection:
     conflictpolicy: ALLOW_EXPLICIT_OVERRIDES</code></pre>
       <p>Use <code>simplejavamail.locked.connection.conflictpolicy=REJECT_CONFLICTS</code> when the deployment requires strict handling.
         Existing value locks and mandatory transport rules remain binding in both modes.</p>
-      <p>
-        Boot backs off independently for <code class="inline language-java">SimpleJavaMailConfig</code>, <code class="inline language-java">SimpleJavaMail</code>,
-        and <code class="inline language-java">Mailer</code>. A replacement config feeds the two remaining defaults; a replacement factory feeds the default
-        Mailer; and a replacement Mailer leaves the injectable config and factory available. Spring closes the Mailer it creates. Your replacement Mailer
-        follows the destroy method declared or inferred by its own bean definition. Use <code class="inline language-java">@Bean(destroyMethod = "")</code>
-        only when the application deliberately owns shutdown elsewhere.
-      </p>
+      <p>Boot supplies each of the three beans independently. Choose the bean to replace based on what you need to change.</p>
+      <ul>
+        <li><code class="inline language-java">SimpleJavaMailConfig</code> supplies settings to the default factory and its Mailer.</li>
+        <li><code class="inline language-java">SimpleJavaMail</code> replaces the factory the default Mailer uses.</li>
+        <li><code class="inline language-java">Mailer</code> replaces only the sending bean. You can still inject the default config and factory.</li>
+      </ul>
+      <p>Spring closes the default Mailer. For your own Mailer bean, Spring uses the declared or inferred destroy method. Set
+        <code class="inline language-java">@Bean(destroyMethod = "")</code> only if you close the Mailer elsewhere.</p>
       <p>
         To disable all three defaults, use Spring Boot's standard exclusion:
       </p>
@@ -287,10 +280,8 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <h2>Configure sending limits</h2>
   <section>
     <div class="view">
-      <p>Put your deployment's message and recipient rates in the same Spring configuration as its SMTP server.
-        Plain Spring and the Boot starter both use the shared loader; the metadata model supplies IDE hints, not a separate limiter.</p>
-      <p>These example values are not defaults. Limits are disabled unless configured, and both rules apply when present.
-        <code>allowbursts: false</code> spreads starts out while retaining the rolling-window ceiling.</p>
+      <p>If your relay lets one account send 30 messages and address 100 recipients per minute, put both limits next to its SMTP settings.
+        Once configured, both caps apply. <code>allowbursts: false</code> also spaces out send starts within the rolling window.</p>
       <p>Mailers built from the injected <code>SimpleJavaMail</code> factory can share a named group's allowance when their rules agree.
         Constructing another factory, starting another application instance, or restarting this one starts independent history.
         See <a href="sending-and-execution.html#section-sending-limits">sending limits</a> for accounting, resets, clustering, and shutdown behavior.</p>
@@ -307,7 +298,8 @@ OAuth2AccessTokenProvider smtpAccessTokens(
         limit: 100
         period: PT1M
       allowbursts: false</code></pre>
-      <p>The equivalent property names begin with <code>simplejavamail.smtp.ratelimit.</code>.
+      <p>Limits are off until you configure them. Plain Spring and the Boot starter both read <code>simplejavamail.smtp.ratelimit.</code> settings,
+        and Spring metadata provides IDE hints.
         Use the factory's <code>getConfig().getDiagnostics()</code> to trace loaded values and sources;
         <code>mailer.getOperationalConfig()</code> includes later Java builder choices.</p>
     </div>
@@ -317,14 +309,16 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <h2>Configure received-mail import limits</h2>
   <section>
     <div class="view">
-      <p>Plain Spring and the Boot starter capture import limits through the same Environment loader as other factory settings.
-        These example values are application choices. An omitted choice inherits the captured factory value; the library fallback is unlimited.
-        An explicit zero selects unlimited, subject to any configured lock.</p>
-      <p>Imports from the injected <code>SimpleJavaMail</code> factory use these defaults. One import owns its allowance across selected nested messages;
-        another import starts independently. You can supply an <code>ImportLimitsConfig</code> group on a particular conversion, with omitted members
-        inheriting the captured factory choices. See <a href="features.html#conversion-import-limits">the Java API and result handling</a>.</p>
-      <p>The equivalent fixed-value namespace is <code>simplejavamail.locked.conversion.import.</code>. Equal explicit choices are permitted;
-        conflicting values, including an unlimited reset, fail before the import consumes input. Spring metadata supplies IDE hints for both forms.</p>
+      <p>A support inbox may receive forwarded mail inside a forwarded message. Set import limits to cap how much data each conversion can read
+        and how deep it can go. The allowance covers the selected nested messages in that import. The next import starts with a fresh allowance.</p>
+      <ul>
+        <li>Plain Spring and the Boot starter both capture these defaults for the injected <code>SimpleJavaMail</code> factory. Without a configured value,
+          the library falls back to unlimited.</li>
+        <li>Give an individual conversion an <code>ImportLimitsConfig</code> to change its limits. Omitted fields inherit factory settings and zero explicitly
+          requests unlimited. See <a href="/email-conversion.html#conversion-import-limits">the Java API and result handling</a>.</li>
+        <li>To enforce a limit, use <code>simplejavamail.locked.conversion.import.</code>. An explicit match is fine. A conflicting value, including an unlimited
+          reset, fails before the import reads any input. Spring metadata supplies IDE hints for both namespaces.</li>
+      </ul>
     </div>
     <div class="side">
       <pre><code class="language-yaml small">simplejavamail:
@@ -343,9 +337,13 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <h2>Choose S/MIME key reuse capacity</h2>
   <section>
     <div class="view">
-      <p>Configure how many loaded S/MIME key configurations the injected <code>SimpleJavaMail</code> factory may keep for signing and
-        decryption. Its Mailers and converters share that reuse. The default <code>-1</code> is unlimited; <code>0</code> keeps no completed
-        entries, and a positive integer selects least-recently-used entry capacity.</p>
+      <p>If your app signs mail with a different S/MIME key for each customer, set how many loaded key configurations it can keep in memory.
+        Mailers and converters from the injected factory share that cache.</p>
+      <ul>
+        <li><code>-1</code> (the default) keeps an unlimited number of entries.</li>
+        <li><code>0</code> keeps no completed entries.</li>
+        <li>A positive integer caps the number of entries and evicts the least recently used when the cache fills.</li>
+      </ul>
       <p>Use <code>simplejavamail.locked.smime.cache.capacity</code> when the captured value must remain fixed. This setting belongs to the
         factory root; named Mailer definitions cannot override it. Separately configured factories have independent reuse.</p>
       <p>Changing an Environment value does not reconfigure existing objects. Create a replacement configured factory and its Mailers and
@@ -357,8 +355,7 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   smime:
     cache:
       capacity: 10000</code></pre>
-      <p>This example chooses 10,000 configurations, not bytes or employees. Key reuse has no time-based expiry. Choosing capacity alone
-        does not enable signing or decryption.</p>
+      <p>This example caches up to 10,000 key configurations. Entries have no time-based expiry. Configure signing and decryption separately.</p>
     </div>
   </section>
 
@@ -366,9 +363,10 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <h2>Choose how recipient rejections are handled</h2>
   <section>
     <div class="view">
-      <p>Plain Spring and the Boot starter load the same Boolean Email default. This example permits sending to accepted recipients when another
-        recipient is rejected. Individual emails may choose false with <code>SmtpDeliveryOptions.Builder.withSendingToAcceptedRecipients(false)</code>; clearing leaves the default
-        available again. Partial acceptance still fails the operation with its receipt.</p>
+      <p>If an ops alert goes to three people and one address is rejected, you may still want the other two to get it. Set this default in plain Spring or
+        Spring Boot to send to the accepted recipients. The operation still reports partial acceptance as a failure and includes the receipt.</p>
+      <p>To withhold the message from everyone when the server rejects any recipient, set
+        <code>SmtpDeliveryOptions.Builder.withSendingToAcceptedRecipients(false)</code>. Clearing the per-message choice restores the default.</p>
       <p>To keep the choice fixed within the injected factory, move the property under <code>locked.defaults</code> instead.
         For example, <code>simplejavamail.locked.defaults.sendtoacceptedrecipients=false</code> requires stopping on known recipient rejection.
         Equal explicit choices are allowed; conflicting ones fail. See the
@@ -383,17 +381,24 @@ OAuth2AccessTokenProvider smtpAccessTokens(
     </div>
   </section>
 
+  <section>
+    <p class="wide">The shared Environment loader also supports <a href="/smtp-connection-failover.html#section-named">named failover Mailers</a>,
+      their policies and <code>simplejavamail.locked.*</code> counterparts. Use the same property names in properties files or nested YAML.
+      Each named definition keeps its own sources and settings; it does not inherit the default Mailer's ordinary properties.</p>
+  </section>
+
   <a href="#section-spring-locked-configuration" id="section-spring-locked-configuration" class="section-link h2">&sect;</a>
   <h2>Keep selected settings fixed</h2>
   <section>
     <div class="view">
-      <p>A central configuration can supply <a href="configuration.html#section-locked-configuration">locked settings</a> alongside ordinary defaults.
-        All Mailers built from the injected factory inherit them. With the deliberate override policy, this example permits Java customization
-        of the ordinary port setting, but not a different relay or a weaker transport strategy. The archive BCC remains in the actual delivery envelope.</p>
+      <p>Suppose every invoice must go through your company relay over STARTTLS and reach the archive mailbox, even when a team supplies its own Mailer.
+        Put the relay, transport strategy, and archive BCC in <a href="configuration.html#section-locked-configuration">locked settings</a>.
+        Any Mailer built from the injected factory keeps them. The BCC applies to the actual delivery envelope.</p>
+      <p>Keep the port in ordinary settings if teams may need to change it. An explicit Java override still needs the connection conflict policy shown above.</p>
       <p>The shared loader reads both namespaces through Spring's <code>Environment</code>, including profiles, aliases and placeholders.
         Diagnostics name the underlying source that declared the property. IDE hints reuse the ordinary property types; there are no wrapped
         <code>value</code>/<code>locked</code> objects and no second runtime binder.</p>
-      <p>Adopting this factory is the boundary. Creating another Mailer from it retains the locks; deliberately creating an independent factory does not.</p>
+      <p>Build your Mailers from the injected factory to pick up these locks. An independent factory uses its own configuration.</p>
     </div>
     <div class="side">
 <pre><code class="language-yaml small">simplejavamail:
@@ -415,12 +420,8 @@ OAuth2AccessTokenProvider smtpAccessTokens(
   <section>
 
     <div class="wide">
-      <p>The <a href="features.html#section-international-mail">legacy SMTP content opt-in</a> is also a typed Boolean Spring setting.
-        Leave it unset or false unless you have verified the server and onward delivery route. Put it in the relevant deployment profile;
-        it does not change TLS requirements or prove downstream delivery:</p>
-<pre><code class="language-properties small"># application-verified-legacy-relay.properties
-simplejavamail.smtp.legacycontentsupport=true</code></pre>
-      Spring profiles can provide different values, for example <code>default</code> and <code>production</code>:
+      <p>Use the default profile to send to your test server and see the SMTP transcript. Activate <code>production</code>
+        to switch to an authenticated relay behind a proxy and turn the transcript off.</p>
       <pre><code class="language-properties small">#application.properties
 simplejavamail.javaxmail.debug=true
 simplejavamail.smtp.host=smtp.host
@@ -439,7 +440,8 @@ simplejavamail.proxy.port=1080
 simplejavamail.proxy.username=&lt;proxy_username&gt;
 simplejavamail.proxy.password=&lt;proxy_password&gt;
 </code></pre>
-      For per-cluster pool settings, Spring properties use the same dynamic namespace as regular property files:
+      <p>If your order emails have a dedicated pool, tune that cluster independently. Use a readable name and supply its UUID, or use the UUID directly.
+        Spring uses the same per-cluster property names as a standalone properties file.</p>
       <pre><code class="language-properties small">#application.properties
 simplejavamail.defaults.connectionpool.clusters.orders.clusterkey.uuid=00000000-0000-0000-0000-000000000301
 simplejavamail.defaults.connectionpool.clusters.orders.coresize=0
@@ -452,18 +454,21 @@ simplejavamail.defaults.connectionpool.clusters.orders.loadbalancing.strategy=RA
 simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.maxsize=8
 simplejavamail.defaults.connectionpool.clusters.00000000-0000-0000-0000-000000000302.loadbalancing.strategy=ROUND_ROBIN
 </code></pre>
+      <p>If one deployment has a verified route that requires the
+        <a href="/sending-and-execution.html#section-international-mail">legacy SMTP content opt-in</a>, enable the Boolean only in that profile.
+        Verify the server and onward route first. TLS requirements still apply, and the setting gives no evidence of downstream delivery.</p>
+<pre><code class="language-properties small"># application-verified-legacy-relay.properties
+simplejavamail.smtp.legacycontentsupport=true</code></pre>
 	</div>
   </section>
   <section>
 	<div class="view">
-	  <p>
-		The Spring module includes configuration metadata for every supported <code class="inline language-properties">simplejavamail.*</code> setting,
-		giving compatible IDEs completion and type hints in <code class="inline language-text">application.properties</code> and YAML files. This metadata
-		is editor assistance only: values are still resolved from Spring's <code class="inline language-java">Environment</code> when the application context
-		starts. Dynamic namespaces such as <code class="inline language-properties">extraproperties.*</code> and connection-pool cluster names are recognized,
-		but their application-defined child keys cannot be predicted. A few generated metadata aliases exist where Spring's relaxed binding cannot
-		represent the original name cleanly.
-	  </p>
+      <p>Your IDE can suggest <code class="inline language-properties">simplejavamail.*</code> properties and show their types in
+        <code class="inline language-text">application.properties</code> and YAML. At startup, Spring's <code class="inline language-java">Environment</code>
+        still resolves the actual values.</p>
+      <p>You'll get suggestions for dynamic prefixes such as <code class="inline language-properties">extraproperties.*</code> and connection-pool
+        clusters. You supply the child keys, such as the cluster name. Some properties have generated aliases, like those shown here, for names
+        Spring's relaxed binding cannot represent cleanly.</p>
 	</div>
 
 	<div class="side">

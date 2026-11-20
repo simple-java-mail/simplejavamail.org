@@ -4,6 +4,12 @@ Routes: `/configuration.html` and `/security.html`
 Role: explain where shared mailer settings and security settings belong
 Primary audience: teams preparing production mailers
 
+## Current-documentation copy pass
+
+Approved 2026-11-14: revise Configuration, Security and Converting and inspecting email as current reference material. Consolidate repeated proxy, configuration and protection explanations; group received-mail details by topic; retain examples, public anchors, dependency requirements, stream ownership, timing, errors and protection limits. Put comparisons with previous releases and older serialized forms in the 10.0.0 migration notes, using existing entries where they already cover the change. Keep current fallback behavior in the guides whenever callers still need it.
+
+Implemented locally; see the [copy-pass record](capabilities-implementation-review-followup.md#current-documentation-copy-pass) for preservation checks and verification.
+
 ## Configuration page
 
 ### Reader question
@@ -15,6 +21,8 @@ Primary audience: teams preparing production mailers
 1. **Configuration at a glance:** link cards for the Java SMTP API, properties, Spring, defaults and overrides, and pools and clusters. Keep individual settings in the table of contents.
 2. **Choose a configuration route:** Java builders, properties, Spring, or supplied Jakarta `Session`.
 3. **Build a reusable Mailer:** server, port, credentials, transport strategy, timeouts.
+
+Begin with one complete Mailer and the transport-security decision. Follow it with task links; place alternative connection, proxy, and supplied-Session examples after the first send rather than in the opening example.
 4. **Layer configuration:** common properties, environment overrides, and precedence.
 5. **Set message rules once:** defaults, forced overrides, validation, and default signing or encryption where applicable.
 6. **Configure delivery behavior:** async, connection reuse, simple batch.

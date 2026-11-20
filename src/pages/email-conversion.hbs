@@ -1,0 +1,688 @@
+---
+layout: "layouts/base.hbs"
+permalink: "/email-conversion.html"
+tags: ["publicPage"]
+title: "Converting and inspecting email"
+description: "Convert supplied EML, MIME and Outlook messages; inspect sources and protection, apply import limits, preserve finalized EML and serialize email."
+---
+<p>Once your app has an email, you can read its contents, check where a value came from or send the original file as-is. Your app supplies the message.</p>
+<nav class="guide-contents" aria-label="On this page"><section><h2>Conversion and inspection</h2><ul>
+<li><a href="#section-converting">Common conversions</a></li><li><a href="#section-source-inspection">Sources, originals and Problems</a></li>
+<li><a href="#section-receive-protected-content">Receiving keys and protected content</a></li>
+<li><a href="#received-conversion-details">Received-mail details</a></li><li><a href="#conversion-import-limits">Import limits</a></li><li><a href="#outlook-source-data">Outlook source data</a></li>
+<li><a href="#section-exact-eml">Submit finalized EML</a></li><li><a href="#section-serializing-emails">Serialize an Email</a></li>
+</ul></section></nav>
+<a href="#section-converting" id="section-converting" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Converting between Email, MimeMessage, EML and Outlook .msg{{/components/feature-heading-h2}}
+
+  <section>
+    <div class="wide full-width-example">
+      <p>Say your support app gets a forwarded <code>.eml</code>. Convert it to <code>Email</code> to read the subject, body and attachments.
+        If the next step needs Jakarta Mail, ask for a <code>MimeMessage</code>. Add <code>outlook-module</code> to do the same with Outlook <code>.msg</code> files.</p>
+      <p>Choose a source, set any options, then ask for the result you want. For example, supply receive keys to open
+        <a href="security.html#section-reading-smime">S/MIME</a> or <a href="security.html#section-reading-openpgp">OpenPGP/MIME</a> content.
+        The static <code>EmailConverter</code> methods are also available.</p>
+<pre><code class="language-java small">Path emlPath = Path.of("received.eml");
+Path msgPath = Path.of("received.msg");
+
+// Choose the source first, then the format you need
+byte[] emlBytes = mail.converter().fromEmail(yourEmail).toEmlBytes();
+String emlText = mail.converter().fromEmail(yourEmail).toEml();
+MimeMessage mimeMessage = mail.converter().fromEmail(yourEmail)
+    .withSession(yourSession).toMimeMessage();
+Email email = mail.converter().fromMimeMessage(yourMimeMessage).toEmail();
+
+// Simple Java Mail closes the stream it opens for each Path
+Email parsedEml = mail.converter().fromEml(emlPath).toEmail();
+EmailPopulatingBuilder editableEml = mail.converter().fromEml(emlPath).toEmailBuilder();
+MimeMessage parsedMimeMessage = mail.converter().fromEml(emlPath).toMimeMessage();
+
+Email parsedMsg = mail.converter().fromOutlookMsg(msgPath).toEmail();
+OutlookEmailConversionResult msgWithSourceData =
+    mail.converter().fromOutlookMsg(msgPath).toEmailBuilderWithOutlookData();
+
+</code></pre>
+      <ul>
+        <li><strong>Know when the file is read.</strong> The <code>to...</code> call reads the input. Start with a new source selection for each
+          conversion, including after a failed read. A builder returned by an import uses the factory settings captured for that conversion.</li>
+        <li><strong>Choose how to provide the file.</strong> Pass a <code>Path</code> or <code>File</code> and Simple Java Mail closes the stream it opens.
+          The fluent API leaves streams you supply open. You can also pass a String for in-memory EML.</li>
+        <li><strong>Choose when to read attachments.</strong> <code>withFetchAttachmentData(false)</code> defers ordinary attachment reads.
+          Protection processing and delivery reports may read what they need. See the <a href="#received-conversion-details">received-mail details</a>.</li>
+        <li><strong>Choose how much to change.</strong> Direct MIME/EML routes skip the editable Email stage. When exporting an Email, use
+          <code>withEmailGovernance(...)</code> to apply templates explicitly. To submit the original bytes, see <a href="#section-exact-eml">exact EML submission</a>.</li>
+      </ul>
+    </div>
+  </section>
+
+<a href="#section-source-inspection" id="section-source-inspection" class="section-link h2">&sect;</a>
+    <h2>Inspect received content and processing problems</h2>
+
+  <section>
+    <div class="wide full-width-example">
+      <p>A support ticket arrives with two attachments named <code>invoice.pdf</code>. One opens and the other has a damaged signature.
+        Read the usable parts through the ordinary <code>Email</code> getters. Then use <code>getProblems()</code> to find which part hit trouble and
+        <code>getSourceData()</code> for the input evidence Simple Java Mail captured.</p>
+<pre><code class="language-java">Email email = mail.converter().fromEml(emlBytes).toEmail();
+email.getPlainText();
+email.getAttachments();
+
+EmailSourceData source = email.getSourceData();
+List&lt;EmailSourceHeader&gt; headers = source.getHeaders();
+List&lt;EmailSourceProperty&gt; properties = source.getProperties();
+List&lt;EmailSourcePart&gt; parts = source.getParts();
+List&lt;EmailSourceData&gt; derivedViews = source.getDerivedSources();
+
+for (EmailProblem problem : email.getProblems()) {
+    EmailSourceIdentity origin = problem.getOrigin();
+    List&lt;EmailSourceElement&gt; affectedSources = problem.getSources();
+    // Inspect the observation and its affected source entries.
+}</code></pre>
+      <h3>Find the part that needs attention</h3>
+      <ul>
+        <li><strong>Missing or unreadable values.</strong> An unreadable sender with no raw fallback is absent and an unreadable recipient list is empty.
+          The Problem retains the failure and any source references. A missing or unavailable Subject can be <code>null</code>.
+          A readable empty Subject stays empty, even when another view has a value. Use inspection if that distinction matters.</li>
+        <li><strong>A recovered sender.</strong> If a malformed <code>Sender</code> supplies the fallback for a missing <code>From</code>, the recovered
+          address remains readable and the Problem points to that header. <code>From</code> and <code>Reply-To</code> can share one observation.
+          Successfully parsed and unused Sender headers need no recovery.</li>
+        <li><strong>A problem inside an attachment.</strong> An embedded Outlook message converted to an EML attachment can contribute address Problems to its
+          parent. Those Problems still point to the child's source. A malformed signed S/MIME attachment, or a file that your usable key cannot open, keeps its
+          original attachment and a Problem linked to that occurrence. The parent keeps its own protection facts.</li>
+        <li><strong>A read you need to stop.</strong> Interruption throws <code>CancellationException</code> with the original cause, even if optional
+          S/MIME inspection is unavailable. A socket timeout by itself is separate. An unusable keystore or a direct low-level protection helper failure
+          also fails the operation.</li>
+      </ul>
+
+      <h3>Keep the evidence for the ticket</h3>
+      <p>Source headers preserve spelling, raw values, repeats and available order, including fields excluded from outgoing composition.
+        Visit a part's headers, properties and children for its own evidence. Native Outlook properties remain separate from derived views.
+        Use <code>OutlookEmailConversionResult</code> for the specialized Outlook API.</p>
+<pre><code class="language-java">for (EmailSourcePart part : email.getSourceData().getParts()) {
+    // Inspect part.getHeaders()/getProperties(), then visit part.getChildren().
+    EmailSourceContent captured = part.getContent();
+    if (captured != null) {
+        long retainedBytes = captured.getSize();
+        boolean complete = captured.isFullyCaptured();
+    }
+}</code></pre>
+      <ul>
+        <li><strong>Complete originals.</strong> Import retains complete supplied raw EML or MSG in its consumed format. Use
+          <code>getInspection().getOriginalMessage()</code> for the file and <code>getOriginalAttachment(index)</code> for the matching attachment
+          occurrence. An opened file can expose its usable bytes alongside its protected original. A supplied <code>MimeMessage</code> without captured
+          raw bytes has no original file to return.</li>
+        <li><strong>Captured payloads.</strong> Use <code>openStream()</code> or <code>readAllBytes()</code> to read captured content again. A partial
+          capture gives you the prefix and its retained size. A null content value means no bytes were kept. Inspecting the capture leaves the external
+          resource and the chosen eager or deferred read behavior alone.</li>
+        <li><strong>What may use memory.</strong> Outlook RTF can be kept beside derived HTML, while a Base64 decode or filename recovery can reuse
+          unchanged content. Raw originals and distinct decoded content may take extra memory. Copies can share those captures. Use import limits
+          to bound import work and budget heap separately.</li>
+      </ul>
+      <p>A delivery report can read its status part even with deferred attachment extraction. A failed read keeps the acquired prefix and a Problem.
+        If only closing the stream failed, the complete capture remains. Ambiguous reports can reference several parts and a missing status part can
+        reference its container. <code>problem.getSources()</code> exposes what was captured without a second read. Cancellation still propagates.
+        See <a href="delivery-reports.html#imperfect-notifications">imperfect delivery notifications</a>.</p>
+
+      <h3>Export a file and keep the diagnostics</h3>
+      <p>If the ticket system stores EML, use a result method when importing an Outlook attachment and exporting it in one operation.
+        Save the resulting bytes when available and record any Problems from that conversion.</p>
+<pre><code class="language-java">EmailConversionResult&lt;byte[]&gt; converted = mail.converter()
+    .fromOutlookMsg(msgPath)
+    .toEmlBytesResult();
+
+if (converted.hasValue()) {
+    Files.write(emlPath, converted.getValue());
+}
+List&lt;EmailProblem&gt; newProblems = converted.getProblems();
+List&lt;EmailSourceData&gt; retainedSources = converted.getSources();</code></pre>
+      <ul>
+        <li>Usable output can come with recoverable Problems. When conversion can't produce an artifact, read <code>getFailure()</code>.
+          Failed input reads and unrecognized MSG files cannot produce a successful empty artifact. Direct value methods throw that recognized failure,
+          including static <code>EmailConverter</code> methods. Invalid use and unrelated application failures throw in either form.</li>
+        <li>For a separate review step, import an inspection Email and decide later whether to export. Static MSG stream overloads close their input.
+          Fluent conversion leaves your stream open.</li>
+        <li>Problems belong to the operation that recorded them. Their source links and observed Message-ID survive copies, edits and supported
+          serialization. Outgoing completion keeps history and unchanged associations. A replaced field has caller-supplied content with unknown
+          incoming protection. Later reads and sends leave the original Problems alone.</li>
+        <li>An empty Problems list gives you no proof that every part or signature was inspected. Expected transformations can retain sources without
+          adding a Problem. Historic Problems leave outgoing validation and exact or protected byte requirements up to the send operation.
+          Fresh composition starts with empty source data and Problems, and ordinary export keeps those records out of MIME and logs.</li>
+      </ul>
+    </div>
+  </section>
+
+<h2 id="section-receive-protected-content">Read protected content</h2>
+
+  <section>
+    <div class="wide full-width-example">
+      <p>Suppose you accept signed reports from a partner and want to open a protected attachment. Supply the right receive keys on the conversion.
+        Load <a href="/modules.html#smime-module"><code>smime-module</code></a> for S/MIME and
+        <a href="/modules.html#openpgp-module"><code>openpgp-module</code></a> for OpenPGP/MIME.</p>
+<pre><code class="language-java small">Pkcs12Config myKeyInfo = Pkcs12Config.builder()
+    .pkcs12Store(Path.of("my_smime_keystore.pkcs12"))
+    .storePassword("my_store_password")
+    .keyAlias("my_key_alias")
+    .keyPassword("my_key_password")
+    .build();
+
+OpenPgpReceiveConfig openPgpKeys = OpenPgpReceiveConfig.builder()
+    .addVerificationKeyRing(senderPublicKeyRing)
+    .addDecryptionKeyRing(recipientSecretKeyRing, recipientPassphrase)
+    .build();
+
+// Receive-side security options do not require placeholder null arguments
+Email protectedEmail = mail.converter()
+    .fromEml(emlPath)
+    .withSmimeDecryption(myKeyInfo)
+    .withOpenPgpReceiveConfig(openPgpKeys)
+    .withSession(yourSession)
+    .toEmail();
+
+ProtectionInspection protection = protectedEmail.getInspection().getOpenPgp();
+for (SignatureObservation signature : protection.getSignatures()) {
+    SignatureVerification verification = signature.getStatus();
+    String signingKeyFingerprint = signature.getSigningKeyFingerprint();
+}
+// Check the exact value your application consumes:
+ProtectionCheck decision = documentRequirements.check(
+    protectedEmail.getInspection().getAttachment(documentIndex));
+</code></pre>
+      <ul>
+        <li><strong>Decide on the file you will use.</strong> Check the actual attachment or field against <code>ProtectionRequirements</code>.
+          It checks approved signing keys, full signature coverage and decryption requirements using the recorded evidence without reading content,
+          running cryptography or adding Problems. See the <a href="security.html#section-inspecting-received-protection">received-protection workflow</a>.</li>
+        <li><strong>Keep the findings separate.</strong> Opening encrypted content, verifying its signature and approving the signer are separate decisions.
+          The inspection records whether decryption was unavailable, deferred or failed. The selected value carries the coverage that was established.
+          An unopened encrypted part leaves its inner signature and coverage unestablished.</li>
+      </ul>
+
+      <p>Mailers and converters from one factory share its <a href="security.html#section-smime-key-cache">S/MIME key reuse capacity</a>.
+        Separate factories keep separate key caches. That capacity counts key configurations. <a href="#conversion-import-limits">Import limits</a>
+        apply to each message instead.</p>
+
+      <h3>Check the keys before building</h3>
+      <ul>
+        <li><strong>PKCS12.</strong> Supply the store, alias and both passwords. Use <code>""</code> or an empty <code>char[]</code> for an empty password.
+          Missing choices throw <code>IllegalArgumentException</code> at build time. <code>getPkcs12StoreData()</code> can inspect an incomplete
+          builder and returns the supplied bytes or null. Key and password getters return copies. The S/MIME operation validates the store,
+          passwords and key when it uses them.</li>
+        <li id="openpgp-receive-draft-validation"><strong>OpenPGP receive keys.</strong> <code>getVerificationKeyRings()</code> and
+          <code>getDecryptionKeyRings()</code> return editable copies. Use <code>clearVerificationKeyRings()</code> or <code>clearDecryptionKeyRings()</code>
+          to remove a set. <code>clearPassphraseProvider()</code> restores the passphrases supplied with the decryption keys. Required nulls fail in
+          setters and empty key bytes fail at <code>build()</code>. Inspecting a builder skips the provider and cryptography. Built configurations and
+          inspection results retain their own snapshots.</li>
+        <li><strong>Outgoing OpenPGP choices.</strong> Signing and encryption builders expose their keys and algorithms too.
+          <code>clearSigningKeyId()</code> restores automatic selection. <code>clearRecipientPublicKeyRings()</code> clears keys while keeping the
+          cipher, so supply replacement keys before building. Algorithm reset methods restore the library defaults.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="wide full-width-example">
+      <h2 id="received-conversion-details">Received-mail conversion details</h2>
+
+      <p>A customer opens ticket 1042 to ask about an invoice. Their email has a short note, a logo, the invoice PDF and an earlier email attached.
+        The ticket app can show the note and file names up front, then read the PDF when someone opens it.</p>
+
+      <h3 id="streamed-text-bodies">Read the note and list the files</h3>
+<pre><code class="language-java">Email preview = mail.converter()
+    .fromEml(Path.of("ticket-1042.eml"))
+    .withFetchAttachmentData(false)
+    .toEmail();
+
+String subject = preview.getSubject();
+String note = preview.getPlainText();
+List&lt;AttachmentResource&gt; files = preview.getAttachments();</code></pre>
+      <p>The preview has the note and file metadata. <code>withFetchAttachmentData(false)</code> defers ordinary attachment payload reads.
+        Body parsing, delivery reports and requested protection processing can still read selected content.</p>
+      <details class="doc-disclosure">
+        <summary>Stream ownership and text decoding</summary>
+        <ul>
+          <li><strong>OpenPGP processing.</strong> For mail with a valid, ordinary non-OpenPGP MIME declaration, installing
+            <code>openpgp-module</code> leaves unrelated attachments deferred.</li>
+          <li><strong>Who closes each stream.</strong> Simple Java Mail closes the body, calendar and eager attachment streams it opens, even on failure.
+            Your DataSource and any top-level EML stream you supply remain yours. Recoverable failures appear in <code>Email.getProblems()</code>
+            with available source evidence. Conversion exceptions retain causes and suppressed failures. Cancellation and unrelated errors propagate.</li>
+          <li><strong>How text is decoded.</strong> Already-decoded Strings keep the provider's interpretation. Text streams use the MIME charset and aliases.
+            With no charset, the <code>us-ascii</code> default maps through Jakarta Mail's aliases to ISO-8859-1. Calendar streams honor their declared charset.
+            An unsupported calendar charset can leave a Problem and the readable neighboring parts.</li>
+          <li><strong>What metadata stays available.</strong> Eager and deferred extraction preserve the same Content-Type parameters, including
+            <code>charset</code>. Parse out the base type if you need to test for <code>text/plain</code>.</li>
+        </ul>
+      </details>
+
+      <h3 id="imported-inline-resources">Attachments and inline images</h3>
+      <section aria-label="MIME structure and preview result">
+        <div class="view">
+          <h4>MIME in the ticket email</h4>
+<pre><code class="language-text">multipart/mixed
+├── multipart/alternative
+│   ├── text/plain
+│   └── multipart/related
+│       ├── text/html
+│       └── image/png (logo.png)
+├── application/pdf (invoice.pdf)
+└── message/rfc822 (earlier.eml)</code></pre>
+        </div>
+        <div class="side">
+          <h4>What the preview gets</h4>
+          <ul>
+            <li><strong>Note.</strong> <code>getPlainText()</code> and <code>getHTMLText()</code> return the two versions of the note.</li>
+            <li><strong>Embedded images.</strong> <code>getEmbeddedImages()</code> has <code>logo.png</code>, which the HTML references.</li>
+            <li><strong>Attachments.</strong> <code>getAttachments()</code> has <code>invoice.pdf</code> and <code>earlier.eml</code> in source order.</li>
+          </ul>
+        </div>
+      </section>
+      <p>When the handler needs the invoice, read just that resource. <code>readAllBytes()</code> closes the stream it opens.</p>
+<pre><code class="language-java">AttachmentResource invoice = files.stream()
+    .filter(file -&gt; "invoice.pdf".equals(file.getName()))
+    .findFirst()
+    .orElseThrow();
+
+byte[] invoiceBytes = invoice.readAllBytes();</code></pre>
+      <p>The ticket has one file of that name. If names can repeat in your app, keep the attachment index from the preview.</p>
+      <details class="doc-disclosure">
+        <summary>When a logo also appears as a download</summary>
+        <ul>
+          <li>A referenced image in <code>multipart/related</code> appears once in <code>getEmbeddedImages()</code> when it lacks
+            <code>Content-Disposition</code>. An explicitly attached, referenced image has both an embedded and a downloadable view.</li>
+          <li>Unreferenced inline resources with the same Content-ID remain separate attachments in source order, including any attachments between them.
+            Eager and deferred imports classify them the same way and follow their chosen read timing.</li>
+          <li>A decoded filename such as <code>&lt;draft&gt;.txt</code> or <code>UnknownAttachment</code> keeps its spelling. A missing filename can fall back
+            to its CID. If both filename and Content-Type are absent, the fallback is <code>UnknownAttachment</code> and takes no payload read.</li>
+        </ul>
+      </details>
+
+      <h4 id="resource-representation-boundaries">Match Content-IDs</h4>
+      <p>The ticket's HTML uses <code>src="cid:logo%2F1@example.org"</code>. Its image part has
+        <code>Content-ID: &lt;logo/1@example.org&gt;</code>. Simple Java Mail matches those values during import. Look up the image by its
+        Content-ID without the angle brackets.</p>
+<pre><code class="language-java">Optional&lt;AttachmentResource&gt; logo = preview.getEmbeddedImages().stream()
+    .filter(image -&gt; "logo/1@example.org".equals(image.getContentId()))
+    .findFirst();</code></pre>
+      <details class="doc-disclosure">
+        <summary>Content-ID matching rules and Outlook fallback</summary>
+        <p>MIME/EML, MSG and replies built from readable Emails decode HTML character references once and then percent-decode CID URLs once.
+          The scheme is case-insensitive and the ID is case-sensitive.</p>
+        <ul>
+          <li><code>src="cid:logo&amp;#64;example.org"</code> matches <code>Content-ID: &lt;logo@example.org&gt;</code>.
+            <code>cid:logo@example.org.extra</code> refers to a different ID, and a literal <code>+</code> stays a plus.</li>
+          <li><code>srcset="cid:logo&amp;#64;example.org 1x"</code> identifies that same logo. Each <code>srcset</code> URL is interpreted separately from
+            its descriptor. Commas inside a URL stay part of that URL.</li>
+          <li>MIME/EML import skips valid external comments and folding whitespace around the ID. For example,
+            <code>Content-ID: &lt;logo@example.org&gt; (company logo)</code> matches <code>cid:logo@example.org</code>.</li>
+          <li>Matching leaves original HTML, raw CSS, Content-IDs and image bytes alone. A filename such as <code>a&amp;amp;b.png</code> stays literal.
+            The same <a href="/email-composition.html#automatic-image-character-references">HTML attribute interpretation</a> applies to automatic image lookup.</li>
+        </ul>
+        <p>For MSG, Simple Java Mail checks the explicit ID, short filename and long filename in that order. Empty resources stay out of the image list.
+          Use the converted Email for these shared matching rules. The raw Outlook source view shows the specialist reader's interpretation.</p>
+      </details>
+
+      <h3 id="conversion-body-parts">Body parts and encodings</h3>
+      <p>The earlier email stays in <code>earlier.eml</code>, so the preview shows only the customer's new note. To see the MIME tree behind the
+        preview, start with <code>preview.getSourceData().getParts()</code> and follow each part's <code>getChildren()</code>.</p>
+      <details class="doc-disclosure">
+        <summary>Body selection, transfer encodings and calendar parts</summary>
+        <ul>
+          <li><strong>Attached multipart content.</strong> Conversion keeps an explicitly attached child multipart together with its filename,
+            Content-Type parameters and content.</li>
+          <li><strong>What supplies the body.</strong> Ordinary nested body containers, including inline and filename-only multiparts, contribute text and
+            resources. Repeated text and HTML parts follow the usual combination rules. The effective plain-text, HTML or calendar root supplies the body
+            even if marked as an attachment. Use source inspection for the original MIME nesting.</li>
+          <li id="empty-imported-bodies"><strong>Empty text stays empty.</strong> A readable empty body stays <code>""</code> in <code>getPlainText()</code> or
+            <code>getHTMLText()</code> and in ordinary export. Defaults fill an absent body. Whitespace stays as received. Use inspection when
+            an unavailable body and an absent body would lead to different decisions.</li>
+          <li><strong>Transfer encoding can include comments.</strong> <code>Content-Transfer-Encoding: base64 (encoded for transport)</code> gives you
+            decoded content and <code>ContentTransferEncoding.BASE_64</code>. Conflicting declarations, unsupported encodings and required read failures
+            follow normal handling. Comments leave read timing and exact or protected bytes unchanged.</li>
+          <li><strong>Decode the transport layer before opening protected mail.</strong> Base64 and quoted-printable around OpenPGP/MIME signatures or
+            ciphertext are decoded for processing. The signed MIME entity and retained original EML stay intact. Give ordinary EML or MimeMessage conversion
+            an <a href="security.html#section-reading-openpgp">OpenPGP receive configuration</a>. <code>withSmimeDecryption(...)</code> can also supply
+            keys for independent S/MIME files inside that message. Their contents, originals and results stay with those
+            <a href="security.html#signed-parent-attachments">protected attachments</a>.</li>
+          <li><strong>Use the calendar method from the MIME header first.</strong> Parameter names and recognized values are case-insensitive,
+            including quoted parameters. For example, <code>request</code> becomes <code>CalendarMethod.REQUEST</code> while
+            <code>getCalendarText()</code> preserves the text. Missing or unsupported methods follow normal calendar failure handling.</li>
+        </ul>
+      </details>
+
+      <h3 id="unparseable-imported-addresses">Addresses and headers</h3>
+      <p>If the ticket has <code>Reply-To: broken &lt;address</code>, the preview can still show the sender's note and the address as received.
+        Check the address before using it in an outgoing reply.</p>
+      <details class="doc-disclosure">
+        <summary>Address fallbacks, receipt headers and original evidence</summary>
+        <ul>
+          <li><strong>Malformed addresses.</strong> When MIME/EML address parsing fails, the offending From, To/Cc/Bcc or Reply-To text stays in
+            its <code>Recipient</code> while conversion continues. Outgoing validation checks the retained value. Successful lenient parsing and
+            missing-field fallbacks follow their usual rules.</li>
+          <li><strong>Unusable bounce address.</strong> A MIME, EML or MSG message can still be imported. For
+            <code>Return-Path: (comment only)</code>, <code>getBounceToRecipient()</code> returns null and <code>Email.getHeaders()</code> keeps the original
+            header. Recipients you build yourself follow their normal lenient rules.</li>
+          <li><strong>Parent and attached mail.</strong> Headers, bounce addresses and receipt destinations come from the effective root after protection
+            processing. Import attached mail separately for its own headers. The attachment keeps its filename, type, description, ID and encoding.</li>
+          <li><strong>Receipts and delivery reports.</strong> Case-insensitive <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code>
+            supply ordered destinations and request flags, with usable values in the typed fields and header view. A converted notification exposes an
+            immutable <code>DeliveryStatusReport</code>. Ordinary mail and mail with only an attached report return null for the parent's report.
+            See <a href="/delivery-reports.html">Reading delivery reports</a>.</li>
+          <li><strong>Readable headers and original evidence.</strong> The case-insensitive header view agrees with typed fields where interpretation is
+            available and can retain raw fallbacks. Source data keeps original occurrences and displaced alternatives, including evidence from other
+            layers. Reconstructed output emits typed fields once, creates new MIME structure, keeps appropriate custom fields and drops obsolete delivery
+            and authentication claims. Byte-preserving relay keeps the original representation. See
+            <a href="security.html#section-reading-smime-merging">protected header selection</a>.</li>
+        </ul>
+      </details>
+
+      <h3 id="interpreted-sent-dates">Sent dates</h3>
+      <p>Ticket 1042 has an impossible sent date. Leave it out of the sent-time sort and show the original header in the support details.</p>
+<pre><code class="language-java">String rawDate = preview.getSourceData().getHeaders().stream()
+    .filter(header -&gt; "Date".equalsIgnoreCase(header.getName()))
+    .findFirst()
+    .map(EmailSourceHeader::getRawValue)
+    .orElse(null);
+
+Instant sentAt = preview.getSentDateAsInstant();</code></pre>
+      <ul>
+        <li><strong>Raw Date header.</strong> <code>31 Feb 2026 10:20:30 +0000</code></li>
+        <li><strong>Parsed sent date.</strong> <code>sentAt</code> is <code>null</code>. So is <code>getSentDate()</code>.</li>
+      </ul>
+      <details class="doc-disclosure">
+        <summary>Timezones, Outlook dates and export</summary>
+        <ul>
+          <li><strong>MIME/EML.</strong> A missing or unknown timezone also leaves the parsed date null. Supported unambiguous formats remain usable.</li>
+          <li><strong>Outlook.</strong> Use the actual client-submit time, then a usable Date header. A generic reader date can represent creation time
+            and gives you no sent-date fallback. If both usable sources are missing, both Email sent-date getters return null. Missing source, creation
+            or modification dates also leave the corresponding <code>OutlookMessageData</code> getter null. Returned Date objects are defensive copies.</li>
+          <li><strong>Export.</strong> Ordinary reconstruction supplies a date if none is fixed. Exact EML keeps its original bytes.</li>
+        </ul>
+      </details>
+
+      <h3 id="undecodable-optional-headers">Recover optional metadata</h3>
+      <p>A broken optional header can leave the note readable. Open <a href="#section-source-inspection">source inspection</a> to see what
+        Simple Java Mail captured and check <code>getProblems()</code> for recoverable failures.</p>
+      <details class="doc-disclosure">
+        <summary>Header and attachment recovery</summary>
+        <p>When a header's encoded-word charset is unavailable, conversion keeps the undecoded source text and unfolds legal folding. Known
+          attachment or inline dispositions can survive malformed optional parameters using independent naming metadata or the unnamed fallback.
+          Unknown or competing dispositions give you no ordinary attachment classification. Required content decoding, invalid options and
+          unrelated application failures have their own error paths.</p>
+      </details>
+      <p>To send a reconstructed message, use <code>mailer.rehearse(email)</code> to prepare and validate it first. To relay the original bytes,
+        use <a href="#section-exact-eml">exact EML</a>.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wide full-width-example">
+      <h2 id="conversion-import-limits">Limit a received-mail import</h2>
+      <p>Say your support inbox takes customer EML or MSG files. One upload can be too big, while another can hide a long chain of attached messages.
+        Give each import a byte, part and depth allowance. Nested messages and opened protection views share that allowance.</p>
+<pre><code class="language-java">ImportLimitsConfig limits = ImportLimitsConfig.builder()
+    .withMaximumInputBytes(25L * 1024 * 1024)
+    .withMaximumPartCount(1_000)
+    .withMaximumNestingDepth(30)
+    .build();
+
+Email limited = mail.converter().fromEml(emlPath)
+    .withImportLimitsConfig(limits)
+    .toEmail();</code></pre>
+      <p>Pick limits that fit your application. A missing choice inherits the factory setting, zero allows unlimited input for that choice,
+        and a positive value sets the bound. Negative values are invalid. Reuse the same configuration with <code>toEmailBuilder()</code> if you need
+        an editable result or <code>fromOutlookMsg(...)</code> for an Outlook file.</p>
+
+      <h3 id="check-conversion-import-result">Check whether the import finished</h3>
+      <p>If the importer reaches the part limit before reading a ticket attachment, the subject and body may still be usable. Check for
+        <code>IMPORT_LIMIT_EXCEEDED</code> so the ticket can show a partial preview and hold any work that needs the full message.</p>
+<pre><code class="language-java">boolean hitLimit = limited.getProblems().stream()
+    .anyMatch(problem -&gt; problem.getCode() == EmailProblem.Code.IMPORT_LIMIT_EXCEEDED);
+
+if (hitLimit) {
+    // Application code shows any available text and marks the preview incomplete.
+    showPartialPreview(limited.getSubject(), limited.getPlainText());
+}</code></pre>
+      <p>Read any other Problems before trusting the result. See <a href="#section-source-inspection">source inspection</a> for originals,
+        source links and historical Problems.</p>
+      <details class="doc-disclosure">
+        <summary>How bytes, parts and depth are counted</summary>
+        <ul>
+          <li><strong>Input bytes.</strong> The bound counts the original encoded EML or MSG. String EML counts as UTF-8. Simple Java Mail checks
+            while acquiring the input and may read one extra byte to confirm the limit was exceeded. An oversized input can leave an incomplete
+            prefix and any available source evidence. Incomplete attachment bytes stay out of the normal attachment list.</li>
+          <li><strong>Parts.</strong> The MIME root uses one part and interpreted children use more. An opened protection view uses a node at the same
+            logical depth. Reading an admitted occurrence again for retention uses no additional part. For Outlook, root metadata uses the first node.
+            Represented bodies, retained native bodies such as RTF and attachments are children. When the allowance runs out, later parts are omitted
+            with bounded reporting.</li>
+          <li><strong>Depth.</strong> Root depth is one. An embedded message root adds a level beneath its attachment. A depth stop omits that subtree
+            and leaves eligible siblings available.</li>
+        </ul>
+      </details>
+      <details class="doc-disclosure">
+        <summary>Original content and protection after a limit stop</summary>
+        <p>Any complete raw input already acquired stays available even if traversal stops later. Losing a child part leaves an already read body and
+          the original envelope structure in place. A retained protected attachment keeps its own protection facts.</p>
+        <p>If a protection layer could not open, the available evidence and any permitted already read native fallback remain. Check the selected
+          field's inspection for absence, unavailability, deliberately skipped inspection or unknown evidence. Use established inspection evidence
+          for verification and decryption decisions.</p>
+      </details>
+
+      <h3 id="choose-conversion-import-source">Choose a source that can honor your limits</h3>
+      <ul>
+        <li><strong>Raw EML or Outlook MSG.</strong> Pass the original input to enforce a byte cap, a part count, a nesting depth, or all three.</li>
+        <li><strong>Supplied <code>MimeMessage</code>.</strong> You can cap parts and depth. The original encoded size is unavailable, so a finite
+          byte cap fails before the converter consumes the message. To clear that cap for one import, use <code>withMaximumInputBytes(0)</code>
+          or <code>resetMaximumInputBytes()</code>, subject to locks.</li>
+      </ul>
+      <details class="doc-disclosure">
+        <summary>Supplied messages, direct conversions and CLI input</summary>
+        <ul>
+          <li><strong>Supplied <code>MimeMessage</code>.</strong> <code>getInspection().getOriginalMessage()</code> is null without captured raw input.
+            A missing Date or Message-ID in an unsaved message stays missing when it is imported with limits, even if diagnostic serialization generates it.</li>
+          <li><strong>Direct conversion.</strong> MIME/EML transformations that skip Email import reject explicit import limits. Combined
+            Outlook-to-MIME/EML conversions apply the limits during import.</li>
+          <li><strong>CLI message files.</strong> The CLI uses the request's captured factory. Copying and replying pass through a <code>MimeMessage</code>,
+            so they reject a finite byte cap before reading the file. EML forwarding borrows MIME without the ordinary import defaults. MSG forwarding
+            imports with its supported limits. See <a href="cli.html#message-file-import-limits">CLI message-file import limits</a>.</li>
+        </ul>
+      </details>
+      <details class="doc-disclosure">
+        <summary>Inheriting limits and budgeting memory</summary>
+        <p>Inspect supplied choices before a read with <code>getImportLimitsConfig()</code>. Replacing the group replaces those choices.
+          Use <code>useConfiguredImportLimitsConfig()</code> to restore all captured factory defaults, or <code>useConfiguredMaximumInputBytes()</code>
+          to inherit just the byte setting. Parts and depth have corresponding reset and inheritance methods.
+          See <a href="configuration.html#section-import-limits">property defaults and fixed values</a>.</p>
+        <p>Budget memory and time for the whole operation. Input selection can copy an array or encode a String before import.
+          Native parsers and crypto libraries can allocate separately. Deferred attachments are read later under their own ownership rules.
+          Apply any acceptance limit for <a href="#section-exact-eml">exact EML relay</a> at its input.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <div class="wide full-width-example">
+      <h2 id="outlook-source-data" class="feature-heading">Outlook source data {{> components/module-badges outlook=true}}</h2>
+      <p>When support receives a <code>.msg</code> and needs the raw headers, ask for the Email builder and Outlook data together.
+        Use the Email for ordinary message fields and <code>OutlookMessageData</code> for the native message class and structural Outlook headers.</p>
+<pre><code class="language-java small">OutlookEmailConversionResult result =
+    mail.converter().fromOutlookMsg(msgFile).toEmailBuilderWithOutlookData();
+
+Email email = result.buildEmail();
+OutlookMessageData outlookData = result.getOutlookMessageData();
+
+List&lt;String&gt; receivedHeaders = outlookData.getHeaderValues("Received");
+String messageClass = outlookData.getMessageClass();
+String rawHeaders = outlookData.getRawHeaders();
+</code></pre>
+      <ul>
+        <li id="outlook-receipt-header-names"><strong>Read receipt destinations in source order.</strong> Outlook recognizes
+          <code>Disposition-Notification-To</code> and <code>Return-Receipt-To</code> regardless of name capitalization. Static and fluent imports,
+          builder/data results and nested MSG imports expose the same typed lists. Repeated fields retain their order and duplicates even when they
+          vary in capitalization. Other names keep their original spelling.</li>
+        <li id="outlook-missing-attachment-type"><strong>Give an untyped file a download type.</strong> A readable attachment uses its supplied or
+          filename-inferred type first, then <code>application/octet-stream</code>. A CID image whose type can't be inferred uses the same fallback.
+          The name and content stay as received.</li>
+        <li id="outlook-missing-sender"><strong>Supply a sender before forwarding.</strong> If the MSG lacks a sender address,
+          <code>Email.getFromRecipient()</code> returns null. A sender name and native properties may still be in <code>Email.getSourceData()</code>.
+          The last modifier stays separate. Copies preserve this evidence and the missing address. Set From before sending or opt the imported Email
+          into Mailer defaults.</li>
+        <li><strong>Choose which body to trust.</strong> With <code>email.getInspection().getHTMLText()</code> you can check the origin, derivation and
+          protection of the HTML your app actually uses. Native HTML, HTML extracted from RTF and rendered RTF have distinct derivations.
+          <code>outlookData.getBodyHTML()</code> and <code>getBodyRTF()</code> expose the native views separately. An invalid incoming signature can
+          leave readable content and source-linked observations. See the <a href="security.html#section-inspecting-received-protection">received-protection workflow</a>.</li>
+      </ul>
+      <p>You can import ordinary EML, MIME and Outlook mail without <code>smime-module</code>. Recognizable protected input and available metadata
+        remain inspectable, with unsupported or unestablished facts unavailable or unknown. Inspection can still establish that plain content is unsigned
+        and unencrypted. Add <code>smime-module</code> to request S/MIME decryption.</p>
+    </div>
+  </section>
+
+<a href="#section-exact-eml" id="section-exact-eml" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Submit finalized EML without rebuilding{{/components/feature-heading-h2}}
+  {{> components/pattern-examples topic="exact-content"}}
+
+  <section>
+    <div class="wide full-width-example">
+      <p>Say your billing service signs an invoice and saves it as <code>archive/invoice-2048.eml</code>. A delivery job picks it up later.
+        <code>startingFromExactEml(...)</code> lets that job send the signed message straight from the archive and choose its SMTP envelope.</p>
+
+      <h3>Send the archived invoice</h3>
+      <p>Use a configured <code>Mailer</code> and give the builder at least one SMTP recipient. That address controls delivery even if the
+        visible <code>To</code> or <code>Cc</code> says something else. Add an envelope sender if you want bounces sent to a specific mailbox.</p>
+<pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+Path archiveFile = Path.of("archive", "invoice-2048.eml");
+
+Email invoice = mail.emailBuilder()
+    .startingFromExactEml(archiveFile)
+    .withEnvelopeRecipients("ap@example.net")
+    .withEnvelopeSender("bounces@example.org")
+    .buildEmail();
+
+MailSubmissionReceipt receipt = mailer.sync().sendMail(invoice);</code></pre>
+      <p>Keep the receipt with the job so you can see what the relay accepted. See the <a href="/analyzing-send-results.html#section-get-receipt">submission receipt guide</a>.</p>
+      <p>Pass a <code>Path</code> and Simple Java Mail opens and closes the file for you. A supplied <code>InputStream</code> is read immediately,
+        and your code closes it.</p>
+
+      <h3>Check the send before it leaves</h3>
+      <p>When you try the worker on a new route, run <code>rehearse</code> before <code>sendMail</code> to check the destination and compare the bytes
+        with the archived file. A <a href="/debugging.html#section-email-validation">rehearsal</a> runs without an SMTP connection.</p>
+<pre><code class="language-java">MailRehearsal preview = mailer.rehearse(invoice);
+if (!preview.getEnvelopeRecipients().equals(List.of("ap@example.net"))) {
+    throw new IllegalStateException("Unexpected delivery address");
+}
+if (!Arrays.equals(preview.getEmlBytes(), Files.readAllBytes(archiveFile))) {
+    throw new IllegalStateException("Rehearsal differs from the archived invoice");
+}</code></pre>
+      <ul>
+        <li><strong>Check the file.</strong> Use complete, non-empty EML that Jakarta Mail can parse, with CRLF line endings and a final CRLF.
+          The configured message size limit counts those bytes.</li>
+        <li><strong>Review the headers.</strong> Every byte is preserved, including any <code>Bcc</code>, <code>Resent-Bcc</code> and
+          <code>Content-Length</code> headers. If you need a Message-ID, set it before finalizing the file.</li>
+        <li><strong>Finish the content before it reaches the worker.</strong> Apply templates, content checks, inline images and any outgoing
+          DKIM, S/MIME or OpenPGP/MIME protection before archiving. Exact preparation bypasses the Mailer's ordinary defaults, overrides and
+          content transformations. Mandatory locks still apply, and the Mailer rejects conflicts that would require rewriting the file.</li>
+        <li><strong>Check your transport.</strong> The bundled Angus adapter preserves exact bytes. A replacement adapter must opt in.
+          A <a href="/configuration.html#section-custom-mailer"><code>CustomMailer</code></a> receives the <code>Email</code> and a
+          byte-preserving <code>MimeMessage</code>.</li>
+      </ul>
+
+      <h3>Send the same bytes to a new mailbox</h3>
+      <p>Accounts Payable moved to a new inbox and asks for another copy. Export the bytes from the exact <code>Email</code> and give them a new
+        envelope. If you track delivery failures, you can tie the request to this send with an envelope ID.</p>
+<pre><code class="language-java">byte[] finalizedEml = mail.converter().fromEmail(invoice).toEmlBytes();
+SmtpDeliveryOptions feedback = SmtpDeliveryOptions.builder()
+    .withDeliveryStatusNotification(
+        DeliveryStatusNotification.ReturnOption.HEADERS_ONLY,
+        DeliveryStatusNotification.NotifyOption.FAILURE)
+    .fixingEnvelopeId("invoice-2048-ap-move")
+    .build();
+
+Email redirected = mail.emailBuilder()
+    .startingFromExactEml(finalizedEml)
+    .withEnvelopeRecipients("ap-new@example.net")
+    .withEnvelopeSender("bounces@example.org")
+    .withSmtpDeliveryOptions(feedback)
+    .buildEmail();
+
+MailSubmissionReceipt redirectedReceipt = mailer.sync().sendMail(redirected);
+String submittedEnvelopeId = redirectedReceipt.getEnvelopeId();</code></pre>
+      <ul>
+        <li>For a deliberate repeat to the same mailbox, send the original exact <code>invoice</code> again.</li>
+        <li>When reusing a builder, check <code>getEnvelopeRecipients()</code>, <code>getEnvelopeSender()</code> and <code>getSmtpDeliveryOptions()</code>.
+          Supply new recipients after <code>clearEnvelopeRecipients()</code>. <code>clearEnvelopeSender()</code> restores the provider's normal
+          sender fallback.</li>
+        <li>Save the receipt's envelope ID with the job. If a later report includes that ID, you can match it to this send.
+          See <a href="/delivery-reports.html">reading delivery reports</a> and the envelope options for
+          <a href="/email-composition.html#section-dsn-envelope-id">notifications and envelope IDs</a> or
+          <a href="/security.html#section-requiretls">REQUIRETLS</a>.</li>
+      </ul>
+
+      <h3>Read or edit a separate copy</h3>
+      <p>You can read the original body, headers and attachments through the usual <code>Email</code> getters. The builder records
+        <code>getInspection().getSmime()</code> and <code>getInspection().getOpenPgp()</code> facts with the available modules.
+        Unestablished facts stay <code>UNKNOWN</code>, and the original bytes are ready for relay either way. See the
+        <a href="/security.html#section-reading-smime-verification">S/MIME</a> and <a href="/security.html#section-reading-openpgp-status">OpenPGP</a>
+        guides for the result meanings.</p>
+      <p>Suppose support needs to read an S/MIME-encrypted invoice. With <code>smime-module</code> and the recipient's keys, open a separate
+        view of the same file through <a href="#section-converting">ordinary conversion</a>.</p>
+<pre><code class="language-java">Email readableInvoice = mail.converter()
+    .fromEml(archiveFile)
+    .withSmimeDecryption(recipientKeys)
+    .toEmail();</code></pre>
+      <ul>
+        <li>To edit the message, start with <code>copying(invoice)</code>. An explicit call to
+          <code>mailer.getEmailGovernance().produceEmailApplyingDefaultsAndOverrides(invoice)</code> also creates a composed
+          <code>Email</code> from the parsed view, applying the Mailer's <a href="/configuration.html#section-config-mailer">defaults and overrides</a>.</li>
+        <li>A rebuilt message can invalidate old signatures. Review any carried-over protection and apply fresh signing or encryption as needed.</li>
+        <li>Keep the EML file for relay. A <a href="#section-serializing-emails">serialized Email</a> also needs the classes and optional modules
+          stored in its object graph when restored.</li>
+      </ul>
+
+      <h3>Send the file from the command line</h3>
+      <p>With your relay configured, run this from the archive directory. Relative paths use the calling client's working directory, even
+        when a daemon handles the send. See the <a href="/cli.html">CLI guide</a>.</p>
+<pre><code class="language-text">sjm send --email:startingFromExactEml invoice-2048.eml --email:withEnvelopeRecipients ap@example.net</code></pre>
+      <p>For a runnable Java example with relay setup and receipt output, see the
+        <a href="https://github.com/bbottema/simple-java-mail/blob/develop/modules/simple-java-mail/src/test/java/demo/ExactEmlSendDemoApp.java">exact EML demo</a>.</p>
+    </div>
+  </section>
+
+<a href="#section-serializing-emails" id="section-serializing-emails" class="section-link h2">&sect;</a>
+	{{#> components/feature-heading-h2 core=true}}Serializing Email objects{{/components/feature-heading-h2}}
+
+  <section>
+    <div class="wide full-width-example">
+      <p>Suppose a Java worker saves a composed order email to a queue and sends it after a restart. A supported Java snapshot can hold the Email
+        and the settings it needs when sending. Here's a round trip using the composed message from the
+        <a href="security.html#section-sending-openpgp">OpenPGP example</a>.</p>
+<pre class="wide"><code class="language-java">byte[] snapshot;
+try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+     ObjectOutputStream output = new ObjectOutputStream(bytes)) {
+    output.writeObject(protectedEmail);
+    snapshot = bytes.toByteArray();
+}
+
+Email restored;
+try (ObjectInputStream input = new ObjectInputStream(
+        new ByteArrayInputStream(snapshot))) {
+    restored = (Email) input.readObject();
+}
+
+mailer.sync().sendMail(restored);</code></pre>
+      <h3>Check what your queue stores</h3>
+      <ul>
+        <li><strong>Attachment bytes and MIME metadata.</strong> Serialization reads custom DataSources in full. Keep lazy or remote content available
+          until the write completes. A read failure stops the write. A restored source is repeatable and read-only. Its original class and custom
+          behavior, such as lazy loading, network access, caching or write support, stay with the original source.</li>
+        <li><strong>Forwarded messages and recorded inspection.</strong> Forwarded MIME is stored in RFC 822 form and restored with a neutral Session.
+          Supported snapshots retain complete originals, core inspection facts, unchanged occurrence associations, confidentiality requirements and
+          draft permissions. Restoration uses those recorded facts without verifying the mail or recreating uncaptured evidence.</li>
+        <li><strong>Protection settings and secrets.</strong> S/MIME signing settings retain the PKCS12 data and passwords. OpenPGP retains signing key,
+          hash and cipher choices. Signing carries the secret key ring and passphrase. Encryption-only settings keep the recipient public key rings.
+          Treat the snapshot as sensitive because it can hold the full message, attachments, credentials and private keys.</li>
+        <li><strong>What happens when the worker sends.</strong> A restored composed email applies its protection when sent. A restored
+          <a href="#section-exact-eml">exact protected EML</a> retains its finished bytes. DKIM header exclusions stay detached and immutable.
+          Build a replacement <code>DkimConfig</code> to change them.</li>
+      </ul>
+      <p>Give the worker the classes and optional modules stored in the snapshot's object graph. Before upgrading a queue that stores Email objects,
+        check <a href="migration-notes-10.0.0.html#serialized-email-compatibility">compatibility with older snapshots</a>.</p>
+    </div>
+  </section>

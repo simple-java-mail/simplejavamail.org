@@ -9,10 +9,16 @@
     <main id="main-content" data-pagefind-body>
       {{{content}}}
     </main>
+    {{#if imageLightbox}}
+      {{> components/journal-image-dialog}}
+    {{/if}}
     {{> footer}}
     <script src="/assets/lib/prism.js"></script>
     <script>window.Prism && window.Prism.highlightAll();</script>
     <script type="module" src="/scripts/site.js"></script>
+    {{#if imageLightbox}}
+      <script type="module" src="/scripts/journal-images.js"></script>
+    {{/if}}
     <script type="module" src="/pagefind/pagefind-component-ui.js"></script>
   </body>
 </html>

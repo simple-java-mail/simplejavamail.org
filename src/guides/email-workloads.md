@@ -27,7 +27,7 @@ The [API reference](/sending-and-execution.html) explains the settings. The [cas
 
 <p class="field-guide-goal"><strong>Target:</strong> Send about twenty confirmations a day without making an HTTP request wait for SMTP; acknowledge the request within two seconds.</p>
 
-At this volume, a connection pool may buy you very little. Build [one reusable Mailer](/features.html#section-reusable-mailer) and start with direct sending. If the confirmation must survive a restart, [save a mail job with the business transaction](/case-studies/polar-meridian.html#leonie-places-her-order-and-ravi-gets-to-work) and let a background worker claim it. Moving work to another thread alone does not make it durable.
+At this volume, a connection pool may buy you very little. Build [one reusable Mailer](/configuration.html#section-reusable-mailer) and start with direct sending. If the confirmation must survive a restart, [save a mail job with the business transaction](/case-studies/polar-meridian.html#leonie-places-her-order-and-ravi-gets-to-work) and let a background worker claim it. Moving work to another thread alone does not make it durable.
 
 Once that worker has claimed a job and constructed its `Email`, a blocking send is perfectly reasonable:
 
@@ -200,7 +200,7 @@ Two server addresses are not automatically two eligible destinations:
 
 | What you were given | A reasonable starting point |
 | --- | --- |
-| One managed SMTP hostname | [One reusable Mailer](/features.html#section-reusable-mailer); the service operator manages the servers behind it |
+| One managed SMTP hostname | [One reusable Mailer](/configuration.html#section-reusable-mailer); the service operator manages the servers behind it |
 | Two equivalent, approved relays | [Register both Mailers in one cluster](/sending-and-execution.html#section-clustering) with matching pool settings |
 | EU-only and US-only routes | Separate groups; select the permitted region before submitting |
 | Different customers' servers | Separate configuration and groups; no cross-customer fallback |
@@ -317,7 +317,7 @@ The probe opens a fresh connection; it sends no email and does not warm the pool
 
 <p class="field-guide-goal"><strong>Target:</strong> Detect an oversized invoice before submitting it, using the complete encoded message rather than the PDF's file size.</p>
 
-The customer accepts attachments up to a certain size, but its relay limits the whole email. [MIME encoding](/features.html#section-content-transfer-encoding), headers, other attachments and any signing or encryption all contribute. Measure the prepared message:
+The customer accepts attachments up to a certain size, but its relay limits the whole email. [MIME encoding](/email-composition.html#section-content-transfer-encoding), headers, other attachments and any signing or encryption all contribute. Measure the prepared message:
 
 ```java
 static long preparedBytes(Mailer mailer, Email email) {
@@ -327,7 +327,7 @@ static long preparedBytes(Mailer mailer, Email email) {
 
 *Measure what would be sent, not just what was attached.*
 
-[Rehearsal](/features.html#section-email-validation) applies the Mailer's configuration and prepares the message offline. It contacts no server. Compare the result with your application's [maximum email size](/features.html#section-maximum-emailsize) and the relay's advertised `SIZE` maximum, when known. A [probe](/debugging.html#section-smtp-capabilities) can help during onboarding, but the actual sending connection determines the current server limit.
+[Rehearsal](/debugging.html#section-email-validation) applies the Mailer's configuration and prepares the message offline. It contacts no server. Compare the result with your application's [maximum email size](/debugging.html#section-maximum-emailsize) and the relay's advertised `SIZE` maximum, when known. A [probe](/debugging.html#section-smtp-capabilities) can help during onboarding, but the actual sending connection determines the current server limit.
 
 For the managed Angus transport, an oversized message is rejected before `MAIL FROM` when that connection advertises a usable maximum. [Receipt size facts](/analyzing-send-results.html#section-message-size) distinguish the prepared size from the server limit, so ticket feedback can say which constraint the attachment hit. Missing capability information is unknown, not proof that any size is allowed. Offer a smaller document or an approved download link; repeatedly retrying the same bytes won't shrink them.
 
@@ -335,7 +335,7 @@ For the managed Angus transport, an oversized message is rejected before `MAIL F
 
 <p class="field-guide-goal"><strong>Target:</strong> Identify whether a customer's configured relay can submit to an internationalized mailbox before enabling that workflow.</p>
 
-A support reply to `采购@partner.com` needs [`SMTPUTF8`](/features.html#section-international-mail) because the mailbox's local part contains non-ASCII characters. A subject saying “Résumé” does not necessarily need it: MIME header encoding can represent that text without raw UTF-8 headers.
+A support reply to `采购@partner.com` needs [`SMTPUTF8`](/sending-and-execution.html#section-international-mail) because the mailbox's local part contains non-ASCII characters. A subject saying “Résumé” does not necessarily need it: MIME header encoding can represent that text without raw UTF-8 headers.
 
 Inspect the [effective capabilities](/debugging.html#section-smtp-capabilities) reported by the customer's connection probe:
 
@@ -348,13 +348,13 @@ static Optional<Boolean> advertisesSmtpUtf8(SmtpConnectionReport report) {
 
 *Distinguish an advertised capability, its absence and an incomplete probe.*
 
-An empty `Optional` means the probe didn't establish the capability set; `false` means the inspected set lacks `SMTPUTF8`. [`8BITMIME`](/features.html#section-international-mail) answers a different question about raw eight-bit body content. Simple Java Mail checks the actual message against the sending connection, so onboarding information isn't a permanent guarantee. Hold incompatible messages and explain the requirement to the customer's administrator. Don't enable a [legacy content exception](/configuration.html#section-legacy-smtp-content) for every customer to make one failure disappear.
+An empty `Optional` means the probe didn't establish the capability set; `false` means the inspected set lacks `SMTPUTF8`. [`8BITMIME`](/sending-and-execution.html#section-international-mail) answers a different question about raw eight-bit body content. Simple Java Mail checks the actual message against the sending connection, so onboarding information isn't a permanent guarantee. Hold incompatible messages and explain the requirement to the customer's administrator. Don't enable a [legacy content exception](/configuration.html#section-legacy-smtp-content) for every customer to make one failure disappear.
 
 ### A partner update must stay confidential
 
 <p class="field-guide-goal"><strong>Target:</strong> Send maintenance instructions only to approved partners, protected for their keys, without silently downgrading required transport encryption.</p>
 
-Prepare a separately encrypted message for each partner using [S/MIME](/security.html#section-sending-smime), or use [OpenPGP](/security.html#section-sending-openpgp) where that is the established partner requirement. Resolve approved recipient keys from your application configuration; if a key is unavailable or expired, hold the message rather than sending plaintext. Choosing who owns a key is not a side effect of [email-address validation](/features.html#section-email-validation).
+Prepare a separately encrypted message for each partner using [S/MIME](/security.html#section-sending-smime), or use [OpenPGP](/security.html#section-sending-openpgp) where that is the established partner requirement. Resolve approved recipient keys from your application configuration; if a key is unavailable or expired, hold the message rather than sending plaintext. Choosing who owns a key is not a side effect of [email-address validation](/debugging.html#section-email-validation).
 
 For messages that also require encrypted onward transport, add [`SmtpDeliveryOptions.builder().withTlsRequiredForOnwardDelivery().build()`](/security.html#section-requiretls) through `withSmtpDeliveryOptions(...)` on the email builder. S/MIME protects the content; REQUIRETLS tells cooperating SMTP servers to retain transport encryption. The submission server must support the requirement or the send fails—there is no silent fallback. Neither mechanism proves final delivery.
 
@@ -393,7 +393,7 @@ static ProtectionCheck processPartnerDocument(
 
 The process and hold callbacks belong to your application. Preserve `check.getOutcome()` and its stable reason codes so a known mismatch remains distinct from unavailable evidence. `MIXED` can satisfy the base approved-signature rule when one same signature is verified, fully covers the value and has an approved key. Add `requireAllSignaturesVerified()` deliberately if your workflow also holds any relevant invalid or unresolved signature. Partial or unknown coverage cannot become that full-coverage witness. A native HTML fallback has its own evidence; a protected plain-text body does not approve it.
 
-Retain [the original input](/features.html#section-source-inspection) through `received.getInspection().getOriginalMessage()` when evidence or original-preserving forwarding matters. Its format can be EML or MSG; a missing complete original is null, and a diagnostic prefix is not a complete file. The ordinary attachment exposes selected usable bytes, including successful decryption. Keep this receive decision separate from the [outgoing confidentiality recipe](#a-partner-update-must-stay-confidential) and the [submitted-byte archive](#reproduce-last-month-s-instructions). The [protected-partners application](/patterns/protected-partners.html#check-the-required-document) assembles receive, process/hold and original retention while keeping SMTP uncertainty separate.
+Retain [the original input](/email-conversion.html#section-source-inspection) through `received.getInspection().getOriginalMessage()` when evidence or original-preserving forwarding matters. Its format can be EML or MSG; a missing complete original is null, and a diagnostic prefix is not a complete file. The ordinary attachment exposes selected usable bytes, including successful decryption. Keep this receive decision separate from the [outgoing confidentiality recipe](#a-partner-update-must-stay-confidential) and the [submitted-byte archive](#reproduce-last-month-s-instructions). The [protected-partners application](/patterns/protected-partners.html#check-the-required-document) assembles receive, process/hold and original retention while keeping SMTP uncertainty separate.
 
 A child's original file does not include its parent's encryption envelope. If that file was extracted through parent encryption, [original forwarding still needs outgoing protection or explicit conversion permission](/security.html#received-protection-reuse). An encrypted child body can leave child headers clear; retaining original bytes does not make the whole file public.
 
@@ -401,9 +401,9 @@ A child's original file does not include its parent's encryption envelope. If th
 
 <p class="field-guide-goal"><strong>Target:</strong> Retrieve the maintenance instructions actually submitted last month without recreating them from today's template and configuration.</p>
 
-A business-event ID identifies why you sent something; it doesn't preserve what you sent. Retain [finalized EML alongside the explicit SMTP envelope](/features.html#section-exact-eml) and attempt metadata for streams that need this evidence. Other streams, such as short-lived login codes, can retain metadata without keeping the content.
+A business-event ID identifies why you sent something; it doesn't preserve what you sent. Retain [finalized EML alongside the explicit SMTP envelope](/email-conversion.html#section-exact-eml) and attempt metadata for streams that need this evidence. Other streams, such as short-lived login codes, can retain metadata without keeping the content.
 
-[Polar Meridian's archive](/case-studies/polar-meridian.html#what-happened-to-leonie-s-confirmation-tracing-the-evidence) prepares, signs and encrypts the message, commits a safe outbound representation, then submits those same bytes through [`startingFromExactEml(...)`](/features.html#section-exact-eml). Sender, recipients, [DSN settings](/features.html#section-delivery-status-notification) and [REQUIRETLS](/security.html#section-requiretls) are separate submission metadata: saving just the EML is not enough to preserve that envelope and transport policy.
+[Polar Meridian's archive](/case-studies/polar-meridian.html#what-happened-to-leonie-s-confirmation-tracing-the-evidence) prepares, signs and encrypts the message, commits a safe outbound representation, then submits those same bytes through [`startingFromExactEml(...)`](/email-conversion.html#section-exact-eml). Sender, recipients, [DSN settings](/email-composition.html#section-delivery-status-notification) and [REQUIRETLS](/security.html#section-requiretls) are separate submission metadata: saving just the EML is not enough to preserve that envelope and transport policy.
 
 Exact submission bypasses ordinary composition and keeps the supplied bytes, including any accidental `Bcc` header. Reject an unsafe outbound representation before archiving or sending it; silently rewriting protected bytes defeats the point. Archive failure must stop submission if preserving the evidence was a prerequisite.
 
@@ -489,7 +489,7 @@ If [partial sending](/analyzing-send-results.html#section-partial-send) is enabl
 
 The relay accepted the invoice yesterday. Today the destination reports a full mailbox. These are two observations about different stages, not contradictory results. Keep submission state and later-delivery feedback separately so the application can explain both.
 
-Use a monitored [envelope-sender address](/features.html#section-bouncing-emails) for bounce traffic; `Reply-To` directs human replies and is not a substitute. Request the [DSN notifications](/features.html#section-delivery-status-notification) the workflow needs, then retain the receipt's [`getEnvelopeId()`](/features.html#section-dsn-envelope-id) when available. This attempt identifier helps correlate a returned DSN's `Original-Envelope-Id`; keep the [Message-ID](/features.html#section-custom-id) and business-event ID too. Not every relay supports DSN or supplies all those fields.
+Use a monitored [envelope-sender address](/email-composition.html#section-bouncing-emails) for bounce traffic; `Reply-To` directs human replies and is not a substitute. Request the [DSN notifications](/email-composition.html#section-delivery-status-notification) the workflow needs, then retain the receipt's [`getEnvelopeId()`](/email-composition.html#section-dsn-envelope-id) when available. This attempt identifier helps correlate a returned DSN's `Original-Envelope-Id`; keep the [Message-ID](/email-composition.html#section-custom-id) and business-event ID too. Not every relay supports DSN or supplies all those fields.
 
 Convert the received notification through the ordinary MIME/EML converter, then inspect [`Email.getDeliveryStatusReport()`](/delivery-reports.html). Simple Java Mail extracts recipient actions, status codes and the reported envelope identifier; your inbound processor checks trust, matches the report to an attempt and updates invoice follow-up. A later failure may warrant contacting the customer or correcting the address, not blindly sending the invoice again. [RelayDesk's bounce continuation](/case-studies/relaydesk.html#accepted-by-smtp-then-a-bounce-arrives) connects the two stages.
 
@@ -536,7 +536,7 @@ Scheduling measures local admission-to-worker delay, not time spent in your dura
 
 Clearing 72,000 jobs in an hour needs twenty (additional) submissions per second. If normal traffic already consumes eighty of an approved hundred per second, that uses all the remaining capacity—with no room for retries or slower responses. Either allow more time, reduce other work or arrange more upstream capacity.
 
-Start recovery with expired jobs and permanent failures removed from the sending queue. Old login codes are not useful work. [Pace the remaining attempts](/sending-and-execution.html#section-sending-limits), preserve their business-event identity, and give each new attempt its own [Message-ID](/features.html#section-custom-id). [Known submissions and uncertain results](#smtp-may-have-accepted-the-message) need different treatment; replaying the entire outage window is not a recovery strategy.
+Start recovery with expired jobs and permanent failures removed from the sending queue. Old login codes are not useful work. [Pace the remaining attempts](/sending-and-execution.html#section-sending-limits), preserve their business-event identity, and give each new attempt its own [Message-ID](/email-composition.html#section-custom-id). [Known submissions and uncertain results](#smtp-may-have-accepted-the-message) need different treatment; replaying the entire outage window is not a recovery strategy.
 
 Watch queue age by priority, current urgent-mail latency and attempts per business event. A declining backlog is encouraging, but not if fresh requests are now late or repeated attempts are making the relay busier. [Polar Meridian](/case-studies/polar-meridian.html#noor-monitors-for-performance-degradation) shows the archive and monitoring behind those questions.
 

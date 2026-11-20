@@ -24,10 +24,7 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       </p>
       <p>For a visual map of the pieces producing these results and observer callbacks, see
         <a href="/sending-and-execution.html#section-send-architecture">Inside a mail send</a>.</p>
-      <p>In outgoing send results and connection-probe reports, unavailable scalar facts return <code>null</code>: identifiers, timestamps,
-        durations, endpoint values, counts and boxed Booleans. A known zero or false stays a real value. Required facts remain non-null;
-        optional whole receipts, diagnostics, failures, SMTP responses, capability snapshots and TLS details use <code>Optional</code>.
-        Collections are non-null, with empty meaning no reported entries. This convention does not change the separate received-Email parsing model.</p>
+
       <p>To join actual sends to application traces and aggregated metrics, use the optional
         <a href="/opentelemetry.html">OpenTelemetry integration</a>. It records terminal completion directly,
         independently of progress coalescing or result-observer dispatch.</p>
@@ -36,7 +33,6 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
 
   <section class="toc">
     <ul>
-      <li><a href="#section-observation-options">Choose how to observe sending</a></li>
       <li><a href="#section-get-receipt">Get the receipt, including when a send fails</a></li>
       <li><a href="#section-message-size">Check message size against the server limit</a></li>
       <li><a href="#section-partial-send">Follow one partially successful send</a></li>
@@ -44,6 +40,8 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       <li><a href="#section-retry-decisions">Decide what can be retried</a></li>
       <li><a href="#section-unknown-acceptance">When the final reply never arrives</a></li>
       <li><a href="#section-control-results">Interpret cancellation and timeout results</a></li>
+      <li><a href="#section-sent-id">Read the generated Message-ID</a></li>
+      <li><a href="#section-observation-options">Choose how to observe sending</a></li>
       <li><a href="#section-other-send-paths">Use the same facts in other send paths</a></li>
       <li><a href="#section-async-results" class="indent">Asynchronous sends</a></li>
       <li><a href="#section-observer-results" class="indent">Mail-send observers</a></li>
@@ -51,58 +49,25 @@ description: "Read SMTP submission receipts, follow a partial send recipient by 
       <li><a href="#section-send-timings" class="indent">Where did the time go?</a></li>
       <li><a href="#section-open-connection-results" class="indent">Open connections and simple batches</a></li>
       <li><a href="#section-provider-details">Account for missing provider details</a></li>
-    </ul>
+</ul>
   </section>
-
-  <a href="#section-observation-options" id="section-observation-options" class="section-link h2">&sect;</a>
-  <h2>Choose how to observe sending</h2>
-  <section><div class="wide">
-    <p>Progress, final results and telemetry answer different questions. Use them independently or together:</p>
-    <div class="doc-table-wrap" tabindex="0" aria-label="Compare mail-send observation facilities"><table>
-      <thead><tr><th>Facility</th><th>Question it answers</th><th>What you get</th></tr></thead>
-      <tbody>
-        <tr><td><a href="#section-live-progress">Progress observer</a></td><td>What is happening now?</td>
-          <td>Stages and available upload counts, with finer SMTP detail when supported. Updates can be combined or dropped, so this is a best-effort view, not an audit trail.</td></tr>
-        <tr><td><a href="#section-observer-results">Result observer</a></td><td>What happened, and where did the time go?</td>
-          <td>The final outcome, receipt, failure, portable timings and bounded connection/submission histories.</td></tr>
-        <tr><td><a href="/opentelemetry.html">OpenTelemetry</a></td><td>How is sending behaving across my application?</td>
-          <td>Application-linked traces, per-send timings and aggregate measurements, recorded independently of observer delivery.</td></tr>
-      </tbody>
-    </table></div>
-    <p>The result observer and telemetry reuse the same portable measurement boundaries. Total diagnostics, live elapsed progress and the logical
-      telemetry span include per-send handler-factory work from attempt entry, including a factory failure. Result-observer delivery remains outside
-      the measured send. Detailed progress can identify greeting,
-      TLS, authentication and other SMTP stages, but it does not turn them into separate duration measurements.</p>
-    <p>Intermediate upload-count updates are throttled to one every 250 milliseconds; stage changes and the final count bypass that throttle
-      but can still be combined.
-      Neither that reporting interval nor your telemetry export interval rounds the underlying send timings.
-      All three facilities describe local sending and SMTP submission, not final mailbox delivery.</p>
-  </div></section>
 
   <a href="#section-get-receipt" id="section-get-receipt" class="section-link h2">&sect;</a>
   <h2>Get the receipt, including when a send fails</h2>
   <section>
     <div class="view">
-      <p>
-        A successful single-email send returns a receipt. <code>mailer.sync().sendMail(email)</code> returns it directly; ignore it when only completion matters. It follows the ordinary synchronous send
-        path, but returns a <code>MailSubmissionReceipt</code>. A failed or partial submission throws <code>MailSubmissionException</code> instead;
-        <code>getSubmissionReceipt()</code> returns an Optional containing the facts from that same attempt. The exception's <code>getStatus()</code> delegates to the
-        receipt, and <code>getCause()</code> retains the original Jakarta Mail failure.
-      </p>
-      <p>
-        Catching only <code>MailSubmissionException</code> is deliberate here. Preparation and validation failures, for example, do not produce a
-        submission receipt and still propagate to the caller. Connection acquisition and exhausted failover routes also fail without a receipt.
-        A provider-internal preflight failure can have a receipt without a server response; receipt presence alone does not prove an SMTP command was reached.
-      </p>
-      <p id="local-envelope-preparation-failures">In the unreleased 10.0.0 line, local MIME/envelope preparation failures use <code>MailFailureKind.PREPARATION</code> and have
-        no submission receipt, even if a connection has already been acquired. For example, a <code>Newsgroups</code> destination in the final
-        envelope can prevent per-recipient notification settings from matching the SMTP recipients. Ordinary and retry-enabled sends report
-        that same local failure consistently, and the terminal observer agrees with the caller. Genuine provider compatibility results retain
-        their separate receipt behavior.</p>
-      <p>
-        The snippets below reuse a configured <code>mailer</code> and an <code>email</code>, and omit imports. <code>printReceipt</code> is a small
-        application method defined in the next example, not another Simple Java Mail API.
-      </p>
+      <p>Your invoice job finishes with an exception. Can you mark the invoice as sent, or should someone take a look? Start with
+        the <code>MailSubmissionReceipt</code>. It records what the sending attempt found out about SMTP submission.</p>
+      <ul>
+        <li><strong>Send completed:</strong> <code>mailer.sync().sendMail(email)</code> returns the receipt directly.</li>
+        <li><strong>Submission failed or was partial:</strong> <code>MailSubmissionException.getSubmissionReceipt()</code> returns an
+          Optional with the facts from that attempt. <code>getStatus()</code> reads the receipt’s status and <code>getCause()</code> retains the original Jakarta Mail failure.</li>
+      </ul>
+      <p>This first example catches submission failures. If validation, preparation, connection acquisition or failover fails before submission,
+        the exception propagates without a receipt. A preflight failure inside the provider can include a receipt with no server response, even if
+        the attempt never reached an SMTP command.</p>
+
+      <p>The examples use your configured <code>mailer</code> and <code>email</code>. <code>printReceipt</code> is an application helper shown below.</p>
     </div>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-get-receipt">MailSubmissionReceipt receipt;
@@ -113,20 +78,24 @@ try {
 }
 
 printReceipt(receipt);</code></pre>
-      <p>For one failure boundary covering library-owned validation, message-size, admission, connection, submission, timeout, cancellation and cleanup
-        failures, catch <code>org.simplejavamail.MailException</code>.
-        Its <code>Optional&lt;MailSubmissionReceipt&gt;</code> exposes whatever submission facts were available. A <code>MailSendCleanupException</code>
-        can retain an accepted receipt even though cleanup failed; do not turn that into an automatic resend. Specific exception types remain
-        available for focused catches. A connection-scope batch cleanup failure cannot stand in for one email's receipt.</p>
+      <p>If you want one place to record mail failures in the job, catch <code>org.simplejavamail.MailException</code>. It covers failures in
+        validation, message size, admission, connection, submission, timeout, cancellation and cleanup. Read the optional receipt first.
+        A <code>MailSendCleanupException</code> can retain an accepted receipt. Record the cleanup problem without resending an accepted message.
+        For a connection-scope batch cleanup failure, look at the individual email results for submission receipts.</p>
 <pre><code class="language-java small" id="example-common-failure">try {
     printReceipt(mailer.sync().sendMail(email));
 } catch (MailException failure) {
     failure.getSubmissionReceipt().ifPresent(this::printReceipt);
     recordFailure(failure);
 }</code></pre>
-      <p>During <a href="/mail-send-retries.html">automatic retries</a>, that same getter retains the last refusal if retry waiting is interrupted
-        or the next connection cannot be acquired. The current failure keeps its own kind and cause. Once another provider invocation begins,
-        an earlier refusal no longer establishes the final submission result.</p>
+      <p id="local-envelope-preparation-failures">A connection can be open while a local check still prevents submission. For example, if the
+        final envelope contains a <code>Newsgroups</code> destination, per-recipient notification settings may fail to match the SMTP
+        recipients. This reports <code>MailFailureKind.PREPARATION</code> without a receipt. The caller and terminal observer see the same
+        failure whether retries are enabled or disabled. A compatibility failure reported by the provider can still include a receipt.</p>
+      <p>Say the server refused the first attempt, then the next connection failed. During
+        <a href="/mail-send-retries.html">automatic retries</a>, the getter keeps the last refusal when retry waiting is interrupted or the next
+        connection cannot be acquired. The new failure keeps its own kind and cause. Once the next call to the provider begins, use that attempt’s
+        outcome. The previous refusal can’t establish what happened this time.</p>
       <p><code>failure.getKind()</code> returns a typed <code>MailFailureKind</code> such as <code>VALIDATION</code>, <code>MESSAGE_SIZE</code>,
         <code>PREPARATION</code>, <code>CAPACITY</code>, <code>CONNECTION</code>, <code>SUBMISSION</code>, <code>TIMEOUT</code>,
         <code>CANCELLED</code> or <code>CLEANUP</code>. Configuration and conversion failures have their own kinds too.
@@ -196,13 +165,10 @@ printReceipt(receipt);</code></pre>
   <a href="#section-message-size" id="section-message-size" class="section-link h2">&sect;</a>
   <h2>Check message size against the server limit</h2>
   <section>
-    <div class="wide">
-      <p>An attachment can make an email too large for your SMTP server, even if your own application allows it.
-        On managed Angus connections, Simple Java Mail counts the prepared email and checks the server's advertised SIZE limit
-        before submitting anything. There is no switch to enable: ordinary sends, async sends, simple batches and open connections all use this check.</p>
-      <p>These two receipt fields tell you what happened, including when the check rejects an email:</p>
-    </div>
     <div class="wide full-width-example">
+      <p>Your application lets an invoice with attachments through, but the SMTP relay advertises a 10 MB limit. On managed Angus connections,
+        Simple Java Mail checks the prepared message against that limit before submission. The check runs automatically on sync and async sends,
+        simple batches and open connections.</p>
 <pre><code class="language-java small">MailSubmissionReceipt receipt;
 try {
     receipt = mailer.sync().sendMail(email);
@@ -215,32 +181,32 @@ System.out.println("Prepared content bytes: " + receipt.getMessageSize());
 System.out.println("Server limit bytes: " + receipt.getServerMaximumMessageSize());
 System.out.println("SMTP reply present: " + receipt.getSmtpResponse().isPresent());</code></pre>
 <pre><code class="language-text small">Submission: REJECTED
-Prepared content bytes: 12345678
-Server limit bytes: 10000000
-SMTP reply present: false</code></pre>
-    </div>
-    <div class="wide">
-      <p>Here the email was too large, so no MAIL FROM, RCPT or DATA command was sent. The exception explains that you can reduce
-        the content or attachments, or use a server with a higher limit. Its receipt lists the recipients as valid but unsent, with
-        <code>CALLER_POLICY_REQUIRED</code> retry guidance. Retrying the same email against the same limit will not help.</p>
-      <p><code>getMessageSize()</code> is the complete prepared SMTP content size, not bytes successfully transferred. It includes SMTP line
-        endings and excludes dot escaping and the DATA terminator. Counting happens after negotiated provider conversion, without another
-        buffered copy; exact and signed content is not rebuilt. Caller-owned attachment and content sources must stay readable and return
-        the same content on repeated reads.</p>
-      <p><code>getServerMaximumMessageSize()</code> describes the actual selected connection, using the capabilities after STARTTLS when applicable.
-        Equality is allowed. Missing, zero, malformed, overflowing or contradictory limits are unknown and do not trigger rejection.
-        The client adds SIZE when advertised; one valid advanced caller-supplied estimate is preserved, but the receipt still reports the measured size.</p>
-      <p>Either field can be <code>null</code>. Incomplete measurement does not become a partial count. Logging-only sends, CustomMailer,
-        ordinary caller-owned Angus Sessions and providers that do not report sizes leave these facts unavailable. A known server limit can
-        survive a failure that happened before counting finished. Being under the limit does not guarantee acceptance or final delivery.</p>
-      <p>This is separate from your application's <code>ValidationConfig.Builder.withMaximumEmailSize(...)</code> guard and
-        <code>mailer.rehearse(email).getEncodedSize()</code>, which work without a server. Rehearsal EML can differ from SMTP content after
-        provider conversion or omitted headers. A <a href="/debugging.html#section-smtp-capabilities">connection probe</a> is useful for diagnosis,
-        but may connect to a different server in a cluster; sending always checks its own connection.</p>
-      <p>To collect these facts for successful and failed attempts in one place, use your result observer. Attempts that fail before a receipt
-        exists do not enter this callback's <code>ifPresent</code> block:</p>
-    </div>
-    <div class="wide full-width-example">
+Prepared content bytes: 12345678  ← measured by getMessageSize()
+Server limit bytes: 10000000       ← selected relay's limit from getServerMaximumMessageSize()
+SMTP reply present: false         ← the local check stopped the send</code></pre>
+      <p>The prepared email is about 2.3 MB over this relay’s limit. No <code>MAIL FROM</code>, <code>RCPT</code> or <code>DATA</code> command
+        was sent. The receipt lists the recipients as valid but unsent and gives <code>CALLER_POLICY_REQUIRED</code> retry guidance.
+        Reduce the content or use a relay with a higher limit. A message under the size limit still needs to be accepted by the relay.</p>
+      <ul>
+        <li><strong>Your application’s limit.</strong> <code>ValidationConfig.Builder.withMaximumEmailSize(...)</code> and
+          <code>mailer.rehearse(email).getEncodedSize()</code> work offline. Rehearsal EML can differ from SMTP content after provider conversion
+          or omitted headers. A <a href="/debugging.html#section-smtp-capabilities">connection probe</a> can help diagnose a limit, but a clustered
+          send can select a different relay.</li>
+        <li><strong>Unavailable values.</strong> Either size field can be <code>null</code>. A known relay limit can survive a failure before counting
+          finished. Logging-only sends, CustomMailer, ordinary caller-owned Angus Sessions and providers that do not report sizes leave them unavailable.</li>
+      </ul>
+      <details class="doc-disclosure">
+        <summary>How SMTP content is counted and compared</summary>
+        <p><code>getMessageSize()</code> measures the whole prepared SMTP content, including SMTP line endings, before dot escaping and the
+          DATA terminator. An incomplete measurement stays unavailable. Counting happens after negotiated provider conversion, without a second buffered
+          copy or rebuilding exact and signed content. Borrowed content sources must stay readable and provide the same content on repeated reads.</p>
+        <p><code>getServerMaximumMessageSize()</code> reads the selected connection’s advertised capabilities after STARTTLS when applicable.
+          A message exactly at the limit passes this check. Missing, zero, malformed, overflowing or contradictory limits stay unknown.
+          The client adds SIZE when advertised. If you supplied one valid advanced SIZE estimate, it is preserved, while the receipt reports the measured size.</p>
+      </details>
+      <details class="doc-disclosure">
+        <summary>Record sizes across successful and failed sends</summary>
+        <p>Use a result observer to collect these facts wherever there is a receipt.</p>
 <pre><code class="language-java small">mailerBuilder.withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -&gt;
     outcome.getSubmissionReceipt().ifPresent(receipt -&gt;
         System.out.printf("%s: content=%s bytes, server limit=%s bytes%n",
@@ -248,6 +214,7 @@ SMTP reply present: false</code></pre>
             receipt.getServerMaximumMessageSize()))).build());</code></pre>
 <pre><code class="language-text small">ACCEPTED: content=3250 bytes, server limit=10000000 bytes
 REJECTED: content=12345678 bytes, server limit=10000000 bytes</code></pre>
+      </details>
     </div>
   </section>
 
@@ -380,7 +347,7 @@ simplejavamail.locked.defaults.sendtoacceptedrecipients=false</code></pre>
         (or <code>mail.smtps.sendpartial=true</code>) cannot be overridden by one Email choosing false. That clash fails before <code>MAIL FROM</code>.
         Remove the advanced property and use an Email default or the ordinary property above, so individual emails can still opt out.</p>
       <p>The bundled Angus adapter supports both choices. Another provider needs an adapter that explicitly supports them; otherwise the send fails
-        before submission. <a href="features.html#section-custom-mailer">CustomMailer</a> receives the governed choice on Email and owns honoring it,
+        before submission. <a href="/configuration.html#section-custom-mailer">CustomMailer</a> receives the governed choice on Email and owns honoring it,
         but is incompatible with a factory lock on this setting because Simple Java Mail cannot check its internal recipient handling.</p>
       <p>See the <a href="spring.html#section-spring-recipient-rejection">Spring configuration example</a> and
         <a href="cli.html#section-cli-recipient-rejection">CLI options</a>.</p>
@@ -502,15 +469,13 @@ System.out.println("Retry candidates: " + retryAddresses);</code></pre>
         Now consider a separate attempt addressed only to Alice. Her RCPT command succeeds and the client sends the message data, but the connection
         drops before the final response arrives. The server may already have queued the message. A missing reply is not a rejection.
       </p>
-      <p>
-        The receipt is <code>UNKNOWN</code> with <code>DUPLICATE_RISK</code>, no final SMTP response and no automatic retry candidates. Even if the
-        provider retained Alice's positive RCPT reply, it cannot prove final submission. Some failure paths also lose those earlier RCPT details;
-        the receipt then leaves them unknown rather than guessing.
-      </p>
-      <p>
-        Check server logs or provider tracking if available, or apply an explicit application policy for possible duplicates. Reusing a Message-ID
-        does not by itself guarantee that an SMTP server will discard a second submission.
-      </p>
+      <ul>
+        <li><code>UNKNOWN</code> and <code>DUPLICATE_RISK</code> tell you that a resend could queue a second copy.</li>
+        <li>The receipt has no final SMTP response and lists no automatic retry candidates.</li>
+        <li>If the provider captured Alice’s <code>RCPT TO</code> reply, it shows the server accepted the address. If the provider lost it too, the receipt records it as unknown.</li>
+      </ul>
+      <p>Look up the attempt in the server logs or your provider’s tracking, if you have access. If the evidence is still missing, follow your
+        application’s policy for possible duplicates. Reusing the Message-ID alone gives you no guarantee that a second submission will be discarded.</p>
     </div>
     <div class="wide full-width-example">
 <pre><code class="language-text small">RCPT TO:&lt;alice@example.org&gt;  → 250 Recipient OK
@@ -534,14 +499,16 @@ Retry candidates: 0</code></pre>
       <p><code>MailSendCancelledException</code> and <code>MailSendTimeoutException</code> say why an operation stopped.
         Their optional <code>getSubmissionReceipt()</code> says what SMTP facts were known. These are separate questions:
         a stop request does not recall mail or establish that it was unsent.</p>
-      <p>Before execution or while claiming a connection there may be no receipt. With the managed Angus transport, a stop before the
-        terminating DATA command is known unsent; a lost final reply after DATA termination or BDAT LAST is
-        <code>UNKNOWN</code> with <code>DUPLICATE_RISK</code>. Recipient replies already captured remain available.
-        If final acceptance was observed first, a late request can still leave a normal successful completion.</p>
-      <p>In the unreleased 10.0.0 line, an independent close or pool-release failure still fails the operation after a late stop, with its
-        original cause and the accepted receipt retained. Cancellation/timeout translation can keep its existing exception type; the receipt
-        still says <code>ACCEPTED</code>. Report the cleanup problem rather than automatically resending accepted mail. See
-        <a href="/sending-and-execution.html#late-stop-cleanup">late-stop cleanup behavior</a>.</p>
+      <p>Suppose an operator stops the invoice job while the relay is slow to answer. Read the receipt for where the attempt stopped:</p>
+      <ul>
+        <li>Before execution or while claiming a connection, there may be no receipt.</li>
+        <li>With managed Angus, a stop before terminating DATA is known unsent. Losing the final reply after DATA termination or BDAT LAST
+          gives you <code>UNKNOWN</code> and <code>DUPLICATE_RISK</code>. Any recipient replies already recorded remain available.</li>
+        <li>When the client already saw final acceptance, a late stop can still leave a normal successful completion.</li>
+      </ul>
+      <p>If close or pool release also fails after a late stop, the operation fails with the original cause and the accepted receipt. Even if
+        you catch a cancellation or timeout exception, an <code>ACCEPTED</code> receipt still records acceptance. Report the cleanup problem
+        and avoid sending a second copy. See <a href="/sending-and-execution.html#late-stop-cleanup">late-stop cleanup behavior</a>.</p>
       <p>The callback below sees the actual operation failure. <code>get()</code> and <code>join()</code> wrap it in
         ExecutionException and CompletionException, respectively. Cancelling the detached future itself affects only that view.
         For configuration, ownership, and the limitations of stopping I/O, see
@@ -574,6 +541,54 @@ Retry: DUPLICATE_RISK</code></pre>
       <p>This illustrative output means the final acceptance reply was not observed. Do not automatically retry the original email.</p>
     </div>
   </section>
+
+<a href="#section-sent-id" id="section-sent-id" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 core=true}}Getting the generated email id after sending{{/components/feature-heading-h2}}
+
+  <section>
+    <div class="view">
+      <p>
+        Sometimes you need the actual ID used in the MimeMessage that went out to the SMTP server.
+        Luckily, it's very easy to retrieve it.
+      </p>
+    </div>
+
+    <div class="side">
+<pre><code>
+mailer.sync().sendMail(email); // id updated during sending!
+email.getId(); // <1420232606.6.1509560747190@Cypher>
+</code></pre>
+    </div>
+  </section>
+
+  <a href="#section-observation-options" id="section-observation-options" class="section-link h2">&sect;</a>
+  <h2>Choose how to observe sending</h2>
+  <section><div class="wide">
+      <p>In outgoing send results and connection-probe reports, unavailable scalar facts return <code>null</code>: identifiers, timestamps,
+        durations, endpoint values, counts and boxed Booleans. A known zero or false stays a real value. Required facts remain non-null;
+        optional whole receipts, diagnostics, failures, SMTP responses, capability snapshots and TLS details use <code>Optional</code>.
+        Collections are non-null, with empty meaning no reported entries. This convention does not change the separate received-Email parsing model.</p>
+    <p>Progress, final results and telemetry answer different questions. Use them independently or together:</p>
+    <div class="doc-table-wrap" tabindex="0" aria-label="Compare mail-send observation facilities"><table>
+      <thead><tr><th>Facility</th><th>Question it answers</th><th>What you get</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#section-live-progress">Progress observer</a></td><td>What is happening now?</td>
+          <td>Stages and available upload counts, with finer SMTP detail when supported. Updates can be combined or dropped, so this is a best-effort view, not an audit trail.</td></tr>
+        <tr><td><a href="#section-observer-results">Result observer</a></td><td>What happened, and where did the time go?</td>
+          <td>The final outcome, receipt, failure, portable timings and bounded connection/submission histories.</td></tr>
+        <tr><td><a href="/opentelemetry.html">OpenTelemetry</a></td><td>How is sending behaving across my application?</td>
+          <td>Application-linked traces, per-send timings and aggregate measurements, recorded independently of observer delivery.</td></tr>
+      </tbody>
+    </table></div>
+    <p>The result observer and telemetry reuse the same portable measurement boundaries. Total diagnostics, live elapsed progress and the logical
+      telemetry span include per-send handler-factory work from attempt entry, including a factory failure. Result-observer delivery remains outside
+      the measured send. Detailed progress can identify greeting,
+      TLS, authentication and other SMTP stages, but it does not turn them into separate duration measurements.</p>
+    <p>Intermediate upload-count updates are throttled to one every 250 milliseconds; stage changes and the final count bypass that throttle
+      but can still be combined.
+      Neither that reporting interval nor your telemetry export interval rounds the underlying send timings.
+      All three facilities describe local sending and SMTP submission, not final mailbox delivery.</p>
+  </div></section>
 
   <a href="#section-other-send-paths" id="section-other-send-paths" class="section-link h2">&sect;</a>
   <h2>Use the same facts in other send paths</h2>
@@ -683,14 +698,9 @@ try (mailer) {
 }</code></pre>
     </div>
     <div class="wide">
-      <p>The snapshot has explicit getters: <code>getStage()</code>, <code>getElapsed()</code>, <code>getObservedAt()</code>,
-        <code>getSequence()</code>, <code>getSubmissionAttempt()</code>, and optional <code>getBytesWritten()</code> and <code>getTotalBytes()</code>.
-        Elapsed time uses a monotonic clock; the timestamp is for correlating external logs. The automatic string includes the observation ID,
-        stage, attempt, elapsed time and available counts, but never Message-IDs, addresses, content, credentials or raw server replies.</p>
-      <p>Here is abbreviated output for a send that waits for its rate allowance and connection, uploads, gets a temporary refusal,
-        then succeeds on a configured retry. The ID is shortened here for readability; the real value is a UUID. Intermediate snapshots may be missing.</p>
-    </div>
-    <div class="wide full-width-example">
+      <h4>Read a progress update</h4>
+      <p>Here’s the output for one send that waits for its rate allowance and connection, uploads the attachment, then retries after a
+        temporary refusal. The UUID is shortened and some snapshots are omitted.</p>
 <pre><code class="language-text small">id=7cf5… seq=2  WAITING_FOR_RATE_LIMIT attempt=0 elapsed=PT0.02S
 id=7cf5… seq=3  ACQUIRING_CONNECTION  attempt=0 elapsed=PT2S
 id=7cf5… seq=6  UPLOADING             attempt=1 elapsed=PT4S bytes=524288/1048576
@@ -701,29 +711,55 @@ id=7cf5… seq=17 WAITING_FOR_RESPONSE  attempt=2 elapsed=PT11S bytes=1048576/10
 Result 7cf5…: successful=true
 SMTP submission: ACCEPTED
 id=7cf5… seq=19 FINISHED              attempt=2 elapsed=PT11.2S</code></pre>
-    </div>
-    <div class="wide">
-      <p><code>FINISHED</code> only means the logical send ended, not that it succeeded. The result, receipt and completion handle remain authoritative.
-        A late progress callback may arrive after the result callback. A dashboard should remember finished IDs and ignore subsequent progress for them.
-        The <a href="https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/modules/simple-java-mail/src/test/java/demo/MailSendObserverDemoApp.java">observer demo</a>
-        shows both registrations and that terminal-state guard.</p>
-      <h4>What the stages and upload figures mean</h4>
-      <p><code>WAITING_FOR_EXECUTION</code> covers async admission and worker waiting; <code>PREPARING</code> covers email governance and validation.
-        <code>WAITING_FOR_RATE_LIMIT</code> is intentional pacing, <code>ACQUIRING_CONNECTION</code> includes obtaining a usable connection, and
-        <code>PREPARING_MIME</code> includes MIME conversion and protection. <code>SUBMITTING</code> is the provider invocation;
-        <code>UPLOADING</code> and <code>WAITING_FOR_RESPONSE</code> add detail where supported. <code>WAITING_TO_RETRY</code> is a configured retry delay,
-        and <code>CLEANING_UP</code> covers ordinary per-email release/close. Stages can repeat or be skipped. This is not a protocol-event audit trail.</p>
-      <p>Attempt numbers start at one when the provider is invoked, not when a connection is tried. Connection failover leaves the number at zero;
-        an actual retry increments it and resets upload counts. One email remains one observation throughout both.</p>
-      <p>Managed Angus transports count serialized MIME bytes successfully handed to the DATA or BDAT content stream, before line-ending normalization,
-        dot escaping, command framing and TLS overhead. The optional total comes from the existing size-preparation pass; it is not the receipt's canonical
-        SMTP SIZE value. No extra content read is added. If content changes and the figures no longer agree, the total becomes unknown.</p>
-      <p><strong>100% uploaded is not SMTP acceptance.</strong> Bytes may still be buffered, the final reply can reject the message, or the connection can
-        disappear before acceptance is known. Final mailbox delivery remains separate. Caller-owned ordinary Angus transports, other adapters without
-        upload support and <code>CustomMailer</code> report coarse submission progress with unknown byte counts. Logging-only sends report preparation,
-        not invented SMTP activity. A lazy batch observes only emails it reaches; shared connection setup/teardown is not repeated for every email.</p>
-      <p>For example, a slow greeting can leave a send in <code>WAITING_FOR_GREETING</code> before any submission attempt starts.
-        Authentication has its own stage too. You do not need protocol debug logging to tell those waits apart.</p>
+      <ul>
+        <li><strong>Before an attempt:</strong> At sequence 3 the send is still getting a connection. Attempt 0 means the provider hasn’t been called.</li>
+        <li><strong>After upload:</strong> At sequence 8 all bytes have been handed off, and the send is still waiting for the relay’s answer.
+          The configured retry starts attempt 2 and its byte count starts over.</li>
+        <li><strong>At the end:</strong> <code>FINISHED</code> means the send ended. Read the result observer or completion handle for the
+          outcome. Here the receipt shows that the second attempt was accepted by SMTP. Mailbox delivery is a separate event.</li>
+      </ul>
+
+      <h4>Keep the dashboard row on its final result</h4>
+      <p>Use <code>getObservationId()</code> as the row key and <code>getSequence()</code> to order live updates. When the result arrives,
+        mark the row final. Progress callbacks can arrive afterward, even with a newer sequence than the last one you displayed.</p>
+<pre><code class="language-text small">7cf5… progress #14: UPLOADING → Sending, attempt 2
+7cf5… result: ACCEPTED → Accepted by SMTP
+7cf5… late #17: WAITING_FOR_RESPONSE → Keep “Accepted by SMTP”</code></pre>
+      <p>In your result handler, add the observation ID to <code>finishedIds</code> and set the final row under the same lock. Then use
+        this guard in the progress handler:</p>
+<pre><code class="language-java small">synchronized (finishedIds) {
+    if (!finishedIds.contains(progress.getObservationId())) {
+        updateRowIfNewer(progress);
+    }
+}</code></pre>
+      <p>The observation ID follows one send, the Message-ID identifies the email, and the OpenTelemetry trace ID can follow the
+        whole request. See the <a href="https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/modules/simple-java-mail/src/test/java/demo/MailSendObserverDemoApp.java">observer demo</a>
+        for both handlers.</p>
+
+      <details class="doc-disclosure">
+        <summary>Progress fields, stages and byte counts</summary>
+        <ul>
+          <li><strong>Fields.</strong> Use <code>getStage()</code> for the label and <code>getSubmissionAttempt()</code> for the attempt.
+            <code>getElapsed()</code> uses a monotonic clock. Use the wall-clock <code>getObservedAt()</code> to match other logs.
+            <code>getBytesWritten()</code> and <code>getTotalBytes()</code> are optional.</li>
+          <li><strong>Before submission.</strong> <code>WAITING_FOR_EXECUTION</code> covers async admission and worker waiting.
+            <code>PREPARING</code> applies email rules and validation. <code>WAITING_FOR_RATE_LIMIT</code> is intentional pacing.
+            <code>ACQUIRING_CONNECTION</code> includes getting a usable connection. <code>PREPARING_MIME</code> includes MIME conversion and protection.
+            Connection failover before the first provider call keeps the attempt at zero.</li>
+          <li><strong>During and after an attempt.</strong> <code>SUBMITTING</code> is the provider call. <code>UPLOADING</code> and
+            <code>WAITING_FOR_RESPONSE</code> add detail when supported. <code>WAITING_TO_RETRY</code> is the configured retry delay.
+            <code>CLEANING_UP</code> includes ordinary per-email release or close.</li>
+          <li><strong>Byte counts.</strong> Managed Angus counts serialized MIME bytes successfully handed to the DATA or BDAT content
+            stream, before line-ending normalization, dot escaping, command framing or TLS overhead. The optional total comes from
+            the existing size-preparation pass without another content read. It can differ from SMTP SIZE and becomes unknown if the
+            content changes and the numbers no longer agree.</li>
+        </ul>
+        <p>Bytes can still be buffered at 100%, and the server can still reject the message or disconnect before acceptance is known.
+          Stages can repeat or be coalesced. Use protocol logging for a command-by-command record.</p>
+      </details>
+      <h4>Locate a connection wait</h4>
+      <p>If a send sits in <code>WAITING_FOR_GREETING</code> at attempt zero, the server has yet to say hello. If it reaches
+        <code>AUTHENTICATING</code>, it got further. You can tell those waits apart without enabling protocol debug logging.</p>
     </div>
     <div class="wide full-width-example">
 <pre><code class="language-text small"># New connection; abbreviated illustrative snapshots, not a guaranteed event sequence
@@ -747,46 +783,52 @@ id=8ef1… seq=6 SUBMITTING                 attempt=1 elapsed=PT0.4S
 Result 8ef1…: successful=true</code></pre>
     </div>
     <div class="wide">
-      <h4>Which connection and SMTP details are available?</h4>
-      <p><code>NEGOTIATING_CAPABILITIES</code> covers EHLO or HELO, including EHLO after STARTTLS.
-        <code>NEGOTIATING_TLS</code> covers an observable TLS upgrade, including its handshake and certificate checks.
-        <code>SUBMITTING_SENDER</code> and <code>SUBMITTING_RECIPIENTS</code> describe the SMTP envelope exchange, not mailbox delivery.
-        <code>WAITING_FOR_DATA_PERMISSION</code> means the server has not yet replied to DATA with permission to upload.</p>
-      <p>BDAT does not have that DATA-permission exchange. Chunk replies are not reported as final acceptance waiting.
-        DNS, TCP connection, proxy negotiation and implicit TLS stay within <code>ACQUIRING_CONNECTION</code> where the provider cannot
-        identify them reliably. These stages are not per-phase duration measurements.</p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Sending path</th><th>What you can see</th></tr></thead>
-        <tbody>
-          <tr><td>New managed Angus connection caused by this email</td><td>Supported greeting, capability, TLS and authentication stages, then envelope and upload progress</td></tr>
-          <tr><td>Reused or background-created connection</td><td>Current envelope/upload work; no historical connection setup</td></tr>
-          <tr><td>Shared batch/open-connection setup</td><td>Setup is outside individual emails; their own envelope/upload work can still be observed</td></tr>
-          <tr><td>Caller-owned ordinary Angus transport</td><td>Coarse progress; SJM does not replace your transport for diagnostics</td></tr>
-          <tr><td>Another provider adapter</td><td>Any details it supports, with coarse fallback for the rest; setup and upload support are independent</td></tr>
-          <tr><td>CustomMailer</td><td>Opaque submission callback, without invented SMTP detail</td></tr>
-        </tbody>
-      </table></div>
-      <p>Missing detail never makes a provider unsuitable for sending. A fast exchange may also be coalesced before your callback sees it,
-        so a missing stage does not prove that work was skipped. Handle additional enum values in dashboard switches; the stage list may grow.
-        No commands, recipient addresses, credentials or raw replies are included.</p>
-      <h4>Callback speed and shutdown</h4>
-      <p>Progress runs on a lazily started, dedicated daemon dispatcher. The optional
-        <code>withProgressObserver(observer, applicationExecutor)</code> overload hands work to your executor from that dispatcher, never from a send
-        thread. Callbacks are serialized per Mailer. Sending, cancellation and completion never wait for a progress callback.
-        Keep a supplied executor separate from mail-sending workers; if you deliberately share their executor, slow reporting can occupy those workers.</p>
-      <p>Only the newest pending snapshot per ID is kept, up to 1,024 pending IDs plus one callback in flight; overflow discards the oldest pending snapshot.
-        Upload-only updates are published at most four times per second per email. Stage changes and the final count bypass that throttle but can still
-        be coalesced. These bounds keep a lagging dashboard from retaining an unbounded send history; they do not limit sending throughput.</p>
-      <p>Callback runtime failures and rejected executor handoffs are logged and ignored, without retry or inline fallback. Shutdown waits for sending,
-        not reporting: it discards pending progress and does not interrupt an executing callback or close your executor. Registering an observer again
-        replaces only that observer and its dispatch choice. Both registrations are Java callbacks, not properties, Spring metadata or CLI options.</p>
-      <h4>Three different identifiers</h4>
-      <p>The observation UUID correlates progress and the final outcome for one invocation. Re-sending the same Email produces a new UUID, even if its
-        Message-ID stays the same. <code>getInitialMessageId()</code> and <code>getEffectiveMessageId()</code> are separately available when known.
-        The observation ID is never inserted into the email or SMTP exchange, is not ENVID, and is not a deduplication key or an OpenTelemetry TraceId.
-        Older serialized outcomes can have no observation ID. Use it in logs or span attributes if useful, not as a per-send metric label.</p>
-      <p>For completed phase durations, use <a href="#section-send-timings">actual-send diagnostics</a>. For a separate endpoint check rather than an email
-        already in flight, use a <a href="/debugging.html#section-smtp-capabilities">connection probe</a>.</p>
+      <details class="doc-disclosure">
+        <summary>Connection stages and provider support</summary>
+        <ul>
+          <li><strong>Connection setup.</strong> <code>NEGOTIATING_CAPABILITIES</code> covers EHLO or HELO, including EHLO after STARTTLS.
+            <code>NEGOTIATING_TLS</code> covers an observable TLS upgrade, handshake and certificate checks. DNS, TCP connection, proxy
+            negotiation and implicit TLS stay within <code>ACQUIRING_CONNECTION</code> where the provider cannot identify them separately.</li>
+          <li><strong>SMTP envelope.</strong> <code>SUBMITTING_SENDER</code> and <code>SUBMITTING_RECIPIENTS</code> describe the SMTP envelope
+            exchange. <code>WAITING_FOR_DATA_PERMISSION</code> means the server hasn’t answered DATA yet. BDAT has no equivalent permission
+            exchange, and individual chunk replies do not count as the final reply.</li>
+          <li><strong>Managed Angus.</strong> A connection opened for this send can show greeting, capabilities, TLS and authentication,
+            then envelope and upload progress. Reused or background-created connections only show current work. Shared batch or
+            open-connection setup and teardown sit outside per-email progress. Lazy batches observe only the emails they reach.</li>
+          <li><strong>Other paths.</strong> A caller-owned ordinary Angus transport stays in place and reports coarse progress without byte counts.
+            Other adapters can supply setup and upload details independently, with coarse progress for unsupported stages.
+            <code>CustomMailer</code> has a submission callback without SMTP details or byte counts. Logging-only mode shows preparation.</li>
+        </ul>
+        <p>Progress stages do not measure phase durations. Coalescing can hide stages even when the provider reports them.
+          Let your dashboard display a generic label for new stage values. Default progress output includes the observation ID, stage, attempt,
+          elapsed time and available counts. It omits commands, Message-IDs, addresses, content, credentials and raw replies.</p>
+      </details>
+      <details class="doc-disclosure">
+        <summary>Callback backlog, executor ownership and shutdown</summary>
+        <ul>
+          <li><strong>Dispatch.</strong> A dedicated daemon dispatcher starts on demand and serializes progress callbacks per Mailer.
+            With <code>withProgressObserver(observer, applicationExecutor)</code>, it hands the callback to your executor.
+            Sending, cancellation and completion do not wait for progress callbacks. Keep the reporting executor separate from sending
+            workers if slow callbacks would occupy them.</li>
+          <li><strong>Coalescing.</strong> The dispatcher keeps only the newest pending snapshot per ID, up to 1,024 pending IDs plus one
+            callback in flight. Overflow drops the oldest pending snapshot. Upload-only snapshots are published at most four times per second
+            per email. Stage changes and the final count bypass that throttle and can still be coalesced.</li>
+          <li><strong>Failure and shutdown.</strong> Callback runtime failures and rejected handoffs are logged and ignored, without retry or
+            inline fallback. Shutdown waits for sending and discards pending progress. It leaves the executing callback and your executor alone.</li>
+          <li><strong>Registration.</strong> Registering an observer again replaces only that observer and its dispatch choice. Register
+            progress and result callbacks in Java. They have no property, Spring metadata or CLI registration.</li>
+        </ul>
+      </details>
+      <details class="doc-disclosure">
+        <summary>Observation IDs in logs and traces</summary>
+        <p>Sending the same Email again creates a fresh observation UUID even if it reuses the Message-ID. Use
+          <code>getInitialMessageId()</code> and <code>getEffectiveMessageId()</code> when you need those message identifiers.
+          Older serialized outcomes can lack an observation ID. No observation ID is inserted into the email or SMTP exchange.
+          It is separate from the envelope ID (ENVID) and from any application deduplication key. Use it in logs and span attributes,
+          where a high-cardinality identifier can be useful. Keep it out of metric labels.</p>
+      </details>
+      <p>For completed phase durations, use <a href="#section-send-timings">actual-send diagnostics</a>. To check a fresh connection,
+        use a <a href="/debugging.html#section-smtp-capabilities">connection probe</a>.</p>
     </div>
   </section>
 
@@ -794,9 +836,9 @@ Result 8ef1…: successful=true</code></pre>
   <h3>Where did the time go?</h3>
   <section>
     <div class="wide">
-      <p>A send took a second and a half. Was it waiting for a worker or sending allowance, getting a connection, signing the email or submitting it?
-        Your existing observer now receives <code>outcome.getDiagnostics()</code> automatically. These measurements describe that particular
-        attempt, including failures before SMTP. Nothing is sent or read a second time to collect them.</p>
+      <p>Your invoice sends have slowed down. Do you check the executor, the connection pool or the SMTP server? Start with
+        <code>outcome.getDiagnostics()</code> in your existing result observer. These measurements describe that send, including failures before SMTP.
+        They use the work already performed, without another send or content read.</p>
     </div>
     <div class="wide full-width-example">
 <pre><code class="language-java small" id="example-send-timings">mailerBuilder.withSendHandlers(MailSendHandlers.builder().withResultObserver(outcome -&gt; {
@@ -910,7 +952,7 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
         Use the configured observer for each email actually attempted.
         Batches stop at their first failure; untouched emails have no outcomes. Pooling changes how a connection is obtained, not how to read a
         receipt. <code>withOpenConnection</code> uses the built-in transport path and cannot be combined with a
-        <a href="/features.html#section-custom-mailer">CustomMailer</a>.
+        <a href="/configuration.html#section-custom-mailer">CustomMailer</a>.
       </p>
     </div>
     <div class="wide full-width-example">
@@ -930,46 +972,56 @@ Cleanup: PT0.002S (failure observed here)</code></pre>
   <h2>Account for missing provider details</h2>
   <section>
     <div class="wide">
-      <p>
-        The API is provider-neutral, but the available evidence depends on the provider. Angus supplies individual RCPT replies when it can.
-        Simple Java Mail collects its successful replies internally and restores the prior reporting setting after the send. You do not need to
-        enable <code>mail.smtp.reportsuccess</code>; a fully accepted send returns normally even if that setting was already enabled.
-      </p>
-      <p>
-        Other providers may expose fewer facts. Some connection failures prevent Angus from exposing earlier RCPT replies. An early abort at a
-        repeated mailbox can also leave its exact envelope position unknown; individual RCPT facts then remain absent and retry advice requires
-        caller policy. Logging-only mode and custom mailers expose no RCPT evidence and use <code>CALLER_POLICY_REQUIRED</code>.
-        Older serialized receipts retain their known recipient buckets, but cannot recover original envelope order or RCPT details that were never stored.
-      </p>
-      <p>
-        A logging-only receipt describes the prepared MIME recipients in order. Explicit override receivers supply the delivery list when
-        present, and duplicate occurrences remain separate. A CustomMailer receipt captures the same prepared intent before the callback.
-        Your implementation owns its external delivery mapping. Both paths retain <code>UNKNOWN</code> acceptance and absent SMTP replies.
-        If the prepared MIME recipient headers cannot be parsed, the receipt uses the typed recipients or the explicit override receivers.
-      </p>
-      <p>
-        Receipts and recipient results are immutable snapshots of one attempt, including when a pooled transport is reused. They are not sanitized
-        logging reports: addresses and raw server replies may contain personal information or control characters. The examples use fictional addresses
-        and mostly print enums and codes. In application logs, decide which details to retain and escape untrusted text appropriately.
-      </p>
-      <p>
-        For a problem before submission, start with <a href="/debugging.html#section-config-diagnostics">configuration provenance</a>,
-        <a href="/debugging.html#section-async-queue">async queue diagnostics</a> or
-        <a href="/debugging.html#section-debug-logging">Jakarta Mail debug logging</a>. For later delivery, use
-        <a href="/features.html#section-delivery-status-notification">delivery status notifications</a>, bounces or provider-specific tracking;
-        a submission receipt alone cannot tell you what happened in the recipient's mailbox.
-      </p>
-      <p>
-        To identify the original destination in a later DSN, the managed Angus transport supplies
-        <a href="/features.html#section-dsn-recipients">ORCPT and optional recipient-specific NOTIFY preferences</a> when supported.
-        ORCPT can appear as <code>Original-Recipient</code> in that later report; it is not the immediate receipt's <code>getOriginalAddress()</code> field.
-        To match a later DSN to your application record, retain <code>receipt.getEnvelopeId()</code>, the effective
-        <a href="/features.html#section-dsn-envelope-id">envelope identifier (ENVID)</a>. The bundled Angus adapter generates one per send when DSN
-        is supported, unless you set <code>SmtpDeliveryOptions.Builder.fixingEnvelopeId(...)</code>. The value is <code>null</code> when no effective identifier is available.
-        The observer exposes the same receipt through <code>outcome.getSubmissionReceipt()</code>, including for batches.
-        A later report can return the value as <code>Original-Envelope-ID</code>. It is separate from Message-ID and does not prove acceptance or final delivery.
-        Neither result waits for that report; your application still needs to receive and process it.
-      </p>
+      <p>A staging send completes successfully with an <code>UNKNOWN</code> receipt. Check the sending path before treating that result
+        as an SMTP failure. For example, a result observer can tell you when the Mailer was running in logging-only mode:</p>
+<pre><code class="language-java small">if (outcome.isLoggingOnly()) {
+    System.out.println("Prepared in logging-only mode");
+}
+outcome.getSubmissionReceipt().ifPresent(receipt -&gt;
+    System.out.println("Submission: " + receipt.getStatus()));</code></pre>
+      <div class="doc-table-wrap" role="region" aria-label="Submission evidence by sending path" tabindex="0">
+        <table>
+          <thead><tr><th scope="col">Sending path</th><th scope="col">What the receipt can tell you</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Angus SMTP</th><td>Overall acceptance, submission and individual <code>RCPT TO</code> replies when captured. A failed connection or early abort can leave replies or recipient positions unknown.</td></tr>
+            <tr><th scope="row">Another SMTP provider</th><td>The facts its adapter can report. Replies or recipient details can be unavailable.</td></tr>
+            <tr><th scope="row">Logging-only mode</th><td>The prepared recipients in order. SMTP acceptance is <code>UNKNOWN</code>, there are no SMTP replies, and retry advice is <code>CALLER_POLICY_REQUIRED</code>.</td></tr>
+            <tr><th scope="row"><code>CustomMailer</code></th><td>The prepared recipients before your callback runs, with the same acceptance and reply limits as logging-only mode. Your callback decides whom to submit to.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li><strong>Before submission:</strong> check <a href="/debugging.html#section-config-diagnostics">configuration provenance</a>,
+          <a href="/debugging.html#section-async-queue">async queue diagnostics</a> or
+          <a href="/debugging.html#section-debug-logging">Jakarta Mail debug logging</a>.</li>
+        <li><strong>After submission:</strong> look for <a href="/email-composition.html#section-delivery-status-notification">delivery status notifications</a>,
+          bounces or provider tracking for mailbox outcomes.</li>
+      </ul>
+      <details class="doc-disclosure">
+        <summary>Recipient order, captured replies and safe logging</summary>
+        <ul>
+          <li>Simple Java Mail collects Angus’s successful replies internally and restores the previous <code>mail.smtp.reportsuccess</code> setting.
+            A fully accepted send returns normally even if you already enabled that setting.</li>
+          <li>An early abort at a repeated mailbox can leave its exact envelope position unknown. In that case individual RCPT facts are absent
+            and retry advice requires caller policy. Older serialized receipts keep the known recipient buckets but can’t recover envelope order
+            or RCPT details they never stored.</li>
+          <li>Logging-only and <code>CustomMailer</code> receipts keep duplicate MIME recipients in order. Explicit override receivers take precedence.
+            If MIME recipient headers cannot be parsed, the receipt uses the typed recipients or the override receivers.</li>
+          <li>A receipt snapshots one attempt even when the next send reuses the transport. For logs, prefer enums and codes when possible.
+            If you retain addresses or raw replies, escape untrusted text and account for personal data.</li>
+        </ul>
+      </details>
+      <details class="doc-disclosure">
+        <summary>Match a later delivery report</summary>
+        <p>Keep <code>receipt.getEnvelopeId()</code> with the job if it’s available. It can come back as <code>Original-Envelope-ID</code>, a
+          different field from Message-ID. The bundled Angus adapter generates an <a href="/email-composition.html#section-dsn-envelope-id">envelope identifier (ENVID)</a>
+          for each send that supports DSN unless you set <code>SmtpDeliveryOptions.Builder.fixingEnvelopeId(...)</code>. The value is <code>null</code>
+          if there’s no effective ID. The result observer exposes the same receipt, including for batches.</p>
+        <p>Managed Angus supplies <a href="/email-composition.html#section-dsn-recipients">ORCPT and optional recipient-specific NOTIFY preferences</a>
+          when supported. The later report can return ORCPT as <code>Original-Recipient</code>. The immediate receipt’s
+          <code>getOriginalAddress()</code> describes the submission attempt. Your application receives and processes later reports separately.
+          An envelope identifier alone establishes neither acceptance nor delivery.</p>
+      </details>
     </div>
   </section>
 

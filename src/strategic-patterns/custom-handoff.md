@@ -15,7 +15,7 @@ mermaid: true
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and the services for each demo. The local examples use synthetic data and run without a real mail account.
 
 Run these commands from that directory:
 
@@ -62,25 +62,32 @@ The receiver decrypts the synthetic partner message, verifies its signature and 
 
 ## Choose the destination
 
-Start with the HTTPS version, which checks the server's certificate and hostname. The RabbitMQ version publishes persistent messages with confirmation, then processes them in a separate consumer. You could use the same callback for storage or SFTP, though those implementations aren't included.
+Start with HTTPS. Both versions prepare and protect mail before handing it off. Look for the confirmation from the destination and track later processing separately.
 
-An HTTPS response tells you the gateway accepted the package, while a broker confirmation tells you it was published. Neither proves that a consumer finished processing it or that an SMTP server accepted any mail. SJM therefore reports `UNKNOWN` for SMTP acceptance. If the handoff fails ambiguously, leave it on hold and check the receiver's records and duplicate-handling rules before retrying.
+- **HTTPS.** The client verifies the server’s certificate and hostname. A successful response confirms acceptance by the gateway.
+- **RabbitMQ.** A broker confirmation records publication of the persistent message. Check the separate consumer for the processing result.
+- **Lost confirmation.** Keep the job on hold. Check the receiver’s records and its duplicate-handling rules before retrying a package it may already have stored.
 
-The demo gateway rejects requests for DSNs, onward TLS or recipient-rejection behavior because it doesn't implement them. When building your own integration, decide how each requested feature maps to the destination and reject any you can't support.
+The receipt records `UNKNOWN` for SMTP acceptance. The demo rejects requests for DSNs, onward TLS, or recipient-rejection behavior. If you adapt the callback for another destination, such as storage or SFTP, map each requested feature to behavior that destination supports and reject unsupported requests.
 
-The scenario checks protection, hidden-envelope recipients, duplicate requests, rejected packages and stored packages whose confirmation was lost:
+The HTTPS scenario checks protection, hidden-envelope recipients, duplicate input, rejected packages, and a package stored before confirmation was lost.
 
 ```json
 {"pattern":"custom-handoff","mode":"https","smtpServer":false,"preparedProtectionVerified":true,"duplicateSuppressed":true,"smtpAcceptance":"UNKNOWN"}
 ```
 
-To try RabbitMQ, stop the HTTPS stack first. Include both Compose files in each command; you can then check the broker confirmation and the consumer's result separately.
+<details class="doc-disclosure">
+<summary>Try the RabbitMQ version</summary>
+
+Stop the HTTPS stack first. Then use both Compose files to start RabbitMQ and run the scenario. Check the broker confirmation and the consumer’s result separately.
 
 ```text
 docker compose -f tools/integration-patterns/custom-handoff/compose.yaml down --volumes --remove-orphans
 docker compose -f tools/integration-patterns/custom-handoff/compose.yaml -f tools/integration-patterns/custom-handoff/rabbitmq.yaml up --build -d --wait
 docker compose -f tools/integration-patterns/custom-handoff/compose.yaml -f tools/integration-patterns/custom-handoff/rabbitmq.yaml run --rm scenario
 ```
+
+</details>
 
 ## Source and cleanup
 

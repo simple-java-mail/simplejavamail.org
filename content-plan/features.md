@@ -1,23 +1,18 @@
-# Capabilities reference
+# Capabilities catalogue and Email guides
 
-Route: `/features.html`
-Role: be the complete, searchable map of the high-level outbound-email API
-Primary audience: implementers checking whether and how a requirement is supported
-Primary action: reach an exact example or adjacent configuration/security page
+Discovery route: `/features.html` — Capabilities
+Task guides: `/email-composition.html` — Building emails; `/email-conversion.html` — Converting and inspecting email
+Role: make the whole library discoverable and give detailed content a clear guide home
+
+The [implemented discovery structure](capabilities-discovery.md) is authoritative for page roles, shared data, navigation, section ownership and compatibility. The catalogue uses visible grouped feature links and an obvious first-email route. API explanations and examples belong in the task guides or existing focused guides.
+
+The technical requirements below continue to apply to their new guide destinations. Their existing Features links are preserved through the legacy-fragment mapping.
 
 ## Reader question
 
 > Does the library handle this requirement, and where is the smallest correct example?
 
-## Visible structure
-
-### Hero: Features from compose to send
-
-Short orientation plus local search/filter links. Preserve the legacy `navigation` anchor.
-
-Follow the hero with quick-link cards for composing, attachments and embedded images, replies and forwards, address validation, and asynchronous or batch sending. Keep the exhaustive feature list in the table of contents.
-
-The opening copy must establish that this is not only a friendlier `MimeMessage` API. Name the integrated capabilities: reusable message rules, DKIM, S/MIME, OpenPGP/MIME, diagnostics, conversion, authenticated SOCKS, batching, connection pools, and SMTP clusters. Distinguish features absent from Jakarta Mail itself from those that would otherwise require direct Session, MimeMessage, or Transport work.
+## Guide content
 
 ### Compose messages
 
@@ -75,7 +70,7 @@ Keep a short introduction and the existing submission-receipt and recipient-repl
 
 ### Use content rendered by your template system
 
-Preserve the existing `section-rendered-templates` anchor and place this near the end of the page, after custom sending logic and before maximum message size.
+Preserve the existing `section-rendered-templates` anchor and place this near the end of the Building emails guide.
 
 This is a useful application integration recipe, not a core Simple Java Mail capability. Keep it out of the opening quick links and the primary Compose summary.
 
@@ -103,10 +98,6 @@ A short Spring note may show an application service receiving both a `Mailer` an
 
 The concrete engines are examples, not an endorsement or compatibility matrix. Do not add template-engine dependencies, version promises, a renderer SPI, delayed rendering, or engine-specific Simple Java Mail modules.
 
-### Grand example appendix
-
-Retain a complete, feature-rich example as a clearly labeled appendix. Break it into logical annotated regions and keep it out of the main reading path.
-
 ## Legacy anchor commitments
 
 Preserve every current section ID, including:
@@ -116,7 +107,7 @@ Preserve every current section ID, including:
 - `authentication`
 - all existing IDs for builder APIs, batch/clustering, custom Session, encodings, IDs/dates/receipts, transport examples, resources, headers/properties/debug, binding/hostname, iCalendar, delivery notifications/DSN, validation, conversion, bounce/reply/forward, proxy, connection tests, serialization, custom sending, and maximum size.
 
-When headings move, compatibility anchors remain before the new heading.
+When headings move to another guide, retain their ids there and update the Features compatibility mapping.
 
 ## Content pattern per capability
 
@@ -140,6 +131,6 @@ The features already exist, but the current page reads like a chronological accu
 - Do not duplicate full security or configuration guides here.
 - Keep project planning and the public roadmap on `/contact.html`, not in the capability reference.
 - Identify optional-module requirements before the code sample.
-- Keep examples current with version 9 recipient builders.
+- Keep examples current with the 10.0.0 factory and recipient-builder contracts.
 - Do not describe template engines as supported integrations; describe the render-then-build contract.
 - Preserve all existing anchors even if an old label is retired.

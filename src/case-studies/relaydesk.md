@@ -595,7 +595,7 @@ Email reply = replyEmailBuilder
 
 *Human replies return to the ticket; delivery reports identify the send attempt.*
 
-Ordinary replies follow the `Reply-To` message header, whereas `withBounceTo(...)` sets the SMTP envelope sender, `MAIL FROM`, where failures normally return. For servers supporting DSN, the [delivery-status notification options](/features.html#section-delivery-status-notification) request failure and delay reports with headers rather than another copy of the attachments; the envelope ID gives RelayDesk another way to identify the attempt in a returned DSN. These are [delivery reports](https://www.rfc-editor.org/rfc/rfc3461.html#section-4), not read receipts or a promise that a report will arrive.
+Ordinary replies follow the `Reply-To` message header, whereas `withBounceTo(...)` sets the SMTP envelope sender, `MAIL FROM`, where failures normally return. For servers supporting DSN, the [delivery-status notification options](/email-composition.html#section-delivery-status-notification) request failure and delay reports with headers rather than another copy of the attachments; the envelope ID gives RelayDesk another way to identify the attempt in a returned DSN. These are [delivery reports](https://www.rfc-editor.org/rfc/rfc3461.html#section-4), not read receipts or a promise that a report will arrive.
 
 ### Match the bounce to the sending attempt
 
@@ -614,7 +614,7 @@ Ticket KD-1043 · attempt 1
 
 With the failure attached to the right ticket, Maya checks the customer's contact details. Kestrel confirms an updated address, and she sends the reply there as a new attempt, keeping the failed one in the history. There's nothing for Sam or Anika to repair this time, and no reason to keep retrying a mailbox that no longer exists.
 
-If Maya wants confirmation that the customer has read her corrected reply, Simple Java Mail can request a [read receipt](/features.html#section-return-receipt) using `withDispositionNotificationTo(...)` or the provider-dependent `withReturnReceiptTo(...)`. The [recipient can ignore an MDN request](https://www.rfc-editor.org/rfc/rfc8098.html#section-2.1), though, so a missing receipt leaves the reply's read status unknown.
+If Maya wants confirmation that the customer has read her corrected reply, Simple Java Mail can request a [read receipt](/email-composition.html#section-return-receipt) using `withDispositionNotificationTo(...)` or the provider-dependent `withReturnReceiptTo(...)`. The [recipient can ignore an MDN request](https://www.rfc-editor.org/rfc/rfc8098.html#section-2.1), though, so a missing receipt leaves the reply's read status unknown.
 
 Some platforms turn to tracking pixels here: tiny remote images with a URL unique to the message, whose download is recorded as an apparent open. [Mail clients can block the image or fetch it in the background](https://support.apple.com/guide/mail/change-privacy-settings-mlhlae4a4fe6/mac), though, so even that doesn't prove the customer read the reply.
 

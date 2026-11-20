@@ -1,4 +1,5 @@
 @import "tokens.less";
+@import "../_includes/styles/dependency-picker.less";
 
 // Start pages use the documentation palette and reading rhythm. Dark surfaces are
 // reserved for runnable code and the single closing action panel.
@@ -38,7 +39,7 @@
 
 .start-boundary-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 0.86fr) minmax(0, 1.14fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: @space-lg;
   margin-top: @space-xl;
 }
@@ -177,16 +178,6 @@
   color: @teal-deep;
 }
 .start-code-window { max-width: 850px; margin-top: @space-lg; }
-.start-alternate-install { max-width: 850px; margin-top: @space-md; border: 1px solid @line; background: @surface; }
-.start-alternate-install summary {
-  padding: @space-sm @space-md;
-  cursor: pointer;
-  font-family: @font-mono;
-  font-size: 0.67rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-.start-alternate-install pre { margin: 0; border: 0; border-top: 1px solid @line-dark; }
 .start-note {
   max-width: 850px !important;
   margin-top: @space-md;
@@ -199,7 +190,7 @@
 
 .start-verify-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: @space-md;
   margin-top: @space-xl;
 }
@@ -250,11 +241,9 @@
 .start-next-grid small { margin-top: @space-xs; color: @steel; }
 
 @media (max-width: 900px) {
-  .start-boundary-grid,
   .legacy-doc-content .start-stage-list,
   .start-fit-grid,
   .start-action-box,
-  .start-verify-grid,
   .start-next-grid { grid-template-columns: minmax(0, 1fr); }
   .start-stage-list > li { min-height: 0; }
   .start-module-list > a { grid-template-columns: minmax(0, 1fr); gap: @space-xs; padding-block: @space-md; }

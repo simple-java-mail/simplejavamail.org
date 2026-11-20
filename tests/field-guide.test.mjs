@@ -40,6 +40,7 @@ test("Tactical Patterns uses the docs frame with one title and both navigation r
   assert.match(layout, /layout: "layouts\/base.hbs"/);
   assert.match(layout, /customDocsContent: true/);
   const handlebars = Handlebars.create();
+  for (const [name, helper] of Object.entries(createTemplateHelpers())) handlebars.registerHelper(name, helper);
   for (const name of ["head", "site-header", "footer", "breadcrumbs"]) handlebars.registerPartial(name, "");
   handlebars.registerPartial("docs-sidebar", '<aside class="docs-sidebar">Documentation navigation</aside>');
   handlebars.registerHelper("fieldGuideSections", fieldGuideSections);
@@ -125,7 +126,7 @@ test("local indexes derive all scenario links from the directory without changin
 test("scenarios provide deep reference links including the optional batch module", () => {
   assert.match(body, /optional \[batch module\]\(\/modules.html#batch-module\)/);
   for (const section of body.split(/^### /m).slice(1)) {
-    assert.match(section, /\]\(\/(?:features|sending-and-execution|analyzing-send-results|debugging|configuration|security|modules|smtp-connection-failover)\.html#/);
+    assert.match(section, /\]\(\/(?:email-composition|email-conversion|sending-and-execution|analyzing-send-results|debugging|configuration|security|modules|smtp-connection-failover)\.html#/);
   }
 });
 
@@ -135,10 +136,10 @@ test("capability mentions link directly to their relevant deeper explanations", 
     ["sequential batch over one connection", "/sending-and-execution.html#section-not-reusing-connections"],
     ["whole-operation deadline", "/sending-and-execution.html#section-send-deadlines"],
     ["Build replacement Mailers from the new configuration", "/configuration.html#section-config-snapshot"],
-    ["`SMTPUTF8`", "/features.html#section-international-mail"],
-    ["`8BITMIME`", "/features.html#section-international-mail"],
+    ["`SMTPUTF8`", "/sending-and-execution.html#section-international-mail"],
+    ["`8BITMIME`", "/sending-and-execution.html#section-international-mail"],
     ["OpenPGP", "/security.html#section-sending-openpgp"],
-    ["envelope-sender address", "/features.html#section-bouncing-emails"],
+    ["envelope-sender address", "/email-composition.html#section-bouncing-emails"],
     ["completion observer", "/analyzing-send-results.html#section-observer-results"],
   ]) {
     assert.ok(body.includes(`[${text}](${destination})`), text);
@@ -146,14 +147,16 @@ test("capability mentions link directly to their relevant deeper explanations", 
   assert.match(body, /RelayDesk's recipient-specific example\]\(\/case-studies\/relaydesk\.html#retry-the-warehouse-s-copy-not-the-buyer-s\)/);
 });
 
-test("Use cases offers a route to the shared Patterns home", () => {
+test("the former Use cases route offers the catalogue and retains its section links", () => {
   const template = readFileSync(new URL("../src/pages/use-cases.hbs", import.meta.url), "utf8");
-  assert.match(template, /href="\/patterns\.html"/);
+  assert.match(template, /href="\/features\.html"/);
+  assert.match(template, /name="robots" content="noindex"/);
   assert.doesNotMatch(template, /data\.draft|working draft/i);
 });
 
 test("the Docs dropdown offers one combined Patterns link without badge headings", () => {
   const handlebars = Handlebars.create();
+  for (const [name, helper] of Object.entries(createTemplateHelpers())) handlebars.registerHelper(name, helper);
   handlebars.registerHelper("eq", (left, right) => left === right);
   handlebars.registerHelper("activeClass", (url, current) => url === current ? "is-active" : "");
   const nav = JSON.parse(readFileSync(new URL("../src/_data/nav.json", import.meta.url), "utf8"));
@@ -161,10 +164,11 @@ test("the Docs dropdown offers one combined Patterns link without badge headings
   assert.doesNotMatch(template, /field-guide-menu-items|pattern-badge/);
   const preview = handlebars.compile(template)({ nav, page: { url: "/docs.html" } });
   const menu = preview.match(/<ul id="primary-docs-submenu"[\s\S]*?<\/ul>/)[0];
-  assert.match(menu, /href="\/patterns\.html"[^>]*>Tactical\/strategic patterns<\/a>/);
+  assert.match(menu, /href="\/patterns\.html"[^>]*>Patterns<\/a>/);
   assert.equal((menu.match(/href="\/patterns\.html"/g) || []).length, 1);
   assert.doesNotMatch(menu, /email-workload-field-guide|strategic-patterns/);
-  assert.match(menu, /href="\/use-cases\.html"/);
+  assert.doesNotMatch(menu, /href="\/use-cases\.html"/);
+  assert.match(menu, /href="\/docs\.html#recover-from-failures"/);
   assert.match(menu, /href="\/modules\.html"/);
 });
 
@@ -190,7 +194,7 @@ test("the docs sidebar marks the listed page or its navigation parent as current
     assert.deepEqual(currentLinks, currentLink ? [currentLink] : [], url);
     assert.match(menu, /<a href="\/patterns\.html"[^>]*>Patterns<\/a>\s*<ul class="docs-nav-children">\s*<li>\s*<a href="\/email-workload-field-guide\.html"[^>]*>Tactical Patterns<\/a>\s*<\/li>\s*<li>\s*<a href="\/strategic-patterns\.html"[^>]*>Strategic Patterns<\/a>\s*<\/li>\s*<\/ul>/);
     assert.doesNotMatch(menu, /pattern-badge|pattern-navigation/);
-    assert.ok(menu.indexOf('href="/use-cases.html"') < menu.indexOf('href="/email-workload-field-guide.html"'));
-    assert.ok(menu.indexOf('href="/why-simple-java-mail.html"') < menu.indexOf('href="/use-cases.html"'));
+    assert.ok(menu.indexOf('href="/features.html"') < menu.indexOf('href="/email-workload-field-guide.html"'));
+    assert.ok(menu.indexOf('href="/why-simple-java-mail.html"') < menu.indexOf('href="/features.html"'));
   }
 });

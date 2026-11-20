@@ -22,7 +22,11 @@
         {{else}}
         {{> breadcrumbs}}
         <header class="doc-hero">
-          {{#if section}}<p class="eyebrow">{{section}}</p>{{/if}}
+          {{#with (guideContext page.url nav @root.capabilities)}}
+            <p class="eyebrow"><a href="{{href}}">{{label}}</a></p>
+          {{else}}
+            {{#if section}}<p class="eyebrow">{{section}}</p>{{/if}}
+          {{/with}}
           <h1>{{title}}</h1>
           <p class="doc-lede">{{description}}</p>
           {{#if showOpenSourceBadges}}
@@ -36,16 +40,17 @@
           {{/if}}
         </header>
 
-        <article class="legacy-doc-content">
+        <article class="legacy-doc-content" data-pagefind-weight="2">
           {{{content}}}
         </article>
         {{/if}}
 
         <nav class="doc-next" aria-label="Documentation next steps">
-          <a href="/docs.html">
-            <span>Find another task</span>
-            <strong>Documentation index <span aria-hidden="true">→</span></strong>
-          </a>
+          {{#with (guideContext page.url nav @root.capabilities)}}
+            <a href="{{href}}"><span>More in this group</span><strong>{{label}} <span aria-hidden="true">→</span></strong></a>
+          {{else}}
+            <a href="/docs.html"><span>Find another task</span><strong>Documentation index <span aria-hidden="true">→</span></strong></a>
+          {{/with}}
           <a href="/contact.html">
             <span>Something unclear?</span>
             <strong>Help and contribute <span aria-hidden="true">→</span></strong>
@@ -60,6 +65,10 @@
     <script src="/pages/scripts/lazy-img-loader.js"></script>
     <script type="module" src="/scripts/site.js"></script>
     <script type="module" src="/pagefind/pagefind-component-ui.js"></script>
+    {{#if mermaid}}
+      <script src="/assets/lib/mermaid.min.js"></script>
+      <script type="module" src="/scripts/mermaid.js"></script>
+    {{/if}}
     {{#if mimeStructureDemo}}{{> components/mimemessage--structure-demo-script}}{{/if}}
   </body>
 </html>

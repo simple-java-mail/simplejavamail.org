@@ -22,7 +22,7 @@ mermaid: true
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and the services for each demo. The local examples use synthetic data and run without a real mail account.
 
 Run these commands from that directory:
 
@@ -37,9 +37,11 @@ Expect urgent work to finish while bulk work waits. You should also see the appr
 
 ## Follow one job
 
-Start at [`PolarMeridianApplication`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/polar-meridian/src/main/java/PolarMeridianApplication.java), where the constructor connects the article's Dispatcher to the demo's storage and sending code. Follow [`PolarStorage`](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/polar-meridian/src/main/java/PolarStorage.java) into the [original Dispatcher](/assets/journal/articles/polar-meridian/examples/PolarMeridianDispatcher.java), then return to `preparation` and `recordOutcome` to see how a message is prepared and its result saved. The [JDBC limiter](/assets/journal/articles/polar-meridian/examples/JdbcDispatchLimits.java) checks the allowance shared by both instances, while SJM's local limit applies within each factory.
+Pick a protected urgent job in `/jobs`. Find its send in `/attempts` and query `/archive-proof?id=<job-id>`. Look for `sameBytes: true`, which confirms that the bytes in the archive match the message captured by the relay.
 
-Compare `/jobs`, `/attempts` and `/events` after the scenario. Check that the protected job's archived bytes match the captured message, and look for the event raised when saving a result fails. If you want to explore telemetry too, try the optional Collector setup below.
+For that job’s code path, start where the application connects the [Dispatcher](/assets/journal/articles/polar-meridian/examples/PolarMeridianDispatcher.java) to the Mailers. Follow `preparation` to see how the protected bytes are produced, then `recordOutcome` to see where the attempt is saved. [Application wiring](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/polar-meridian/src/main/java/PolarMeridianApplication.java) · [Job and attempt storage](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/polar-meridian/src/main/java/PolarStorage.java)
+
+The scenario also injects a result-write failure. Open `/events` for the attention event from that case. For rate accounting, the JDBC limiter tracks the allowance shared by both instances. SJM applies the local limit inside each factory. [JDBC limiter](/assets/journal/articles/polar-meridian/examples/JdbcDispatchLimits.java) · [Optional telemetry setup](#opentelemetry)
 
 ## The problem
 

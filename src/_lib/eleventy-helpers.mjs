@@ -147,6 +147,15 @@ export function headingsFromHtml(content) {
   return headings;
 }
 
+// Put legacy section targets on their headings so search can link to the matching subsection.
+export function linkableGuideHeadings(content) {
+  return String(content).replace(/<a\b([^>]*\bid="([a-z0-9-]+)"[^>]*)>([^<]*)<\/a>(\s*)<h([23])\b([^>]*)>/gi,
+    (match, attributes, id, label, whitespace, level, headingAttributes) => {
+      if (!/\bsection-link\b/.test(attributes) || /\bid\s*=/.test(headingAttributes)) return match;
+      return `<a${attributes.replace(/\s+id="[a-z0-9-]+"/i, '')}>${label}</a>${whitespace}<h${level}${headingAttributes} id="${id}">`;
+    });
+}
+
 function findNavPath(items, url) {
   for (const item of items || []) {
     if (item.url === url) return [item];

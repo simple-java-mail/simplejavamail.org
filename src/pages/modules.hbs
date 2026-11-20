@@ -35,10 +35,10 @@ description: "Understand the default Angus provider adapter and choose optional 
 
   <h2 id="core-module" class="with-back-to-top">Core</h2>
   <nav class="module-capability-links" aria-label="Core capabilities">
-    <a href="features.html#section-basic-usage"><span>Compose</span><strong>Messages and recipients</strong><b aria-hidden="true">→</b></a>
-    <a href="features.html#section-attachments"><span>Content</span><strong>Attachments and images</strong><b aria-hidden="true">→</b></a>
+    <a href="/email-composition.html#section-basic-usage"><span>Compose</span><strong>Messages and recipients</strong><b aria-hidden="true">→</b></a>
+    <a href="/email-composition.html#section-attachments"><span>Content</span><strong>Attachments and images</strong><b aria-hidden="true">→</b></a>
     <a href="security.html#section-authentication-methods"><span>Transport</span><strong>TLS and OAuth2</strong><b aria-hidden="true">→</b></a>
-    <a href="features.html#section-converting"><span>Interoperate</span><strong>EML and MIME conversion</strong><b aria-hidden="true">→</b></a>
+    <a href="/email-conversion.html#section-converting"><span>Interoperate</span><strong>EML and MIME conversion</strong><b aria-hidden="true">→</b></a>
   </nav>
   <section>
     <div class="view">
@@ -57,13 +57,14 @@ description: "Understand the default Angus provider adapter and choose optional 
       </ul>
       <p>The main artifact adds <code class="inline language-text">angus-mail-provider-module</code> at runtime. That adapter brings Angus Mail, while keeping Angus-specific SMTP handling inside the adapter.</p>
       <p>Use the published POM on Maven Central as the authoritative list of transitive dependencies for the current release.</p>
-      <p>In unreleased 10.0.0, the main module also uses <code>org.jsoup:jsoup</code> to interpret HTML attributes during CID resource matching.
-        Maven includes it automatically. Custom module paths must include <code>org.jsoup</code>; the public SJM API remains independent of its types.</p>
+
       <p style="margin-top: 1em">
         The <code class="inline language-text">simple-java-mail</code> and <code class="inline language-text">core-module</code> jars include
         Java module descriptors. Modular applications can require
         <code class="inline language-java">org.simplejavamail</code> directly.
       </p>
+      <p>The main module uses <code>org.jsoup:jsoup</code> to interpret HTML attributes during CID resource matching.
+        Maven includes it automatically. Custom module paths must include <code>org.jsoup</code>; the public SJM API remains independent of its types.</p>
     </div>
     <div class="side">
       <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable Simple Java Mail artifact path">
@@ -82,60 +83,43 @@ description: "Understand the default Angus provider adapter and choose optional 
 
   <h2 id="angus-mail-provider-module" class="with-back-to-top">Angus Mail provider adapter</h2>
   <nav class="module-capability-links" aria-label="Angus Mail provider adapter capabilities">
-    <a href="features.html#section-bouncing-emails"><span>Envelope</span><strong>Bounce address handling</strong><b aria-hidden="true">→</b></a>
-    <a href="features.html#section-delivery-status-notification"><span>Request</span><strong>Delivery status notifications</strong><b aria-hidden="true">→</b></a>
-    <a href="features.html#section-submission-receipts"><span>Inspect</span><strong>Enhanced SMTP responses</strong><b aria-hidden="true">→</b></a>
+    <a href="/email-composition.html#section-bouncing-emails"><span>Envelope</span><strong>Bounce address handling</strong><b aria-hidden="true">→</b></a>
+    <a href="/email-composition.html#section-delivery-status-notification"><span>Request</span><strong>Delivery status notifications</strong><b aria-hidden="true">→</b></a>
+    <a href="/analyzing-send-results.html#section-get-receipt"><span>Inspect</span><strong>Enhanced SMTP responses</strong><b aria-hidden="true">→</b></a>
     <a href="#mail-transport-adapter-spi"><span>Replace</span><strong>Another Jakarta Mail provider</strong><b aria-hidden="true">→</b></a>
   </nav>
 
-  <section>
-    <div class="view">
-      <p>
-        You do not normally add this artifact yourself. <code class="inline language-text">simple-java-mail</code> includes it as a runtime dependency, so
-        the normal setup remains one dependency and uses Angus as the supported default Jakarta Mail implementation.
-      </p>
-      <p>
-        The adapter is the small provider-specific part of the library. It translates envelope sender, DSN, and detailed SMTP response handling into
-        Angus behavior without making the public message, conversion, DKIM, S/MIME, or OpenPGP APIs depend on Angus classes.
-      </p>
-      <p>
-        Only exclude the adapter when you supply another compatible Jakarta Mail implementation. No other provider adapter ships with Simple Java Mail
-        today. The Jakarta Mail API jar is not enough by itself: MIME and EML conversion also use implementation services from Jakarta Mail and Jakarta
-        Activation. Without an implementation, conversion stops with an error that tells you to restore the default module or add a replacement.
-      </p>
-      <p>
-        Ordinary messages can use Jakarta Mail's regular Transport API with a replacement implementation. Provider-specific envelope or DSN features
-        need a matching adapter and fail clearly when the selected provider cannot supply them.
-      </p>
-    </div>
-    <div class="side">
-      <p>The adapter brings:</p>
-      <ul>
-        <li><a href="https://eclipse-ee4j.github.io/angus-mail/"><code>org.eclipse.angus:angus-mail</code></a></li>
-      </ul>
-      <p>
-        You do not need a direct Angus dependency for normal sending. Add <code>org.eclipse.angus:angus-mail</code> as a compile dependency only when
-        your own source imports <code>org.eclipse.angus.*</code>. A modular application must also require <code>org.eclipse.angus.mail</code>. The
-        adapter still supplies Angus at runtime, but deliberately does not make its implementation classes part of your application's compile API.
-      </p>
-    </div>
-  </section>
+  <section><div class="wide">
+    <dl class="extension-boundary-map">
+      <div><dt>Use the default provider</dt><dd>Depend on <code>simple-java-mail</code>. Its runtime adapter brings
+        <a href="https://eclipse-ee4j.github.io/angus-mail/"><code>org.eclipse.angus:angus-mail</code></a> and maps envelope sender,
+        DSN and SMTP response handling. The public message, conversion and protection APIs remain provider-neutral.</dd></div>
+      <div><dt>Import Angus types in your own code</dt><dd>Add <code>org.eclipse.angus:angus-mail</code> as a compile dependency.
+        On the module path, also declare <code>requires org.eclipse.angus.mail;</code>. The adapter supplies runtime Angus.</dd></div>
+      <div><dt>Use another Jakarta Mail implementation</dt><dd>Exclude the bundled adapter and supply the replacement runtime
+        implementation. The ordinary <code>Transport</code> API can send standard mail. Provider-specific envelope and DSN features need
+        a compatible adapter. See <a href="#mail-transport-adapter-spi">how to add one</a>.</dd></div>
+    </dl>
+    <p>Angus is the bundled adapter. MIME and EML conversion also need Jakarta Mail and Activation implementation services.
+      If those services are missing, the conversion error points to restoring the default module or adding an implementation.</p>
+  </div></section>
 
   <a href="#mail-transport-adapter-spi" id="mail-transport-adapter-spi" class="section-link h3">&sect;</a>
   <h3>Integrating another Jakarta Mail provider</h3>
 
   <section>
     <p>
-      Adding another compatible Jakarta Mail implementation changes the provider behind the Session; it does not require replacing the whole Mailer.
-      For ordinary content without provider-specific envelope options, Simple Java Mail can submit through Jakarta Mail's regular
-      <code class="inline language-java">Transport.sendMessage(...)</code> API.
+      If your application server already supplies a Jakarta Mail implementation, you can keep it and still use Simple Java Mail.
+      For ordinary messages without provider-specific envelope options, Simple Java Mail sends through the provider's standard
+      <code class="inline language-java">Transport.sendMessage(...)</code>.
     </p>
     <p>
-      Exclude the default adapter to remove its transitive Angus implementation, then add your replacement implementation to the runtime path.
-      The Jakarta Mail API alone does not supply the services needed for sending or MIME conversion.
+      To swap out Angus, exclude its adapter and make sure your replacement implementation is on the runtime path.
+      Sending and MIME conversion both need a provider implementation alongside the Jakarta Mail API.
     </p>
-    <div class="wide full-width-example">
-      <p>Maven:</p>
+    <details class="doc-disclosure wide full-width-example">
+      <summary>Exclude the Angus adapter in Maven or Gradle</summary>
+      <p>Maven</p>
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
     &lt;artifactId&gt;simple-java-mail&lt;/artifactId&gt;
@@ -147,65 +131,128 @@ description: "Understand the default Angus provider adapter and choose optional 
         &lt;/exclusion&gt;
     &lt;/exclusions&gt;
 &lt;/dependency&gt;</code></pre>
-      <p>Gradle:</p>
+      <p>Gradle</p>
 <pre><code class="language-groovy">implementation('org.simplejavamail:simple-java-mail:{{site.version}}') {
     exclude group: 'org.simplejavamail', module: 'angus-mail-provider-module'
 }</code></pre>
+    </details>
+    <div class="wide">
+      <h4>Send a signed invoice through your provider</h4>
+      <p>Your application needs to submit an invoice from an already signed EML file through its Jakarta Mail provider. Implement
+        <code class="inline language-java">MailTransportAdapter</code> to preserve the file byte for byte, carry the requested envelope
+        options, and pass back the provider's submission result. The same SPI covers features such as a custom envelope sender or DSNs.</p>
+
+      <dl class="extension-boundary-map">
+        <div>
+          <dt><strong>Match the provider</strong></dt>
+          <dd><p>Implement <code>supports(Transport)</code> for your concrete Transport. Simple Java Mail matches the adapter to the
+            actual provider and handles connecting, pooling, and reuse.</p></dd>
+        </div>
+        <div>
+          <dt><strong>Check the prepared mail</strong></dt>
+          <dd>
+            <p>Declare support for the invoice's <code>PRESERVE_ALL_BYTES</code> requirement with
+              <code>supportsContentRequirement(...)</code>. Simple Java Mail also checks the adapter's <code>supportsDeliveryEnvelope(...)</code>
+              before dispatch. Inside <code>sendMessage(Transport, PreparedMail)</code>, check the requested options on the already connected
+              Transport before starting SMTP submission. See <a href="#mail-transport-adapter-envelope-options">the fixed ENVID walkthrough</a>.</p>
+            <details class="doc-disclosure">
+              <summary>Content-preservation levels</summary>
+              <p>Read <code>PreparedMail.getContentRequirement()</code>. <code>NORMAL</code> is ordinary composed mail.
+                <code>PRESERVE_PROTECTED_CONTENT</code> preserves the protected content. <code>PRESERVE_ALL_BYTES</code> preserves every
+                supplied byte of an exact message. The deprecated boolean constructor and <code>requiresStableContent()</code>
+                remain available for compatibility. Use the enum for all three levels.</p>
+            </details>
+          </dd>
+        </div>
+        <div>
+          <dt><strong>Submit on the supplied connection</strong></dt>
+          <dd><p>Use the content and recipients in <code>PreparedMail</code> and set the requested SMTP envelope separately.
+            For this invoice, submit the EML bytes unchanged. Simple Java Mail owns connection setup and routing. If the supplied connection
+            is unusable, report the failure using the facts you have.</p></dd>
+        </div>
+        <div>
+          <dt><strong>Return the result</strong></dt>
+          <dd>
+            <p>Return a non-null <code>MailTransportResult</code>. Simple Java Mail translates it into the
+              <a href="analyzing-send-results.html">submission result the caller sees</a>.</p>
+            <ul>
+              <li><strong>The server confirms the whole invoice.</strong> Return <code>accepted(...)</code> with the accepted recipients
+                and available SMTP reply.</li>
+              <li><strong>The final reply goes missing.</strong> Return <code>failedWithUnknownAcceptance(...)</code> with the failure and
+                any recipient facts you still know. The relay may already have the invoice. The application decides whether to resend.</li>
+            </ul>
+            <details class="doc-disclosure">
+              <summary>Other provider outcomes</summary>
+              <ul>
+                <li>Return <code>unknown(...)</code> when the provider returns normally without confirming acceptance.</li>
+                <li>Return <code>failed(...)</code> for a Jakarta Mail submission failure. It keeps the original exception and takes
+                  recipient groups from the first <code>SendFailedException</code> in the standard next-exception chain, stopping at a
+                  loop. Without sufficient recipient details, a 4xx or 5xx reply establishes rejection. Intermediate or unusable codes
+                  leave acceptance unknown while retaining the raw reply.</li>
+              </ul>
+            </details>
+          </dd>
+        </div>
+      </dl>
     </div>
-    <p>
-      Implement the public <code class="inline language-java">MailTransportAdapter</code> SPI when the provider must also handle envelope sender or DSN
-      options, preserve finalized or protected message bytes, or expose its final SMTP response. The adapter receives an already connected Transport and
-      the prepared mail, then returns a provider-neutral <code class="inline language-java">MailTransportResult</code>. Simple Java Mail continues to own
-      transport acquisition, connection reuse, pooling, and result translation.
-    </p>
-    <p>
-      An adapter implements <code class="inline language-java">supports(Transport)</code>, optionally declares which content-preservation requirements it
-      supports, and performs the final submission in <code class="inline language-java">sendMessage(Transport, PreparedMail)</code>.
-    </p>
-    <p>
-      Use <code>PreparedMail.getContentRequirement()</code> to distinguish <code>NORMAL</code>, <code>PRESERVE_PROTECTED_CONTENT</code>, and
-      <code>PRESERVE_ALL_BYTES</code>. The adapter must explicitly support the requested preservation level; exact EML requires every supplied byte
-      to survive submission. The deprecated boolean constructor and <code>requiresStableContent()</code> remain compatibility shims, but cannot express
-      the difference between protected content and a fully exact message.
-    </p>
-    <p>
-      Return a non-null <code class="inline language-java">MailTransportResult</code>: use <code>accepted(...)</code> when every submitted recipient was
-      accepted, or <code>unknown(...)</code> for an opaque operation that returned normally but cannot report server acceptance. Use
-      <code>failed(...)</code> for a Jakarta Mail submission failure; it copies available recipient groups from the first <code>SendFailedException</code>
-      in the standard next-exception chain, with cycle protection, and
-      preserves the original exception. Only actual 4xx/5xx replies establish rejection when recipient facts are unavailable; intermediate or unusable
-      codes leave acceptance unknown, while the raw response remains available for inspection. If the final acceptance reply was lost after sending the message data, use
-      <code>failedWithUnknownAcceptance(...)</code>, retaining only recipient facts that remain certain. A lost reply must not become a known rejection
-      or trigger an automatic resend. See <a href="analyzing-send-results.html">submission results and failure handling</a>.
-    </p>
-    <p>
-      For <a href="/features.html#section-dsn-envelope-id">DSN envelope identifiers (ENVID)</a>, also opt in through
-        <code>supportsDeliveryEnvelope(...)</code>. Its default preserves existing envelope behavior but declines fixed ENVID and recipient-specific NOTIFY, so an older adapter cannot
-      silently drop a new identifier. An adapter that supports it must check DSN on the actual connected transport and fail before submission when
-      the server cannot honor the fixed identifier. The bundled Angus adapter does this check after connection setup, not from an earlier probe result.
-      Without a fixed value it generates a fresh UUID when DSN is available, and otherwise sends normally without ENVID. Adapters report the effective,
-      unencoded identifier through <code>MailTransportResult.withEnvelopeId(...)</code>; the same value reaches <code>MailSubmissionReceipt.getEnvelopeId()</code>.
-        Leave it absent when no identifier was used or its use is unknown.
-      </p>
-      <p>For <a href="/features.html#section-dsn-recipients">recipient-specific NOTIFY</a>, the ordered
-        <code>DeliveryEnvelope.getRecipientOptions()</code> list contains one <code>DeliveryRecipient</code> per input envelope occurrence.
-        An empty list means no recipient-specific preference. Match the prepared address order, including duplicates and any subsequent provider group expansion;
-        an explicit set replaces shared NOTIFY, while an empty set inherits it. Reject unsupported explicit preferences before MAIL FROM.
-        <code>MailTransportCompatibilityException</code> identifies this pre-submission rejection so a healthy pooled connection remains reusable;
-        never use it for an SMTP transaction that has already started.</p>
-      <p>The managed Angus command hook adds ORCPT without replacing Angus's recipient loop or reply handling. Ordinary Angus transports from caller-owned
-        Sessions do not have that hook. Library-owned stock Angus Sessions retain it with custom socket factories, without gaining unsupported physical abort.
-        ORCPT is optional for third-party adapters; any automatically generated value must match the actual envelope recipient
-        and leave notification preferences and MIME bytes unchanged.</p>
-      <p><code>PreparedMail.isLegacySmtpContentSupportEnabled()</code> carries the actual selected server's compatibility permission, defaulting to false in
-        existing constructors. It does not change the content-preservation contract. The bundled managed Angus adapter negotiates SMTPUTF8 per message;
-        caller-owned Sessions, CustomMailer and third-party providers retain their own transport behavior. See the
-        <a href="features.html#section-international-mail">legacy-content boundaries</a>.</p>
     <div class="wide full-width-example">
-      <p>Register the implementation through the standard Java service-provider mechanism:</p>
+      <h4 id="mail-transport-adapter-envelope-options">Carry the requested envelope options</h4>
+      <p>Say an invoice worker sets a <a href="/email-composition.html#section-dsn-envelope-id">fixed envelope ID</a> with <code>fixingEnvelopeId("invoice-2047-a2")</code> on its
+        <code>SmtpDeliveryOptions</code> builder to match a later delivery report to this attempt. Follow that ID through the adapter.</p>
+      <ol>
+        <li>Opt in to fixed ENVID via <code>supportsDeliveryEnvelope(...)</code>. In <code>sendMessage(...)</code>,
+          get the DSN settings from <code>preparedMail.getDeliveryEnvelope().getDeliveryStatusNotification()</code>,
+          then read their <code>getEnvelopeId()</code>.</li>
+        <li>Check DSN on the actual connected transport. If the connection supports it, issue
+          <code>ENVID=invoice-2047-a2</code> on <code>MAIL FROM</code>. Keep the MIME content unchanged.
+          If the caller leaves the ID open, you can generate one on a DSN-capable connection or send without one.</li>
+        <li>Attach the effective, unencoded ID to the result using <code>result.withEnvelopeId("invoice-2047-a2")</code>,
+          including a failed submission that used it. The caller reads it through
+          <code>MailSubmissionReceipt.getEnvelopeId()</code>. Leave the ID absent when the send used none or its use is unknown.</li>
+      </ol>
+      <p>Check requested options before <code>MAIL FROM</code>. When the connected transport cannot honor an explicit request,
+        throw <code>MailTransportCompatibilityException</code> before starting the transaction so a healthy pooled connection
+        remains reusable.</p>
+      <ul>
+        <li><strong>NOTIFY and RET.</strong> Check support for the requested recipient preferences. The default adapter contract supports the
+          existing envelope sender and shared NOTIFY and RET options. Mandatory shared DSN also requires <code>supportsRequiredDeliveryStatusNotification()</code>
+          and DSN on this connection.</li>
+        <li><strong><a href="/security.html#section-requiretls">REQUIRETLS</a>.</strong> Check authenticated TLS and a usable REQUIRETLS advertisement after negotiation.
+          Set <code>withRequireTlsUsed(true)</code> only when you issue the parameter.</li>
+      </ul>
+      <p>Fixed ENVID, recipient-specific NOTIFY and REQUIRETLS each need explicit opt-in through <code>supportsDeliveryEnvelope(...)</code>.</p>
+      <details class="doc-disclosure">
+        <summary>Apply NOTIFY to each envelope recipient</summary>
+        <p><code>DeliveryEnvelope.getRecipientOptions()</code> supplies a <code>DeliveryRecipient</code> for each occurrence.
+          Follow the prepared address order through duplicates and provider group expansion.</p>
+        <ul>
+          <li>An empty recipient-options list means the caller supplied no recipient-specific preferences.</li>
+          <li>On an individual recipient, an explicit event set replaces shared NOTIFY. An empty set inherits it.</li>
+          <li>If you generate optional ORCPT, use the actual envelope recipient and preserve its notification preferences and the MIME bytes.</li>
+        </ul>
+        <p>See the <a href="/email-composition.html#section-dsn-recipients">recipient builder example</a>.</p>
+      </details>
+      <details class="doc-disclosure">
+        <summary>Angus behavior and legacy SMTP content</summary>
+        <ul>
+          <li>The bundled Angus adapter checks DSN after each connection setup. With no fixed ID, it generates a fresh UUID when
+            DSN is available and sends without ENVID otherwise.</li>
+          <li>The managed Angus command hook adds ORCPT while keeping Angus's recipient loop and reply handling. Ordinary
+            transports from caller-owned Angus Sessions lack this hook. Library-owned stock Angus Sessions keep the hook
+            with custom socket factories. Those factories still lack physical abort support.</li>
+          <li><code>PreparedMail.isLegacySmtpContentSupportEnabled()</code> carries the selected server's compatibility opt-in.
+            Existing constructors default it to false, and the content-preservation contract still applies. Managed Angus
+            negotiates SMTPUTF8 per message. Caller-owned Sessions, CustomMailer and third-party providers retain their own
+            behavior. See the <a href="/sending-and-execution.html#section-international-mail">legacy-content boundaries</a>.</li>
+        </ul>
+      </details>
+    </div>
+    <div class="wide full-width-example">
+      <h4>Register the adapter</h4>
+      <p>On the classpath, add the implementation to the Java service-provider file.</p>
 <pre><code class="language-text small"># META-INF/services/org.simplejavamail.api.mailer.spi.MailTransportAdapter
 com.example.ExampleMailTransportAdapter</code></pre>
-      <p>Or, on the module path:</p>
+      <p>On the module path, declare it in <code>module-info.java</code>.</p>
 <pre><code class="language-java small">provides org.simplejavamail.api.mailer.spi.MailTransportAdapter
     with com.example.ExampleMailTransportAdapter;</code></pre>
       <p>
@@ -217,9 +264,9 @@ com.example.ExampleMailTransportAdapter</code></pre>
 
   <h2 id="batch-module" class="with-back-to-top">Batch and clustering support</h2>
   <nav class="module-capability-links" aria-label="Batch module capabilities">
-    <a href="features.html#section-sending-asynchronously"><span>Schedule</span><strong>Asynchronous sending</strong><b aria-hidden="true">→</b></a>
+    <a href="/sending-and-execution.html#section-send-execution"><span>Schedule</span><strong>Asynchronous sending</strong><b aria-hidden="true">→</b></a>
     <a href="smtp-connection-pooling.html"><span>Choose</span><strong>Pool orchestration options</strong><b aria-hidden="true">→</b></a>
-    <a href="configuration.html#section-clustering"><span>Route</span><strong>Multiple SMTP clusters</strong><b aria-hidden="true">→</b></a>
+    <a href="/sending-and-execution.html#section-clustering"><span>Route</span><strong>Multiple SMTP clusters</strong><b aria-hidden="true">→</b></a>
     <a href="sending-and-execution.html#section-mailer-lifecycle"><span>Close</span><strong>Mailer lifecycle</strong><b aria-hidden="true">→</b></a>
   </nav>
 
@@ -251,7 +298,7 @@ com.example.ExampleMailTransportAdapter</code></pre>
 
   <h2 id="authenticated-socks-module" class="with-back-to-top">Authenticated (SOCKS) proxy support</h2>
   <nav class="module-capability-links" aria-label="Authenticated SOCKS module capabilities">
-    <a href="features.html#section-proxy"><span>Send</span><strong>Authenticated SOCKS</strong><b aria-hidden="true">→</b></a>
+    <a href="/configuration.html#section-proxy"><span>Send</span><strong>Authenticated SOCKS</strong><b aria-hidden="true">→</b></a>
     <a href="configuration.html#section-proxy-bridge-ports"><span>Configure</span><strong>Proxy bridge ports</strong><b aria-hidden="true">→</b></a>
   </nav>
 
@@ -270,7 +317,7 @@ com.example.ExampleMailTransportAdapter</code></pre>
 
   <h2 id="outlook-module" class="with-back-to-top">Outlook support</h2>
   <nav class="module-capability-links" aria-label="Outlook module capabilities">
-    <a href="features.html#section-converting"><span>Convert</span><strong>Outlook .msg messages</strong><b aria-hidden="true">→</b></a>
+    <a href="/email-conversion.html#section-converting"><span>Convert</span><strong>Outlook .msg messages</strong><b aria-hidden="true">→</b></a>
     <a href="security.html#section-reading-smime"><span>Read</span><strong>Protected Outlook messages</strong><b aria-hidden="true">→</b></a>
   </nav>
 
@@ -314,16 +361,15 @@ com.example.ExampleMailTransportAdapter</code></pre>
     <ul>
       <li><a class="indent" href="https://github.com/simple-java-mail/java-utils-mail-dkim">org.simplejavamail:utils-mail-dkim</a></li>
     </ul>
-    <p>The 10.0.0 DKIM module uses the shared upstream signer over finalized MIME bytes. DKIM signing does not require Angus;
-      the default Angus SMTP adapter remains a separate submission choice. Configure signing through the same
-      <code>signWithDomainKey(DkimConfig)</code> application API.</p>
+    <p>The DKIM module signs the finalized MIME bytes using the shared upstream signer. Configure it with <code>signWithDomainKey(DkimConfig)</code>.
+      The signing module works with other Jakarta Mail providers as well as the default Angus SMTP adapter.</p>
   </section>
 
   <h2 id="smime-module" class="with-back-to-top">S/MIME support</h2>
   <nav class="module-capability-links" aria-label="S/MIME module capabilities">
     <a href="security.html#section-sending-smime"><span>Protect</span><strong>Sign and encrypt messages</strong><b aria-hidden="true">→</b></a>
     <a href="security.html#section-reading-smime"><span>Read</span><strong>Protected messages</strong><b aria-hidden="true">→</b></a>
-    <a href="features.html#section-recipient-builders"><span>Target</span><strong>Recipient certificates</strong><b aria-hidden="true">→</b></a>
+    <a href="/email-composition.html#section-recipient-builders"><span>Target</span><strong>Recipient certificates</strong><b aria-hidden="true">→</b></a>
   </nav>
 
   <section>
@@ -367,7 +413,7 @@ com.example.ExampleMailTransportAdapter</code></pre>
     <p class="wide">
       Key discovery, public keyservers, WKD, and application trust policy are outside the module. Pass the key-ring bytes selected by your application.
     </p>
-    <p>For a named Java module in unreleased 10.0.0, resolve the optional feature explicitly in your application's <code>module-info.java</code>:</p>
+    <p>If your application is a named Java module, add the optional feature to its <code>module-info.java</code>.</p>
     <pre><code class="language-java">module notifications {
     requires org.simplejavamail;
     requires org.simplejavamail.openpgp;
@@ -462,7 +508,7 @@ com.example.ExampleMailTransportAdapter</code></pre>
 
   <h2 id="karaf-module" class="with-back-to-top">Apache Karaf support</h2>
   <nav class="module-capability-links" aria-label="Karaf module capabilities">
-    <a href="features.html#section-basic-usage"><span>Use</span><strong>Compose and send</strong><b aria-hidden="true">→</b></a>
+    <a href="/email-composition.html#section-basic-usage"><span>Use</span><strong>Compose and send</strong><b aria-hidden="true">→</b></a>
     <a href="configuration.html#section-programmatic-api-common"><span>Configure</span><strong>Build a Mailer</strong><b aria-hidden="true">→</b></a>
   </nav>
 

@@ -6,15 +6,16 @@ tags:
 title: "Security"
 section: "Protect and operate"
 description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/MIME, and protection against header injection."
+mermaid: true
 ---
-		<section><p class="wide">An expired primary certificate can be a reason to use another approved relay, without trusting that expired certificate.
-      <a href="/smtp-connection-failover.html#section-policy">Connection failover</a> provides separate opt-ins for authentication rejection and
-      certificate verification failure. The selected destination still has to pass its own TLS checks, and mandatory message locks remain binding.</p></section>
+
 		<section class="doc-overview" aria-labelledby="security-overview-title">
 			<header>
 				<p class="eyebrow">Security at a glance</p>
 				<h2 id="security-overview-title">Choose the layer you need.</h2>
-				<p class="wide">Mail security is a stack. Protect the SMTP connection, authenticate the sending domain, protect the message content, or combine those layers. The matrix below shows which job each route does.</p>
+				<p class="wide">
+				  Say your app sends customer invoices. Use TLS to protect the connection to your SMTP relay, DKIM to sign for your sending domain, and S/MIME or OpenPGP/MIME if the invoice itself needs protection.
+				</p>
 			</header>
 			<div class="doc-card-grid">
 				{{> components/doc-overview-card href="#section-transport-strategy-tls" kicker="Connection" title="TLS" description="Encrypt the SMTP connection and verify the identity of the server receiving your mail." core=true}}
@@ -32,9 +33,7 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 
 		<section>
 			<p class="wide">
-				These mechanisms solve different problems. In a normal production setup you will usually use verified TLS for submission, then add DKIM and
-				one content-protection format only when your mail flow calls for them. SPF and DMARC are included here for context, but they are not configured
-				by Simple Java Mail.
+			  Start with verified TLS when you connect to your relay. Add DKIM for the domains you send from, and choose a content-protection format where your recipients need one. Set up SPF and DMARC through your sending infrastructure and DNS.
 			</p>
 			<div class="doc-table-wrap" tabindex="0" aria-label="Scrollable email security route comparison">
 				<table class="security-route-table">
@@ -69,29 +68,33 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 
 		<section class="toc">
 			<ul>
-				<li><a href="#section-security-routes">Which security route handles what?</a></li>
-				<li><a href="#section-authentication-methods">Choosing SMTP encryption and authentication</a></li>
-				<li><a href="#section-transport-strategy-smtp" class="indent">TransportStrategy.SMTP</a></li>
-				<li><a href="#section-transport-strategy-smtps" class="indent">TransportStrategy.SMTPS</a></li>
-				<li><a href="#section-transport-strategy-tls" class="indent">TransportStrategy.SMTP_TLS</a></li>
-				<li><a href="#section-transport-strategy-oauth2" class="indent">TransportStrategy.SMTP_OAUTH2</a></li>
-				<li><a href="#section-requiretls">Require TLS for onward delivery</a></li>
-				<li><a href="#section-custom-ssl-factory">Configure your own SSL connection factory</a></li>
-				<li><a href="#section-whitelist-hosts">Certificate trust</a></li>
-				<li><a href="#section-verify-server-identity">Verifying server identity</a></li>
-				<li><a href="#section-crlf-scanning">Scanning for suspicious content</a></li>
-				<li><a href="#section-sending-dkim">Signing emails with DKIM</a></li>
-				<li><a href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
-				<li><a href="#section-smime-key-cache">Choose S/MIME key reuse capacity</a></li>
-				<li><a href="#section-reading-smime">Reading S/MIME signed / encrypted attachments</a></li>
-				<li><a href="#section-reading-smime-verification" class="indent">What the signature status means</a></li>
-				<li><a href="#section-reading-smime-merging" class="indent">One readable message, with retained originals</a></li>
-				<li><a href="#section-reading-smime-decryption" class="indent">Decrypting S/MIME attachments using certificate</a></li>
-				<li><a href="#section-inspecting-received-protection">Check incoming mail before acting on it</a></li>
-				<li><a href="#section-sending-openpgp">Signing / encrypting emails with OpenPGP/MIME</a></li>
-				<li><a href="#section-reading-openpgp">Reading OpenPGP/MIME messages</a></li>
-				<li><a href="#section-reading-openpgp-status" class="indent">What the OpenPGP status means</a></li>
-			</ul>
+      <li><a href="#section-security-routes">Which security route handles what?</a></li>
+      <li><a href="#section-authentication-methods">Choosing SMTP encryption and authentication</a></li>
+      <li><a href="#section-transport-strategy-smtp" class="indent">TransportStrategy.SMTP</a></li>
+      <li><a href="#section-transport-strategy-smtps" class="indent">TransportStrategy.SMTPS</a></li>
+      <li><a href="#section-transport-strategy-tls" class="indent">TransportStrategy.SMTP_TLS</a></li>
+      <li><a href="#section-transport-strategy-oauth2" class="indent">TransportStrategy.SMTP_OAUTH2</a></li>
+      <li><a href="#section-transport-strategy-smtps-oauth2" class="indent">TransportStrategy.SMTPS_OAUTH2</a></li>
+      <li><a href="#oauth2-token-refresh" class="indent">Refreshing OAuth2 tokens</a></li>
+      <li><a href="#section-gmail" class="indent">Send through Gmail</a></li>
+      <li><a href="#section-requiretls">Require TLS for onward delivery</a></li>
+      <li><a href="#section-custom-ssl-factory">Configure your own SSL connection factory</a></li>
+      <li><a href="#section-whitelist-hosts">Certificate trust</a></li>
+      <li><a href="#section-verify-server-identity">Verifying server identity</a></li>
+      <li><a href="#section-crlf-scanning">Scanning for suspicious content</a></li>
+      <li><a href="#section-sending-dkim">Signing emails with DKIM</a></li>
+      <li><a href="#section-sending-smime">Signing / encrypting emails with S/MIME</a></li>
+      <li><a href="#section-protect-existing-mime" class="indent">Protect a MimeMessage you already have</a></li>
+      <li><a href="#section-smime-key-cache" class="indent">Choose S/MIME key reuse capacity</a></li>
+      <li><a href="#section-reading-smime">Reading S/MIME messages and attachments</a></li>
+      <li><a href="#section-reading-smime-verification" class="indent">Read the protection of the value you use</a></li>
+      <li><a href="#section-reading-smime-merging" class="indent">One readable message, with retained originals</a></li>
+      <li><a href="#section-reading-smime-decryption" class="indent">Supply incoming S/MIME keys</a></li>
+      <li><a href="#section-inspecting-received-protection">Check incoming mail before acting on it</a></li>
+      <li><a href="#section-sending-openpgp">Signing / encrypting emails with OpenPGP/MIME</a></li>
+      <li><a href="#section-reading-openpgp">Reading OpenPGP/MIME messages</a></li>
+      <li><a href="#section-reading-openpgp-status" class="indent">Inspect OpenPGP observations</a></li>
+</ul>
 		</section>
 
 
@@ -101,28 +104,17 @@ description: "Configure TLS, OAuth2, server verification, DKIM, S/MIME, OpenPGP/
 		<section>
 			<div>
 				<p class="wide">
-					The transport strategy chooses how your Mailer connects. Unless you configure another strategy, the default is
-					<code class="inline language-java">SMTP</code>: try STARTTLS when the server offers it and allow plaintext when it does not.
-					Adding a username and password does not change that choice. If your application requires encryption, choose
-					<code class="inline language-java">SMTP_TLS</code> or <code class="inline language-java">SMTPS</code> explicitly.
+				  Check your relay's setup instructions before choosing a strategy. For a submission port that requires a STARTTLS upgrade, choose <code>SMTP_TLS</code>. For a port that starts with TLS, choose <code>SMTPS</code>. The default <code>SMTP</code> tries STARTTLS when offered and allows plaintext if it isn't offered, even when you supply a password.
 				</p>
 				<p class="wide">
-					There are four strategies:
+				  Set the strategy when you build the Mailer, alongside the host, port and credentials.
 				</p>
-				<pre><code>TransportStrategy strategy = TransportStrategy.SMTP;
-// or: TransportStrategy.SMTPS, TransportStrategy.SMTP_TLS,
-//     TransportStrategy.SMTP_OAUTH2, TransportStrategy.SMTPS_OAUTH2
-
-SimpleJavaMail.fromDefaults().mailerBuilder()
-  .withSMTPServer("host", port, "username", passwordOrOAUTH2Token)
-  .withTransportStrategy(strategy);
-</code></pre>
-				<p class="wide">
-					Or with property default:
-				</p>
-				<pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP
-# or: SMTPS, SMTP_TLS, SMTP_OAUTH2, SMTPS_OAUTH2
-</code></pre>
+<pre><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
+    .withSMTPServer("smtp.example.com", 587, username, password)
+    .withTransportStrategy(TransportStrategy.SMTP_TLS)
+    .buildMailer();</code></pre>
+				<p class="wide">You can also select the strategy in your configuration.</p>
+<pre><code class="language-properties small">simplejavamail.transportstrategy=SMTP_TLS</code></pre>
 				<div class="doc-table-wrap" tabindex="0" aria-label="Scrollable SMTP transport strategy comparison">
 					<table class="security-route-table">
 						<thead><tr><th>Strategy</th><th>TLS behavior</th><th>When STARTTLS is absent</th><th>Default port</th></tr></thead>
@@ -135,26 +127,20 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 						</tbody>
 					</table>
 				</div>
-				<p class="wide">
-					<code class="inline language-java">buildMailer()</code> rejects an extra
-					<code class="inline language-properties">mail.smtp.starttls.required</code> value that disables STARTTLS when you select
-					<code class="inline language-java">SMTP_TLS</code> or <code class="inline language-java">SMTP_OAUTH2</code>.
-					Remove that override to keep mandatory TLS. For opportunistic username/password authentication, choose
-					<code class="inline language-java">SMTP</code> instead. See the <a href="migration-notes-10.0.0.html#mandatory-starttls">migration example</a>.
-				</p>
-				<p class="wide">
-					For <code>SMTPS_OAUTH2</code>, an extra <code>mail.transport.protocol</code> must retain <code>smtps</code>;
-					a contradictory protocol override is rejected before connections or workers are started.
-				</p>
-				<p class="wide">
-					This check runs when Simple Java Mail creates the Session, including logging-only builds. A caller-supplied Session or
-					<code class="inline language-java">CustomMailer</code> keeps its own connection configuration. The check does not freeze the Session,
-					validate arbitrary provider or socket-factory replacements, or change your certificate-trust and server-identity settings.
-				</p>
-				<p class="wide">
-					A <a href="debugging.html#section-smtp-capabilities">connection probe</a> can help explain what happened on its own connection;
-					it does not choose a strategy or approve a later send. Configure the required behavior on the Mailer that sends the email.
-				</p>
+				<ul>
+				  <li><strong>Check extra properties.</strong> <code>buildMailer()</code> rejects
+				    <code>mail.smtp.starttls.required=false</code> with <code>SMTP_TLS</code> or <code>SMTP_OAUTH2</code>. If you
+				    supply <code>mail.transport.protocol</code> with <code>SMTPS_OAUTH2</code>, keep it set to <code>smtps</code>.
+				    Conflicts fail before connections or workers start.</li>
+				  <li><strong>Check who configures the connection.</strong> These checks apply when Simple Java Mail creates the
+				    Session, including logging-only mode. If you supply a Session or <code>CustomMailer</code>, configure the
+				    connection yourself. Keep the Session stable in use and make sure custom providers and socket factories perform
+				    the certificate checks you need.</li>
+				  <li><strong>Check the connection you intend to use.</strong> A <a
+				    href="debugging.html#section-smtp-capabilities">connection probe</a> describes its own connection. Set the
+				    required behavior on the Mailer that will send the message. Choose <code>SMTP</code> only where opportunistic
+				    encryption is acceptable.</li>
+				</ul>
 			</div>
 		</section>
 
@@ -163,7 +149,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 		<h3>TransportStrategy.SMTP</h3>
 
 		<section>
-			<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
     .withTransportStrategy(TransportStrategy.SMTP);</code></pre>
 			<div>
 				<p class="wide">
@@ -175,21 +161,16 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 		</section>
 		<section>
 			<div>
-				<p class="wide">
-					Whenever TLS is negotiated, Simple Java Mail verifies that the certificate belongs to the SMTP host and uses the JVM trust store.
-					Both checks can be overridden, but that
-					should be reserved for controlled compatibility or test environments.
-				</p>
-				<p class="wide">
-					Fallback means STARTTLS was not offered. If the server offers it but refuses the upgrade, or the TLS handshake or certificate check
-					fails, the connection fails. Simple Java Mail does not automatically retry that connection in plaintext.
-				</p>
-				<p class="wide">
-					This strategy can still fall back to plaintext when the server does not advertise STARTTLS. An active attacker can therefore
-					suppress the STARTTLS offer before certificate validation begins. Use
-					<code class="inline language-java">TransportStrategy.SMTPS</code> or
-					<code class="inline language-java">TransportStrategy.SMTP_TLS</code> when encryption must be mandatory.
-				</p>
+				<ul>
+				  <li><strong>The server offers STARTTLS.</strong> Simple Java Mail checks the certificate chain against the JVM
+				    trust store and verifies the host name when TLS is negotiated. Reserve certificate exceptions for controlled
+				    test or compatibility environments.</li>
+				  <li><strong>The server refuses the upgrade or TLS checks fail.</strong> The connection fails. Plaintext fallback
+				    applies only when STARTTLS wasn't offered.</li>
+				  <li><strong>Encryption is required.</strong> Choose <code>SMTP_TLS</code> or <code>SMTPS</code> so a missing
+				    STARTTLS advertisement cannot leave you sending in plaintext. Opportunistic SMTP depends on an advertisement
+				    that can be suppressed before certificate checks begin.</li>
+				</ul>
 			</div>
 		</section>
 		<section>
@@ -204,7 +185,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder()
 				</p>
 			</div>
 			<div class="side">
-      <pre><code class="language-java">SimpleJavaMail.fromDefaults().mailerBuilder()
+<pre><code class="language-java">SimpleJavaMail.fromDefaults().mailerBuilder()
 	  .withTransportStrategy(TransportStrategy.SMTP)
 	  .withTlsConfig(TlsConfig.builder()
 	      .withOpportunisticTLS(false)
@@ -225,7 +206,7 @@ Or with properties:
 			<p class="wide">
 				SMTP entirely encapsulated by TLS. Commonly known as SMTPS.
 			</p>
-			<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
     .withTransportStrategy(TransportStrategy.SMTPS);</code></pre>
 
 			<p class="wide">
@@ -246,7 +227,7 @@ Or with properties:
 				The connection starts with SMTP and must upgrade to TLS before authentication or mail submission. A username and password work here too;
 				there is no fallback to plaintext if the server lacks STARTTLS.
 			</p>
-			<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
 	.withSMTPServer("smtp.example.com", 587, "username", "password")
     .withTransportStrategy(TransportStrategy.SMTP_TLS);</code></pre>
 
@@ -271,13 +252,13 @@ Or with properties:
 				The SMTP username identifies the mailbox and the credential is an OAuth2 access token, not a refresh token, client secret, or authorization
 				code. If your application already has a token whose lifetime covers the Mailer, pass it in the usual password position.
 			</p>
-			<pre class="full-width-example"><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
+<pre class="full-width-example"><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 587, "user@example.com", accessToken)
     .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
     .buildMailer();</code></pre>
 			<p class="wide">
 				Simple Java Mail configures SMTP and XOAUTH2, but it does not run the OAuth authorization flow itself. Your application remains responsible
-				for obtaining the access token from its provider.
+				for obtaining the access token from its provider. If the Mailer outlives that token, <a href="#oauth2-token-refresh">register a token provider</a>.
 			</p>
 		</section>
 		<a href="#section-transport-strategy-smtps-oauth2" id="section-transport-strategy-smtps-oauth2" class="section-link h3">&sect;</a>
@@ -286,25 +267,26 @@ Or with properties:
 			<p class="wide">
 				Use <code>SMTPS_OAUTH2</code> when the SMTP service requires XOAUTH2 over implicit TLS. The connection is encrypted from its
 				first byte, uses port 465 when no port is supplied, and does not negotiate STARTTLS. Certificate-chain and server-identity
-				validation follow the same defaults as <code>SMTPS</code>. Both OAuth2 strategies accept a fixed token or a runtime provider.
+				validation follow the same defaults as <code>SMTPS</code>. Supply a fixed token as below or <a href="#oauth2-token-refresh">register a token provider</a> for refresh.
 			</p>
-			<pre class="full-width-example"><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
+<pre class="full-width-example"><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withSMTPServer("smtp.example.com", 465, "user@example.com", accessToken)
     .withTransportStrategy(TransportStrategy.SMTPS_OAUTH2)
     .buildMailer();</code></pre>
-			<p class="wide">The existing property configuration also accepts the preset:</p>
-			<pre><code class="language-properties">simplejavamail.transportstrategy=SMTPS_OAUTH2
+			<p class="wide">
+Select the same strategy through properties:
+</p>
+<pre><code class="language-properties">simplejavamail.transportstrategy=SMTPS_OAUTH2
 simplejavamail.smtp.host=smtp.example.com
 simplejavamail.smtp.username=user@example.com
 # Fixed-token route only; omit this property when registering a provider in Java.
 simplejavamail.smtp.password=your-access-token</code></pre>
 		</section>
-		<section>
-			<p class="wide">
-				For a long-lived Mailer, use an <code class="inline language-java">OAuth2AccessTokenProvider</code> so an expired token can be replaced without
-				rebuilding the Mailer. It works with both OAuth2 strategies and can use whichever OAuth client, token endpoint, cache, or refresh flow your application already uses.
-			</p>
-			<pre class="full-width-example"><code class="language-java">OAuth2AccessTokenProvider accessTokens =
+  <h3 id="oauth2-token-refresh">Refresh OAuth2 tokens on long-running Mailers</h3>
+  <section><div class="wide">
+    <p>If your worker runs all day and its token expires in an hour, register a token provider.
+      Both OAuth2 strategies can call your existing token service when a physical connection opens or reconnects.</p>
+<pre class="full-width-example"><code class="language-java">OAuth2AccessTokenProvider accessTokens =
     () -&gt; tokenService.currentAccessToken();
 
 Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
@@ -312,34 +294,21 @@ Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
     .withTransportStrategy(TransportStrategy.SMTP_OAUTH2)
     .withOAuth2AccessTokenProvider(accessTokens)
     .buildMailer();</code></pre>
-			<p class="wide">For the same provider over implicit TLS, choose port 465 and <code>SMTPS_OAUTH2</code>:</p>
-			<pre class="full-width-example"><code class="language-java">Mailer mailer = SimpleJavaMail.fromDefaults().mailerBuilder()
-    .withSMTPServer("smtp.example.com", 465, "user@example.com")
-    .withTransportStrategy(TransportStrategy.SMTPS_OAUTH2)
-    .withOAuth2AccessTokenProvider(accessTokens)
-    .buildMailer();</code></pre>
-			<p class="wide">
-				Simple Java Mail asks the provider immediately before opening a physical SMTP connection and again when a disconnected connection must be
-				reopened. An already-connected pooled transport is reused without another provider call. The provider should be thread-safe and cache a valid
-				token rather than contacting the authorization server on every call.
-			</p>
-			<p class="wide">
-				Choose either a fixed token or a provider for one Mailer; configuring both is rejected. Provider errors and null or blank results stop the
-				connection without exposing the token, while SMTP authentication rejection is returned normally without a hidden retry.
-			</p>
-			<p class="wide">
-				A supplied Jakarta Mail Session can use the provider too;
-				configure that Session for <code class="inline language-properties">mail.smtp.auth.mechanisms=XOAUTH2</code>, or
-				<code class="inline language-properties">mail.smtps.auth.mechanisms=XOAUTH2</code> when its protocol is <code>smtps</code>, and then call
-				<code class="inline language-java">mail.mailerBuilder(session).withOAuth2AccessTokenProvider(...)</code>.
-			</p>
-			<p class="wide" id="supplied-session-oauth2-mechanisms">
-				Set <code>mail.transport.protocol</code> on the Session or Mailer builder to select the intended connection protocol. A token provider
-				requires <code>XOAUTH2</code> in that protocol's <code>auth.mechanisms</code> property. If you reuse a Session, wait for the previous
-				Mailer to finish shutting down before changing its credentials and building another Mailer. See the
-				<a href="understanding-configuration.html#supplied-session-protocol">protocol settings and conflict rules</a>.
-			</p>
-			<pre class="full-width-example"><code class="language-java">// The previous Mailer using this Session has completed close().
+    <ul>
+      <li>Use port 465 and <code>SMTPS_OAUTH2</code> for the same callback over implicit TLS. An open pooled connection can be reused without a fresh callback.</li>
+      <li>Choose one credential source per Mailer. Make the callback thread-safe and cache valid tokens.
+        A provider error or a blank or null token stops the connection without exposing the token. SMTP authentication rejection reaches the caller without an automatic retry.</li>
+    </ul>
+    <p>In Spring, register an <code>OAuth2AccessTokenProvider</code> bean or adapt Spring Security’s OAuth2 client manager.
+      See <a href="/spring.html#section-spring-oauth2">Spring integration</a>.</p>
+<details class="doc-disclosure">
+  <summary>Protocol, username and token choices for a supplied Session</summary>
+<p class="wide" id="supplied-session-oauth2-mechanisms">
+Set <code>mail.transport.protocol</code> on the Session or Mailer builder and include <code>XOAUTH2</code>
+in that protocol's <code>auth.mechanisms</code> property. See the
+<a href="/understanding-configuration.html#supplied-sessions">protocol settings and conflict rules</a>.
+</p>
+<pre class="full-width-example"><code class="language-java">// The previous Mailer using this Session has completed close().
 try (Mailer reused = mail.mailerBuilder(session)
         .withProperty("mail.transport.protocol", "smtp")
         .withProperty("mail.smtp.auth.mechanisms", "XOAUTH2") // for an smtp Session
@@ -348,30 +317,48 @@ try (Mailer reused = mail.mailerBuilder(session)
     reused.sync().sendMail(email);
 }</code></pre>
 			<p class="wide" id="supplied-session-oauth2-usernames">
-				For SMTP or STARTTLS, configure <code>mail.smtp.user</code>; for SMTPS, configure <code>mail.smtps.user</code>.
-				This works with direct and pooled connections. A different username configured for the other protocol does not change the account used.
-				Jakarta Mail also supports a username in the transport URL and the <code>mail.user</code> fallback.
-				See <a href="/migration-notes-10.0.0.html#pooled-oauth-usernames">pooled OAuth username migration guidance</a>.
-			</p>
+For SMTP or STARTTLS, set <code>mail.smtp.user</code>; for SMTPS, set <code>mail.smtps.user</code>.
+Direct and pooled connections use the username for the selected protocol. A username for the other protocol has no effect.
+Jakarta Mail also accepts a transport-URL username and the <code>mail.user</code> fallback.
+</p>
 			<p class="wide" id="supplied-session-oauth2-registration">
-				After a Mailer has fully shut down, you can reuse its Session with a fixed token, a different token provider or ordinary authentication.
-				Configure the credentials you want for the next Mailer, along with the matching authentication mechanism and TLS settings.
-				Do not change the Session while its Mailer is still in use. See
-				<a href="/migration-notes-10.0.0.html#pooled-oauth-registration">pooled authentication migration guidance</a> for a fixed-token example.
-			</p>
+Wait for the previous Mailer to shut down before changing a Session's credentials and building its replacement.
+You can then choose a fixed token, another token provider or ordinary authentication, with matching authentication and TLS settings.
+See the <a href="migration-notes-10.0.0.html#pooled-oauth-registration">fixed-token Session example</a>.
+</p>
 			<p class="wide" id="supplied-session-oauth2-token">
-				For a Session you supply, set a fixed token with the String property <code>simplejavamail.oauth2.token</code>.
-				String values inherited through <code>Properties</code> defaults are accepted too. Configure the Session's protocol, username and
-				XOAUTH2 mechanism as usual. Sending, connection tests and authenticated probes all use that token.
-				See the <a href="/understanding-configuration.html#supplied-sessions">supplied-Session rules</a> and
-				<a href="/migration-notes-10.0.0.html#inherited-oauth2-token">inherited-token migration note</a>.
-			</p>
-			<p class="wide">
-				Spring applications can register the provider as a bean. See <a href="/spring.html#section-spring-oauth2">Spring integration</a> for the direct
-				bean form and an adapter for Spring Security's OAuth2 client manager.
-			</p>
-		</section>
+For a supplied Session, put a fixed token in the String property <code>simplejavamail.oauth2.token</code>;
+inherited String defaults in <code>Properties</code> are accepted. Configure the protocol, username and XOAUTH2 mechanism as above.
+Sending, connection tests and authenticated probes use that token. See the
+<a href="/understanding-configuration.html#supplied-sessions">supplied-Session rules</a>.
+</p>
+</details>
+  </div></section>
 
+<a href="#section-gmail" id="section-gmail" class="section-link h3">&sect;</a>
+  {{#> components/feature-heading-h3 core=true}}Send through Gmail{{/components/feature-heading-h3}}
+
+  <section>
+    <div class="view">
+      <p>
+        Gmail's <a href="https://developers.google.com/workspace/gmail/imap/imap-smtp">SMTP submission service</a> uses port 587 with STARTTLS
+        or port 465 with TLS from the start.
+      </p>
+      <p>These examples use an <a href="https://support.google.com/accounts/answer/185833?hl=en">app password</a>, if your account supports one.
+        For OAuth2, use the <a href="#section-transport-strategy-oauth2">token configuration above</a>.</p>
+    </div>
+
+    <div class="side">
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+  .withSMTPServer("smtp.gmail.com", 587, "you@gmail.com", "app password")
+  .withTransportStrategy(TransportStrategy.SMTP_TLS);
+// or:
+SimpleJavaMail.fromDefaults().mailerBuilder()
+  .withSMTPServer("smtp.gmail.com", 465, "you@gmail.com", "app password")
+  .withTransportStrategy(TransportStrategy.SMTPS);
+</code></pre>
+    </div>
+  </section>
 
 		<a href="#section-requiretls" id="section-requiretls" class="section-link h2">&sect;</a>
 		<h2>Require TLS for onward delivery</h2>
@@ -379,12 +366,10 @@ try (Mailer reused = mail.mailerBuilder(session)
 		<section>
 			<div>
 				<p class="wide">
-					A Mailer's <code class="inline language-java">TransportStrategy</code> controls the connection from your application to its configured SMTP
-					server. It says nothing about the next hop. For an individual message that must not be relayed over plaintext, request RFC 8689 REQUIRETLS on
-					the Email:
+				  Say a sensitive report can go through several relays after your submission server. Your Mailer's <code>TransportStrategy</code> controls only the first connection. Ask for RFC 8689 REQUIRETLS on the Email when later relays also need to use TLS.
 				</p>
 			</div>
-			<pre class="full-width-example"><code class="language-java">Email email = mail.emailBuilder().startingBlank()
+<pre class="full-width-example"><code class="language-java">Email email = mail.emailBuilder().startingBlank()
     .from("sender@example.org")
     .withRecipients(mail.recipientBuilder().withName("Recipient").withAddress("recipient@example.net").withType(Message.RecipientType.TO).build())
     .withSubject("Sensitive report")
@@ -404,7 +389,7 @@ if (receipt.isRequireTlsUsed()) {
 					certificate policy, and a post-TLS REQUIRETLS advertisement. If one is missing, no <code class="inline language-text">MAIL FROM</code> command is
 					sent. For example:
 				</p>
-				<pre><code class="language-text small">This email requires REQUIRETLS, but the SMTP server does not advertise usable REQUIRETLS support after TLS negotiation.
+<pre><code class="language-text small">This email requires REQUIRETLS, but the SMTP server does not advertise usable REQUIRETLS support after TLS negotiation.
 Use a server that supports RFC 8689, or clear the requirement for this email. No message was submitted.</code></pre>
 				<p class="wide">
 					This check is intentionally separate from a <a href="debugging.html#section-smtp-capabilities">connection probe</a>, which uses another connection.
@@ -418,16 +403,13 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 				<p>
 					To apply the same suppressible default through property files, environment variables or Spring configuration, set:
 				</p>
-				<pre><code class="language-properties small">simplejavamail.defaults.requiretls=true</code></pre>
+<pre><code class="language-properties small">simplejavamail.defaults.requiretls=true</code></pre>
 				<p>
-					Calling <code class="inline language-java">clearTlsRequiredForOnwardDelivery()</code> removes a value set directly on that builder and resumes the
-					normal defaults/overrides fallback. To opt one composed Email out of a configured default or override, suppress that source explicitly.
-					Exact EML accepts the same <code class="inline language-java">SmtpDeliveryOptions</code> requirement, but keeps bypassing Email templates and preserves
-					its source bytes unchanged.
+				  Clear a choice you set on <code>SmtpDeliveryOptions.Builder</code> with <code>clearTlsRequiredForOnwardDelivery()</code>. Ordinary defaults or overrides can still supply the value. Use the suppression options shown here to skip either source for one composed Email. On an exact EML builder, use the same delivery options to request REQUIRETLS while keeping the original bytes. Exact mode skips Email templates.
 				</p>
 			</div>
 			<div class="side">
-				<pre><code class="language-java">Email email = mail.emailBuilder().startingBlank()
+<pre><code class="language-java">Email email = mail.emailBuilder().startingBlank()
     .withTemplateOptions(EmailTemplateOptions.builder()
         .dontApplyDefaultValueFor(
             EmailProperty.TLS_REQUIRED_FOR_ONWARD_DELIVERY)
@@ -440,10 +422,7 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 		</section>
 		<section>
 			<p class="wide">
-				A true <code class="inline language-java">isRequireTlsUsed()</code> means the first server received REQUIRETLS on this attempt, including a rejected
-				<code class="inline language-text">MAIL FROM</code>. It does not prove server acceptance, compliance by every later relay, final delivery, or
-				end-to-end confidentiality. Use <a href="#section-sending-smime">S/MIME</a> or
-				<a href="#section-sending-openpgp">OpenPGP/MIME</a> when the message content itself needs cryptographic protection.
+			  Use <code class="inline language-java">isRequireTlsUsed()</code> to record whether the SMTP attempt sent the REQUIRETLS option. The value can be true even if the server rejects <code class="inline language-text">MAIL FROM</code>. Server acceptance, later relay behavior and final delivery are separate facts. Use <a href="#section-sending-smime">S/MIME</a> or <a href="#section-sending-openpgp">OpenPGP/MIME</a> when the message content itself needs cryptographic protection.
 			</p>
 		</section>
 
@@ -454,16 +433,16 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 		<section>
 			<div class="view">
 				<p>
-					Supply your own SSL connection factory when you need custom connection code, for example to use a client certificate or your own certificate checks.
+				  Your internal relay may require a client certificate. Supply an SSL connection factory for that connection, and keep its certificate checks in the factory.
 				</p>
-				<p>With an Angus Session created by Simple Java Mail, a failure in your factory stops the connection attempt. It does not quietly try
-					Java's standard factory instead: that factory might not use your client certificate or custom certificate checks.
-					You can explicitly allow that fallback, as shown below, if the standard factory is also acceptable for your deployment.</p>
-				<p>If your factory fails while adding encryption to an already-open connection, Simple Java Mail closes that connection so it is not left hanging.
-					Your original factory still controls certificate validation and any trusted-server checks. The cleanup does not add cancellation support
-					for a custom factory. Sessions you create and supply yourself keep their existing behavior.</p>
-				<p>A class-based factory needs a public static <code>getDefault()</code> method. In a modular application, export its package to
-					<code>org.simplejavamail.mailprovider.angus</code>, or supply an instance instead. Factory initialization stays lazy.</p>
+				<ul>
+				  <li><strong>Know what fails.</strong> With a managed Angus Session, a custom factory failure stops the connection
+				    by default. If the failure happens while upgrading an open connection, Simple Java Mail closes it. Your factory
+				    still owns trust checks and cancellation behavior. A supplied Session retains its provider's behavior.</li>
+				  <li><strong>Choose an instance or class.</strong> A class-based factory needs a public static
+				    <code>getDefault()</code> method. In a modular application, export its package to
+				    <code>org.simplejavamail.mailprovider.angus</code> or pass an instance. The factory is initialized lazily.</li>
+				</ul>
 			</div>
 			<div class="side">
 <pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
@@ -474,14 +453,16 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 	.buildMailer();
 </code></pre>
 				Or with property default:
-				<pre><code class="language-properties small">simplejavamail.custom.sslfactory.class=your.project.YourSSLSocketFactory</code></pre>
+<pre><code class="language-properties small">simplejavamail.custom.sslfactory.class=your.project.YourSSLSocketFactory</code></pre>
 			</div>
 		</section>
 		<section>
 			<div class="wide">
 				<h3>Explicitly allow the standard factory as a fallback</h3>
-				<p>This uses an existing advanced Angus property, not another builder method. Set it only when a connection made without your custom factory's
-					settings is acceptable. For <code>SMTP</code> and <code>SMTP_TLS</code>:</p>
+				<p>
+Set the Angus fallback property only if a connection without your custom factory's behavior is acceptable.
+For <code>SMTP</code> and <code>SMTP_TLS</code>:
+</p>
 <pre><code class="language-java">mailerBuilder.withProperty("mail.smtp.socketFactory.fallback", "true");</code></pre>
 				<p>Or in your Simple Java Mail properties file or Spring configuration:</p>
 <pre><code class="language-properties">simplejavamail.extraproperties.mail.smtp.socketFactory.fallback=true</code></pre>
@@ -499,25 +480,23 @@ Use a server that supports RFC 8689, or clear the requirement for this email. No
 		<section>
 			<div class="view">
 				<p>
-					Simple Java Mail leaves <code class="inline language-properties">mail.*.ssl.trust</code> unset by default.
-					Angus Mail then validates the certificate chain against the JVM trust store.
+				  If an internal relay uses your company's private CA, start by adding the CA to the JVM trust store. Simple Java Mail leaves <code class="inline language-properties">mail.*.ssl.trust</code> unset by default, so Angus checks the chain there.
 				</p>
 				<p>
-					Certificate trust and server identity are two separate checks. A normal production connection needs both: a certificate from a trusted issuer
-					and a certificate that names the SMTP host you connected to.
+				  Check two things when troubleshooting the relay. The certificate chain must lead to a trusted issuer, and the certificate must name the SMTP host you connected to.
 				</p>
 				<p>
-					For a private certificate authority, the best fix is to add that CA to the JVM trust store. If that is not practical,
-					<code class="inline language-java">trustingSSLHosts(...)</code> creates a narrow exception for named hosts.
-					<code class="inline language-java">trustingAllHosts(true)</code> accepts certificates from every host and should be a last-resort compatibility setting.
+				  If adding the private CA to the trust store is impractical, <code class="inline language-java">trustingSSLHosts(...)</code> limits the trust exception to named hosts. Reserve <code class="inline language-java">trustingAllHosts(true)</code> for last-resort compatibility work, since it accepts certificates from every host.
 				</p>
-				<p>In the unreleased 10.0.0 line, different explicit Java, raw-property, factory and supplied Session declarations for the same
-          supported TLS setting fail during construction by default. Remove obsolete trust workarounds at their sources, or deliberately select
-          the advanced <a href="understanding-configuration.html#connection-conflicts">override policy</a>. Locks and mandatory encryption requirements remain
-          binding in either mode.</p>
+				<p>
+Conflicting explicit TLS settings in Java, raw properties, factory configuration or a supplied Session are rejected at construction.
+Remove unwanted declarations at their source, or deliberately select the
+<a href="/understanding-configuration.html#connection-conflicts">override policy</a>.
+Configuration locks and mandatory encryption requirements apply in either mode.
+</p>
 			</div>
 			<div class="side">
-				<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
+<pre><code>SimpleJavaMail.fromDefaults().mailerBuilder()
 	.withSMTPServer("smtp.example.com", 587)
 	.withTransportStrategy(TransportStrategy.SMTP_TLS)
 	// secure default; shown explicitly here
@@ -539,7 +518,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 	    .build());
 </code></pre>
 				Or with property default:
-				<pre><code class="language-properties small">simplejavamail.defaults.trustallhosts=false
+<pre><code class="language-properties small">simplejavamail.defaults.trustallhosts=false
 # optional narrow exception; ignored when trustallhosts is true:
 simplejavamail.defaults.trustedhosts=smtp.internal.example</code></pre>
 			</div>
@@ -571,18 +550,21 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 	    .build());
 </code></pre>
 				Or with property default:
-				<pre><code class="language-properties small">simplejavamail.defaults.verifyserveridentity=true</code></pre>
+<pre><code class="language-properties small">simplejavamail.defaults.verifyserveridentity=true</code></pre>
 		</section>
 
+
+<section><p class="wide">An expired primary certificate can be a reason to use another approved relay, without trusting that expired certificate.
+      <a href="/smtp-connection-failover.html#section-policy">Connection failover</a> provides separate opt-ins for authentication rejection and
+      certificate verification failure. The selected destination still has to pass its own TLS checks, and mandatory message locks remain binding.</p></section>
 
 		<a href="#section-crlf-scanning" id="section-crlf-scanning" class="section-link h2">&sect;</a>
 		<h2>Scanning for suspicious content</h2>
 
 		<section>
 			<p class="wide">
-				Simple Java Mail by default tests most fields and headers for suspicious content, which could indicate a
-				<strong>CRLF injection attack</strong>. This is a unique feature of Simple Java Mail.
-			</p>
+Before sending, Simple Java Mail scans fields and headers for suspicious CR/LF sequences that could inject extra message headers.
+</p>
 
 			<p class="wide" style="margin-top: 1em">
 				The values being scanned are:
@@ -598,7 +580,7 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 				<li>every TO/CC/BCC recipient name and address</li>
 				<li>disposition-notification-to recipient name and address, if provided</li>
 				<li>return-receipt-to recipient name and address, if provided</li>
-				<li><a href="/features.html#section-dsn-envelope-id">fixed DSN envelope identifiers (ENVID)</a>, validated separately when their configuration is built</li>
+				<li><a href="/email-composition.html#section-dsn-envelope-id">fixed DSN envelope identifiers (ENVID)</a>, validated separately when their configuration is built</li>
 			</ul>
 
 			<p class="wide">
@@ -609,8 +591,8 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 			</p>
 
 			<p class="wide">
-				Here's some more info on this topic:
-			</p>
+Background on header injection:
+</p>
 			<ul class="indent">
 				<li><a href="https://web.archive.org/web/20160331233647/http://www.cakesolutions.net/teamblogs/2008/05/08/email-header-injection-security">Email Header Injection security</a></li>
 				<li><a href="https://security.stackexchange.com/questions/54099/what-threats-come-from-crlf-in-email-generation/54100#54100">StackExchange - What threats come from CRLF in email generation?</a></li>
@@ -630,117 +612,46 @@ SimpleJavaMail.fromDefaults().mailerBuilder().withSMTPServer("smtp.internal.exam
 		</section>
 
 
-		<a href="#section-sending-dkim" id="section-sending-dkim" class="section-link h2">&sect;</a>
-		{{#> components/feature-heading-h2 dkim=true}}Signing emails with DKIM{{/components/feature-heading-h2}}
+  <a href="#section-sending-dkim" id="section-sending-dkim" class="section-link h2">&sect;</a>
+  {{#> components/feature-heading-h2 dkim=true}}Signing emails with DKIM{{/components/feature-heading-h2}}
+  <section><div class="wide full-width-example">
+    <h3>Sign a receipt for your domain</h3>
+    <p>For receipts from <code>receipts@example.org</code>, publish the public key for your selector in DNS. Give the DKIM module
+      the matching private key, selector and signing domain. The receiver can then verify the signed parts.
+      See <a href="https://www.endpointdev.com/blog/2014/04/spf-dkim-and-dmarc-brief-explanation/">how DKIM fits with SPF and DMARC</a>.</p>
+<pre><code class="language-java">DkimConfig signing = DkimConfig.builder()
+    .dkimPrivateKeyPath(Path.of("secrets/dkim-private-key.der"))
+    .dkimSigningDomain("example.org")
+    .dkimSelector("dkim1")
+    .build();
 
-		<section>
-			<div class="view">
-				<p>
-					Simple Java Mail supports signing with <a href="https://www.endpointdev.com/blog/2014/04/spf-dkim-and-dmarc-brief-explanation/">DKIM</a>
-					domain keys on individual emails or reusable Email defaults/overrides templates.
-				</p>
-                <p>The sender domain must match the signing domain or be one of its subdomains. This comparison ignores capitalization:
-                    <code>Sender@EXAMPLE.COM</code> can use <code>example.com</code>, as can <code>Sender@sales.Example.Com</code>.
-                    The address, its local part and your configured signing domain retain their supplied spelling. The usual DNS key
-                    and signing requirements still apply.</p>
-				<p>
-					Use <code class="inline language-java">dkimPrivateKeyPath(Path)</code>,
-					<code class="inline language-java">dkimPrivateKeyPath(String)</code>, or
-					<code class="inline language-java">dkimPrivateKeyPath(File)</code> for a key file; it is read immediately and
-					the stream Simple Java Mail opens is closed before the call returns.
-					For key material already in memory, <code class="inline language-java">dkimPrivateKeyData(byte[])</code>
-					copies the bytes. The <code class="inline language-java">String</code> overload converts the supplied key data to
-					UTF-8 bytes without Base64-decoding it. The <code class="inline language-java">InputStream</code> overload consumes
-					the stream immediately but leaves closing it to the caller.
-				</p>
-				<p>Complete key-material reads for DKIM, S/MIME and PKCS12 report known opening, reading and closing I/O failures as
-                    <code>MailException</code> with kind <code>PREPARATION</code>. The original I/O cause and suppressed closing errors remain available.
-                    Filesystem readers close their own streams; supplied streams remain open for your code to close. This does not perform
-                    cryptographic validation before the feature is used. A filesystem replacement is installed only after reading,
-                    preparation and closing all succeed. If the call fails, a reused builder keeps its previous material and related choices.</p>
-			</div>
-			<div class="side">
-<pre><code class="small">currentEmailBuilder.signWithDomainKey(
-	DkimConfig.builder()
-		.dkimPrivateKeyPath(Path.of("secrets/dkim-private-key.der"))
-		.dkimSigningDomain("your-domain.org")
-		.dkimSelector("dkim1")
-		.useLengthParam(false) // default
-		.build()
-);
-</code></pre>
-				Or configure DKIM as a default for emails sent through a mailer:
-				<pre><code class="small">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
-Email signingDefaults = mail.emailBuilder().startingBlank()
-    .signWithDomainKey(DkimConfig.builder()
-            .dkimPrivateKeyData(privateKeyBytes)
-            .dkimSigningDomain("your_domain.org")
-            .dkimSelector("your_selector")
-            .build())
-    .buildEmail();
-
-currentMailerBuilder
-    .withEmailDefaults(signingDefaults)
-    .buildMailer();
-</code></pre>
-				<p>
-					The template can omit the sender; the prepared email cannot. A message's own DKIM setting wins over a default.
-					A supplied template replaces property-derived message defaults, so see
-					<a href="configuration.html#section-config-mailer">defaults and overrides</a> if you want to keep those as well.
-				</p>
-				Or with properties:
-				<pre><code class="language-properties small"># defaults on Mailer level:
-				simplejavamail.dkim.signing.private_key_file_or_data=file:my_dkim_key.der
-				simplejavamail.dkim.signing.selector=dkim1
-				simplejavamail.dkim.signing.signing_domain=your-domain.com
-				simplejavamail.dkim.signing.use_length_param=false # default
-				# Omit header exclusions to sign the default header set, including From.
-				simplejavamail.dkim.signing.header_canonicalization=RELAXED
-				simplejavamail.dkim.signing.body_canonicalization=RELAXED
-				simplejavamail.dkim.signing.algorithm=SHA256_WITH_RSA
-				</code></pre>
-				<p class="wide">
-					Use <code class="inline language-properties">file:</code> for a path or
-					<code class="inline language-properties">base64:</code> followed by Base64-encoded key bytes for inline data.
-					A missing explicit file or malformed Base64 value fails during configuration without including the key data in the error.
-					Unprefixed values are also accepted for compatibility.
-				</p>
-			</div>
-		</section>
-
-		<section>
-			<div class="view">
-				<p><strong>Use the exceptions deliberately</strong></p>
-				<p>
-					RSA-SHA256 is the default signing algorithm. Choose <code>SHA256_WITH_ED25519</code> with a matching Ed25519 key
-					for Ed25519-SHA256; both choices cover the final outgoing representation, including selected S/MIME or OpenPGP protection.
-					SJM defaults to relaxed canonicalization for both headers and body. The normal configuration leaves the DKIM body-length
-					tag off and signs the default header list. Turn on the
-					<code class="inline language-java">l=</code> body-length tag only when a known downstream service appends a footer:
-					content appended after the signed length is not covered by the signature.
-				</p>
-				<p>
-					Likewise, exclude a header only when that specific relay rewrites it. <code class="inline language-java">From</code>
-					is mandatory in a DKIM signature, so the DKIM module rejects that exclusion when signing, before reading message content.
-				</p>
-				<p>
-					Inspect a builder's choices before building it, or clear just an optional preference when reusing it. For example,
-					<code>clearSigningAlgorithm()</code>, <code>clearHeaderCanonicalization()</code> and
-					<code>clearExcludedHeadersFromDkimDefaultSigningList()</code> leave the key and domain untouched.
-					S/MIME offers <code>clearSignatureAlgorithm()</code>, <code>clearKeyEncapsulationAlgorithm()</code> and
-					<code>clearCipherAlgorithm()</code>. Clearing restores the downstream library's choice rather than selecting another algorithm.
-					Keep these objects and their serialized forms private even though automatic rendering hides known key material.
-				</p>
-				<p>Completed DKIM header exclusions are immutable, including after restoring a supported older serialized configuration.
-					A collection returned by the getter cannot change an Email's signing choices. Build a replacement <code>DkimConfig</code>
-					when selecting different exclusions; older stored entries keep their meaning.</p>
-				<p>In the unreleased 10.0.0 line, <code>dkimSigningDomain(null)</code> and <code>dkimSelector(null)</code> reject the
-					missing argument before replacing an earlier choice. Handle a missing domain or selector before calling the setter;
-					leave it uncalled when you intend to keep the current choice. Builder inspection stays passive, and optional algorithm
-					nulls still select the module default. See the <a href="migration-notes-10.0.0.html#grouped-configuration">signing configuration migration guidance</a>.</p>
-			</div>
-			<div class="side">
-<pre><code class="small">DkimConfig.builder()
+Email receipt = mail.emailBuilder().startingBlank()
+    .from("receipts@example.org").to("customer@example.net")
+    .withSubject("Your receipt").withPlainText("Thank you for your order.")
+    .signWithDomainKey(signing)
+    .buildEmail();</code></pre>
+    <p>Use the sender’s domain or a parent domain. Matching ignores domain case and preserves the supplied spelling.
+      The default is RSA-SHA256 with relaxed header and body canonicalization. DKIM signs the final outgoing form, including any S/MIME or OpenPGP protection.</p>
+    <h3>Sign every receipt from this Mailer</h3>
+    <p>Put the same config on a defaults template. A message can supply its own DKIM config.</p>
+<pre><code class="language-java">Email signingDefaults = mail.emailBuilder().startingBlank().signWithDomainKey(signing).buildEmail();
+Mailer receiptMailer = mail.mailerBuilder().withEmailDefaults(signingDefaults).buildMailer();</code></pre>
+    <p>The template can omit From. The prepared message needs a sender. Supplying a defaults template replaces property-derived
+      message defaults. See <a href="configuration.html#section-config-mailer">defaults and overrides</a> to keep those values.</p>
+<details class="doc-disclosure">
+  <summary>Set the signing defaults in properties</summary>
+<pre><code class="language-properties">simplejavamail.dkim.signing.private_key_file_or_data=file:my_dkim_key.der
+simplejavamail.dkim.signing.selector=dkim1
+simplejavamail.dkim.signing.signing_domain=example.org</code></pre>
+      <p>Use <code>file:</code> for a path or <code>base64:</code> for inline key data. A missing explicit file or malformed Base64 fails
+        during configuration and the error omits the key data. Unprefixed values are accepted for compatibility.
+        <code>use_length_param</code> defaults to false, <code>header_canonicalization</code> and <code>body_canonicalization</code>
+        to <code>RELAXED</code>, and <code>algorithm</code> to <code>SHA256_WITH_RSA</code>.</p>
+</details>
+<details class="doc-disclosure">
+  <summary>If a downstream service appends a footer or rewrites a header</summary>
+<p>Keep the default header set unless a known relay rewrites a specific header. Keep <code>From</code> signed. Excluding it fails
+        before the module reads message content. Enabling the <code>l=</code> tag signs only the original body length and leaves appended content outside the signature.</p><pre><code class="small">DkimConfig.builder()
     .dkimPrivateKeyPath(Path.of("secrets/dkim-private-key.der"))
     .dkimSigningDomain("your-domain.org")
     .dkimSelector("dkim1")
@@ -750,152 +661,95 @@ currentMailerBuilder
     .excludedHeadersFromDkimDefaultSigningList("Message-ID", "Date")
     .build();
 </code></pre>
-			</div>
-		</section>
-
-		<section>
-			<p class="wide">
-				You can also sign a MIME message directly. Keep the returned message and send or write that value;
-				the input message does not receive the DKIM signature. In unreleased 10.0.0, the helper finalizes and
-				signs the content during this call, and repeated writes retain the signed bytes:
-			</p>
-			<div class="wide">
-				<pre><code class="small">MimeMessage signed = MailerHelper.signMessageWithDKIM(
+</details>
+<details class="doc-disclosure">
+  <summary>Use an Ed25519 key</summary>
+<p>Publish the matching public key under the selector and choose the Ed25519 signing algorithm.</p><pre><code class="language-java">DkimConfig signing = DkimConfig.builder()
+    .dkimPrivateKeyPath(Path.of("secrets/dkim-ed25519-private-key.der"))
+    .dkimSigningDomain("example.org")
+    .dkimSelector("dkim-ed25519")
+    .signingAlgorithm("SHA256_WITH_ED25519")
+    .build();</code></pre>
+</details>
+<details class="doc-disclosure">
+  <summary>Sign an existing MimeMessage</summary>
+<p>Use the returned result. The helper finalizes and signs that message, which retains the signed bytes across repeated writes.</p><pre><code class="small">MimeMessage signed = MailerHelper.signMessageWithDKIM(
     mimeMessageToSign, emailContainingSigningDetails);
 signed.writeTo(outputStream); // Or submit signed through your application-owned transport.</code></pre>
-			</div>
-		</section>
-
-		<section>
-			<div class="view">
-				<p><strong>Excluding headers</strong></p>
-				<p>
-					Header exclusions are a compatibility setting, not a normal tuning option. Leave the default list alone unless a
-					specific relay is known to rewrite a header. <code class="inline language-java">From</code> must remain signed and
-					cannot be excluded.
-				</p>
-			</div>
-			<div class="side">
-<pre><code class="small">DkimConfig.builder()
-    // ... your signing key, domain and selector
-    .excludedHeadersFromDkimDefaultSigningList("Message-ID", "Date")
-    .build()
-</code></pre>
-			</div>
-		</section>
-
+</details>
+<details class="doc-disclosure">
+  <summary>Load keys, handle failures and reset options</summary>
+<ul>
+      <li>Path, String path and File setters read and close the file immediately. <code>dkimPrivateKeyData(byte[])</code> copies the bytes.
+        The data String overload encodes UTF-8 text without Base64 decoding. The stream overload reads immediately and you close the stream.</li>
+      <li>Known key-file open, read and close failures use <code>MailException</code> with kind <code>PREPARATION</code>, retaining the cause and suppressed close errors.
+        A replacement takes effect after reading, preparation and closing succeed. Key validation happens when signing.</li>
+      <li>Built exclusions are immutable. Build a replacement to change them. <code>clearSigningAlgorithm()</code>,
+        <code>clearHeaderCanonicalization()</code> and <code>clearExcludedHeadersFromDkimDefaultSigningList()</code> preserve the key and domain.
+        A null DKIM domain or selector throws and preserves the previous value. A null optional algorithm selects the default.</li>
+      <li>Builder getters can inspect unfinished choices. Keep key material and serialized configs private. Automatic rendering hides known secrets.</li>
+      </ul>
+</details>
+  </div></section>
 
 		<a href="#section-sending-smime" id="section-sending-smime" class="section-link h2">&sect;</a>
 		{{#> components/feature-heading-h2 smime=true}}Signing / encrypting emails with S/MIME{{/components/feature-heading-h2}}
-    {{> components/pattern-examples topic="protected-content"}}
-
-		<section>
-			<div class="view">
-				<p>
-					Simple Java Mail supports signing and encrypting with <a href="https://www.globalsign.com/en/blog/what-is-s-mime/">S/MIME</a>.
-				</p>
-				<br/>
-				<p>
-					You can sign, encrypt or both sign and encrypt an email. In the latter case the email will first be signed
-					and then encrypted, as per
-					<a href="https://github.com/markenwerk/java-utils-mail-smime#using-the-library-as-a-sender-" target="_blank">
-						advice</a> of the underlying library. All signing/encrypting is performed when the email is being sent.
-				</p>
-				<br/>
-				<p>
-					You can <strong>sign individual emails</strong> or <strong>sign all emails</strong> by configuring S/MIME defaults on the
-					<em>Mailer</em> or through properties.
-				</p>
-				<p><code>clearSmimeSigning()</code> and <code>clearSmimeEncryption()</code> remove one local choice independently;
-					<code>clearSmime()</code> removes both. These operations retain recipient certificates and permit ordinary template fallback.
-					Use the per-field suppression controls when a template should not supply the cleared choice again. Recipient certificates can
-					still request encryption after the Email choices are cleared. The <a href="understanding-configuration.html#configuration-precedence">scope and precedence table</a>
-					explains these separate sources; ordinary suppression cannot remove configuration locks.</p>
-				<p><code>signWithSmime(config)</code> and <code>encryptWithSmime(config)</code> require a non-null configuration.
-                    A missing value throws <code>IllegalArgumentException</code> before changing an earlier choice; use the named clear methods
-                    when removal is intentional. Optional algorithm fields may still use null to select their documented module defaults.</p>
-                <p>Inside the configuration builders, <code>pkcs12Config(Pkcs12Config)</code> and
-                    <code>x509Certificate(X509Certificate)</code> also require non-null material. A missing key-store configuration or
-                    certificate throws <code>IllegalArgumentException</code> immediately, retaining the earlier material and all algorithm
-                    preferences. Supply a replacement only when it is available. Selecting these values performs no cryptography and
-                    does not load the S/MIME module; certificates retain their supplied identity.</p>
-                <p>In unreleased 10.0.0, <code>Pkcs12Config.build()</code> requires store bytes, a store password, a key alias and a key password.
-                    Missing choices fail with <code>IllegalArgumentException</code> identifying the field. Supply <code>""</code> or an empty
-                    <code>char[]</code> for an explicitly empty password. The builder getters can still inspect incomplete choices;
-                    null setter arguments leave earlier choices intact. Store parsing, password correctness and alias existence are checked
-                    by the S/MIME operation when it uses the configuration.</p>
-				<p>
-					For encryption, Simple Java Mail can use one email-level encryption certificate, or different certificates per recipient. When any
-					To/Cc/Bcc recipient carries a certificate, it requests S/MIME encryption even without an email-level encryption configuration.
-					That recipient certificate is used first. Recipients without a certificate fall back to the
-					email-level or mailer-level <code class="inline language-java">SmimeEncryptionConfig</code>, if one is configured.
-					An email using these recipient certificates cannot also request <a href="#section-sending-openpgp">OpenPGP signing or encryption</a>;
-					<code>buildEmail()</code> rejects that conflict.
-				</p>
-				<p>
-					For a mailing list, department, or any group that should share certificate rules, use <code class="inline language-java">mail.recipientsBuilder()</code> before adding the
-					flat recipient list to the email. <code class="inline language-java">withDefaultSmimeCertificate(...)</code> fills only missing certificates,
-					<code class="inline language-java">withFixedSmimeCertificate(...)</code> replaces every recipient certificate in that group, and
-					<code class="inline language-java">clearingSmimeCertificates()</code> removes certificate state from reused recipients so the email-level
-					or mailer-level fallback certificate can apply.
-					To keep each original recipient's certificate instead, use <code class="inline language-java">resetSmimeCertificatePolicy()</code>.
-					It removes the group rule, not the recipients' certificates, and leaves any group notification policy unchanged.
-				</p>
-				<p><code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code> and <code>withFixedSmimeCertificate(...)</code>
-                    require a non-null certificate. Passing null throws <code>IllegalArgumentException</code> before changing the existing certificate or group policy.
-                    Use <code>clearingSmimeCertificate()</code> for an individual recipient, or the group clear/reset operations above when removal or restoration is intended.</p>
-				<table><thead><tr><th>Recipient-group operation</th><th>Certificates on produced recipients</th></tr></thead><tbody>
-					<tr><td><code>withDefaultSmimeCertificate(c)</code></td><td>Fill missing certificates only.</td></tr>
-					<tr><td><code>withFixedSmimeCertificate(c)</code></td><td>Replace every recipient certificate with <code>c</code>.</td></tr>
-					<tr><td><code>clearingSmimeCertificates()</code></td><td>Strip certificates, permitting the Email fallback.</td></tr>
-					<tr><td><code>resetSmimeCertificatePolicy()</code></td><td>Stop applying the group rule and preserve the original recipients' certificates.</td></tr>
-				</tbody></table>
-				<br/>
-				<p>
-					For maximum flexibility, you can configure all algorithms and certificates specific to S/MIME signing and encryption. This includes
-					choosing the key encapsulation algorithm and cipher algorithm for encryption, and the signature algorithm for signing. For a list of
-					available algorithms, see the <code class="inline language-java">SmimeEncryptionConfig</code> and
-					<code class="inline language-java">SmimeSigningConfig</code> classes.
-				</p>
-				<p>In the unreleased 10.0.0 line, S/MIME retains the finalized content headers and the
-                    <a href="features.html#smime-body-transfer-encoding">body transfer encoding you selected</a> for single-part and multipart
-                    messages alike. Signing and encryption wrap that prepared content without choosing a different inner-body encoding.
-                    Before signing, raw binary attachments receive a safe transfer encoding so MIME line canonicalization cannot change their decoded bytes.
-                    This preparation leaves the caller's content unchanged and keeps binary attachments supported.</p>
-			</div>
-			<div class="side">
-				Signing an email:
-				<pre><code>Pkcs12Config myKeyInfo = Pkcs12Config.builder()
-    .pkcs12Store(Path.of("my_smime_keystore.pkcs12"))
-    .storePassword("my_store_password")
-    .keyAlias("my_key_alias")
-    .keyPassword("my_key_password")
+    <section>
+      <div class="wide full-width-example">
+        <h3 id="section-smime-sign-statement">Sign a statement</h3>
+        <p>Use <a href="https://www.globalsign.com/en/blog/what-is-s-mime/">S/MIME</a> to sign a statement with your finance team's
+          private key. Add <a href="/modules.html#smime-module"><code>smime-module</code></a> and supply the PKCS12 keystore,
+          store password, signing key alias and key password.</p>
+<pre><code class="language-java">SmimeSigningConfig signing = SmimeSigningConfig.builder()
+    .pkcs12Config(Path.of("finance-signing.p12"), storePassword, keyAlias, keyPassword)
     .build();
 
-Email emailToBeSigned = currentEmailBuilder
-    .(..)
-    .signWithSmime(SmimeSigningConfig.builder()
-		.pkcs12Config(myKeyInfo)
-		.signatureAlgorithm("SHA256withRSA") // optional
-		.build())
-    .buildEmail();
+EmailPopulatingBuilder statement = mail.emailBuilder().startingBlank()
+    .from("finance@example.org")
+    .to("reviewer@example.net")
+    .withSubject("Monthly statement")
+    .withPlainText(statementText);
 
-mailer.sync().sendMail(emailToBeSigned);
-</code></pre>
-				Encrypting an email:
-				<pre><code>Email emailToBeEncrypted = currentEmailBuilder
-    .(..)
-    .encryptWithSmime(SmimeEncryptionConfig.builder()
-		.x509Certificate(Path.of("x509CertificateInStandardPEM.crt"))
-		.keyEncapsulationAlgorithm("RSA_OAEP_SHA384") // optional
-		.cipherAlgorithm("AES256_CBC") // optional
-		.build())
-    .buildEmail();
+mailer.sync().sendMail(statement.signWithSmime(signing).buildEmail());</code></pre>
+        <h3 id="section-smime-encrypt-statement">Encrypt it for the reviewer</h3>
+        <p>For a private statement, use this send in place of the signing-only example. Encrypt with the reviewer's public X.509
+          certificate. Keep the signing config to sign first, then encrypt, or omit it to encrypt only. Protection is applied when
+          Simple Java Mail prepares MIME output for conversion or sending.</p>
+<pre><code class="language-java">SmimeEncryptionConfig encryption = SmimeEncryptionConfig.builder()
+    .x509Certificate(Path.of("reviewer-certificate.pem"))
+    .build();
 
-mailer.sync().sendMail(emailToBeEncrypted);
-</code></pre>
-				Encrypting with different recipient certificates:
-				<pre><code>SmimeEncryptionConfig algorithmsAndFallback = SmimeEncryptionConfig.builder()
+mailer.sync().sendMail(statement.signWithSmime(signing)
+    .encryptWithSmime(encryption)
+    .buildEmail());</code></pre>
+        <ul>
+          <li>Give each reviewer their own certificate when they have one. A certificate on any To, Cc or Bcc recipient requests
+            S/MIME encryption and takes precedence for that recipient. The Email or Mailer can supply a fallback for other recipients.</li>
+          <li>Use one content-protection format per message. <code>buildEmail()</code> rejects S/MIME recipient certificates combined
+            with <a href="#section-sending-openpgp">OpenPGP signing or encryption</a>.</li>
+        </ul>
+      </div>
+    </section>
+
+    {{> components/pattern-examples topic="protected-content"}}
+    <section>
+      <div class="wide full-width-example">
+        <details class="doc-disclosure">
+          <summary>Set certificates for a group of recipients</summary>
+          <p>Use <code>mail.recipientBuilder()</code> for individual certificates or <code>mail.recipientsBuilder()</code> to apply
+            a certificate policy to a mailing list. Properties can supply one fallback certificate for the Email or Mailer.</p>
+          <div class="doc-table-wrap" tabindex="0" aria-label="S/MIME recipient certificate options">
+            <table><thead><tr><th>Recipient-group operation</th><th>Certificates on produced recipients</th></tr></thead><tbody>
+              <tr><td><code>withDefaultSmimeCertificate(c)</code></td><td>Fill missing certificates only.</td></tr>
+              <tr><td><code>withFixedSmimeCertificate(c)</code></td><td>Replace every recipient certificate with <code>c</code>.</td></tr>
+              <tr><td><code>clearingSmimeCertificates()</code></td><td>Strip certificates, permitting the Email fallback.</td></tr>
+              <tr><td><code>resetSmimeCertificatePolicy()</code></td><td>Stop applying the group rule and keep the original certificates.</td></tr>
+            </tbody></table>
+          </div>
+          <p>Resetting the policy leaves the source recipients, any already built list and all NOTIFY choices as they were.
+            Email templates and separately added recipients can still request encryption after you clear a group's certificates.</p>
+          <p>For two reviewers with individual certificates, configure the fallback for anyone without one.</p>
+<pre><code>SmimeEncryptionConfig algorithmsAndFallback = SmimeEncryptionConfig.builder()
     .x509Certificate(fallbackCertificate)
     .keyEncapsulationAlgorithm("RSA_OAEP_SHA384")
     .cipherAlgorithm("AES256_CBC")
@@ -918,8 +772,8 @@ Email emailToBeEncrypted = currentEmailBuilder
     .encryptWithSmime(algorithmsAndFallback)
     .buildEmail();
 </code></pre>
-				Encrypting a group with exactly one certificate:
-				<pre><code>List&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
+          <p>To give a list the same certificate, use a fixed policy.</p>
+<pre><code>List&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withFixedSmimeCertificate(financeCertificate)
     .withRecipientsWithDefaultName("Finance", Message.RecipientType.TO,
             "alice@example.com", "bob@example.com")
@@ -929,15 +783,15 @@ Email emailToBeEncrypted = currentEmailBuilder
     .withRecipients(finance)
     .buildEmail();
 </code></pre>
-				Defaulting only missing certificates in a group:
-				<pre><code>List&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
+          <p>To fill only missing certificates, use a default policy.</p>
+<pre><code>List&lt;Recipient&gt; finance = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .withDefaultSmimeCertificate(financeFallbackCertificate)
     .withRecipients(previousFinanceRecipients)
     .buildRecipients();
 // recipients that already had their own certificates keep them;
 // the others receive financeFallbackCertificate</code></pre>
-				Clearing reused recipient certificates so the email-level certificate applies:
-				<pre><code>List&lt;Recipient&gt; reusableRecipients = SimpleJavaMail.fromDefaults().recipientsBuilder()
+          <p>To let the Email fallback apply to reused recipients, clear their certificates.</p>
+<pre><code>List&lt;Recipient&gt; reusableRecipients = SimpleJavaMail.fromDefaults().recipientsBuilder()
     .clearingSmimeCertificates()
     .withRecipients(previousRecipients)
     .buildRecipients();
@@ -947,8 +801,8 @@ Email emailToBeEncrypted = currentEmailBuilder
     .encryptWithSmime(emailLevelSmimeEncryptConfig)
     .buildEmail();
 </code></pre>
-				Resetting a group rule preserves the original metadata instead:
-				<pre><code class="language-java">IRecipientsBuilder group = mail.recipientsBuilder()
+          <p>To keep each reused recipient's original certificate after an earlier group policy, reset the policy.</p>
+<pre><code class="language-java">IRecipientsBuilder group = mail.recipientsBuilder()
     .withRecipients(previousRecipients);
 
 List&lt;Recipient&gt; cleared =
@@ -956,24 +810,27 @@ List&lt;Recipient&gt; cleared =
 
 List&lt;Recipient&gt; preserved =
     group.resetSmimeCertificatePolicy().buildRecipients();</code></pre>
-				<p>The previously built <code>cleared</code> list remains cleared, and the source recipients are unchanged.
-					Resetting this certificate policy leaves the group's NOTIFY policy unchanged. Neither the group clear nor the Email's
-					<code>clearSmime()</code> is a universal encryption-disable operation: Email templates or recipients added directly to the Email later can still supply
-					protection choices.</p>
-				Sign all emails by default from Java:
-				<pre><code>SmimeSigningConfig signingDefaults = SmimeSigningConfig.builder()
-    .pkcs12Config(myKeyInfo)
-    .build();
+        </details>
+        <details class="doc-disclosure">
+          <summary>Set Mailer defaults or clear a choice</summary>
+          <ul>
+            <li>Set S/MIME defaults on the Mailer or through properties to sign every message. Properties can select a single
+              encryption fallback. Use Java recipient or group settings for different certificates.</li>
+            <li><code>clearSmimeSigning()</code> and <code>clearSmimeEncryption()</code> clear their respective local choices.
+              <code>clearSmime()</code> clears both. Recipient certificates and ordinary templates can still request encryption.
+              Use per-field suppression to skip a template. Configuration locks still apply. See the
+              <a href="understanding-configuration.html#configuration-precedence">scope and precedence table</a>.</li>
+          </ul>
+          <p>Set the signing default in Java.</p>
+<pre><code class="language-java">Email protectionDefaults = mail.emailBuilder().startingBlank()
+    .signWithSmime(signing)
+    .buildEmailCompletedWithDefaultsAndOverrides(); // retain property defaults too
 
-SimpleJavaMail.fromDefaults().mailerBuilder()
-    (...)
-    .withEmailDefaults(SimpleJavaMail.fromDefaults().emailBuilder().startingBlank()
-		.signWithSmime(signingDefaults)
-		.buildEmailCompletedWithDefaultsAndOverrides()) // retain property defaults too
-    .buildMailer();
-</code></pre>
-				Property-only S/MIME defaults:
-				<pre><code class="language-properties small"># Sign every email sent through a property-configured mailer.
+Mailer protectedMailer = mail.mailerBuilder()
+    .withEmailDefaults(protectionDefaults)
+    .buildMailer();</code></pre>
+          <p>Or use properties for the signing identity and encryption fallback.</p>
+<pre><code class="language-properties small"># Sign every email sent through a property-configured mailer.
 simplejavamail.smime.signing.keystore=my_smime_keystore.pkcs12
 simplejavamail.smime.signing.keystore_password=keystore_password
 simplejavamail.smime.signing.key_alias=key_alias
@@ -991,50 +848,97 @@ simplejavamail.smime.encryption.cipher=AES256_CBC
 simplejavamail.defaults.to.name=Finance
 simplejavamail.defaults.to.address=alice@example.com,bob@example.com
 </code></pre>
-				<p class="small">
-					Properties can configure the signing identity and a single encryption fallback. They cannot express different S/MIME certificates per
-					recipient; use <code class="inline language-java">mail.recipientBuilder()</code> or <code class="inline language-java">mail.recipientsBuilder()</code>
-					for per-recipient or group certificate policy.
-				</p>
-			</div>
-		</section>
+        </details>
+        <details class="doc-disclosure">
+          <summary>Keystore validation, algorithm options and transfer encoding</summary>
+          <ul>
+            <li><code>Pkcs12Config.build()</code> needs the store bytes, store password, key alias and key password. Use
+              <code>""</code> or an empty <code>char[]</code> for an empty password. A missing field causes
+              <code>IllegalArgumentException</code> naming the field. Getters can inspect an unfinished builder. The S/MIME
+              operation checks store parsing, passwords and alias lookup.</li>
+            <li><code>signWithSmime(...)</code>, <code>encryptWithSmime(...)</code>, <code>pkcs12Config(Pkcs12Config)</code>
+              and <code>x509Certificate(X509Certificate)</code> reject null with <code>IllegalArgumentException</code> and
+              keep the earlier choice. PKCS12 setters also preserve earlier values when passed null. The material setters retain
+              the supplied configuration or certificate. Module loading and cryptographic work happen later.</li>
+            <li><code>withSmimeCertificate(...)</code>, <code>withDefaultSmimeCertificate(...)</code> and
+              <code>withFixedSmimeCertificate(...)</code> require a non-null certificate. Passing null throws
+              <code>IllegalArgumentException</code> and keeps the current certificate or policy. Clear an individual certificate
+              with <code>clearingSmimeCertificate()</code>, or use the group clear or reset operation.</li>
+            <li>Choose the signature algorithm on <code>SmimeSigningConfig</code>. Choose key encapsulation and cipher on
+              <code>SmimeEncryptionConfig</code>. Those classes list their supported algorithms. An optional algorithm set
+              to null selects its documented module default. To restore those defaults explicitly, use <code>clearSignatureAlgorithm()</code>,
+              <code>clearKeyEncapsulationAlgorithm()</code> or <code>clearCipherAlgorithm()</code>.</li>
+            <li>S/MIME preserves prepared headers and the <a href="/email-composition.html#smime-body-transfer-encoding">selected
+              body transfer encoding</a> for single-part and multipart messages. Before signing raw binary attachments, it
+              selects a safe transfer encoding so MIME line canonicalization leaves the decoded bytes intact. The caller's
+              content stays unchanged.</li>
+          </ul>
+        </details>
+      </div>
+    </section>
 
+
+<section><div class="wide full-width-example">
+      <h3 id="section-protect-existing-mime">Protect a MimeMessage you already have</h3>
+      <p>If you’ve already edited a <code>MimeMessage</code>, pass it to the S/MIME helper. It takes the content and headers from
+        that message and the protection settings from the <code>Email</code> you supply. Mailer defaults and overrides do not apply.</p>
+<pre><code class="language-java">Email protection = mail.emailBuilder().startingBlank()
+    .encryptWithSmime(SmimeEncryptionConfig.builder()
+        .x509Certificate(readerCertificate).build())
+    .buildEmail();
+
+MimeMessage encrypted = MailerHelper.signAndOrEncryptMessageWithSmime(
+    session, existingMimeMessage, protection);</code></pre>
+      <h4 id="smime-helper-message-id">Choose the protected message’s Message-ID</h4>
+      <ul>
+        <li><strong>Use a fresh ID.</strong> Leave the protection Email’s ID unset, as in the example. The helper generates an ID even if the supplied MIME message has one.</li>
+        <li><strong>Keep an existing ID.</strong> The helper uses any nonempty ID on the protection Email, including an ID carried over by import or copying.
+          To reuse the supplied MIME message’s ID, call <code>fixingMessageId(existingMimeMessage.getMessageID())</code> on the protection builder before building it.</li>
+        <li><strong>Discard an inherited ID.</strong> Call <code>clearId()</code> on the copied builder to generate a fresh ID when protection runs.</li>
+      </ul>
+      <details class="doc-disclosure">
+        <summary>Signing order, certificate selection and repeated writes</summary>
+        <p>Add <code>smime-module</code> for signing, encryption, or both. Together they sign first and then encrypt.
+          Recipient certificates, the Email’s fallback certificate and configured encryption algorithms follow the
+          <a href="security.html#section-sending-smime">ordinary S/MIME rules</a>. The helper finalizes each protected result so repeated
+          writes keep its content and ID. With neither operation requested, it returns the supplied message with its existing ID and needs no S/MIME module.</p>
+      </details>
+
+</div>
+</section>
 
 		<a href="#section-smime-key-cache" id="section-smime-key-cache" class="section-link h3">&sect;</a>
 		<h3>Choose S/MIME key reuse capacity</h3>
 		<section><div class="wide full-width-example">
-			<p>When an application signs or decrypts with many different key configurations, choose how many loaded configurations it may keep
-				for reuse. Configure <code>simplejavamail.smime.cache.capacity</code> on the <code>SimpleJavaMail</code> factory:</p>
-			<pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.withConfig(
+      <p>Set <code>simplejavamail.smime.cache.capacity</code> to control how many loaded key configurations one factory keeps for
+        signing and decryption. Each entry includes parsed keys and retained keystore and password material.</p>
+      <table><thead><tr><th scope="col">Capacity</th><th scope="col">What the factory keeps</th></tr></thead><tbody>
+        <tr><td><code>-1</code> (default)</td><td>All loaded entries, with no count limit.</td></tr>
+        <tr><td><code>0</code></td><td>No completed entries. Overlapping operations can still share a load.</td></tr>
+        <tr><td>Positive integer</td><td>Up to that many completed entries. When full, the cache evicts the least recently used.</td></tr>
+      </tbody></table>
+      <p>For example, to keep up to 10,000 configurations:</p>
+<pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.withConfig(
     ConfigLoader.builder()
         .withMap(Map.of(ConfigKeys.SMIME_KEY_CACHE_CAPACITY.key(), 10_000))
         .load());</code></pre>
-			<p>The example chooses 10,000 entries. The published fallback,
-				<code>ConfigLoader.DEFAULT_SMIME_KEY_CACHE_CAPACITY</code>, is <code>-1</code>:</p>
-			<div class="doc-table-wrap" tabindex="0" aria-label="Scrollable S/MIME key reuse capacity values">
-				<table><thead><tr><th>Configured value</th><th>Behavior</th></tr></thead><tbody>
-					<tr><td>Absent or <code>-1</code></td><td>Keep entries without a count limit while the application retains the factory or its participating Mailers and converters.</td></tr>
-					<tr><td><code>0</code></td><td>Keep no completed entries. Signing and decryption still load and use keys; overlapping work can share a load.</td></tr>
-					<tr><td>Positive integer</td><td>Keep at most that many completed configurations. A new entry removes the least recently used entry when space is needed.</td></tr>
-				</tbody></table>
-			</div>
-			<p>This counts key configurations, including their retained keystore/password material and parsed keys. It is not a byte or heap limit.
-				An operation already using a key can finish after eviction; a later operation may reload it from the material held by the configuration. Entries do not expire
-				with time. Values below <code>-1</code> are rejected before key loading for signing or decryption; fractions, overflow and unsupported
-				input types are configuration errors.</p>
-			<p>Mailers and converters obtained from the same factory share this capacity and reuse. For example, incoming decryption uses the
-				same factory as sending:</p>
-			<pre><code class="language-java">Email received = mail.converter().fromEml(incomingEml)
+      <details class="doc-disclosure">
+        <summary>Sharing keys, eviction and changing capacity</summary>
+        <ul>
+          <li><strong>Share a factory.</strong> Its Mailers and converters share loaded keys. A second factory has its own cache, even with identical settings.
+            A send uses the selected Mailer’s factory, including after failover. <code>SimpleJavaMail.fromDefaults()</code> and the static converters use the default factory.</li>
+          <li><strong>Size the cache.</strong> Capacity counts configurations. Entries have no time-based expiry. Work in progress can finish using an evicted key,
+            and later work can reload it. <code>ConfigLoader.DEFAULT_SMIME_KEY_CACHE_CAPACITY</code> supplies the default. Values below <code>-1</code>
+            fail before key loading. Fractions, overflow and unsupported types are configuration errors.</li>
+          <li><strong>Change the limit.</strong> Configure it at the factory root, or lock it with <code>simplejavamail.locked.smime.cache.capacity</code>.
+            Named Mailers share that limit. To change it, create a replacement factory and use its Mailers and converters. Close old Mailers to release sending resources.
+            Cached keys can live as long as you retain the factory or any participating Mailer or converter. There is no separate cache cleanup call.</li>
+        </ul>
+        <p>Use the same factory to reuse its loaded keys for incoming decryption.</p>
+<pre><code class="language-java">Email received = mail.converter().fromEml(incomingEml)
     .withSmimeDecryption(customerKeys)
     .toEmail();</code></pre>
-			<p>Separate factories have independent caches, even if they use the same configuration snapshot. A send uses the selected Mailer's
-				factory, including a borrowed failover Mailer from another factory; the factory that originally built the Email does not choose it.
-				Private named Mailers share their creating factory's capacity. Put the property at the configuration root; a named-Mailer definition
-				cannot override it. The fixed-value form is <code>simplejavamail.locked.smime.cache.capacity</code>.</p>
-			<p>To change capacity, create a replacement configured factory and obtain its Mailers and converters. Existing objects keep their
-				selected policy. Close Mailers as usual to release sending resources; closing one does not clear keys shared with other participants.
-				Retaining a factory, one of its converters or a Mailer can retain its cached keys. No additional cache cleanup call is required.
-				<code>SimpleJavaMail.fromDefaults()</code> and static conversion helpers use the conventional default factory.</p>
+      </details>
 		</div></section>
 
 
@@ -1042,10 +946,10 @@ simplejavamail.defaults.to.address=alice@example.com,bob@example.com
         {{#> components/feature-heading-h2 smime=true}}Reading S/MIME messages and attachments{{/components/feature-heading-h2}}
 
         <section><div class="view">
-            <p>Convert supplied EML or Outlook MSG with the incoming keys your application makes available. Successfully opened content is readable
-                through the ordinary Email getters: bodies stay bodies, files stay attachments, and an independent attached message stays one attachment.
-                Reading a getter never starts decryption, verification or another input read.</p>
-            <pre><code class="language-java">Email received = mail.converter()
+            <p>
+              Your partner sends you an encrypted PDF. Supply your recipient keys while converting their EML or Outlook MSG. When opening succeeds, read the body and attachment bytes through the normal getters. An attached message still occupies one attachment. Reading a getter starts no new input read, decryption or verification.
+            </p>
+<pre><code class="language-java">Email received = mail.converter()
     .fromEml(Path.of("partner-message.eml"))
     .withSmimeDecryption(recipientKeys)
     .toEmail();
@@ -1067,67 +971,133 @@ Email attachedMessage = document.getEmail(); // Already parsed, or null.
 
         <a href="#section-reading-smime-verification" id="section-reading-smime-verification" class="section-link h3">&sect;</a>
         {{#> components/feature-heading-h3 smime=true}}Read the protection of the value you use{{/components/feature-heading-h3}}
-        <section><div class="view">
-            <p>A valid signature over plain text does not verify native HTML, a Subject or an independently attached child's files. Inspect the exact
-                selected value with <code>getPlainText()</code>, <code>getHTMLText()</code>, <code>getSubject()</code> or <code>getAttachment(index)</code>
-                on <code>EmailInspection</code>. These return metadata, while the useful content remains on Email and AttachmentResource.</p>
-            <p><code>VERIFIED</code> means established full signature coverage of that value; it does not approve the signer. <code>INVALID</code>
-                means an actual signature check failed. <code>UNVERIFIED</code> is a recognized associated signature whose verification was not
-                established. <code>UNSIGNED</code> needs established absence. <code>UNKNOWN</code> means presence or coverage could not be established.
-                <code>MIXED</code> preserves differing outcomes or known partial coverage. Inspect individual observations when a summary needs explanation.</p>
-            <p>The family view, <code>received.getInspection().getSmime()</code>, lists captured S/MIME signature and decryption observations, algorithms,
-                available signer-key facts and source references. It includes the actual opening layers of this message's direct resources as source-scoped
-                history, including after a resource is cleared or replaced. It does not declare the parent body or whole Email trusted. An attached child's
-                internal body observations remain on <code>attachment.getEmail().getInspection()</code> when that child is available.</p>
-            <p>A supplied certificate approves a signing key only when your application chooses it. SJM does not discover a certificate path, check
-                revocation or make a claimed From address trustworthy. <code>ApprovedSigners</code> below pins explicitly configured signing public keys;
-                certificate identity, validity and organizational authorization remain your application's responsibility.</p>
-            <p id="nested-smime-ciphertext">Nested protection retains individual layer observations. A successful outer decryption does not establish
-                the signature or encryption coverage of an unopened inner value. Missing or malformed MIME declarations retain unknown facts and
-                their actual Problems; they do not establish plain, unsigned content. Explicit keys and normal shared import limits apply during conversion.</p>
+        <section><div class="wide full-width-example">
+          <p>A partner sends an encrypted message with an invoice PDF. After opening the message, select the invoice and
+            check its own protection. Use the same attachment index for the file and its inspection. If two files share a
+            name, the index identifies the occurrence you picked.</p>
+<pre><code class="language-java">int invoiceIndex = 0; // The invoice is the first attachment in this example.
+AttachmentResource invoice = received.getAttachments().get(invoiceIndex);
+ValueInspection invoiceProtection =
+    received.getInspection().getAttachment(invoiceIndex);
+
+EncryptionStatus encryption = invoiceProtection.getEncryptionStatus();
+SignatureStatus signature = invoiceProtection.getSignatureStatus();</code></pre>
+          <figure class="doc-diagram mermaid" data-pagefind-ignore>
+%%{init: { "flowchart": { "padding": 8, "nodeSpacing": 20, "rankSpacing": 20, "wrappingWidth": 160 } } }%%
+flowchart TB
+    accTitle: Open the message, check the PDF, then approve the signer
+    accDescr: A decryption key opens the outer S/MIME message. Inspect whether a verified signature fully covers the selected invoice PDF. The application still checks the observed signing key against the partner's approved key.
+    open["&lt;b&gt;Open the message&lt;/b&gt;&lt;br/&gt;Decrypt the outer S/MIME layer"]
+    pdf["&lt;b&gt;Check the invoice PDF&lt;/b&gt;&lt;br/&gt;Inspect its signature coverage"]
+    signer["&lt;b&gt;Approve the signer&lt;/b&gt;&lt;br/&gt;Match the partner's signing key"]
+    open --&gt; pdf --&gt; signer
+          </figure>
+          <p>Opening the outer message gives you readable content. For this invoice, require a signature that verifies and
+            covers the whole PDF. Before acting on it, use the <a href="#section-inspecting-received-protection">received-protection
+            workflow</a> to require a signing key your application approves. <code>ApprovedSigners</code> pins explicitly
+            configured signing public keys. Certificate identity, validity, path discovery, revocation, organizational
+            authorization and the claimed From address remain your application's responsibility.</p>
+          <p>A reviewer reading HTML should inspect <code>getHTMLText()</code>. Plain text and Subject have their own
+            <code>getPlainText()</code> and <code>getSubject()</code> inspections. Get the content itself from <code>Email</code>
+            or <code>AttachmentResource</code>. For a value inside an attached message, start with
+            <code>attachment.getEmail().getInspection()</code>.</p>
+          <div class="doc-table-wrap" tabindex="0" aria-label="Signature status meanings">
+  <table class="signature-status-table">
+    <thead><tr><th>Status</th><th>Meaning for the selected value</th></tr></thead>
+    <tbody>
+      <tr><td><code>VERIFIED</code></td><td>A verified signature fully covers this value. The signer still needs your application's approval.</td></tr>
+      <tr><td><code>INVALID</code></td><td>A signature check failed.</td></tr>
+      <tr><td><code>UNVERIFIED</code></td><td>A related signature was recognized, but verification was not established.</td></tr>
+      <tr><td><code>UNSIGNED</code></td><td>The absence of a signature was established.</td></tr>
+      <tr><td><code>UNKNOWN</code></td><td>Signature presence or coverage could not be established.</td></tr>
+      <tr><td><code>MIXED</code></td><td>Outcomes differ, or only partial coverage is known. Read the individual observations.</td></tr>
+    </tbody>
+  </table>
+</div>
+          <details class="doc-disclosure">
+            <summary>Inspect the S/MIME history and nested layers</summary>
+            <p><code>received.getInspection().getSmime()</code> lists S/MIME signatures, decryption observations, algorithms,
+              available signer-key details and source references. It keeps the recorded layers for this message's direct
+              resources after replacements or clears. A child's internal layers stay with that child. Use the selected value
+              for a coverage decision.</p>
+          </details>
+          <p id="nested-smime-ciphertext">Opening an outer layer establishes evidence for that layer. An unopened inner value
+            still needs its own inspection. Missing or malformed MIME declarations keep their actual Problems and leave facts unknown.
+            Conversion uses the supplied keys and the usual shared import limits.</p>
         </div></section>
 
         <a href="#section-reading-smime-merging" id="section-reading-smime-merging" class="section-link h3">&sect;</a>
         {{#> components/feature-heading-h3 smime=true}}One readable message, with retained originals{{/components/feature-heading-h3}}
-        <section><div class="view">
-            <p>Conversion selects this logical message's representations rather than merging an outer Email with a second inner Email. Protected body
-                content supplies an available plain or HTML alternative, including a present empty string. When that alternative is absent or unavailable,
-                an already materialized native alternative can fill it. Each alternative has its own source, derivation and protection evidence.</p>
-            <p>HTML keeps its associated embedded resources. An unambiguous already read same-message resource can fill a missing reference; an independent
-                child's images are never borrowed. Materialized images unused by the selected HTML remain ordinary attachments. Ambiguity keeps its
-                source-linked Problem rather than creating a verified resource association. Calendar method and text are selected together.</p>
-            <p>A present readable protected Subject takes precedence, including an explicitly empty string; otherwise an available earlier/native Subject
-                can supply the selected fallback. A missing or unavailable final Subject is null. Recognized protected authored headers supply the logical
-                addresses, identity, stated sent date and threading with their meaningful omissions. Body-only protection leaves those native headers in place.
-                Generated adapter headers and independently attached messages do not supply the parent's
-                identity. The normal case-insensitive <code>getHeaders()</code> read view keeps useful represented received and custom values; it is not an exact wire dump.</p>
-            <p>When input positively identifies a protected authored address view but that view cannot be read, automatic replies leave destinations
-                unresolved for the caller to choose. Available outer metadata remains readable with its actual source and protection facts.</p>
-            <pre><code class="language-java">AttachmentResource originalMessage = received.getInspection().getOriginalMessage();
-AttachmentResource originalDocument = received.getInspection().getOriginalAttachment(0);
+        <section><div class="wide full-width-example">
+          <h4>Read the message you opened</h4>
+          <p>The invoice is in the attachments list. Use the same <code>Email</code> to read the selected body, Subject and
+            reply addresses. The protected content supplies each value where available.</p>
+          <ul>
+            <li><strong>Body and Subject.</strong> A readable protected value wins, including an empty string. An already read
+              native value can fill an absent or unavailable value. The Subject is null if neither is available.
+              Plain text and HTML each have their own sources, derivation and protection evidence.</li>
+            <li><strong>Headers and reply destinations.</strong> Recognized protected authored headers supply the addresses,
+              identity, sent date and threading, including their omissions. Body-only protection leaves native headers in
+              place. Generated adapter headers and attached messages cannot supply the parent's identity. If protected
+              addresses are identified but unreadable, your application chooses the reply destinations. Available outer
+              metadata keeps its own evidence.</li>
+          </ul>
+          <h4>Retrieve or forward the original you received</h4>
+          <p>If a colleague needs the partner's original encrypted EML, retrieve the whole message. Use the same invoice index
+            to retrieve the original attachment. The whole message holds the enclosing encryption layer. The original
+            attachment may already have been a PDF. An independently encrypted attachment
+            retains its own protected payload here.</p>
+<pre><code class="language-java">EmailInspection inspection = received.getInspection();
+AttachmentResource originalMessage = inspection.getOriginalMessage();
+AttachmentResource originalInvoice = inspection.getOriginalAttachment(invoiceIndex);
 
-Email edited = mail.emailBuilder().copying(received)
+if (originalMessage != null) {
+    Email forward = mail.emailBuilder().forwardingOriginal(received)
+        .from("operator@example.org")
+        .to("reviewer@example.org")
+        .buildEmail();
+}</code></pre>
+          <p>The forward carries the complete retained message as an attachment. The recipient still needs a decryption key.
+            Check the <a href="#received-protection-reuse">reply and forward rules</a> when the new message includes other
+            confidential content. If a complete original was unavailable, its getter returns null. Forwarding the original
+            requires a complete capture.</p>
+          <details class="doc-disclosure">
+            <summary>Selection details for headers, images and calendars</summary>
+            <ul>
+              <li><code>getHeaders()</code> is a case-insensitive view of represented received and custom values. Read the
+                retained original for the exact wire headers.</li>
+              <li>HTML keeps its associated embedded resources. If a reference is missing, an unambiguous already read
+                resource from the same message can fill it. Unused materialized images stay ordinary attachments.
+                An ambiguous association keeps its source-linked Problem. An attached message keeps its own images.</li>
+              <li>Calendar method and text are selected together.</li>
+            </ul>
+          </details>
+          <details class="doc-disclosure">
+            <summary>Original capture and edits</summary>
+            <ul>
+              <li>Conversion retains complete raw EML and MSG in the supplied format. A <code>MimeMessage</code> without
+                captured raw input has no original file. An incomplete prefix is insufficient for original forwarding.
+                For EML String input, the capture contains the UTF-8 bytes the converter actually consumed. Its external wire
+                encoding remains unknown.</li>
+              <li>Copies and snapshots can share captured storage. Originals and different decoded content can require
+                additional memory. There is no automatic temporary-file spill or whole-JVM memory bound.</li>
+              <li>Reading a child Email leaves its parent's attachment payload unchanged. To edit it, render the changed child
+                and replace the parent attachment explicitly. Use <a href="/email-conversion.html#section-source-inspection">source
+                inspection</a> for source data and Problems. Neither is added to outgoing MIME.</li>
+            </ul>
+<pre><code class="language-java">Email edited = mail.emailBuilder().copying(received)
     .withPlainText("Replacement body")
     .buildEmail();
 // The new plain text is caller-supplied with unknown incoming protection.
-// Unchanged fields keep their evidence; retained originals remain historical input.
-</code></pre>
-            <p>Complete raw EML and MSG supplied to conversion are retained automatically under its import contract, in their actual format. A supplied
-                MimeMessage without captured raw input has no invented original file. Incomplete prefixes remain diagnostic source evidence and cannot
-                be forwarded as complete originals. Captured storage can be shared by ordinary copies and snapshots; raw originals and genuinely different
-                decoded content can still require additional memory. There is no whole-JVM memory promise or automatic temporary-file spill.</p>
-            <p>For EML String input, retained bytes are the UTF-8 representation the converter actually consumed. They do not establish an unknown external wire encoding.</p>
-            <p>Current field and indexed resource inspections describe the selected values after edits. Family observations retain their historical
-                source scope; use the current value's inspection for a requirements check, rather than treating an old family observation as protection of a replacement.</p>
-            <p>Reading a child Email leaves its parent's selected attachment payload unchanged. Edit a child, render the replacement and replace the parent
-                attachment explicitly when that is your intent. Source data and Problems are read separately through
-                <a href="features.html#section-source-inspection">source inspection</a>; they are never extra outgoing MIME attachments.</p>
+// Unchanged fields keep their evidence; retained originals remain historical input.</code></pre>
+            <p>After edits, check the current field or resource. The S/MIME history still describes the original sources.</p>
+          </details>
         </div></section>
 
         <a href="#section-reading-smime-decryption" id="section-reading-smime-decryption" class="section-link h3">&sect;</a>
         {{#> components/feature-heading-h3 smime=true}}Supply incoming S/MIME keys{{/components/feature-heading-h3}}
         <section><div class="view">
-            <pre><code class="language-java">Pkcs12Config recipientKeys = Pkcs12Config.builder()
+<pre><code class="language-java">Pkcs12Config recipientKeys = Pkcs12Config.builder()
     .pkcs12Store(Path.of("recipient.p12"))
     .storePassword(storePassword)
     .keyAlias("recipient")
@@ -1153,10 +1123,10 @@ Email received = mail.converter()
         <a href="#section-inspecting-received-protection" id="section-inspecting-received-protection" class="section-link h2">&sect;</a>
         <h2>Check incoming mail before acting on it</h2>
         <section><div class="view">
-            <p>A partner sends an encrypted, signed document for automatic processing. First convert it with the receive keys you have, then select
-                the exact attachment your application requires. Parsing successfully, seeing readable text or finding an empty Problems list does not
-                establish that the document meets your protection policy.</p>
-            <pre><code class="language-java">ApprovedSigners approvedPartner = ApprovedSigners.builder()
+            <p>
+              Suppose your service automatically imports a partner's remittance PDF. Convert the email with your receive keys and select the attachment you intend to import. Before importing it, check that this exact PDF was recovered from encryption and carries a verified signature from a key you approve.
+            </p>
+<pre><code class="language-java">ApprovedSigners approvedPartner = ApprovedSigners.builder()
     .addSmimeCertificate(currentPartnerCertificate)
     .addSmimeCertificate(replacementPartnerCertificate)
     .build();
@@ -1181,18 +1151,25 @@ if (check.isSatisfied()) {
     holdForReview(check.getOutcome(), check.getReasons(), received.getProblems());
 }
 </code></pre>
-            <p>The document lookup and process/hold functions belong to the application. Choose by your expected document contract, and retain the
-                attachment occurrence; duplicate names need not identify the same input. A parsed attached Email has its own inspection. Checking the
-                parent's whole attachment does not silently substitute a check of one child body.</p>
-            <p><code>requireVerifiedSignatureFrom(...)</code> requires one same signature that is verified, fully covers the selected value and uses an
-                explicitly approved actual signing key. A valid unapproved signer cannot combine with an invalid approved signer. Renewed S/MIME
-                certificates with the same normalized public key can match; a new key needs explicit approval. This is signing-key pinning, not automatic PKI validation.</p>
-            <p>For OpenPGP, configure <code>ApprovedSigners.builder().addOpenPgpSigningKeyFingerprint(fullFingerprint).build()</code> with the full
-                fingerprint of the actual signing key, including the signing subkey when applicable. Short key IDs do not approve a key, and approving
-                one key does not automatically approve unrelated or unvalidated subkeys. Receive-key configuration enables verification; it is separate from approval.</p>
-            <p><code>requireDecryptedContent()</code> checks that this selected content was recovered from encryption. A plain PDF and an unopened encrypted
-                resource fail that requirement. It does not attempt decryption. The requirements value can be reused for HTML, Subject or one resource
-                inspection at a time; checking a document says nothing about unselected fields.</p>
+            <ul>
+              <li><strong>Pick the actual document.</strong> Your application supplies the lookup and decides whether to
+                process or hold the file. Keep the attachment index, since names can repeat. If you need a value inside
+                an attached message, use that child's inspection.</li>
+              <li><strong>Check one qualifying signature.</strong> <code>requireVerifiedSignatureFrom(...)</code> needs
+                the same signature to verify, fully cover the selected value and use an approved signing key. An invalid
+                approved signature cannot combine with a valid unapproved one. A renewed S/MIME certificate can match if
+                the normalized public key is the same. Approve a new key explicitly. Your application still owns
+                certificate validity and trust decisions.</li>
+              <li><strong>Approve the OpenPGP signing key.</strong> Use
+                <code>ApprovedSigners.builder().addOpenPgpSigningKeyFingerprint(fullFingerprint).build()</code> with the
+                full fingerprint of the actual signing key, including the signing subkey when applicable. A short ID or
+                approval of a different key is insufficient. Supplying a verification key enables verification, while
+                approval is a separate choice.</li>
+              <li><strong>Check decryption where you need it.</strong> <code>requireDecryptedContent()</code> checks
+                recorded evidence that this value was recovered from encryption. A plain PDF or unopened encrypted
+                payload fails the requirement. Run the check on each value you will use, whether that is the HTML,
+                Subject or one attachment.</li>
+            </ul>
             <div class="doc-table-wrap" tabindex="0" aria-label="Protection check outcomes">
                 <table><thead><tr><th>Outcome</th><th>Application meaning</th></tr></thead><tbody>
                     <tr><td><code>SATISFIED</code></td><td>The supplied requirements are established for this selected value.</td></tr>
@@ -1204,7 +1181,7 @@ if (check.isSatisfied()) {
                 A recognized unsigned message can have no processing Problems while failing a required-signature rule. A missing value differs from a
                 present empty value. Deferred, unavailable and uncaptured history do not become successful empty checks.</p>
             <h3 id="received-protection-explanations">Explain the selected value</h3>
-            <pre><code class="language-java">ValueInspection html = received.getInspection().getHTMLText();
+<pre><code class="language-java">ValueInspection html = received.getInspection().getHTMLText();
 html.getOrigin();
 html.getDerivation();
 html.getAvailability();
@@ -1223,16 +1200,18 @@ for (SignatureInspection signature : html.getSignatures()) {
                 content supplies only plain text while the native message supplies HTML, both remain readable; checking the plain text cannot approve
                 that fallback HTML. Its own inspection describes its native/derived origin and actual coverage. Native origin alone is not proof of
                 unsigned content: an enclosing layer may itself cover it.</p>
-            <p>One full verified approved signature plus another invalid signature yields a <code>MIXED</code> summary and can satisfy the base
-                approved-signature requirement. Add <code>requireAllSignaturesVerified()</code> deliberately when every relevant associated signature
-                must verify. That stricter choice still needs the approved-signature requirement; it does not approve all signers. Known partial coverage
-                remains <code>PARTIAL</code> and cannot be the full-coverage witness. Unknown coverage remains uncertain. Requirements evaluate one selected value per check.</p>
+            <p>
+A fully covering, verified, approved signature can satisfy the base requirement even when another signature is invalid
+and the summary is <code>MIXED</code>. Add <code>requireAllSignaturesVerified()</code> when every relevant signature must verify;
+keep the approved-signature requirement as well. Known partial coverage remains <code>PARTIAL</code> and cannot satisfy full coverage.
+Unknown coverage remains uncertain. Each check applies to one selected value.
+</p>
             <p>Keep the complete original input when your application needs evidence or later original-preserving forwarding. Use
                 <code>received.getInspection().getOriginalMessage()</code> and <code>getOriginalAttachment(documentIndex)</code>; null means no suitable
                 complete captured input was retained. Do not rebuild a signed archive from getters and call it the original. Protect your stored plaintext,
                 original input and credentials under your own retention/access policy.</p>
             <h3 id="received-protection-reuse">Reply or forward deliberately</h3>
-            <pre><code class="language-java">Email interpretedForward = mail.emailBuilder().forwarding(received)
+<pre><code class="language-java">Email interpretedForward = mail.emailBuilder().forwarding(received)
     .from("operator@example.org").to("reviewer@example.org")
     .encryptWithSmime(reviewerEncryption)
     .buildEmail();
@@ -1241,19 +1220,18 @@ Email originalForward = mail.emailBuilder().forwardingOriginal(received)
     .from("operator@example.org").to("reviewer@example.org")
     .buildEmail();
 </code></pre>
-            <p>The interpreted forward uses represented content, including edits and recovered document bytes. The original forward carries retained input
-                in its actual EML or MSG format and fails clearly if suitable complete input is unavailable. It does not rewrite the original payload.
-                Reading a parsed child does not change either attachment payload. An intact encrypted original can be forwarded in an unencrypted outer
-                message when no other derived value discloses confidential content; it does not grant the new recipient a decryption key.</p>
+            <p>
+              A reviewer can receive the recovered PDF with the edits you made, or the original message for inspection. <code>forwarding(received)</code> uses the represented values. <code>forwardingOriginal(received)</code> attaches the complete retained EML or MSG as supplied and reports a failure if a suitable original is unavailable. Reading a parsed child changes neither payload. An intact encrypted original can travel in an unencrypted outer message when the rest of that message reveals no confidential content. The reviewer still needs their own decryption key.
+            </p>
             <p>A child's retained original contains that child's EML or MSG, without its parent's encryption envelope. If it was extracted through the
                 parent's encryption, forwarding that original still reuses confidential content and needs outgoing encryption or the conversion's explicit
                 permission. Even an encrypted child body can leave its own headers clear inside that original file. A signature alone does not establish confidentiality.</p>
             <p>For known confidential input, the new original-forward carrier uses a neutral format-based filename and omits inherited description/CID
                 metadata. The original resource getter keeps its actual input metadata and bytes.</p>
-            <p>Reply and interpreted-forward helpers require suitable outgoing encryption when they automatically reuse confidential content. Drafts remain
-                readable and editable. Enforcement happens at final MIME/EML output and sending after outgoing choices have resolved, including suitable
-                enclosing encryption. Incoming credentials are not outgoing protection settings.</p>
-            <pre><code class="language-java">Email permittedReply = mail.emailBuilder()
+            <p>
+              If you quote decrypted text from the partner's message in a reply, configure encryption for the reviewer. You can read and edit the draft. Simple Java Mail checks automatically reused confidential content at final MIME or EML output and sending, after outgoing settings are resolved. Suitable enclosing encryption can satisfy that check. Configure outgoing protection for the draft separately from the keys you used to read the original.
+            </p>
+<pre><code class="language-java">Email permittedReply = mail.emailBuilder()
     .replyingTo(received, ReplyOptions.allowUnencryptedContent())
     .from("operator@example.org")
     .buildEmail();
@@ -1271,7 +1249,7 @@ byte[] handoff = mail.converter().fromEmail(confidentialDraft)
             <p>The received getter keeps a private Subject. A new helper-generated public Subject uses an actually known public counterpart, otherwise
                 <code>Re: Your message</code> or <code>Fwd: Message</code>. Permission to reuse body content leaves that safe default in place. Body
                 encryption does not hide every outer header; this is not full outbound header protection. See
-                <a href="features.html#section-reply-forward">reply/forward details</a>, the
+                <a href="/email-composition.html#section-reply-forward">reply/forward details</a>, the
                 <a href="email-workload-field-guide.html#check-a-partner-document-before-processing-it">partner-document recipe</a> and the
                 <a href="patterns/protected-partners.html">runnable protected-partners application</a>.</p>
         </div></section>
@@ -1279,62 +1257,68 @@ byte[] handoff = mail.converter().fromEmail(confidentialDraft)
 		<a href="#section-sending-openpgp" id="section-sending-openpgp" class="section-link h2">&sect;</a>
 		{{#> components/feature-heading-h2 openpgp=true}}Signing / encrypting emails with OpenPGP/MIME{{/components/feature-heading-h2}}
 
-		<section>
-			<div class="view">
-				<p>
-					The optional <code class="inline language-text">openpgp-module</code> adds
-					<a href="https://www.rfc-editor.org/rfc/rfc3156.html">RFC 3156</a> signing and encryption. Give it armored or binary key-ring bytes from
-					your application's key store. The module does not look up keys on WKD or a public keyserver.
-				</p>
-				<p>
-					You can sign, encrypt, or do both. When both are configured, Simple Java Mail signs the clear MIME entity first and then encrypts it.
-					Add one public key ring for every key that should be able to decrypt the message. This list is separate from the email's To, Cc, and Bcc
-					recipients, so your application remains responsible for choosing the right keys.
-				</p>
-				<p>
-					S/MIME and OpenPGP/MIME are alternative content-protection formats, so one email cannot configure both. DKIM can be combined with
-					either format and is applied after content protection to the final outgoing message.
-				</p>
-				<p>
-					A certificate on a To/Cc/Bcc recipient is an S/MIME encryption request, including certificates supplied by recipient-group defaults or
-					fixed policies. Combining it with OpenPGP signing or encryption throws <code>IllegalArgumentException</code> during
-					<code>buildEmail()</code>. The error identifies the conflicting recipient or email-level choices. This check uses metadata;
-					it does not load protection modules, inspect key material or read message content.
-				</p>
-				<p>
-					Completion checks again after applying defaults, overrides and mandatory locks. A conflict supplied by the selected Mailer's policy
-					therefore fails before MIME protection or submission. Remove the unwanted choice explicitly. <code>clearSmime()</code> removes only
-					email-level choices; to reuse certified recipients for OpenPGP, strip certificates from copies and replace the copied email's recipients.
-					The original email and recipients keep their settings. Template suppression can exclude ordinary template choices; locks still apply.
-				</p>
-			</div>
-			<div class="side">
-				Add the module:
-<pre><code class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
-    &lt;artifactId&gt;openpgp-module&lt;/artifactId&gt;
-    &lt;version&gt;{{site.version}}&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
-
-				Sign and encrypt:
+    <section>
+      <div class="wide full-width-example">
+        <h3 id="section-openpgp-sign-export">Sign an export</h3>
+        <p>Add <a href="/modules.html#openpgp-module"><code>openpgp-module</code></a> for <a href="https://www.rfc-editor.org/rfc/rfc3156.html">RFC 3156</a>
+          signing and encryption. For a signed daily export, supply your secret signing key ring and its passphrase.
+          Use armored or binary key-ring bytes from your own key store.</p>
 <pre><code class="language-java">OpenPgpSigningConfig signing = OpenPgpSigningConfig.builder()
     .secretKeyRing(senderSecretKeyRing)
     .passphrase(senderPassphrase)
     .build();
 
-OpenPgpEncryptionConfig encryption = OpenPgpEncryptionConfig.builder()
+EmailPopulatingBuilder export = mail.emailBuilder().startingBlank()
+    .from("reports@example.org")
+    .to("alice@example.net")
+    .withSubject("Daily export")
+    .withPlainText(exportText);
+
+mailer.sync().sendMail(export.signWithOpenPgp(signing).buildEmail());</code></pre>
+        <h3 id="section-openpgp-encrypt-export">Encrypt it for your partner</h3>
+        <p>For a private export, use this send in place of the signing-only example. Supply the partner's public key ring.
+          Keep the signing config to sign the clear MIME entity first and then encrypt it, or omit it to encrypt only.</p>
+<pre><code class="language-java">OpenPgpEncryptionConfig encryption = OpenPgpEncryptionConfig.builder()
     .addRecipientPublicKeyRing(alicePublicKeyRing)
-    .addRecipientPublicKeyRing(bobPublicKeyRing)
     .build();
 
-Email protectedEmail = currentEmailBuilder
-    .signWithOpenPgp(signing)
+mailer.sync().sendMail(export.signWithOpenPgp(signing)
     .encryptWithOpenPgp(encryption)
-    .buildEmail();
+    .buildEmail());</code></pre>
+        <ul>
+          <li>Add one public key ring per key that should be able to decrypt the export. The key list is separate from
+            To, Cc and Bcc. Your application chooses and distributes the keys. The module performs no WKD or public
+            keyserver lookup.</li>
+          <li>Use either S/MIME or OpenPGP/MIME on a message. An S/MIME certificate on a recipient also requests S/MIME
+            encryption. DKIM works with either format and signs the final outgoing message after content protection.</li>
+          <li>Protect stored snapshots. Email serialization retains your secret signing keys and passphrases. Encryption-only
+            configurations store the recipient public key rings and cipher choice. See
+            <a href="/email-conversion.html#section-serializing-emails">Serializing Email objects</a>.</li>
+        </ul>
+      </div>
+    </section>
 
-mailer.sync().sendMail(protectedEmail);</code></pre>
-
-				Reuse certified recipients for OpenPGP:
+    <section>
+      <div class="wide full-width-example">
+        <details class="doc-disclosure">
+          <summary>Install the Maven dependency</summary>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
+    &lt;artifactId&gt;openpgp-module&lt;/artifactId&gt;
+    &lt;version&gt;{{site.version}}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+        </details>
+        <details class="doc-disclosure">
+          <summary>Convert an S/MIME draft to OpenPGP/MIME</summary>
+          <p>OpenPGP signing or encryption conflicts with S/MIME on the Email or with any recipient certificate,
+            including certificates from group defaults or fixed policies. <code>buildEmail()</code> throws
+            <code>IllegalArgumentException</code> identifying the conflicting choices. This check uses metadata and needs no
+            module load, key inspection or content read.</p>
+          <p>Completion checks again after applying defaults, overrides and mandatory locks. A conflict from the selected
+            Mailer's policy fails before MIME protection or submission. Use <code>clearSmime()</code> for Email-level
+            settings. For reused recipients, remove S/MIME certificates from copies and replace the copied Email's recipients.
+            The source Email and recipients keep their original settings. Template suppression applies to ordinary settings.
+            Locks still apply.</p>
 <pre><code class="language-java">List&lt;Recipient&gt; pgpRecipients = mail.recipientsBuilder()
     .withRecipients(smimeEmail.getRecipients())
     .clearingSmimeCertificates()
@@ -1346,23 +1330,18 @@ Email pgpEmail = mail.emailBuilder().copying(smimeEmail)
     .withRecipients(pgpRecipients)
     .signWithOpenPgp(signing)
     .buildEmail();</code></pre>
-			</div>
-		</section>
-
-		<section>
-			<div class="view">
-				<p>To reuse OpenPGP settings, put them on an Email template and pass it to <code>withEmailDefaults(...)</code> or
-					<code>withEmailOverrides(...)</code>, just as you would for S/MIME or DKIM. Each signing or encryption configuration is one complete
-					choice: an override replaces the supplied choice, which otherwise wins over a default. Encryption key-ring lists are not merged.</p>
-				<p><code>clearOpenPgpSigning()</code> and <code>clearOpenPgpEncryption()</code> remove one local choice independently;
-					<code>clearOpenPgp()</code> removes both. They permit template fallback. To exclude a template instead, use the ordinary
-					defaults/overrides suppression controls with <code>OPENPGP_SIGNING_CONFIG</code> or <code>OPENPGP_ENCRYPTION_CONFIG</code>.
-					Exact EML remains untouched, including after Java serialization.</p>
-				<p>On the signing-config builder, <code>clearSigningKeyId()</code> returns to automatic key selection and
-					<code>resetHashAlgorithm()</code> restores SHA-256. The encryption-config builder's <code>resetSymmetricAlgorithm()</code>
-					restores AES-256. These companions keep the supplied keys and passphrases; previously built configurations do not change.</p>
-			</div>
-			<div class="side">
+        </details>
+        <details class="doc-disclosure">
+          <summary>Set defaults or clear a choice</summary>
+          <ul>
+            <li>Use <code>withEmailDefaults(...)</code> or <code>withEmailOverrides(...)</code> with an Email template.
+              Each signing or encryption configuration is one complete choice. An override wins over an Email's choice,
+              which wins over a default. Encryption key-ring lists stay separate.</li>
+            <li><code>clearOpenPgpSigning()</code>, <code>clearOpenPgpEncryption()</code> and <code>clearOpenPgp()</code>
+              allow template fallback. Suppress <code>OPENPGP_SIGNING_CONFIG</code> or
+              <code>OPENPGP_ENCRYPTION_CONFIG</code> to skip a default or override. Exact EML keeps its bytes, including
+              across Java serialization.</li>
+          </ul>
 <pre><code class="language-java">Email protectionDefaults = mail.emailBuilder().startingBlank()
     .signWithOpenPgp(signing)
     .encryptWithOpenPgp(encryption)
@@ -1371,25 +1350,20 @@ Email pgpEmail = mail.emailBuilder().copying(smimeEmail)
 Mailer protectedMailer = mail.mailerBuilder()
     .withEmailDefaults(protectionDefaults)
     .buildMailer();</code></pre>
-			</div>
-		</section>
-
-		<section>
-			<div class="view">
-				<p><strong>Keys and algorithm choices</strong></p>
-				<p>
-					Signing uses SHA-256 by default; SHA-384 and SHA-512 are also available. Encryption uses AES-256 by default; AES-128 and AES-192 are
-					available for interoperability needs. You can also select a signing key ID when a secret key ring contains more than one signing key.
-				</p>
-				<p>
-					Key-ring data and passphrases are copied into the configuration object and hidden from <code class="inline language-java">toString()</code>.
-					Both configurations are serializable and are retained when an <code class="inline language-java">Email</code> is serialized, including the
-					selected signing key, hash and cipher. A signing snapshot contains the secret key ring and passphrase; encryption-only configuration
-					contains recipient public key rings and the cipher preference. Protect these snapshots as you would S/MIME private keys and passwords.
-					See <a href="features.html#section-serializing-emails">Serializing Email objects</a> for a round-trip example and older-stream limitations.
-				</p>
-			</div>
-			<div class="side">
+        </details>
+        <details class="doc-disclosure">
+          <summary>Choose a signing key or algorithm</summary>
+          <div class="doc-table-wrap" tabindex="0" aria-label="OpenPGP key and algorithm choices">
+            <table><thead><tr><th>Choice</th><th>Default</th><th>Options</th><th>Reset</th></tr></thead><tbody>
+              <tr><td>Signing key</td><td>Automatic</td><td>Use <code>signingKeyId(...)</code> if the secret ring contains
+                more than one signing key.</td><td><code>clearSigningKeyId()</code></td></tr>
+              <tr><td>Signature hash</td><td>SHA-256</td><td>SHA-384, SHA-512</td><td><code>resetHashAlgorithm()</code></td></tr>
+              <tr><td>Encryption cipher</td><td>AES-256</td><td>AES-128, AES-192</td><td><code>resetSymmetricAlgorithm()</code></td></tr>
+            </tbody></table>
+          </div>
+          <p>Resets leave keys and passphrases on the builder. Built configurations keep their original choices. They copy key-ring
+            bytes and passphrases and hide them from <code>toString()</code>. Serialization retains the chosen signing key,
+            hash and cipher.</p>
 <pre><code class="language-java">OpenPgpSigningConfig signing = OpenPgpSigningConfig.builder()
     .secretKeyRing(senderSecretKeyRing)
     .passphrase(senderPassphrase)
@@ -1402,8 +1376,9 @@ OpenPgpEncryptionConfig encryption = OpenPgpEncryptionConfig.builder()
     .symmetricAlgorithm(
         OpenPgpEncryptionConfig.SymmetricAlgorithm.AES_256)
     .build();</code></pre>
-			</div>
-		</section>
+        </details>
+      </div>
+    </section>
 
 
 		<a href="#section-openpgp-key-replacement" id="section-openpgp-key-replacement" class="section-link h3">&sect;</a>
@@ -1411,18 +1386,17 @@ OpenPgpEncryptionConfig encryption = OpenPgpEncryptionConfig.builder()
 
 		<section>
 			<div class="view">
-				<p>
-					Use <code>addRecipientPublicKeyRing(...)</code> to append a recipient key, or <code>recipientPublicKeyRings(...)</code> to replace
-					the complete selection. Replacement keeps the selected cipher and copies both the list and its byte arrays. A null list or a null
-					entry is rejected before changing your earlier choices. An empty list deliberately clears the keys, just like
-					<code>clearRecipientPublicKeyRings()</code>.
-				</p>
-				<p>
-					Setters collect your choices; <code>getRecipientPublicKeyRings()</code> returns an editable copy without validating unfinished
-					key material. Both ways of supplying keys accept non-null empty byte arrays while you configure the builder, but <code>build()</code>
-					still requires at least one key ring and rejects every empty ring. Correct the choices and build again when needed. Actual key parsing
-					remains part of applying OpenPGP protection. Editing or clearing the builder leaves previously built configurations unchanged.
-				</p>
+				<ul>
+				  <li><strong>Add one recipient.</strong> Use <code>addRecipientPublicKeyRing(...)</code> to append a key ring.</li>
+				  <li><strong>Rotate or replace the list.</strong> Use <code>recipientPublicKeyRings(...)</code> to replace all keys
+				    and keep your cipher setting. It copies the list and its byte arrays. A null list or entry throws and keeps the
+				    previous selection. Pass an empty list or use <code>clearRecipientPublicKeyRings()</code> to clear the
+				    selection.</li>
+				  <li><strong>Check what you picked.</strong> <code>getRecipientPublicKeyRings()</code> returns an editable copy.
+				    The builder accepts non-null empty byte arrays while you make your choices. <code>build()</code> requires at
+				    least one ring and rejects empty rings. The module parses the keys when it applies protection. Earlier built
+				    configurations keep their own keys.</li>
+				</ul>
 			</div>
 			<div class="side">
 <pre><code class="language-java">var recipientKeys = OpenPgpEncryptionConfig.builder()
@@ -1444,10 +1418,10 @@ OpenPgpEncryptionConfig encryption = recipientKeys.build();</code></pre>
         <a href="#section-reading-openpgp" id="section-reading-openpgp" class="section-link h2">&sect;</a>
         {{#> components/feature-heading-h2 openpgp=true}}Reading OpenPGP/MIME messages{{/components/feature-heading-h2}}
         <section><div class="view">
-            <p>Supply verification public keys and available decryption secret keys while converting EML or a supplied MimeMessage. “Reading” here
-                means interpreting input supplied by your application; SJM does not fetch a mailbox over IMAP or POP3. Receive keys enable processing;
-                they do not automatically approve a sender for an application action.</p>
-            <pre><code class="language-java">OpenPgpReceiveConfig receive = OpenPgpReceiveConfig.builder()
+            <p>
+              When a partner's OpenPGP message arrives as an EML file, pass the file and your receive keys to the converter. The same configuration works with a supplied <code>MimeMessage</code>. Your app fetches the mail and chooses which signing keys to approve. The receive configuration supplies keys for verification and decryption.
+            </p>
+<pre><code class="language-java">OpenPgpReceiveConfig receive = OpenPgpReceiveConfig.builder()
     .addVerificationKeyRing(senderPublicKeyRing)
     .addDecryptionKeyRing(recipientSecretKeyRing, recipientPassphrase)
     .build();
@@ -1459,28 +1433,38 @@ Email received = mail.converter().fromEml(emlInputStream)
 ProtectionInspection openPgp = received.getInspection().getOpenPgp();
 ValueInspection document = received.getInspection().getAttachment(0);
 </code></pre>
-            <p>Successful decryption makes the selected bodies and attachment payloads usable through their normal getters. Independently attached
-                messages stay child-owned. Supply <code>withSmimeDecryption(...)</code> too when supported S/MIME files need opening; each optional module
-                owns its family processing and its own unavailable-module boundary. All selected nested processing shares the import's allowances.</p>
-            <p>Base64 or quoted-printable signature/ciphertext transport encoding is decoded before processing. Verification uses the received signed MIME
-                entity, not a reconstruction from selected values. Tolerated outer line endings for ordinary import do not relax exact-EML relay's canonical
-                byte requirements. A signed entity with an empty MIME header area retains its default plain-text meaning.</p>
-            <p>Use <code>passphraseProvider(...)</code> when passphrases are resolved by key ID. Returning null uses that key ring's configured passphrase.
-                The provider runs only when processing needs it. An application/provider defect escapes with its original cause; it is not relabeled as bad
-                ciphertext. Missing matching keys and actual input failures retain their separate processing observations.</p>
-            <p id="receive-key-draft-validation">Receive configuration setters snapshot non-null key material and allow unfinished empty bytes on the builder.
-                Getters return detached choices without invoking the passphrase provider; <code>build()</code> rejects empty keys. The optional module owns
-                cryptographic interpretation. Use the <a href="#section-inspecting-received-protection">same requirements workflow</a> to approve an actual full signing-key fingerprint.</p>
+            <ul>
+              <li><strong>Read what opened.</strong> Use the normal getters for the selected bodies and attachment
+                bytes. An attached message has its own Email and inspection. If you also receive S/MIME, supply
+                <code>withSmimeDecryption(...)</code>. Install the corresponding optional module for each format. Nested
+                processing shares the import's limits.</li>
+              <li><strong>Verify the received MIME.</strong> Import decodes Base64 or quoted-printable transfer encoding
+                on the signature or ciphertext, then verifies the received signed MIME entity. An empty MIME header area
+                keeps its default plain-text meaning. Exact EML relay still requires canonical bytes even when ordinary
+                import can read other line endings.</li>
+              <li><strong>Look up a passphrase if needed.</strong> Use <code>passphraseProvider(...)</code> to resolve
+                passphrases by key ID. The callback runs only if processing needs it. Return null to use the key ring's
+                configured passphrase. If the callback fails, inspect the original cause. Missing keys and malformed
+                inputs produce separate observations.</li>
+            </ul>
+            <p id="receive-key-draft-validation">
+Receive-key setters copy non-null key material. You can inspect unfinished empty bytes on the builder,
+but <code>build()</code> rejects empty keys. Getters return separate copies without invoking the passphrase provider;
+the OpenPGP module interprets the keys during protected-mail processing.
+Use the <a href="#section-inspecting-received-protection">requirements workflow</a> to approve the full fingerprint of an actual signing key.
+</p>
         </div></section>
 
         <a href="#section-reading-openpgp-status" id="section-reading-openpgp-status" class="section-link h3">&sect;</a>
         {{#> components/feature-heading-h3 openpgp=true}}Inspect OpenPGP observations{{/components/feature-heading-h3}}
         <section><div class="view">
-            <p><code>getOpenPgp()</code> exposes immutable individual signature/decryption observations and whether family inspection completed. Direct resources'
-                actual opening layers remain source-scoped history; a parsed child's internal body evidence stays with that child. Repeated
-                signatures from the same key remain distinct. Each signature retains its actual signing-key fingerprint, available key ID, algorithms,
-                verification result, explanation and captured source references. It is not a whole-Email trusted Boolean.</p>
-            <pre><code class="language-java">for (SignatureObservation signature : received.getInspection().getOpenPgp().getSignatures()) {
+            <p>
+Use <code>getOpenPgp()</code> for the immutable signature/decryption history and its completion status.
+Each signature records the actual signing-key fingerprint, available key ID, algorithms, verification result, explanation and source references;
+repeated signatures from the same key remain separate. Direct resources keep their recorded opening layers after edits,
+while an attached child's internal body inspection stays on that child. Check the selected value before trusting its content.
+</p>
+<pre><code class="language-java">for (SignatureObservation signature : received.getInspection().getOpenPgp().getSignatures()) {
     SignatureVerification verification = signature.getStatus();
     String signingKeyFingerprint = signature.getSigningKeyFingerprint();
     String algorithm = signature.getSignatureAlgorithm();
@@ -1490,17 +1474,25 @@ ValueInspection document = received.getInspection().getAttachment(0);
 ProtectionCheck decision = documentRequirements.check(
     received.getInspection().getAttachment(0));
 </code></pre>
-            <p>The family-neutral <a href="#section-reading-smime-verification">signature and encryption meanings</a> also apply here. A recognized
-                signature without an available verification key is <code>UNVERIFIED</code>; unavailable presence/coverage is <code>UNKNOWN</code>.
-                A supplied receive key does not establish decryption of an unencrypted packet in a misleading encrypted wrapper. Actual established
-                decryption and individual signature results remain distinct when another selected layer cannot be processed.</p>
-            <p>Without <code>openpgp-module</code>, ordinary import keeps available metadata and recognizable protected input, with unestablished results
-                unknown or unavailable. An explicit receive configuration requires the module. Malformed MIME declarations and a protocol that disagrees
-                with its wrapper do not establish plain, unsigned or decrypted content; available sources and actual Problems remain readable.</p>
-            <p><a href="features.html#section-exact-eml">Exact EML construction</a> retains authoritative bytes and its independent SMTP envelope contract.
-                Captured self-contained observations may be available, while missing support or keys leave facts unestablished. Exact mode has no receive-key
-                option; use ordinary conversion when you need explicit keys or readable opened content. Inspection never rewrites exact bytes.</p>
-            <p>Complete raw input is retained in its actual format and can be shared by copies. Different decoded content and captured originals can cost
-                additional memory; import byte limits are not whole-JVM memory limits. Old snapshots with uncaptured history remain unknown rather than
-                acquiring new proof during deserialization. Do not assume that arbitrary whole-Email optional-module snapshots are portable to another classpath.</p>
+            <ul>
+              <li><strong>A key is missing.</strong> A recognized signature without a verification key reports
+                <code>UNVERIFIED</code>. When signature presence or coverage cannot be established, it remains
+                <code>UNKNOWN</code>. Use the same <a href="#section-reading-smime-verification">signature and
+                encryption meanings</a> as for S/MIME.</li>
+              <li><strong>The wrapper is inconsistent.</strong> An unencrypted packet stays unencrypted even if its MIME
+                wrapper says otherwise. Malformed MIME declarations and mismatched protocols can leave facts unknown.
+                Read the available sources and Problems. Decryption evidence and individual signature results remain
+                available for the layers the library processed.</li>
+              <li><strong>The module is missing.</strong> Without <code>openpgp-module</code>, ordinary import keeps
+                available metadata and recognizable protected input. It leaves unestablished results unknown or
+                unavailable. Supplying an explicit receive configuration requires the module.</li>
+              <li><strong>You need the original bytes.</strong> <a href="/email-conversion.html#section-exact-eml">Exact
+                EML construction</a> keeps the authoritative bytes and a separate SMTP envelope. It records available
+                protection facts and leaves facts unknown when support or keys are missing. Use ordinary conversion to
+                open and read the content with your receive keys. Inspection never changes exact bytes.</li>
+              <li><strong>You store the imported message.</strong> Complete originals stay in their actual format and
+                can be shared by copies. Different decoded content and originals take additional memory, so import byte
+                limits cover only part of the memory used. Deserializing an Email requires the classes and modules in
+                its object graph. It cannot recover missing protection evidence.</li>
+            </ul>
         </div></section>

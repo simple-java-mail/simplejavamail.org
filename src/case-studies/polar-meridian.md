@@ -325,7 +325,7 @@ long encodedBytes = rehearsal.getEncodedSize();
 
 *Check the prepared message, including configured recipients and protection, before it can leave.*
 
-The [rehearsal](/features.html#section-email-validation) applies SJM's defaults, overrides, signing and encryption. Ravi's final check inspects that effective message and its actual envelope; failure holds the job. It does not test credentials or promise delivery.
+The [rehearsal](/debugging.html#section-email-validation) applies SJM's defaults, overrides, signing and encryption. Ravi's final check inspects that effective message and its actual envelope; failure holds the job. It does not test credentials or promise delivery.
 
 ### The connection and the sending identity
 
@@ -632,7 +632,7 @@ return new PreparedMail(mailer, composed.sendingQuotaGroup, submission, evidence
 
 *Keep Leonie's confirmation for later reference; retain only attempt metadata for her login code.*
 
-For retained mail, finalization adds SMTP's terminating line break when needed and rejects malformed line endings. `exactSubmission(evidence)` rejects outbound Bcc headers before using SJM's [exact-EML builder](/features.html#section-exact-eml):
+For retained mail, finalization adds SMTP's terminating line break when needed and rejects malformed line endings. `exactSubmission(evidence)` rejects outbound Bcc headers before using SJM's [exact-EML builder](/email-conversion.html#section-exact-eml):
 
 ```java
 ExactEmailBuilder exact = mail.emailBuilder()

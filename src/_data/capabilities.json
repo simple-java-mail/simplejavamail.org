@@ -1,0 +1,686 @@
+{
+  "groups": [
+    {
+      "id": "build-messages",
+      "label": "Build messages",
+      "summary": "Describe the message; Simple Java Mail builds the MIME structure.",
+      "guide": "/email-composition.html",
+      "highlights": [
+        "bodies",
+        "attachments",
+        "replies"
+      ]
+    },
+    {
+      "id": "convert-and-inspect-mail",
+      "label": "Convert and inspect existing mail",
+      "summary": "Work with messages your application supplies. Mailbox fetching stays with your application.",
+      "guide": "/email-conversion.html",
+      "highlights": [
+        "conversion",
+        "received-inspection",
+        "import-limits"
+      ]
+    },
+    {
+      "id": "protect-mail",
+      "label": "Protect messages and connections",
+      "summary": "Protect the SMTP connection, authenticate your account, and sign or encrypt content.",
+      "guide": "/security.html",
+      "highlights": [
+        "tls",
+        "dkim",
+        "smime",
+        "openpgp"
+      ]
+    },
+    {
+      "id": "send-one-or-many",
+      "label": "Send one or many",
+      "summary": "Choose how work runs, reuse connections, and stay within your SMTP service’s limits.",
+      "guide": "/sending-and-execution.html",
+      "highlights": [
+        "batches",
+        "pools",
+        "sending-limits"
+      ]
+    },
+    {
+      "id": "recover-from-failures",
+      "label": "Recover from failures",
+      "summary": "Use another approved relay or retry a safely refused submission.",
+      "guide": "/smtp-connection-failover.html",
+      "highlights": [
+        "failover",
+        "retries"
+      ],
+      "related": [
+        "submission-results"
+      ]
+    },
+    {
+      "id": "observe-and-troubleshoot",
+      "label": "Observe and troubleshoot",
+      "summary": "Inspect a message before sending and understand what happened during and after submission.",
+      "guide": "/debugging.html",
+      "highlights": [
+        "rehearsal",
+        "submission-results",
+        "telemetry"
+      ]
+    },
+    {
+      "id": "configure-and-integrate",
+      "label": "Configure and integrate",
+      "summary": "Share application settings and fit the mailer into your infrastructure.",
+      "guide": "/configuration.html",
+      "highlights": [
+        "configuration",
+        "spring",
+        "proxy"
+      ],
+      "subgroups": [
+        {
+          "id": "policy",
+          "label": "Shared settings"
+        },
+        {
+          "id": "application",
+          "label": "Application integration"
+        },
+        {
+          "id": "connection",
+          "label": "Connection and delivery integration"
+        }
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "bodies",
+      "group": "build-messages",
+      "label": "Text and HTML",
+      "href": "/email-composition.html#section-basic-usage",
+      "summary": "Compose both alternatives through one builder."
+    },
+    {
+      "id": "mime-structure",
+      "group": "build-messages",
+      "label": "MIME structure and interoperability",
+      "href": "/rfc-compliant.html",
+      "summary": "Understand how the message parts fit together."
+    },
+    {
+      "id": "recipients",
+      "group": "build-messages",
+      "label": "Recipient builders",
+      "href": "/email-composition.html#section-recipient-builders",
+      "summary": "To, Cc, Bcc and reusable recipient lists."
+    },
+    {
+      "id": "address-validation",
+      "group": "build-messages",
+      "label": "Address validation",
+      "href": "/debugging.html#section-email-validation",
+      "summary": "Apply the default validator or your own recipient rules."
+    },
+    {
+      "id": "attachments",
+      "group": "build-messages",
+      "label": "Attachments",
+      "href": "/email-composition.html#section-attachments",
+      "summary": "Files, data sources and explicit MIME metadata."
+    },
+    {
+      "id": "images",
+      "group": "build-messages",
+      "label": "Embedded images",
+      "href": "/email-composition.html#section-embedding",
+      "summary": "Content IDs and optional image lookup."
+    },
+    {
+      "id": "calendars",
+      "group": "build-messages",
+      "label": "Calendar invitations",
+      "href": "/email-composition.html#section-icalendar-vevent",
+      "summary": "Include iCalendar content."
+    },
+    {
+      "id": "headers",
+      "group": "build-messages",
+      "label": "Headers, IDs and dates",
+      "href": "/email-composition.html#section-custom-headers",
+      "summary": "Control message metadata."
+    },
+    {
+      "id": "replies",
+      "group": "build-messages",
+      "label": "Replies, forwards and copies",
+      "href": "/email-composition.html#section-reply-forward",
+      "summary": "Continue a conversation or reuse a draft."
+    },
+    {
+      "id": "notifications",
+      "group": "build-messages",
+      "label": "Delivery and read-receipt requests",
+      "href": "/email-composition.html#section-return-receipt",
+      "summary": "Choose the destinations for requested notifications."
+    },
+    {
+      "id": "bounce",
+      "group": "build-messages",
+      "label": "Bounce address",
+      "href": "/email-composition.html#section-bouncing-emails",
+      "summary": "Set the envelope sender for delivery failures."
+    },
+    {
+      "id": "dsn",
+      "group": "build-messages",
+      "label": "Delivery-status notification options",
+      "href": "/email-composition.html#section-delivery-status-notification",
+      "summary": "Request DSN feedback and retain an envelope identifier."
+    },
+    {
+      "id": "templates",
+      "group": "build-messages",
+      "label": "Rendered templates",
+      "href": "/email-composition.html#section-rendered-templates",
+      "summary": "Use HTML and text rendered by your application."
+    },
+    {
+      "id": "conversion",
+      "group": "convert-and-inspect-mail",
+      "label": "EML, MIME and Email conversion",
+      "href": "/email-conversion.html#section-converting",
+      "summary": "Choose a source and the representation you need."
+    },
+    {
+      "id": "outlook",
+      "group": "convert-and-inspect-mail",
+      "label": "Outlook MSG conversion",
+      "href": "/email-conversion.html#outlook-source-data",
+      "summary": "Keep source-specific Outlook metadata.",
+      "modules": [
+        "outlook"
+      ]
+    },
+    {
+      "id": "received-inspection",
+      "group": "convert-and-inspect-mail",
+      "label": "Sources, originals and Problems",
+      "href": "/email-conversion.html#section-source-inspection",
+      "summary": "Inspect the selected content and its captured history."
+    },
+    {
+      "id": "received-protection",
+      "group": "convert-and-inspect-mail",
+      "label": "Received-content protection checks",
+      "href": "/security.html#section-inspecting-received-protection",
+      "summary": "Check signatures, approved keys and the exact value you consume.",
+      "demonstrations": [
+        "received-protection"
+      ]
+    },
+    {
+      "id": "received-smime",
+      "group": "convert-and-inspect-mail",
+      "label": "Read S/MIME content",
+      "href": "/security.html#section-reading-smime",
+      "summary": "Open and inspect supplied certificate-protected messages.",
+      "modules": [
+        "smime"
+      ]
+    },
+    {
+      "id": "received-openpgp",
+      "group": "convert-and-inspect-mail",
+      "label": "Read OpenPGP/MIME content",
+      "href": "/security.html#section-reading-openpgp",
+      "summary": "Open and inspect supplied OpenPGP-protected messages.",
+      "modules": [
+        "openpgp"
+      ]
+    },
+    {
+      "id": "import-limits",
+      "group": "convert-and-inspect-mail",
+      "label": "Import limits",
+      "href": "/email-conversion.html#conversion-import-limits",
+      "summary": "Bound input size, interpreted parts and nesting."
+    },
+    {
+      "id": "serialization",
+      "group": "convert-and-inspect-mail",
+      "label": "Email serialization",
+      "href": "/email-conversion.html#section-serializing-emails",
+      "summary": "Store and restore message snapshots."
+    },
+    {
+      "id": "tls",
+      "group": "protect-mail",
+      "label": "TLS and server verification",
+      "href": "/security.html#section-authentication-methods",
+      "summary": "Choose transport encryption and verify the server."
+    },
+    {
+      "id": "oauth",
+      "group": "protect-mail",
+      "label": "OAuth2 authentication",
+      "href": "/security.html#section-transport-strategy-oauth2",
+      "summary": "Use fixed tokens or an application token provider."
+    },
+    {
+      "id": "requiretls",
+      "group": "protect-mail",
+      "label": "REQUIRETLS",
+      "href": "/security.html#section-requiretls",
+      "summary": "Require supported relays to use TLS for onward delivery."
+    },
+    {
+      "id": "dkim",
+      "group": "protect-mail",
+      "label": "DKIM signing",
+      "href": "/security.html#section-sending-dkim",
+      "summary": "Sign for your sending domain.",
+      "modules": [
+        "dkim"
+      ]
+    },
+    {
+      "id": "smime",
+      "group": "protect-mail",
+      "label": "S/MIME signing and encryption",
+      "href": "/security.html#section-sending-smime",
+      "summary": "Protect content using certificates.",
+      "modules": [
+        "smime"
+      ],
+      "demonstrations": [
+        "protected-content"
+      ]
+    },
+    {
+      "id": "openpgp",
+      "group": "protect-mail",
+      "label": "OpenPGP/MIME",
+      "href": "/security.html#section-sending-openpgp",
+      "summary": "Sign, encrypt, verify and decrypt using OpenPGP keys.",
+      "modules": [
+        "openpgp"
+      ]
+    },
+    {
+      "id": "injection",
+      "group": "protect-mail",
+      "label": "Header-injection scanning",
+      "href": "/security.html#section-crlf-scanning",
+      "summary": "Check untrusted header values before sending."
+    },
+    {
+      "id": "execution",
+      "group": "send-one-or-many",
+      "label": "Synchronous and asynchronous sends",
+      "href": "/sending-and-execution.html#section-send-execution",
+      "summary": "Choose whether the caller waits or work runs in the background."
+    },
+    {
+      "id": "batches",
+      "group": "send-one-or-many",
+      "label": "Simple batches and open connections",
+      "href": "/sending-and-execution.html#section-not-reusing-connections",
+      "summary": "Send sequentially without reconnecting for every email."
+    },
+    {
+      "id": "pools",
+      "group": "send-one-or-many",
+      "label": "SMTP connection pools",
+      "href": "/sending-and-execution.html#section-reusing-connections",
+      "summary": "Reuse SMTP connections across concurrent sends.",
+      "modules": [
+        "batch"
+      ],
+      "demonstrations": [
+        "tenant-routing"
+      ]
+    },
+    {
+      "id": "clusters",
+      "group": "send-one-or-many",
+      "label": "SMTP clusters",
+      "href": "/sending-and-execution.html#section-clustering",
+      "summary": "Separate workloads or balance sends across SMTP servers.",
+      "modules": [
+        "batch"
+      ]
+    },
+    {
+      "id": "pool-integration",
+      "group": "send-one-or-many",
+      "label": "Pool an existing mail integration",
+      "href": "/smtp-connection-pooling.html",
+      "summary": "Choose a pooling API and its dependencies for SJM, Jakarta Mail, Spring or Camel."
+    },
+    {
+      "id": "queue",
+      "group": "send-one-or-many",
+      "label": "Queue limits and backpressure",
+      "href": "/sending-and-execution.html#section-async-queue",
+      "summary": "Bound waiting asynchronous work."
+    },
+    {
+      "id": "deadlines",
+      "group": "send-one-or-many",
+      "label": "Deadlines and cancellation",
+      "href": "/sending-and-execution.html#section-send-deadlines",
+      "summary": "Bound the operation and request cancellation."
+    },
+    {
+      "id": "sending-limits",
+      "group": "send-one-or-many",
+      "label": "Message and recipient sending limits",
+      "href": "/sending-and-execution.html#section-sending-limits",
+      "summary": "Pace work to match service allowances.",
+      "demonstrations": [
+        "sending-limits"
+      ]
+    },
+    {
+      "id": "international",
+      "group": "send-one-or-many",
+      "label": "International mail and SMTP compatibility",
+      "href": "/sending-and-execution.html#section-international-mail",
+      "summary": "Handle SMTPUTF8 and message-content requirements."
+    },
+    {
+      "id": "exact",
+      "group": "send-one-or-many",
+      "label": "Exact EML submission",
+      "href": "/email-conversion.html#section-exact-eml",
+      "summary": "Send a finalized message without rebuilding its bytes.",
+      "demonstrations": [
+        "exact-content"
+      ]
+    },
+    {
+      "id": "failover",
+      "group": "recover-from-failures",
+      "label": "SMTP connection failover",
+      "href": "/smtp-connection-failover.html",
+      "summary": "Switch to an approved relay when a connection fails.",
+      "demonstrations": [
+        "connection-failover"
+      ]
+    },
+    {
+      "id": "retries",
+      "group": "recover-from-failures",
+      "label": "Safe, bounded retries",
+      "href": "/mail-send-retries.html",
+      "summary": "Retry temporary refusals without replaying uncertain or partial acceptance."
+    },
+    {
+      "id": "rehearsal",
+      "group": "observe-and-troubleshoot",
+      "label": "Offline rehearsal and prepared-message checks",
+      "href": "/debugging.html#section-email-validation",
+      "summary": "Inspect prepared content, envelope and encoded size without SMTP."
+    },
+    {
+      "id": "local-size",
+      "group": "observe-and-troubleshoot",
+      "label": "Maximum message size",
+      "href": "/debugging.html#section-maximum-emailsize",
+      "summary": "Reject oversized encoded messages before submission."
+    },
+    {
+      "id": "connection-test",
+      "group": "observe-and-troubleshoot",
+      "label": "SMTP connection test",
+      "href": "/debugging.html#section-connection-test",
+      "summary": "Check the configured connection and credentials."
+    },
+    {
+      "id": "connection-probe",
+      "group": "observe-and-troubleshoot",
+      "label": "SMTP capabilities and TLS probes",
+      "href": "/debugging.html#section-smtp-capabilities",
+      "summary": "Inspect what an endpoint advertises and negotiates."
+    },
+    {
+      "id": "config-diagnostics",
+      "group": "observe-and-troubleshoot",
+      "label": "Configuration provenance",
+      "href": "/debugging.html#section-config-diagnostics",
+      "summary": "See which source supplied a setting."
+    },
+    {
+      "id": "logging",
+      "group": "observe-and-troubleshoot",
+      "label": "Logging-only mode",
+      "href": "/debugging.html#section-debug-mode",
+      "summary": "Prepare and log an email instead of submitting it."
+    },
+    {
+      "id": "protocol-logs",
+      "group": "observe-and-troubleshoot",
+      "label": "Protocol debug output",
+      "href": "/debugging.html#section-debug-logging",
+      "summary": "Trace the SMTP conversation through your logging setup."
+    },
+    {
+      "id": "test-inbox",
+      "group": "observe-and-troubleshoot",
+      "label": "Test-inbox routing",
+      "href": "/debugging.html#section-override-receivers",
+      "summary": "Change envelope destinations for testing."
+    },
+    {
+      "id": "submission-results",
+      "group": "observe-and-troubleshoot",
+      "label": "Receipts, partial sends and retry decisions",
+      "href": "/analyzing-send-results.html#section-get-receipt",
+      "summary": "Read what is known about SMTP acceptance.",
+      "demonstrations": [
+        "send-results"
+      ]
+    },
+    {
+      "id": "progress",
+      "group": "observe-and-troubleshoot",
+      "label": "Live send progress and timings",
+      "href": "/analyzing-send-results.html#section-live-progress",
+      "summary": "Follow current work and explain slow sends."
+    },
+    {
+      "id": "delivery-reports",
+      "group": "observe-and-troubleshoot",
+      "label": "Delivery-status reports",
+      "href": "/delivery-reports.html",
+      "summary": "Interpret structured feedback received after submission.",
+      "demonstrations": [
+        "delivery-reports"
+      ]
+    },
+    {
+      "id": "telemetry",
+      "group": "observe-and-troubleshoot",
+      "label": "OpenTelemetry",
+      "href": "/opentelemetry.html",
+      "summary": "Connect sends to application traces and metrics.",
+      "modules": [
+        "telemetry"
+      ],
+      "demonstrations": [
+        "telemetry"
+      ]
+    },
+    {
+      "id": "configuration",
+      "group": "configure-and-integrate",
+      "label": "Java, properties and environment settings",
+      "href": "/configuration.html#section-programmatic-api-common",
+      "summary": "Configure one reusable Mailer.",
+      "subgroup": "policy"
+    },
+    {
+      "id": "defaults",
+      "group": "configure-and-integrate",
+      "label": "Message defaults and overrides",
+      "href": "/configuration.html#section-config-mailer",
+      "summary": "Apply shared message values.",
+      "subgroup": "policy"
+    },
+    {
+      "id": "locks",
+      "group": "configure-and-integrate",
+      "label": "Locked configuration",
+      "href": "/configuration.html#section-locked-configuration",
+      "summary": "Keep selected settings fixed within a factory.",
+      "demonstrations": [
+        "locked-configuration"
+      ],
+      "subgroup": "policy"
+    },
+    {
+      "id": "spring",
+      "group": "configure-and-integrate",
+      "label": "Spring and Spring Boot",
+      "href": "/spring.html",
+      "summary": "Configure and inject managed Mailers.",
+      "modules": [
+        "spring"
+      ],
+      "subgroup": "application"
+    },
+    {
+      "id": "cli",
+      "group": "configure-and-integrate",
+      "label": "Command-line interface",
+      "href": "/cli.html",
+      "summary": "Send, validate and inspect SMTP from a terminal.",
+      "modules": [
+        "cli"
+      ],
+      "subgroup": "application"
+    },
+    {
+      "id": "modules",
+      "group": "configure-and-integrate",
+      "label": "Optional modules and Karaf",
+      "href": "/modules.html",
+      "summary": "Choose dependencies and deployment integration.",
+      "subgroup": "application"
+    },
+    {
+      "id": "proxy",
+      "group": "configure-and-integrate",
+      "label": "Authenticated SOCKS",
+      "href": "/configuration.html#section-proxy",
+      "summary": "Send through a proxy requiring credentials.",
+      "modules": [
+        "socks"
+      ],
+      "subgroup": "connection"
+    },
+    {
+      "id": "session",
+      "group": "configure-and-integrate",
+      "label": "Your own Session and properties",
+      "href": "/configuration.html#section-custom-session",
+      "summary": "Bring existing Jakarta Mail settings.",
+      "subgroup": "connection"
+    },
+    {
+      "id": "socket-factory",
+      "group": "configure-and-integrate",
+      "label": "Custom TLS socket factories",
+      "href": "/security.html#section-custom-ssl-factory",
+      "summary": "Use your own TLS connection setup.",
+      "subgroup": "connection"
+    },
+    {
+      "id": "client-identity",
+      "group": "configure-and-integrate",
+      "label": "SMTP client hostname",
+      "href": "/configuration.html#section-smtp-client-hostname",
+      "summary": "Identify the application during EHLO/HELO.",
+      "demonstrations": [
+        "smtp-client-identity"
+      ],
+      "subgroup": "connection"
+    },
+    {
+      "id": "local-bind",
+      "group": "configure-and-integrate",
+      "subgroup": "connection",
+      "label": "Local SMTP address",
+      "href": "/configuration.html#section-local-bind-address",
+      "summary": "Choose the source address for an SMTP connection."
+    },
+    {
+      "id": "custom-mailer",
+      "group": "configure-and-integrate",
+      "label": "Custom sending logic",
+      "href": "/configuration.html#section-custom-mailer",
+      "summary": "Keep message preparation while replacing submission.",
+      "demonstrations": [
+        "custom-mailer"
+      ],
+      "subgroup": "connection"
+    },
+    {
+      "id": "transport-adapter",
+      "group": "configure-and-integrate",
+      "label": "Transport adapter SPI",
+      "href": "/modules.html#mail-transport-adapter-spi",
+      "summary": "Integrate another Jakarta Mail provider.",
+      "subgroup": "connection"
+    },
+    {
+      "id": "configuration-resolution",
+      "group": "configure-and-integrate",
+      "subgroup": "policy",
+      "label": "Configuration precedence and resolution",
+      "href": "/understanding-configuration.html",
+      "summary": "Explain how loaded settings and Java choices combine."
+    }
+  ],
+  "modules": {
+    "batch": {
+      "label": "batch-module",
+      "href": "/modules.html#batch-module"
+    },
+    "outlook": {
+      "label": "outlook-module",
+      "href": "/modules.html#outlook-module"
+    },
+    "dkim": {
+      "label": "dkim-module",
+      "href": "/modules.html#dkim-module"
+    },
+    "smime": {
+      "label": "smime-module",
+      "href": "/modules.html#smime-module"
+    },
+    "openpgp": {
+      "label": "openpgp-module",
+      "href": "/modules.html#openpgp-module"
+    },
+    "socks": {
+      "label": "authenticated-socks-module",
+      "href": "/modules.html#authenticated-socks-module"
+    },
+    "spring": {
+      "label": "spring-module",
+      "href": "/modules.html#spring-module"
+    },
+    "cli": {
+      "label": "cli-module",
+      "href": "/modules.html#cli-module"
+    },
+    "telemetry": {
+      "label": "open-telemetry-module",
+      "href": "/modules.html#open-telemetry-module"
+    }
+  }
+}

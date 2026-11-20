@@ -16,7 +16,7 @@ Start with a [connection probe](/debugging.html#section-smtp-capabilities): insp
 
 ## Know what you are asking it to send
 
-Use [message rehearsal](/features.html#section-email-validation) to inspect the prepared message's encoded size and envelope recipients before contacting SMTP. Choose repeatable workloads, so a change in message size does not quietly become a change in the benchmark.
+Use [message rehearsal](/debugging.html#section-email-validation) to inspect the prepared message's encoded size and envelope recipients before contacting SMTP. Choose repeatable workloads, so a change in message size does not quietly become a change in the benchmark.
 
 ## Change the connection setup
 

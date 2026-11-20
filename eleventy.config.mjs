@@ -1,5 +1,6 @@
 import { createTemplateHelpers } from "./src/_lib/template-helpers.mjs";
 import path from "node:path";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import Handlebars from "handlebars";
@@ -18,6 +19,7 @@ import {
   headingsFromHtml,
   isoDate,
   journalNeighbor,
+  linkableGuideHeadings,
   navItemForUrl,
   orderJournalEntries,
   rssDate,
@@ -98,6 +100,9 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/lib": "assets/lib" });
   eleventyConfig.addPassthroughCopy({ "node_modules/mermaid/dist/mermaid.min.js": "assets/lib/mermaid.min.js" });
   eleventyConfig.addPassthroughCopy({ "src/static": "." });
+  if (process.env.ELEVENTY_RUN_MODE === "serve" && existsSync(path.join(root, ".local/downloads"))) {
+    eleventyConfig.addPassthroughCopy({ ".local/downloads": "downloads" });
+  }
   eleventyConfig.ignores.add("src/assets/journal/articles/*/examples/README.md");
   eleventyConfig.ignores.add("src/journal/README.md");
   eleventyConfig.ignores.add("src/journal/article-template.md");
@@ -109,7 +114,7 @@ export default function (eleventyConfig) {
   eleventyConfig.ignores.add("src/styles/tokens.less");
 
   eleventyConfig.addTransform("external-link-safety", function (content) {
-    return this.page.outputPath?.endsWith(".html") ? hardenExternalLinks(content, site.url) : content;
+    return this.page.outputPath?.endsWith(".html") ? hardenExternalLinks(linkableGuideHeadings(content), site.url) : content;
   });
 
   eleventyConfig.on("eleventy.after", ({ runMode, results, directories }) => {

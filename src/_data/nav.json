@@ -1,8 +1,17 @@
 {
   "primary": [
-    { "label": "Why Simple Java Mail", "href": "/why-simple-java-mail.html" },
-    { "label": "Case studies", "href": "/case-studies.html" },
-    { "label": "Capabilities", "href": "/features.html" },
+    {
+      "label": "Why Simple Java Mail",
+      "href": "/why-simple-java-mail.html"
+    },
+    {
+      "label": "Case studies",
+      "href": "/case-studies.html"
+    },
+    {
+      "label": "Capabilities",
+      "href": "/features.html"
+    },
     {
       "label": "Docs",
       "href": "/docs.html",
@@ -11,14 +20,25 @@
         "label": "Documentation sections",
         "toggleLabel": "documentation sections",
         "trailingItems": [
-          { "label": "Use cases", "href": "/use-cases.html" },
-          { "label": "Tactical/strategic patterns", "href": "/patterns.html" },
-          { "label": "Help and contribute", "href": "/contact.html" },
-          { "label": "Modules", "href": "/modules.html" }
+          {
+            "label": "Patterns",
+            "href": "/patterns.html"
+          },
+          {
+            "label": "Modules",
+            "href": "/modules.html"
+          },
+          {
+            "label": "Help and contribute",
+            "href": "/contact.html"
+          }
         ]
       }
     },
-    { "label": "Compare", "href": "/feature-matrix.html" }
+    {
+      "label": "Compare",
+      "href": "/feature-matrix.html"
+    }
   ],
   "utility": {
     "label": "GitHub",
@@ -32,67 +52,183 @@
     {
       "label": "Start",
       "items": [
-        { "title": "Documentation", "url": "/docs.html" },
-        { "title": "Get started", "url": "/download.html" },
-        { "title": "Why Simple Java Mail", "url": "/why-simple-java-mail.html" },
-        { "title": "Use cases", "url": "/use-cases.html" },
+        {
+          "title": "Documentation",
+          "url": "/docs.html",
+          "description": "Search and browse all guides."
+        },
+        {
+          "title": "Get started",
+          "url": "/download.html",
+          "description": "Install the library and send a first email."
+        },
+        {
+          "title": "Why Simple Java Mail",
+          "url": "/why-simple-java-mail.html",
+          "description": "Understand what the library handles."
+        },
+        {
+          "title": "Capabilities",
+          "url": "/features.html",
+          "description": "Explore the whole library."
+        },
         {
           "title": "Patterns",
           "url": "/patterns.html",
+          "description": "Focused recipes and runnable applications.",
           "children": [
-            { "title": "Tactical Patterns", "url": "/email-workload-field-guide.html" },
-            { "title": "Strategic Patterns", "url": "/strategic-patterns.html" }
+            {
+              "title": "Tactical Patterns",
+              "url": "/email-workload-field-guide.html",
+              "description": "Choose a focused solution to a mail problem."
+            },
+            {
+              "title": "Strategic Patterns",
+              "url": "/strategic-patterns.html",
+              "description": "Run an application and follow its code."
+            }
           ]
+        },
+        {
+          "title": "Compare libraries",
+          "url": "/feature-matrix.html",
+          "description": "Compare what each API handles."
         }
       ]
     },
     {
-      "label": "Build and configure",
+      "id": "build-messages",
       "items": [
-        { "title": "Capabilities", "url": "/features.html" },
         {
-          "title": "Configuration",
-          "url": "/configuration.html",
-          "children": [
-            { "title": "Spring integration", "url": "/spring.html" },
-            { "title": "Sending and execution", "url": "/sending-and-execution.html" },
-            { "title": "Understanding configuration (advanced)", "url": "/understanding-configuration.html" }
-          ]
+          "title": "Building emails",
+          "url": "/email-composition.html",
+          "description": "Bodies, recipients, attachments, calendars, replies and message options."
         },
-        { "title": "Pool orchestration", "url": "/smtp-connection-pooling.html" },
-        { "title": "SMTP connection failover", "url": "/smtp-connection-failover.html" },
-        { "title": "Mail-send retries", "url": "/mail-send-retries.html" },
-        { "title": "Modules", "url": "/modules.html" }
+        {
+          "title": "MIME and interoperability",
+          "url": "/rfc-compliant.html",
+          "description": "Understand multipart structure and rendering."
+        }
       ]
     },
     {
-      "label": "Protect and operate",
+      "id": "convert-and-inspect-mail",
       "items": [
-        { "title": "Security", "url": "/security.html" },
+        {
+          "title": "Converting and inspecting email",
+          "url": "/email-conversion.html",
+          "description": "EML, MIME, Outlook, sources, protection and original messages."
+        }
+      ]
+    },
+    {
+      "id": "protect-mail",
+      "items": [
+        {
+          "title": "Security",
+          "url": "/security.html",
+          "description": "Transport verification, authentication, signing and encryption."
+        }
+      ]
+    },
+    {
+      "id": "send-one-or-many",
+      "items": [
+        {
+          "title": "Sending and execution",
+          "url": "/sending-and-execution.html",
+          "description": "Sync/async work, sending limits, queues, connections and shutdown."
+        },
+        {
+          "title": "SMTP connection pooling",
+          "url": "/smtp-connection-pooling.html",
+          "description": "Choose the pooling API that fits your application."
+        }
+      ]
+    },
+    {
+      "id": "recover-from-failures",
+      "items": [
+        {
+          "title": "SMTP connection failover",
+          "url": "/smtp-connection-failover.html",
+          "description": "Use an approved alternative relay during an outage."
+        },
+        {
+          "title": "Mail-send retries",
+          "url": "/mail-send-retries.html",
+          "description": "Retry safely refused temporary submissions."
+        }
+      ]
+    },
+    {
+      "id": "observe-and-troubleshoot",
+      "items": [
         {
           "title": "Diagnostics",
           "url": "/debugging.html",
-          "children": [
-            { "title": "Analyzing send results", "url": "/analyzing-send-results.html" },
-            { "title": "Reading delivery reports", "url": "/delivery-reports.html" },
-            { "title": "OpenTelemetry", "url": "/opentelemetry.html" }
-          ]
+          "description": "Validate, rehearse, inspect settings, test connections and log."
+        },
+        {
+          "title": "Analyzing send results",
+          "url": "/analyzing-send-results.html",
+          "description": "Receipts, recipient replies, uncertainty, progress and timings."
+        },
+        {
+          "title": "Reading delivery reports",
+          "url": "/delivery-reports.html",
+          "description": "Interpret received structured delivery feedback."
+        },
+        {
+          "title": "OpenTelemetry",
+          "url": "/opentelemetry.html",
+          "description": "Connect sends to application traces and metrics."
         }
       ]
     },
     {
-      "label": "Integrate and understand",
+      "id": "configure-and-integrate",
       "items": [
-        { "title": "Command-line interface", "url": "/cli.html" },
-        { "title": "MIME and interoperability", "url": "/rfc-compliant.html" },
-        { "title": "Compare libraries", "url": "/feature-matrix.html" }
+        {
+          "title": "Configuration",
+          "url": "/configuration.html",
+          "description": "Java and loaded settings, message rules and integration hooks."
+        },
+        {
+          "title": "Understanding configuration",
+          "url": "/understanding-configuration.html",
+          "description": "Resolve combined settings and unexpected values."
+        },
+        {
+          "title": "Spring integration",
+          "url": "/spring.html",
+          "description": "Configure and inject Mailers in Spring and Boot."
+        },
+        {
+          "title": "Command-line interface",
+          "url": "/cli.html",
+          "description": "Send and inspect SMTP from the command line."
+        },
+        {
+          "title": "Modules",
+          "url": "/modules.html",
+          "description": "Choose optional feature and deployment modules."
+        }
       ]
     },
     {
       "label": "Maintain",
       "items": [
-        { "title": "Migration notes", "url": "/migration-notes.html" },
-        { "title": "Help and contribute", "url": "/contact.html" }
+        {
+          "title": "Migration notes",
+          "url": "/migration-notes.html",
+          "description": "Upgrade an existing application."
+        },
+        {
+          "title": "Help and contribute",
+          "url": "/contact.html",
+          "description": "Ask questions, report issues and contribute."
+        }
       ]
     }
   ]

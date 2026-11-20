@@ -17,7 +17,7 @@ mermaid: true
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and the services for each demo. The local examples use synthetic data and run without a real mail account.
 
 Run these commands from that directory:
 
@@ -66,7 +66,15 @@ The worker reads SES JSON and keeps the feedback even when events are duplicated
 
 TLS between your worker and SES only covers that connection; SES has a separate policy for onward delivery. S/MIME protects the message content, but an SMTP response or delivery event still won't tell you whether a person read or decrypted it.
 
-The scenario repeats input, compares protected archive hashes and supplies duplicate feedback in different orders. It holds rejected or uncertain submissions for review and sends feedback it can't match to a dead-letter queue. All synthetic mail stays in the test server.
+The local scenario repeats input, compares protected archive hashes and supplies duplicate feedback in different orders. It holds rejected or uncertain submissions for review and sends feedback it can't match to a dead-letter queue. Local mail stays in the test server.
+
+On AWS, the mailbox simulator can accept a submission and report a bounce later. The scenario keeps both outcomes on the job and checks the archive hash.
+
+```json
+{"case":"bounce","smtp":"ACCEPTED","feedback":["Bounce","Send"],"archiveHashMatches":true}
+```
+
+Keep the acceptance and bounce together when deciding whether to resend. If connection cleanup fails after acceptance, the inline result observer saves that acceptance and holds the operation for inspection. If the result write itself fails, the job stays `SENDING` so you can check what happened before retrying.
 
 ## Identify the application to SES
 
@@ -74,25 +82,19 @@ The worker sets `ConnectionConfig.Builder.withSmtpClientHostname("correspondence
 
 ## AWS deployment
 
-You can deploy with either Terraform or CloudFormation using the shared runner. Both versions use the same worker configuration and pin the application to an ECR image digest.
+`deploy` creates billable AWS resources. Choose Terraform or CloudFormation and use a separate run name for each deployment. The local Compose run exercises the application with fixtures. The AWS run exercises IAM, network access, SES submission, feedback and archive storage.
 
-Supply a profile, expected account, region, unique run name, existing verified SES domain and sender. Run `preflight` to check those inputs and `plan` to validate without creating resources. The `deploy`, `scenario`, `status` and `destroy` commands then use the saved details for that run.
+1. **Check the inputs with `preflight`.** Supply your profile, expected account, region, unique run name, existing verified SES domain and sender. Start from the [cloud runner command](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0/tools/integration-patterns/aws-correspondence#actual-cloud-lane).
+2. **Review `plan`.** It validates the proposed changes before provisioning. The runner provisions resources for this run and treats your existing SES identity, DNS, suppression settings and production feedback routes as read-only.
+3. **Run `deploy`, then `scenario`.** Both formats deploy the same worker pinned to an ECR image digest. The scenario addresses the SES mailbox simulator. Check submission, feedback and stored archive hashes. Partner decryption needs its own test.
+4. **Check `status`, then run `destroy` when finished.** Keep the saved run details for the cleanup steps below. The dated verification record in the [workbench notes](https://github.com/bbottema/simple-java-mail/blob/codex/10.0.0/tools/integration-patterns/VERIFICATION.md) shows what was deployed and cleaned up.
 
-The deployment creates a network, a task security group with no inbound access, an ECR repository, queues and dead-letter queues, a bucket, a table, a configuration set, a feedback subscription, logs and scoped roles. Demo SMTP credentials go into Secrets Manager, outside the templates and state files, rather than into an image or download.
+<details class="doc-disclosure">
+<summary>Resources and credential storage</summary>
 
-The scripts leave your existing sending identity and its settings alone, including DNS, identity defaults, suppression settings and production feedback routes. Use only one deployment format for each run, and create separate resources rather than trying to adopt infrastructure you already have.
+The run creates a task security group with no inbound access, an ECR repository, queues and dead-letter queues, an archive bucket, a table, a configuration set, a feedback subscription, logs and scoped roles. The runner can use an isolated network or reference an approved one. It puts demo SMTP credentials in Secrets Manager, outside the templates, state, image and download.
 
-The cloud scenarios send to SES mailbox simulator addresses to check submission, feedback and archive storage. They don't test partner decryption. The dated verification record lists what was deployed, observed and cleaned up. AWS resources cost money, and a successful local run doesn't verify the cloud's IAM or network setup.
-
-For example, when SES accepts a message and later reports a simulated bounce, the job records both results:
-
-```json
-{"case":"bounce","smtp":"ACCEPTED","feedback":["Bounce","Send"],"archiveHashMatches":true}
-```
-
-SES accepted the original submission, even though it later reported a bounce. Keep both facts: a bounce doesn't mean it's safe to resend automatically.
-
-If connection cleanup fails after SMTP acceptance, the inline result observer keeps that acceptance result and holds the operation for inspection. If saving the result itself fails, the job stays `SENDING` so you can check what happened before retrying.
+</details>
 
 ## Source and cleanup
 

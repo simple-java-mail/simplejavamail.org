@@ -1,0 +1,40 @@
+@import "tokens.less";
+
+.capability-intro { padding-block: clamp(2rem, 5vw, 4rem) @space-xl; }
+.capability-intro h1 { margin-block: @space-xs @space-md; font-size: clamp(2.7rem, 6vw, 4.3rem); }
+.capability-lede { max-width: 720px; margin-block: 0 @space-md; color: @steel; font-size: 1.17rem; }
+.capability-index { display: flex; flex-wrap: wrap; gap: 0.5rem 1.3rem; margin-top: @space-lg; padding-top: @space-md; border-top: 1px solid @line; }
+.capability-index a { color: @teal-deep; font-size: 0.88rem; text-underline-offset: 0.2em; }
+.capability-family { display: grid; grid-template-columns: minmax(210px, 0.72fr) minmax(0, 1.6fr); gap: clamp(1.5rem, 4vw, 3.5rem); padding-block: @space-xl; border-top: 1px solid @line; scroll-margin-top: @space-xs; }
+.capability-family > header { border-left: 3px solid @teal; padding-left: @space-md; align-self: start; }
+.capability-family h2 { margin: 0 0 @space-sm; font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.2; }
+.capability-family > header p { margin: 0 0 @space-md; color: @steel; font-size: 0.95rem; }
+.capability-guide { color: @teal-deep; font-size: 0.86rem; font-weight: 600; }
+.capability-family-content { min-width: 0; }
+.capability-family-content h3 { margin: @space-md 0 @space-sm; color: @steel; font-family: @font-mono; font-size: 0.68rem; letter-spacing: 0.03em; text-transform: uppercase; }
+.capability-family-content h3:first-child { margin-top: 0; }
+.capability-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem 1.6rem; margin: 0; padding: 0; list-style: none; }
+.capability-features + h3 { margin-top: @space-lg; }
+.capability-features li { min-width: 0; }
+.capability-features li > a:first-child { display: inline; color: @ink; font-size: 0.95rem; font-weight: 600; text-decoration-color: @teal; text-underline-offset: 0.18em; }
+.capability-features li > a:first-child:hover { color: @teal-deep; }
+.capability-description { display: block; margin-top: 0.25rem; color: @steel; font-size: 0.84rem; line-height: 1.5; }
+.capability-features .module-badge { margin-top: 0.35rem; }
+.capability-demonstrations { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-top: @space-lg; padding-top: @space-sm; border-top: 1px solid @line; }
+.capability-demonstrations > span { flex-basis: 100%; color: @steel; font-family: @font-mono; font-size: 0.65rem; }
+.capability-demonstrations a, .capability-related { font-size: 0.8rem; }
+.capability-related { color: @steel; margin-top: @space-md; }
+.capability-next { padding-block: @space-lg @space-xl; border-top: 1px solid @line; }
+.legacy-link-fallback { padding-block: @space-xl; }
+.legacy-link-fallback li:target { padding: @space-sm; outline: 2px solid @teal; }
+
+@media (max-width: 760px) {
+  .capability-intro { padding-block: 2rem 1.6rem; }
+  .capability-family { grid-template-columns: 1fr; gap: @space-lg; padding-block: @space-lg; }
+  .capability-family > header p { margin-bottom: @space-xs; }
+  .capability-features { gap: 1.05rem; }
+}
+@media (max-width: 460px) {
+  .capability-features { grid-template-columns: 1fr; }
+  .capability-index { gap: 0.5rem 1rem; }
+}

@@ -327,7 +327,7 @@ There is a version of this history in which I apologise for not being an expert 
 
 What I bring is engineering, architecture and developer UX together. Libraries have UX too; Joshua Bloch has made the case for API ergonomics [many times](https://www.artima.com/articles/josh-bloch-on-design). I can recognise the useful parts, reduce them to their essentials and shape them into something reusable that fits naturally into the larger library. The aim is a robust library without putting every user in a Boeing cockpit. Otherwise Simple Java Mail, whose mission is to hide the low-level MIME standards, would defeat itself.
 
-Simple Java Mail can make strong choices about MIME structure, TLS, DKIM, S/MIME, pooling and Outlook conversion without pretending those choices fit everybody. When they do not, its [extension points](/features.html#section-extension-points) expose the `Session`, properties, validators, executors, token providers, socket factories and sending logic needed to take over deliberately.
+Simple Java Mail can make strong choices about MIME structure, TLS, DKIM, S/MIME, pooling and Outlook conversion without pretending those choices fit everybody. When they do not, its [extension points](/configuration.html#section-extension-points) expose the `Session`, properties, validators, executors, token providers, socket factories and sending logic needed to take over deliberately.
 
 That is why the ecosystem exists. It is not an empire of subjects I mastered. It is a set of hard problems I made relatable and composable.
 

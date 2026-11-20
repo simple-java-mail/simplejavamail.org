@@ -17,6 +17,8 @@ Delivery is presented as a progression. None of the later modes makes the earlie
 
 Each level states connection ownership, concurrency model, result behavior, and module requirement.
 
+For pooling, put one chooser before the examples; retain the architecture diagram and ownership map as optional detail. Failover chooses a connection before submission, retries repeat an eligible refused submission, and receipts describe what happened. Link to each dedicated guide while keeping uncertainty and duplicate-send warnings visible.
+
 ## Uncommon delivery constraints
 
 ### Authenticated SOCKS
@@ -82,6 +84,8 @@ Description: `Test SMTP connections, validate messages, inspect the settings in 
 Place this page under Diagnostics using the existing always-expanded child navigation and breadcrumb pattern. Keep the old Capabilities anchors as short introductions linking here.
 
 The reader's question is: "The send failed, but did anyone's copy get accepted, and what should I do next?"
+
+Show the receipt before the observation comparison and its timing details. Keep progress, terminal observers, and telemetry as later choices.
 
 - Start with `MailSubmissionReceipt` and `MailSubmissionException`, including receipts on failed or partial sends.
 - Follow Alice, Bob and Carol through a partial send: RCPT 250/450/550, then final DATA 250. Explain why the send fails despite Alice's acceptance.

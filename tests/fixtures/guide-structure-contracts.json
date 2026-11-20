@@ -1,0 +1,55 @@
+{
+  "/security.html": {
+    "contentsBefore": "section-authentication-methods",
+    "order": ["section-authentication-methods", "section-gmail", "section-requiretls", "section-sending-smime", "section-protect-existing-mime", "section-smime-key-cache"],
+    "headings": [
+      {"id": "section-gmail", "level": 3, "parent": "section-authentication-methods"},
+      {"id": "oauth2-token-refresh", "level": 3, "parent": "section-authentication-methods"},
+      {"id": "section-protect-existing-mime", "level": 3, "parent": "section-sending-smime"}
+    ]
+  },
+  "/configuration.html": {
+    "contentsBefore": "section-programmatic-api-common",
+    "order": ["section-programmatic-api-common", "section-programmatic-api-other", "section-proxy", "section-proxy-bridge-ports", "section-config-properties", "section-custom-session", "section-custom-properties"],
+    "headings": [
+      {"id": "section-programmatic-api-other", "level": 2},
+      {"id": "configuration-operations", "level": 3, "parent": "section-programmatic-api-other"},
+      {"id": "configure-relay-tls", "level": 3, "parent": "section-programmatic-api-other"},
+      {"id": "configure-async-workers", "level": 3, "parent": "section-programmatic-api-other"},
+      {"id": "socket-timeouts", "level": 3, "parent": "section-programmatic-api-other"},
+      {"id": "section-proxy-bridge-ports", "level": 3, "parent": "section-proxy"}
+    ]
+  },
+  "/email-conversion.html": {
+    "contentsBefore": "section-converting",
+    "order": ["section-converting", "section-source-inspection", "section-receive-protected-content", "received-conversion-details", "streamed-text-bodies", "imported-inline-resources", "resource-representation-boundaries", "conversion-body-parts", "unparseable-imported-addresses", "interpreted-sent-dates", "undecodable-optional-headers", "conversion-import-limits", "outlook-source-data", "section-exact-eml", "section-serializing-emails"],
+    "headings": [
+      {"id": "section-receive-protected-content", "level": 2},
+      {"id": "received-conversion-details", "level": 2},
+      {"id": "streamed-text-bodies", "level": 3, "parent": "received-conversion-details"},
+      {"id": "imported-inline-resources", "level": 3, "parent": "received-conversion-details"},
+      {"id": "resource-representation-boundaries", "level": 4, "parent": "imported-inline-resources"},
+      {"id": "conversion-body-parts", "level": 3, "parent": "received-conversion-details"},
+      {"id": "unparseable-imported-addresses", "level": 3, "parent": "received-conversion-details"},
+      {"id": "interpreted-sent-dates", "level": 3, "parent": "received-conversion-details"},
+      {"id": "undecodable-optional-headers", "level": 3, "parent": "received-conversion-details"},
+      {"id": "conversion-import-limits", "level": 2},
+      {"id": "outlook-source-data", "level": 2}
+    ],
+    "modules": [{"id": "outlook-source-data", "required": ["outlook-module"]}]
+  },
+  "/email-composition.html": {
+    "contentsBefore": "section-basic-usage",
+    "order": ["section-basic-usage", "section-recipient-builders", "section-content-transfer-encoding", "section-icalendar-vevent", "section-attachments", "section-custom-headers", "section-reply-forward", "section-return-receipt", "section-rendered-templates"],
+    "modules": [{"id": "section-recipient-builders", "forbidden": ["smime-module", "openpgp-module", "batch-module"]}]
+  },
+  "/debugging.html": {"contentsBefore": "section-choose-diagnostic"},
+  "/sending-and-execution.html": {
+    "contentsBefore": "section-send-execution",
+    "headings": [
+      {"id": "section-simple-batch", "level": 3, "parent": "section-batch-and-clustering"},
+      {"id": "section-open-connection", "level": 3, "parent": "section-batch-and-clustering"}
+    ]
+  },
+  "/analyzing-send-results.html": {"contentsBefore": "section-get-receipt"}
+}

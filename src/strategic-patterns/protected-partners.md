@@ -18,7 +18,7 @@ permalink: "/patterns/protected-partners.html"
 
 Download and extract the [complete Simple Java Mail sources](https://github.com/bbottema/simple-java-mail/archive/refs/heads/codex/10.0.0.zip), or use your existing [matching source checkout](https://github.com/bbottema/simple-java-mail/tree/codex/10.0.0). Open a terminal in the directory containing `pom.xml` and `tools/`.
 
-You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and test mail server for you, so you don't need to install them or connect a real mail account.
+You'll need Docker Engine or Docker Desktop with Linux containers and Compose 2.24.4 or newer. Set aside several GB of disk space and at least 4 GB of Docker memory, with more room for brokers and workflow engines. Docker runs the JDK, Maven and the services for each demo. The local examples use synthetic data and run without a real mail account.
 
 ```text
 docker compose -f tools/integration-patterns/protected-partners/compose.yaml up --build -d --wait
@@ -68,11 +68,17 @@ The [complete receiving guide](/security.html#section-inspecting-received-protec
 
 ## Byte-preserving archive
 
-The application saves `received.getInspection().getOriginalMessage()` without rebuilding it, and uses `received.getAttachments()` to get the bytes it can process. If an attachment was opened separately, its usable content can differ from the original file you keep. An original MSG remains an MSG; if the complete original wasn't available, a captured prefix won't magically make a complete archive.
+- **Archive the received file.** Save `received.getInspection().getOriginalMessage()` in its original format. An MSG stays an MSG. If the converter captured only a prefix, record the archive as incomplete.
+- **Process the usable document.** Read the chosen attachment through `received.getAttachments()` after checking its protection evidence. An opened attachment can provide different bytes from the retained original.
 
-Reading an attached Email does not rewrite its parent's resource. `forwarding(received)` deliberately renders the current interpreted view; `forwardingOriginal(received)` carries suitable retained original input. Automatically reusing confidential content in a reply or interpreted forward requires suitable outgoing protection or the explicit operation/conversion permission described in the [reuse guide](/security.html#received-protection-reuse). Incoming keys do not provide outgoing protection, and body encryption does not hide every outer header.
+<details class="doc-disclosure">
+<summary>Forward the received content</summary>
 
-A child's original contains its own EML or MSG, without the parent's envelope. When that file was extracted through parent encryption, original forwarding still requires outgoing protection or explicit conversion permission; encrypting only the child's body may leave its headers clear. Known confidential originals get neutral new carrier metadata while their actual input metadata and bytes remain available unchanged.
+Reading an attached Email leaves its parent resource intact. Use `forwarding(received)` to render the interpreted view. Use `forwardingOriginal(received)` to carry suitable retained original input. Automatically reusing confidential content in a reply or interpreted forward requires suitable outgoing protection or explicit operation or conversion permission. See the [reuse guide](/security.html#received-protection-reuse).
+
+Configure protection for the outgoing message. A child’s retained file contains just its own EML or MSG. When it came from an encrypted parent, original forwarding still requires outgoing protection or explicit conversion permission. Encrypting the child body can leave outer headers clear. Known confidential originals get neutral carrier metadata while retaining their original metadata and bytes.
+
+</details>
 
 <span id="inspect-the-failure-not-just-the-happy-path" aria-hidden="true"></span>
 

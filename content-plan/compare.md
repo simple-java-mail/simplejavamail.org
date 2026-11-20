@@ -28,8 +28,8 @@ Lede:
 Four concise profiles:
 
 - **Jakarta Mail / Angus Mail:** badge: `Low-level SMTP toolkit`; the standard low-level foundational SDK for MIME messages and SMTP transport. A separate line states that it does *not* support DKIM, S/MIME, connection pooling, or batch delivery out of the box.
-- **Spring Mail:** badge: `Rudimentary support`; Spring's `JavaMailSender`, `MailException`, and `MimeMessageHelper` fit when the application already uses those APIs.
-- **Apache Commons Email:** badge: `Maintenance mode`; a handful of message classes remove some Jakarta Mail boilerplate, while leaving most of the harder work to the application.
+- **Spring Mail:** badge: `Spring integration`; Spring's `JavaMailSender`, `MailException`, and `MimeMessageHelper` fit when the application already uses those APIs.
+- **Apache Commons Email:** badge: `Message helpers`; its message classes reduce Jakarta Mail boilerplate for common sending tasks.
 - **Simple Java Mail:** badge: `Complete SMTP solution`; it builds well-formed MIME and adds reusable message rules, DKIM, S/MIME, OpenPGP/MIME, diagnostics, conversion, authenticated SOCKS, and batched, pooled, or clustered delivery.
 
 Use one top badge per card. Do not add a second eyebrow label inside the card.

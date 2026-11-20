@@ -18,18 +18,7 @@ description: "Install Simple Java Mail from Maven Central, send a first email, v
       <p class="start-step-label"><span>01</span> Add the dependency</p>
       <h2>Install Simple Java Mail.</h2>
       <p>Start with <code>simple-java-mail</code>. It gives you the public API, the default Angus sending runtime, and everything needed for the usual send.</p>
-      <div class="code-window start-code-window">
-        <div class="code-window-bar"><span>pom.xml</span><span>Maven</span></div>
-        <pre><code class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;org.simplejavamail&lt;/groupId&gt;
-    &lt;artifactId&gt;simple-java-mail&lt;/artifactId&gt;
-    &lt;version&gt;{{site.version}}&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
-      </div>
-      <details class="start-alternate-install">
-        <summary>Using Gradle?</summary>
-        <pre><code class="language-groovy">implementation("org.simplejavamail:simple-java-mail:{{site.version}}")</code></pre>
-      </details>
+      {{~> components/dependency-picker className="start-code-window"}}
       <p class="start-note">Published on <a href="{{site.mavenCentral}}">Maven Central</a>. Keep the <a href="{{site.javadocs}}">current Javadocs</a> alongside the guide when adapting the examples.</p>
     </section>
 
@@ -94,24 +83,25 @@ Email email = mail.emailBuilder().startingBlank()
       <p class="start-section-intro">The main dependency covers everyday sending. Add a module only when the application needs the feature.</p>
       <div class="start-module-list" role="list">
         <a role="listitem" href="/sending-and-execution.html#section-batch-and-clustering"><code>batch-module</code><strong>Pooled and clustered sending</strong><span>Configure →</span></a>
-        <a role="listitem" href="/features.html#section-proxy"><code>authenticated-socks-module</code><strong>SOCKS proxy credentials</strong><span>Configure →</span></a>
+        <a role="listitem" href="/configuration.html#section-proxy"><code>authenticated-socks-module</code><strong>SOCKS proxy credentials</strong><span>Configure →</span></a>
         <a role="listitem" href="/security.html#section-sending-dkim"><code>dkim-module</code><strong>Domain-key signing</strong><span>Configure →</span></a>
         <a role="listitem" href="/security.html#section-sending-smime"><code>smime-module</code><strong>S/MIME signing and encryption</strong><span>Configure →</span></a>
         <a role="listitem" href="/security.html#section-sending-openpgp"><code>openpgp-module</code><strong>OpenPGP/MIME signing and encryption</strong><span>Configure →</span></a>
-        <a role="listitem" href="/features.html#section-converting"><code>outlook-module</code><strong>Outlook MSG conversion</strong><span>Convert →</span></a>
+        <a role="listitem" href="/email-conversion.html#section-converting"><code>outlook-module</code><strong>Outlook MSG conversion</strong><span>Convert →</span></a>
         <a role="listitem" href="/cli.html#navigation"><code>cli-module</code><strong>Standalone command-line use, Java 17+</strong><span>Use the CLI →</span></a>
         <a role="listitem" href="/spring.html"><code>simple-java-mail-spring-boot-starter</code><strong>Spring Boot auto-configuration</strong><span>Integrate →</span></a>
         <a role="listitem" href="/spring.html"><code>spring-module</code><strong>Plain Spring configuration</strong><span>Integrate →</span></a>
+        <a role="listitem" href="/opentelemetry.html"><code>open-telemetry-module</code><strong>Application traces and metrics</strong><span>Observe →</span></a>
         <a role="listitem" href="/modules.html#navigation"><code>karaf-module</code><strong>OSGi / Karaf deployment</strong><span>See modules →</span></a>
       </div>
     </section>
 
     <section id="configuration-routes" class="start-step start-wide-section">
       <p class="eyebrow">Where to go next</p>
-      <h2>Build, configure, or secure the mailer.</h2>
+      <h2>Where will you take it next?</h2>
       <div class="start-next-grid">
-        <a href="/features.html#section-basic-usage"><span>Build</span><strong>Add rich content</strong><small>HTML, attachments, images, calendars</small></a>
-        <a href="/configuration.html#navigation"><span>Configure</span><strong>Set shared defaults once</strong><small>Properties, environments, defaults, overrides</small></a>
-        <a href="/security.html#navigation"><span>Protect</span><strong>Secure transport and content</strong><small>TLS, OAuth2, DKIM, S/MIME, OpenPGP</small></a>
+        <a href="/features.html"><strong>Explore capabilities</strong><small>Find what the library can handle</small></a>
+        <a href="/configuration.html"><strong>Configure your application</strong><small>Share settings and message rules</small></a>
+        <a href="/debugging.html"><strong>Troubleshoot a send</strong><small>Inspect the message, connection and outcome</small></a>
       </div>
     </section>

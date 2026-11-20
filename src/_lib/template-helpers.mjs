@@ -7,6 +7,8 @@ import { fieldGuideSections } from './field-guide-sections.mjs';
 import { patternCategoryInfo } from './patterns.mjs';
 import { patternExamples, demonstratedReferences } from './pattern-demonstrations.mjs';
 import { patternStack } from './pattern-technologies.mjs';
+import { capability, capabilityGroups, documentationGroups, guideContext } from './capabilities.mjs';
+import { featuresCompatibility } from './documentation-compatibility.mjs';
 
 // Shared by Eleventy and the local Article Workbench; keep rendering rules in one place.
 export function createTemplateHelpers(markdown = createMarkdownLibrary()) {
@@ -17,6 +19,11 @@ export function createTemplateHelpers(markdown = createMarkdownLibrary()) {
   const sourceForgeMarkup = createSourceForgeMarkupLibrary();
 
   register("eq", (left, right) => left === right);
+  register("capability", capability);
+  register("capabilityGroups", capabilityGroups);
+  register("documentationGroups", documentationGroups);
+  register("guideContext", guideContext);
+  register("featuresCompatibility", featuresCompatibility);
   register("year", () => new Date().getFullYear());
   register("activeClass", (href, current) => href === current ? "is-active" : "");
   register("docsCurrent", (href, currentUrl, parentUrl, groups) => {

@@ -11,7 +11,7 @@
       <pagefind-searchbox placeholder="Search docs" show-sub-results></pagefind-searchbox>
     </div>
     <nav class="docs-nav" aria-label="Documentation">
-      {{#each nav.docsGroups}}
+      {{#each (documentationGroups nav @root.capabilities)}}
         <section class="docs-nav-group">
           <h2>{{label}}</h2>
           <ul>

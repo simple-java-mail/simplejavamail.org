@@ -10,12 +10,11 @@ description: "Turn a received delivery notification into recipient actions, stat
 <section>
   <h2 id="read-a-notification">The relay accepted it. What happened next?</h2>
   {{> components/pattern-examples topic="delivery-reports"}}
-  <p>A successful send tells you that an SMTP server accepted the message, not that it reached a mailbox.
-    Later, a delivery notification may say that one address failed, another is still being tried, and a third received the message.
-    Convert that notification into an <code>Email</code> as usual. Simple Java Mail makes the report's fields available without asking your application
-    to understand its MIME structure or parse server-specific prose.</p>
-  <p>A standards-based delivery notification is itself an email with a machine-readable report alongside the explanation you normally see.
-    Simple Java Mail reads those structured fields. It does not guess the result from sentences such as “could not deliver”. A typical notification looks like this:</p>
+  <p>Your billing job submits an invoice on Friday. On Monday a bounce lands in the return mailbox. The receipt records what the
+    submission server accepted on Friday. Convert the notification to an <code>Email</code> to see what the reporting server says happened next.
+    One report can contain an outcome for each of several addresses.</p>
+  <p>Look for the machine-readable status part alongside the explanation a person sees. Simple Java Mail reads that part. Text such as
+    “could not deliver” on its own gives your application an ordinary email.</p>
   <pre><code class="language-text">multipart/report; report-type=delivery-status
 ├── Human-readable explanation
 ├── message/delivery-status: recipient actions, status codes and diagnostics
@@ -36,106 +35,143 @@ if (report != null) {
 FAILED 5.1.1
 DELIVERED 2.0.0
 DELAYED 4.4.1</code></pre>
-  <p>Use the existing EML or MIME conversion methods and, for protected mail, the existing receiving-key inputs.
-    There is no separate report converter, parser option or listener. The getter reads an immutable snapshot already extracted during conversion;
-    it does not fetch mail or do I/O. Your application still supplies the received message.</p>
+  <p>Feed the message from your bounce handler into the same EML or MIME converter you use for other received mail. Supply receive keys there
+    if needed. <code>getDeliveryStatusReport()</code> reads the immutable result of that conversion, so your handler can call it without further I/O.</p>
 </section>
 <section>
-  <h2 id="correlate-and-decide">Match the notification, then make your decision.</h2>
-  <p><code>report.getEnvelopeId()</code> is the reported <code>Original-Envelope-Id</code>. When available, match it to the envelope identifier retained
-    from your original <a href="/analyzing-send-results.html">submission receipt</a>. It is not Message-ID, a progress observation ID or a telemetry trace ID.</p>
-  <p>Keep the identifier's reported spelling when comparing it with the receipt, including trailing spaces. Do not trim it or decode it again.
-    Header parsing already handles leading field whitespace, so an already-removed prefix cannot be recovered from this value.
-    Repeated fields with different remaining spellings leave the identifier unavailable instead of silently merging them.</p>
-  <p>Each recipient provides an original and final <code>ReportedRecipient</code>, a <code>DeliveryAction</code>, an
-    <code>EnhancedStatusCode</code>, an optional <code>DeliveryDiagnostic</code> and any last-attempt/retry-until timestamps.
-    Addresses keep their reported format and spelling, including duplicate occurrences. The reporting server likewise keeps its name and naming format
-    together in a <code>ReportedMailServer</code>.</p>
-  <p>You don't need to split <code>5.1.1</code> to recognize a permanent failure, or parse a diagnostic's leading SMTP reply number yourself:</p>
-  <pre><code class="language-java">for (RecipientDeliveryReport recipient : report.getRecipients()) {
+  <h2 id="correlate-and-decide">Match the notification, then make your decision</h2>
+  <p>The invoice bounce contains <code>Original-Envelope-Id</code>. After checking where it came from, compare that value to the envelope
+    ID saved from the job’s <a href="/analyzing-send-results.html">submission receipt</a>. Then check the action for each recipient.</p>
+  <pre><code class="language-java">String reportedId = report.getEnvelopeId();
+boolean matches = reportedId != null &amp;&amp; reportedId.equals(receipt.getEnvelopeId());</code></pre>
+  <p>Compare the ID exactly, including trailing spaces. The parser strips leading field whitespace. Conflicting repeated IDs leave the ID
+    unavailable. Store it separately from Message-ID, progress observation IDs and telemetry trace IDs.</p>
+  <ul>
+    <li><strong><code>FAILED 5.1.1</code></strong> &mdash; flag the mailbox for correction. The reporting server has stopped trying.</li>
+    <li><strong><code>DELAYED 4.4.1</code></strong> &mdash; keep the recipient pending. A later <code>FAILED 4.4.1</code> means the server gave up.</li>
+    <li><strong><code>DELIVERED 2.0.0</code></strong> &mdash; record reported delivery for this address. A read by the recipient is a separate event.</li>
+    <li><strong><code>RELAYED</code> or <code>EXPANDED</code></strong> &mdash; record the handoff or expansion. Look to later reports for final mailbox evidence.</li>
+  </ul>
+  <p>Read the action and status together. A retry-until timestamp describes the reporting server’s schedule. Your application decides whether to resend.</p>
+  <details class="doc-disclosure">
+    <summary>Read the status code and SMTP reply</summary>
+    <pre><code class="language-java">for (RecipientDeliveryReport recipient : report.getRecipients()) {
     EnhancedStatusCode status = recipient.getStatusCode();
     if (status != null) {
         System.out.println(status + ": permanent=" + status.isPermanentFailure());
-        // For 5.1.1: status class 5, subject 1, detail 1.
     }
-
-    ReportedRecipient target = recipient.getFinalRecipient();
-    if (target != null) {
-        Recipient mailbox = target.getMailbox();
-        if (mailbox != null) {
-            // Explicit access to personal data; automatic report rendering omits it.
-            System.out.println(mailbox.getAddress());
-            // mailbox.getName() is also available when a name was actually reported.
-        }
-    }
-
     DeliveryDiagnostic diagnostic = recipient.getDiagnostic();
     if (diagnostic != null &amp;&amp; diagnostic.getSmtpResponse() != null) {
         System.out.println("SMTP reply: " + diagnostic.getSmtpResponse().getReturnCode());
     }
 }</code></pre>
-  <p>For the failed recipient above, the status line is <code>5.1.1: permanent=true</code>; a reported
-    <code>smtp; 550 5.1.1 No such mailbox</code> also exposes SMTP reply <code>550</code>. Subject and detail remain readable numeric components,
-    including unfamiliar but well-formed combinations; the API does not require an exhaustive enum of registered codes.</p>
-  <p>A <code>ReportedRecipient</code> keeps the source address in <code>getAddress()</code> and its format in <code>getType()</code>.
-    Recognized Internet addresses offer a parsed <code>Recipient</code> through <code>getMailbox()</code>. Its name is usually null because a delivery
-    report normally contains a mailbox address, not a display name. No To/Cc/Bcc preference or certificate is invented. Foreign formats such as
-    <code>x400</code>, malformed mailboxes and address lists keep their reported data but have no mailbox view. Nothing is looked up or contacted.</p>
-  <p>The same principle applies to diagnostics: <code>getType()</code> and <code>getText()</code> preserve the reported explanation, while
-    <code>getSmtpResponse()</code> is available only for a recognizable SMTP reply. Other protocol formats or explanations without a usable
-    reply code remain readable without guessing a number from human prose. That optional view uses the existing <code>SmtpServerResponse</code> API.</p>
-  <p>Read the action as well as the status: <code>DELAYED 4.4.1</code> means the reporting system has not finished; a later
-    <code>FAILED 4.4.1</code> says it stopped. <code>RELAYED</code> and <code>EXPANDED</code> do not establish final mailbox delivery.
-    A reported retry-until time belongs to that system; it is not a schedule for your application to resend.</p>
-  <p>A valid action can include comments: <code>Action: failed (recipient removed)</code> yields <code>FAILED</code> without a warning.
-    The action is case-insensitive, and valid comments before or after it do not change its meaning. Unknown actions, extra tokens,
-    quoted values and malformed comments remain <code>UNKNOWN</code>; the original report content is unchanged.</p>
-  <p>Missing or unusable scalar fields are <code>null</code>. Recipient and warning lists are immutable and never null.
-    A recognized malformed report retains the usable facts and human-readable warnings; contradictory fields are not silently picked.</p>
-  <p>The corresponding interpretation warnings in <code>email.getProblems()</code> link to the affected status part through
-    <code>problem.getSources()</code>. Ambiguous reports can reference the known conflicting parts, and a missing status part can point
-    to the report container. Follow those references into <a href="features.html#section-source-inspection">received-source inspection</a>
-    without parsing a location string or reading the payload again.</p>
+    <p>For a permanent mailbox failure this can print <code>5.1.1: permanent=true</code> and <code>SMTP reply: 550</code>.
+      The status class, subject and detail are numeric even for unfamiliar combinations. A diagnostic retains its original
+      <code>getType()</code> and <code>getText()</code>. Only a recognizable SMTP reply supplies a parsed <code>SmtpServerResponse</code>.</p>
+  </details>
+  <details class="doc-disclosure">
+    <summary>Identify the recipient and reporting server</summary>
+    <p>Each entry carries original and final <code>ReportedRecipient</code> fields, a <code>DeliveryAction</code>, status, optional diagnostic,
+      and any last-attempt or retry-until timestamps. Addresses keep their reported format, spelling and duplicates.
+      A <code>ReportedMailServer</code> pairs the reporting server’s name with its naming format.</p>
+    <pre><code class="language-java">for (RecipientDeliveryReport recipient : report.getRecipients()) {
+    ReportedRecipient target = recipient.getFinalRecipient();
+    if (target != null) {
+        Recipient mailbox = target.getMailbox();
+        if (mailbox != null) {
+            // Addresses can identify people. Choose deliberately what you log.
+            System.out.println(mailbox.getAddress());
+        }
+    }
+}</code></pre>
+    <p><code>getMailbox()</code> parses a recognized Internet address. The name is usually null. Parsing performs no lookup and adds no
+      recipient role or certificate. For other formats such as <code>x400</code>, malformed addresses or lists, read the reported
+      <code>getType()</code> and <code>getAddress()</code>.</p>
+  </details>
 </section>
 <section>
-  <h2 id="imperfect-notifications">Read what you can, even from an imperfect notification.</h2>
-  <p>Mail generated by other systems is not always perfectly formatted. Simple Java Mail recovers a clear meaning where it can:
-    a status such as <code>5.01.001</code> becomes the numeric view <code>5.1.1</code>, and an explicit ISO timestamp such as
-    <code>2026-10-16T10:20:30+02:00</code> can still be read. Each recovery adds a warning; it does not rewrite the original message.</p>
-  <p>A valid mail date can end in a comment, such as <code>Fri, 16 Oct 2026 10:20:30 +0200 (CEST)</code>.
-    Last-attempt and retry-until timestamps retain that instant without a recovery warning. Malformed comments, extra non-comment text,
-    impossible dates and missing or invalid timezones still leave the timestamp unavailable. Numeric timezone hours must be 00 through 23;
-    offsets such as <code>+2400</code> and <code>+9900</code> do not establish a timestamp.</p>
-  <p>If the notification's only direct delivery-status part is in the wrong position, it can still be recognized. Two competing parts are different:
-    Simple Java Mail leaves the report facts unavailable rather than choosing one. It likewise does not invent a timezone or turn an impossible date
-    into another day. Attached or nested notifications remain separate from the outer email's report.</p>
-  <p>If optional report reading stops partway through, the completed header blocks remain available and the warnings say extraction may be incomplete.
-    An unfinished block is not presented as complete. In unreleased 10.0.0, source data retains the bytes already acquired before a failed read,
-    with <code>isFullyCaptured()</code> set to <code>false</code>, and a Problem links to the affected part. A close failure after a complete read keeps
-    the fully captured content and a close observation. This uses the same selected read, including when ordinary attachment extraction is deferred;
-    it does not fetch another copy for diagnostics or turn a partial attachment into complete content. See
-    <a href="features.html#section-source-inspection">received-source inspection</a> and check <code>report.getWarnings()</code> before treating the
-    extracted facts as a complete account.</p>
-  <p>Cancellation remains a failure when acquiring, reading or closing the report stream. A typed interruption does not require the thread's interrupt
-    flag to remain set. Ordinary I/O failures and socket timeouts retain the optional recovery behavior above; application failures keep their own exceptions.</p>
+  <h2 id="imperfect-notifications">Read what you can from an imperfect notification</h2>
+  <p>Say the invoice notification’s stream fails while you’re reading the second recipient. The first recipient’s completed block
+    remains available. Check <code>report.getWarnings()</code> before treating that one result as the whole report.</p>
+  <pre><code class="language-text">Original-Envelope-Id: order-123
+Reporting-MTA: dns; relay.example.org
+
+Final-Recipient: rfc822; alice@example.org
+Action: failed
+Status: 5.1.1
+
+Final-Recipient: rfc822; bob@example.org
+[Read fails here, before the second block ends.]</code></pre>
+  <p>You can match <code>order-123</code> to the job and act on the first address. Leave the second address unresolved.
+    The warning says the recovered facts may be incomplete.</p>
+  <details class="doc-disclosure">
+    <summary>Which fields survive unusual report formatting</summary>
+    <ul>
+      <li>Simple Java Mail can recover a numeric status from <code>5.01.001</code> or read an explicit ISO timestamp such as
+        <code>2026-10-16T10:20:30+02:00</code>. Each recovery adds a warning and leaves the original message intact.</li>
+      <li>A valid mail date can end with a comment, as in <code>Fri, 16 Oct 2026 10:20:30 +0200 (CEST)</code>, without a recovery warning.
+        Malformed comments, extra text, impossible dates and missing or invalid timezones leave the timestamp unavailable.
+        Numeric timezone hours must be 00 through 23, so <code>+2400</code> and <code>+9900</code> are invalid.</li>
+      <li><code>Action: failed (recipient removed)</code> yields <code>FAILED</code> without a warning. Action names are case-insensitive
+        and allow valid comments before or after the name. Extra tokens, quoted values, malformed comments and unrecognized actions yield <code>UNKNOWN</code>.</li>
+      <li>The parser can recognize a lone direct status part even in the wrong position. Two competing parts leave the report facts
+        unavailable. Attached or nested notifications have separate report data.</li>
+      <li>Missing or unusable scalar fields are <code>null</code>. Recipient and warning lists are immutable and never null.
+        A recognized malformed report retains usable facts and warnings without picking among contradictions.</li>
+    </ul>
+  </details>
+  <details class="doc-disclosure">
+    <summary>Partial reads, close failures and source inspection</summary>
+    <ul>
+      <li>After a read failure, completed header blocks remain available. An unfinished block is not presented as complete.
+        The source data retains the bytes already acquired before a failed read. <code>isFullyCaptured()</code> is <code>false</code>,
+        and a Problem links to the affected part.</li>
+      <li>If the stream fails to close after a complete read, the source keeps the complete capture and the Problem records the close failure.
+        Simple Java Mail reads the original selected part even if attachments are deferred. It does not fetch another copy for diagnostics or turn a partial attachment into complete content.</li>
+      <li>Interpretation warnings in <code>email.getProblems()</code> link to affected parts via <code>problem.getSources()</code>.
+        An ambiguous report can point to the known conflicting parts. A missing status part can point to its container.
+        Follow those links in <a href="/email-conversion.html#section-source-inspection">received-source inspection</a> without parsing a
+        location string or reading the payload again.</li>
+      <li>Cancellation remains a failure when acquiring, reading or closing the report stream. A typed interruption can occur without the
+        thread’s interrupt flag being set. Ordinary I/O failures and socket timeouts allow the recovery described above. Application failures
+        keep their own exceptions.</li>
+    </ul>
+  </details>
 </section>
 <section>
-  <h2 id="trust-and-preservation">Useful facts are not authenticated instructions.</h2>
-  <p>A notification can be forged, duplicated, delayed or arrive out of order. Decide which receiving routes and senders your application trusts,
-    confirm the correlation, and apply your own idempotency and business rules. Do not suppress a customer address or resend an invoice merely because
-    an untrusted email says to. A missing report does not prove delivery, and <code>DELIVERED</code> does not mean somebody read the message.</p>
-  <p>Ordinary messages return <code>null</code>. A report attached to an ordinary message is not promoted into its parent's report.
+  <h2 id="trust-and-preservation">Decide whether to act on the bounce</h2>
+  <p>Your invoice worker saved the envelope ID from its submission receipt. When a failure notice comes in, check the receiving route
+    and match the ID before changing the job.</p>
+  <dl>
+    <dt><strong>Trusted route and a matching send</strong></dt>
+    <dd>Apply the recipient outcome to that invoice once. A repeated or older report should follow the same rules as other job events.
+      For example, an older delay should leave a recorded permanent failure in place.</dd>
+    <dt><strong>Untrusted route or an ID you cannot match</strong></dt>
+    <dd>Hold the report for review. A forged notice could otherwise suppress a real customer’s address or trigger another invoice.</dd>
+  </dl>
+  <p>A missing report leaves delivery unknown. A <code>DELIVERED</code> outcome records what the reporting system says about delivery.
+    Reading the message is a separate event.</p>
+<details class="doc-disclosure">
+  <summary>When a converted message exposes a report</summary>
+<p>Ordinary messages return <code>null</code>. A report attached to an ordinary message is not promoted into its parent's report.
     Existing protection processing runs first: readable signed/decrypted notifications can expose reports, while inaccessible ciphertext cannot.
     Inspect the protection results too; a null report does not establish that encrypted content contains none.</p>
-  <p>Ordinary copies and supported Java serialization keep this source snapshot even if you edit the content. Defaults/overrides completion
-    resolves outgoing content and settings without copying the received report or its nested facts. Inspect the original converted Email for this
-    history. New replies and forwards do not inherit it as their own report.
-    Exact EML inspection does not rewrite its bytes or add decryption. Outgoing templates cannot manufacture source metadata, and converting a copied
-    Email back to MIME does not generate a delivery notification from the snapshot.</p>
+</details>
+<details class="doc-disclosure">
+  <summary>Keeping, exporting and logging report data</summary>
+<ul>
+    <li>Keep the received <code>Email</code> when you want the historical report. Ordinary copies and supported Java serialization keep
+      that snapshot through content edits.</li>
+    <li>Defaults and overrides resolve outgoing content and settings. New replies, forwards and completed messages start without the
+      received report or its nested facts.</li>
+    <li>Exact EML inspection preserves the source bytes and performs no added decryption. Exporting a copied <code>Email</code>
+      to MIME also leaves report generation to your application or mail system.</li>
+  </ul>
   <p>A received <code>DeliveryStatusReport</code> is separate from <code>DeliveryStatusNotification</code>, which configures a request for future
     feedback on an outgoing submission. Defaults and overrides can resolve that outgoing request; the received report is historical input data.</p>
   <p>Automatic report rendering includes counts, not addresses, identifiers or diagnostic prose. If you log or export those getters, treat the values
     as untrusted and potentially personal data. JSON/YAML output belongs to your application's normal serializer and DTOs; Simple Java Mail adds no serialization dependency.</p>
+</details>
 </section>
 <section>
   <h2 id="teach-the-integration">Connect facts to your application.</h2>

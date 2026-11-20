@@ -9,9 +9,6 @@ description: "Understand why MIME structure matters, what malformed nesting look
 mimeStructureDemo: true
 ---
   <section class="toc">
-    <p class="wide">An <a href="/smtp-connection-failover.html#section-ownership">SMTP failover destination</a> prepares a composed Email using its own
-      templates and message protection. Exact emails keep their authoritative bytes and ordinary-template bypass; incompatible mandatory locks cause
-      rejection, not rewriting. Routing alone performs no additional serialization or attachment reads.</p>
     <ul>
       <li><a href="#section-why">Why the MIME tree matters</a></li>
       <li><a href="#section-failures">What goes wrong when the structure is wrong</a></li>
@@ -26,13 +23,13 @@ mimeStructureDemo: true
   <section>
     <div>
       <p class="wide">
-        SMTP acceptance is not a rendering test. A server can accept a message whose MIME parts are perfectly readable on their own but describe the
-        wrong relationships. The recipient's mail client then has to guess which body to show, whether an image belongs inside the HTML, and which files
-        are attachments.
+        Suppose your daily sales email includes an HTML summary with a logo, a plain-text version, and a PDF report. It goes through the relay just
+        fine. Then a recipient sees the logo as an attachment and both versions of the summary in the same message. Check how the message groups its
+        MIME parts. The relay can accept the message even when those relationships are wrong.
       </p>
       <p class="wide">
-        As soon as an email contains more than one representation or resource, its shape carries meaning. The MIME standards define three multipart
-        types that do most of the work in application email:
+        The logo belongs with the HTML, the two summaries are alternatives, and the PDF should be available to download on its own.
+        MIME gives each of those relationships a different container.
       </p>
 
       <div class="doc-table-wrap" tabindex="0" aria-label="Scrollable multipart type reference">
@@ -65,8 +62,8 @@ mimeStructureDemo: true
       </div>
 
       <p class="wide">
-        These containers are not interchangeable. A rich message often nests all three: alternatives together, inline resources around those
-        alternatives, and independent attachments at the outside.
+        A rich message can nest all three containers. Group the alternatives, associate inline resources with the content they belong to,
+        and put independent attachments at the outside.
       </p>
     </div>
   </section>
@@ -127,9 +124,8 @@ mimeStructureDemo: true
         what every part means and how the parts should be nested.
       </p>
       <p>
-        Simple Java Mail starts from the content you declare: plain text, HTML, embedded resources, calendar data, attachments, or a forwarded
-        message. It then selects the matching MIME structure and fills in the body parts, content IDs, dispositions, and encodings needed by that
-        structure.
+        In Simple Java Mail, tell the builder what each piece is for. For the sales report, give it both versions of the summary, embed the logo, and
+        attach the PDF. The library chooses the MIME structure, content IDs, dispositions, and encodings.
       </p>
     </div>
     <div class="side padded">
@@ -142,6 +138,22 @@ mimeStructureDemo: true
         shows where each library leaves the work.
       </p>
     </div>
+    <div class="wide full-width-example">
+      <pre><code class="language-java">SimpleJavaMail mail = SimpleJavaMail.fromDefaults();
+Email report = mail.emailBuilder().startingBlank()
+    .from("sales-reports@example.org")
+    .to("team@example.org")
+    .withSubject("Daily sales report")
+    .withPlainText("Today's sales total was $4,200. See the attached report.")
+    .withHTMLText("&lt;img src=\"cid:sales-logo@example.org\" alt=\"Sales\"&gt;"
+        + "&lt;p&gt;Today's sales total was &lt;strong&gt;$4,200&lt;/strong&gt;. See the attached report.&lt;/p&gt;")
+    .withEmbeddedImage("sales-logo@example.org", logoBytes, "image/png")
+    .withAttachment("sales-report.pdf", reportPdfBytes, "application/pdf")
+    .buildEmail();</code></pre>
+    </div>
+    <p class="wide">An <a href="/smtp-connection-failover.html#section-ownership">SMTP failover destination</a> prepares a composed Email using its own
+      templates and message protection. Exact emails keep their authoritative bytes and ordinary-template bypass; incompatible mandatory locks cause
+      rejection, not rewriting. Routing alone performs no additional serialization or attachment reads.</p>
   </section>
 
   <a href="#section-explore-multipart" id="section-explore-multipart" class="section-link h2">&sect;</a>

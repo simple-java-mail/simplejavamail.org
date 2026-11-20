@@ -228,7 +228,7 @@ Mailer mailer = mailerBuilder
 
 An observer failure is logged without changing the send result, so a failed archive update does not mean the email failed to send.
 
-Next time something goes wrong, they can look up what they tried to send and how each attempt ended. Bodies and attachments stay out of ordinary logs, which only need identifiers and results. Access to the stored messages is restricted and they don't keep them indefinitely. This is still something two developers have to look after; Polar Meridian takes the same idea further with [exact-message retention](/features.html#section-exact-eml) for selected business correspondence.
+Next time something goes wrong, they can look up what they tried to send and how each attempt ended. Bodies and attachments stay out of ordinary logs, which only need identifiers and results. Access to the stored messages is restricted and they don't keep them indefinitely. This is still something two developers have to look after; Polar Meridian takes the same idea further with [exact-message retention](/email-conversion.html#section-exact-eml) for selected business correspondence.
 
 ## Give the servers a chance to breathe
 
