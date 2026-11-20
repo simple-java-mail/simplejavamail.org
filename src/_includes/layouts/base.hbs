@@ -12,6 +12,11 @@
       {{> docs-sidebar}}
 
       <main id="main-content" class="docs-content" data-pagefind-body>
+        {{#with migrationNotice}}
+          <aside class="migration-notice" aria-label="Migration automation">
+            {{message}} <a href="{{href}}">{{linkText}}</a>.
+          </aside>
+        {{/with}}
         {{#if customDocsContent}}
           {{{content}}}
         {{else}}
