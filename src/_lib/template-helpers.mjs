@@ -19,7 +19,11 @@ export function createTemplateHelpers(markdown = createMarkdownLibrary()) {
   register("eq", (left, right) => left === right);
   register("year", () => new Date().getFullYear());
   register("activeClass", (href, current) => href === current ? "is-active" : "");
-  register("docsActiveClass", (href, current) => href === current ? "is-active" : "");
+  register("docsCurrent", (href, currentUrl, parentUrl, groups) => {
+    if (href === currentUrl) return "page";
+    if (href === parentUrl && !navItemForUrl(groups, currentUrl)) return "true";
+    return "";
+  });
   register("navItemForUrl", navItemForUrl);
   register("breadcrumbAncestors", breadcrumbAncestors);
   register("json", (value) => JSON.stringify(value).replace(/</g, "\\u003c"));

@@ -168,24 +168,27 @@ test("the Docs dropdown offers one combined Patterns link without badge headings
   assert.match(menu, /href="\/modules\.html"/);
 });
 
-test("the docs sidebar gives Patterns a home and retains direct access to both collections", () => {
+test("the docs sidebar marks the listed page or its navigation parent as current", () => {
   const handlebars = Handlebars.create();
-  handlebars.registerHelper("eq", (left, right) => left === right);
-  handlebars.registerHelper("docsActiveClass", createTemplateHelpers().docsActiveClass);
+  for (const [name, helper] of Object.entries(createTemplateHelpers())) handlebars.registerHelper(name, helper);
   const nav = JSON.parse(readFileSync(new URL("../src/_data/nav.json", import.meta.url), "utf8"));
   const render = handlebars.compile(readFileSync(new URL("../src/_includes/docs-sidebar.hbs", import.meta.url), "utf8"));
-  for (const [url, parent, activeLabel] of [
-    ["/email-workload-field-guide.html", "/patterns.html", "Tactical Patterns"],
-    ["/strategic-patterns.html", "/patterns.html", "Strategic Patterns"],
-    ["/patterns/transaction-outbox.html", "/strategic-patterns.html", null],
-    ["/sending-and-execution.html", "/configuration.html", "Sending and execution"],
+  for (const [url, parent, currentLink] of [
+    ["/email-workload-field-guide.html", "/patterns.html", ["page", "Tactical Patterns"]],
+    ["/strategic-patterns.html", "/patterns.html", ["page", "Strategic Patterns"]],
+    ["/patterns/transaction-outbox.html", "/strategic-patterns.html", ["true", "Strategic Patterns"]],
+    ["/sending-and-execution.html", "/configuration.html", ["page", "Sending and execution"]],
+    ["/migration-notes.html", undefined, ["page", "Migration notes"]],
+    ["/migration-notes-10.0.0.html", "/migration-notes.html", ["true", "Migration notes"]],
+    ["/unlisted.html", undefined, null],
   ]) {
     const menu = render({ nav, page: { url }, breadcrumbParent: parent });
     assert.equal((menu.match(/>Tactical Patterns<\/a>/g) || []).length, 1);
     assert.equal((menu.match(/>Strategic Patterns<\/a>/g) || []).length, 1);
-    const activeLabels = [...menu.matchAll(/class="is-active">([^<]+)<\/a>/g)].map((match) => match[1]);
-    assert.deepEqual(activeLabels, activeLabel ? [activeLabel] : []);
-    assert.match(menu, /<a href="\/patterns.html"[^>]*>Patterns<\/a>\s*<ul class="docs-nav-children">\s*<li><a href="\/email-workload-field-guide\.html"[^>]*>Tactical Patterns<\/a><\/li>\s*<li><a href="\/strategic-patterns\.html"[^>]*>Strategic Patterns<\/a><\/li>\s*<\/ul>/);
+    const currentLinks = [...menu.matchAll(/aria-current="([^"]+)">([^<]+)<\/a>/g)]
+      .map(([, current, label]) => [current, label]);
+    assert.deepEqual(currentLinks, currentLink ? [currentLink] : [], url);
+    assert.match(menu, /<a href="\/patterns\.html"[^>]*>Patterns<\/a>\s*<ul class="docs-nav-children">\s*<li>\s*<a href="\/email-workload-field-guide\.html"[^>]*>Tactical Patterns<\/a>\s*<\/li>\s*<li>\s*<a href="\/strategic-patterns\.html"[^>]*>Strategic Patterns<\/a>\s*<\/li>\s*<\/ul>/);
     assert.doesNotMatch(menu, /pattern-badge|pattern-navigation/);
     assert.ok(menu.indexOf('href="/use-cases.html"') < menu.indexOf('href="/email-workload-field-guide.html"'));
     assert.ok(menu.indexOf('href="/why-simple-java-mail.html"') < menu.indexOf('href="/use-cases.html"'));

@@ -81,7 +81,7 @@ sidebarToggle?.addEventListener('click', () => {
   sidebarToggle.setAttribute('aria-expanded', String(open));
 });
 
-const activeDocsLink = docsSidebar?.querySelector<HTMLAnchorElement>('.docs-nav a.is-active');
+const activeDocsLink = docsSidebar?.querySelector<HTMLAnchorElement>('.docs-nav a[aria-current]');
 window.addEventListener('load', () => {
   if (!docsSidebar || !activeDocsLink || getComputedStyle(docsSidebar).overflowY === 'visible') return;
 
