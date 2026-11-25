@@ -321,6 +321,16 @@ export function renderJournalDiagrams(root: ParentNode = document, redraw = fals
       applyImageBranchLinks(element, source);
       applyActorPortraits(element, source);
       await applySequenceNodeImages(element, source);
+      const svg = element.querySelector(':scope > svg');
+      if (svg && element.closest('[data-diagram-lightbox]')
+        && typeof document.querySelector<HTMLDialogElement>('[data-image-dialog]')?.showModal === 'function') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.diagramPreview = '';
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.append(svg, 'Enlarge diagram');
+        element.append(button);
+      }
     }
   }).catch((error: unknown) => { console.error('Unable to render Mermaid diagram.', error); });
   return diagramRendering;

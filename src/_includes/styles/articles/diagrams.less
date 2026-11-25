@@ -49,6 +49,23 @@
 }
 .journal-prose pre.mermaid.mermaid-compact svg { flex: 0 1 auto; width: 100% !important; max-height: 900px; }
 .journal-prose .journal-diagram-wide pre.mermaid svg { max-width: 780px !important; }
+.journal-prose pre.mermaid:has(> [data-diagram-preview]) {
+  width: min(100%, 390px);
+  margin-inline: auto;
+  padding: 0;
+}
+.journal-prose [data-diagram-preview] {
+  display: block;
+  width: 100%;
+  padding: @space-xs;
+  border: 0;
+  background: transparent;
+  color: @teal-deep;
+  font: inherit;
+  cursor: zoom-in;
+}
+.journal-prose [data-diagram-preview]:focus-visible { outline: 2px solid @teal; outline-offset: -2px; }
+.journal-prose pre.mermaid [data-diagram-preview] > svg { width: 100% !important; }
 .journal-prose .polar-meridian-estate-map pre.mermaid .polar-estate-label {
   display: inline-block;
   width: 13.5rem;
