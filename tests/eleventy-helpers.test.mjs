@@ -820,6 +820,24 @@ test("code styling requires exact fence modifiers and leaves Mermaid sizing alon
   assert.match(markdown.render('```mermaid code-small code-compact\nflowchart LR\nA --> B\n```\n'), /<pre class="mermaid">/);
 });
 
+test("expandable fences preview ten lines and keep the full code available", () => {
+  const markdown = createMarkdownLibrary();
+  const lines = Array.from({ length: 12 }, (_, i) => `line ${i + 1}`);
+  lines[3] = 'if (value < max) return;';
+  const source = lines.join("\n");
+  const render = (info, code) => markdown.render(["```" + info, code, "```", ""].join("\n"));
+  const rendered = render("java code-expandable", source);
+  const summary = rendered.match(/<summary[^>]*>[\s\S]*?<\/summary>/u)?.[0];
+  const preview = summary?.match(/<code class="journal-code-preview language-java" aria-hidden="true">([\s\S]*?)<\/code>/u)?.[1];
+  assert.equal(preview, markdown.utils.escapeHtml(lines.slice(0, 10).join("\n")));
+  assert.match(summary, /value &lt; max/);
+  assert.match(summary, /Show all 12 lines/);
+  assert.doesNotMatch(summary, /line 11/);
+  assert.ok(rendered.includes('<pre><code class="language-java">' + markdown.utils.escapeHtml(source) + "\n</code></pre>"));
+  assert.doesNotMatch(render("java code-expandable", lines.slice(0, 10).join("\n")), /<details/);
+  assert.doesNotMatch(render("java", source), /<details/);
+});
+
 test("Markdown Mermaid fences become progressively enhanced journal diagrams", () => {
   const markdown = createMarkdownLibrary();
   const rendered = markdown.render("```mermaid\nflowchart LR\n  A --> B\n  C[<script>]\n```\n");
@@ -879,6 +897,16 @@ test("italic paragraphs caption fenced code without changing code, links or foll
   assert.match(rendered, /<figcaption>Save <code>id<\/code> &amp; check <a href="\/docs\.html">the result<\/a>\.<\/figcaption>/);
   assert.match(rendered, /<\/figure>\s*<p>Next paragraph\.<\/p>/);
   assert.doesNotMatch(rendered, /<em>/);
+});
+
+test("italic paragraphs caption Markdown tables while preserving the table and following prose", () => {
+  const markdown = createMarkdownLibrary();
+  const table = "| Library | Capability |\n| --- | --- |\n| SJM | MIME composition |";
+  const rendered = markdown.render(table + "\n\n*Compare [the APIs](/feature-matrix.html).*\n\nNext paragraph.\n");
+  assert.match(rendered, /<figure class="journal-captioned">\s*<table>\s*<thead>\s*<tr>\s*<th>Library<\/th>/);
+  assert.match(rendered, /<td>SJM<\/td>\s*<td>MIME composition<\/td>/);
+  assert.match(rendered, /<\/table>\s*<figcaption>Compare <a href="\/feature-matrix\.html">the APIs<\/a>\.<\/figcaption>\s*<\/figure>\s*<p>Next paragraph\.<\/p>/);
+  assert.doesNotMatch(markdown.render(table + "\n\nSome *ordinary emphasis*.\n"), /<figure|<figcaption/);
 });
 
 test("image captions preserve separate alt text and raw image attributes", () => {

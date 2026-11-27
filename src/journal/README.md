@@ -224,9 +224,11 @@ Use it sparingly for dense output. For raw HTML examples, the equivalent is `<pr
 
 For a code block that belongs closely with the surrounding prose, add `code-compact` to use normal paragraph spacing above and below it, including its caption. This changes spacing, not font size. Combine both options as `text code-small code-compact` when needed; neither changes other blocks.
 
-### Image, code and diagram captions
+For a longer inline code example, add `code-expandable` after the language in the fence, as in `java code-expandable`. The first ten lines stay visible and the reader can expand the full, copyable example. Code blocks of ten lines or fewer display in full.
 
-Put an italic-only paragraph immediately after a standalone image or fenced code block, including a Mermaid diagram, separated by a blank line. Typora displays ordinary italic text; the website groups the pair into a `<figure>` with a styled `<figcaption>`. Alt text remains separate from the visible caption.
+### Image, code, diagram and table captions
+
+Put an italic-only paragraph immediately after a standalone image, a fenced code block (including Mermaid) or a Markdown table. Separate it from the item above with a blank line. Typora displays ordinary italic text. The website groups the pair into a `<figure>` with a styled `<figcaption>`. Alt text remains separate from the visible caption.
 
 ```markdown
 ![Example quotation email](/assets/journal/articles/staple-and-sons/example-email.png)

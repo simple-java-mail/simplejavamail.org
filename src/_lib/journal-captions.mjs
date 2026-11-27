@@ -3,6 +3,12 @@ const rawImagePattern = /^\s*<img\b(?:[^<>"']|"[^"]*"|'[^']*')*\/?>\s*$/iu;
 function mediaEnd(tokens, index) {
   const token = tokens[index];
   if (token.level !== 0) return null;
+  if (token.type === "table_open") {
+    for (let end = index + 1; end < tokens.length; end += 1) {
+      if (tokens[end].type === "table_close" && tokens[end].level === token.level) return end + 1;
+    }
+    return null;
+  }
   if (token.type === "fence") return index + 1;
   if (token.type === "html_block" && rawImagePattern.test(token.content)) return index + 1;
   const children = tokens[index + 1]?.children;

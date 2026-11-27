@@ -24,7 +24,21 @@ export function createMarkdownLibrary() {
     if (language !== "mermaid") {
       const code = defaultFenceRenderer(tokens, index, options, env, renderer);
       const classes = ["code-small", "code-compact"].filter((modifier) => modifiers.includes(modifier)).join(" ");
-      return classes ? code.replace(/^<pre>/u, `<pre class="${classes}">`) : code;
+      const fullCode = classes ? code.replace(/^<pre>/u, `<pre class="${classes}">`) : code;
+      if (!modifiers.includes("code-expandable")) return fullCode;
+
+      const previewLimit = 10;
+      const lines = token.content.replace(/\n$/u, "").split("\n");
+      if (lines.length <= previewLimit) return fullCode;
+
+      const preview = markdown.utils.escapeHtml(lines.slice(0, previewLimit).join("\n"));
+      return `<details class="journal-code-disclosure journal-code-disclosure--fence">
+<summary data-pagefind-ignore>
+<code class="journal-code-preview language-${markdown.utils.escapeHtml(language)}" aria-hidden="true">${preview}</code>
+<span class="journal-code-action"><span class="journal-code-expand">Show all ${lines.length} lines <span aria-hidden="true">↓</span></span><span class="journal-code-collapse">Show first ${previewLimit} lines <span aria-hidden="true">↑</span></span></span>
+</summary>
+${fullCode}</details>
+`;
     }
     const compactClass = /^\s*%% journal: compact\s*$/mu.test(token.content) ? " mermaid-compact" : "";
     const diagram = `<pre class="mermaid${compactClass}">${markdown.utils.escapeHtml(token.content)}</pre>`;

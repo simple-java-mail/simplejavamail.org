@@ -29,7 +29,7 @@ p { margin: 0 0 1rem; }
 strong { font-weight: 600; }
 
 code, pre { font-family: @font-mono; }
-:not(pre) > code {
+:not(pre) > code:where(:not(.journal-code-preview)) {
   padding: 0.08em 0.3em;
   background: color-mix(in srgb, @paper 97%, black);
   border: 1px solid @line;
@@ -82,7 +82,12 @@ pre:hover > .copy-code, pre:focus-within > .copy-code, .copy-code:active { borde
 .token.atrule, .token.attr-value, .token.keyword { color: #83B8E8; }
 .token.function, .token.class-name { color: #E9D48C; }
 .token.regex, .token.important, .token.variable { color: #E6A4A4; }
-:not(pre) > code .token[class] { background: transparent; color: inherit; text-shadow: none; text-transform: none; }
+:not(pre) > code:where(:not(.journal-code-preview)) .token[class] {
+  background: transparent;
+  color: inherit;
+  text-shadow: none;
+  text-transform: none;
+}
 
 .shell { width: calc(100% - 2.5rem); max-width: @shell; margin-inline: auto; }
 .wide-shell { max-width: @shell-wide; }
