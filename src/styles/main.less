@@ -238,6 +238,32 @@ pre:hover > .copy-code, pre:focus-within > .copy-code, .copy-code:active { borde
 .code-window-bar > span:first-child { text-transform: none; }
 .code-window pre { margin: 0; border: 0; }
 .code-window .copy-code { top: 0.6rem; }
+.code-tabs:not([hidden]) {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+.code-tabs > button {
+  min-height: 44px;
+  padding: @space-2xs;
+  border: 0;
+  border-inline-end: 1px solid @line-dark;
+  background: @strong-surface;
+  color: #C5DDDF;
+  font: 600 0.76rem @font-mono;
+  cursor: pointer;
+}
+.code-tabs > button:last-child { border-inline-end: 0; }
+.code-tabs > button:hover { background: lighten(@ink-deep, 6%); color: @white; }
+.code-tabs > button[aria-selected="true"] {
+  background: @ink-deep;
+  color: @white;
+  box-shadow: inset 0 -3px @amber;
+}
+.code-tabs > button:focus-visible, .code-tabs ~ [role="tabpanel"]:focus-visible {
+  outline: 2px solid @amber;
+  outline-offset: -3px;
+}
 .fact-row { display: flex; flex-wrap: wrap; gap: 0; margin-top: @space-xl; }
 .fact-row > span { padding: 0.45rem 1rem; border: 1px solid @line; border-right: 0; font-family: @font-mono; font-size: 0.68rem; text-transform: uppercase; }
 .fact-row span:last-child { border-right: 1px solid @line; }

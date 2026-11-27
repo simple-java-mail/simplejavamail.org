@@ -1,28 +1,3 @@
-.dependency-tabs:not([hidden]) {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-.dependency-tabs > button {
-  min-height: 44px;
-  padding: @space-2xs;
-  border: 0;
-  border-inline-end: 1px solid @line-dark;
-  background: @strong-surface;
-  color: #C5DDDF;
-  font: 600 0.76rem @font-mono;
-  cursor: pointer;
-}
-.dependency-tabs > button:last-child { border-inline-end: 0; }
-.dependency-tabs > button:hover { background: lighten(@ink-deep, 6%); color: @white; }
-.dependency-tabs > button[aria-selected="true"] {
-  background: @ink-deep;
-  color: @white;
-  box-shadow: inset 0 -3px @amber;
-}
-.dependency-tabs > button:focus-visible, .dependency-panel:focus-visible {
-  outline: 2px solid @amber;
-  outline-offset: -3px;
-}
 .dependency-panel { position: relative; border-top: 1px solid @line-dark; }
 .dependency-file {
   position: absolute;

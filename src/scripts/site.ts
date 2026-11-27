@@ -91,9 +91,8 @@ window.addEventListener('load', () => {
   docsSidebar.scrollTop = Math.max(0, docsSidebar.scrollTop + centeredOffset);
 }, { once: true });
 
-const dependencyTablist = document.querySelector<HTMLElement>('[data-dependency-tabs]');
-if (dependencyTablist) {
-  const tabs = Array.from(dependencyTablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+for (const tablist of document.querySelectorAll<HTMLElement>('[data-code-tabs]')) {
+  const tabs = Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
   const selectTab = (selected: HTMLButtonElement): void => {
     for (const tab of tabs) {
       const active = tab === selected;
@@ -122,7 +121,7 @@ if (dependencyTablist) {
   }
   if (tabs[0]) {
     selectTab(tabs[0]);
-    dependencyTablist.hidden = false;
+    tablist.hidden = false;
   }
 }
 
