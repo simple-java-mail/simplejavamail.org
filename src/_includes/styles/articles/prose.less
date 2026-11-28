@@ -48,4 +48,52 @@
   color: @ink;
 }
 .journal-prose blockquote > :last-child { margin-bottom: 0; }
+.journal-prose .journal-issue-quote {
+  --issue-quote-surface: @surface;
+  width: fit-content;
+  max-width: calc(100% - @space-sm);
+  margin-block: @space-md;
+
+  > blockquote {
+    margin: 0;
+    padding: @space-sm @space-md;
+    border: 1px solid @line;
+    border-radius: 0.85rem;
+    background: var(--issue-quote-surface);
+  }
+
+  > p {
+    margin: @space-2xs @space-sm 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+}
+.journal-prose .journal-issue-quote--message {
+  margin-inline-start: @space-xs;
+
+  > blockquote { position: relative; }
+  > blockquote::before {
+    position: absolute;
+    inset-block-end: 0.72rem;
+    inset-inline-start: -0.31rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    transform: rotate(45deg);
+    border: solid @line;
+    border-width: 0 0 1px 1px;
+    background: var(--issue-quote-surface);
+    content: "";
+  }
+}
+.journal-prose .journal-issue-quote--reply {
+  --issue-quote-surface: @teal-tint;
+  max-width: calc(100% - @space-lg);
+  margin-inline: auto @space-xs;
+
+  > p { text-align: end; }
+  > blockquote::before {
+    inset-inline: auto -0.31rem;
+    border-width: 1px 1px 0 0;
+  }
+}
 .journal-prose pre { margin: @space-xl 0; }

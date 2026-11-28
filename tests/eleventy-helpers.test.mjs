@@ -933,6 +933,16 @@ test("linked image captions retain their original-file link and image title", ()
   assert.doesNotMatch(rendered, /<p>\s*<a/);
 });
 
+test("an opted-in image frame stays separate from its Markdown caption", () => {
+  const markdown = createMarkdownLibrary();
+  const frame = '<div class="chart" data-captioned-image>\n  <img src="/activity.svg" alt="Monthly activity">\n</div>';
+  const caption = "\n\n*Count of weeks with changes.*\n";
+  const html = markdown.render(frame + caption);
+  assert.match(html, /<figure class="journal-captioned">\s*<div class="chart" data-captioned-image>\s*<img[^>]+>\s*<\/div>\s*<figcaption>Count of weeks with changes\.<\/figcaption>\s*<\/figure>/);
+  assert.doesNotMatch(markdown.render(frame.replace(" data-captioned-image", "") + caption), /<figcaption>/);
+  assert.doesNotMatch(markdown.render(frame.replace("</div>", "More prose</div>") + caption), /<figcaption>/);
+});
+
 test("linked raw persona images retain captions, attributes and their lightbox opt-in", () => {
   const article = readFileSync(new URL("../src/case-studies/relaydesk.md", import.meta.url), "utf8");
   const html = createMarkdownLibrary().render(article.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, ""));

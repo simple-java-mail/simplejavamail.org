@@ -1,4 +1,5 @@
 const rawImagePattern = /^\s*<img\b(?:[^<>"']|"[^"]*"|'[^']*')*\/?>\s*$/iu;
+const imageFramePattern = /^\s*<div\b(?:[^<>"']|"[^"]*"|'[^']*')*\sdata-captioned-image(?=\s|>)(?:[^<>"']|"[^"]*"|'[^']*')*>([\s\S]*?)<\/div>\s*$/iu;
 
 function mediaEnd(tokens, index) {
   const token = tokens[index];
@@ -10,7 +11,10 @@ function mediaEnd(tokens, index) {
     return null;
   }
   if (token.type === "fence") return index + 1;
-  if (token.type === "html_block" && rawImagePattern.test(token.content)) return index + 1;
+  if (token.type === "html_block") {
+    const image = imageFramePattern.exec(token.content)?.[1] ?? token.content;
+    if (rawImagePattern.test(image)) return index + 1;
+  }
   const children = tokens[index + 1]?.children;
   const standaloneImage = children?.length === 1 && children[0].type === "image";
   const linkedImage = children?.length === 3
